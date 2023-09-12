@@ -7,7 +7,12 @@ description: "This endpoint sends an outbound call where the AI navigates custom
 ### Body
 
 <ParamField body="phone_number" type="string">
-  This is the phone number of the person or company you want to call
+  The phone number to call (the number of the insurance company, airline, bank,
+  etc).
+</ParamField>
+
+<ParamField body="hold_connect" type="string">
+  The number to connect into the call when a human is detected (your number).
 </ParamField>
 
 <ParamField body="voice_id" type="number">
@@ -15,35 +20,14 @@ description: "This endpoint sends an outbound call where the AI navigates custom
   (Kylie), 2 (Vanessa), and 3 (Aditya).
 </ParamField>
 
-<ParamField body="request_data" type="object">
-  Provides additional context for the AI to reference during the call.
-</ParamField>
-
-<ParamField body="reduce_latency" type="boolean">
-  Reducing latency can improve response time but may lead to issues like failed
-  calls and voice artifacts (issues with rendering voice).
-</ParamField>
-
-<ParamField body="webhook" type="string">
-  A callback url for after the call. Sends a POST request to a URL when the call
-  is finished. Will contain call id, and the transcripts.
-</ParamField>
-
-<ParamField body="amd" type="boolean">
-  Enables Automatic Machine Detection to detect if the system is speaking with a
-  robot. Useful for detecting voicemails or navigating phone trees. Should be
-  set to false if you're sure you're calling a human or need quicker response
-  time for the first reply.
-</ParamField>
-
 ### Response
 
 <ResponseField name="status" type="string">
-  Either returns 'success' or 'error'
+  Can be "success" or "error".
 </ResponseField>
 
-<ResponseField name="call_id" type="string">
-  A unique identifier for the call (present only if status is 'success')
+<ResponseField name="message" type="string">
+  A description or reason for the response status.
 </ResponseField>
 
 <RequestExample>
@@ -51,27 +35,18 @@ description: "This endpoint sends an outbound call where the AI navigates custom
 ```javascript Example Request.js
 // Headers
 const headers = {
-  Authorization:
-    "sk-a6p90s4w6k69w2ak1hanl40fuetoso5fgd1pmnt87gpsepl9dsw30stfpx7x95r469",
+  Authorization: "sk-xxxxxxxxx",
 };
 
 // Data
 const data = {
   phone_number: "xxx-xxx-xxxxx",
+  hold_connect: "xxx-xxx-xxxxx",
   voice_id: 2,
-  task: "You are calling to see if United Airlines has your bags",
-  request_data: {
-    calling: "United",
-    bag_claim: "69683",
-    airline_code: "UA123", // Additional context based on requirements
-  },
-  reduce_latency: false,
-  amd: true, // Set to false if you're sure you're calling a human or need quicker response
-  webhook: "your-url-here",
 };
 
 // API request
-await axios.post("https://api.bland.ai/call", data, { headers });
+await axios.post("https://api.bland.ai/hold", data, { headers });
 ```
 
 </RequestExample>
@@ -81,7 +56,7 @@ await axios.post("https://api.bland.ai/call", data, { headers });
 ```json Response
 {
   "status": "success",
-  "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1"
+  "message": "The call was successfully put on hold."
 }
 ```
 
