@@ -1,68 +1,61 @@
 ---
-title: "Create User"
-api: "POST https://api.mintlify.com/api/user"
-description: "This endpoint creates a new user"
+title: "Get transcript"
+api: "GET https://api.bland.ai/logs"
+description: "Note: A WebSocket stream is also available in beta, which can be more efficient for receiving real-time updates. You can configure it within the developer portal."
 ---
 
 ### Body
 
-<ParamField body="current_token" type="string">
-  This is the current user group token you have for the user group that you want
-  to rotate.
+<ParamField body="call_id" type="string">
+  The unique identifier for the call.
 </ParamField>
 
 ### Response
 
-<ResponseField name="success" type="number">
-  Indicates whether the call was successful. 1 if successful, 0 if not.
+<ResponseField name="c_id" type="number">
+  The unique identifier for the call.
 </ResponseField>
 
-<ResponseField name="user_group" type="object">
-
-The contents of the user group
-
-<Expandable title="Toggle object">
-
-<ResponseField name="team_id" type="number">
-  This is the internal ID for this user group. You don't need to record this
-  information, since you will not need to use it.
+<ResponseField name="to" type="string">
+  The phone number that received the call.
 </ResponseField>
 
-<ResponseField name="token" type="string">
-  This is the user group token (userGroupToken or USER_GROUP_TOKEN) that will be
-  used to identify which user group is viewing the dashboard. You should save
-  this on your end to use when rendering an embedded dashboard.
+<ResponseField name="request_data" type="string">
+  JSON string representing additional data about the call.
 </ResponseField>
 
-<ResponseField name="name" type="string">
-  This is the name of the user group provided in the request body.
+<ResponseField name="completed" type="boolean">
+  Whether the call has been completed.
 </ResponseField>
 
-<ResponseField name="provided_id" type="string">
-  This is the user_group_id provided in the request body.
+<ResponseField name="created_at" type="string">
+  The timestamp when the call was created.
 </ResponseField>
 
-<ResponseField name="api_environment_tag" type="JSON or null">
-  This is the environment tag of the user group. Possible values are 'Customer'
-  and 'Testing'. User group id's must be unique to each environment, so you can
-  not create multiple user groups with with same id. If you have a production
-  customer and a test user group with the same id, you will be required to label
-  one as 'Customer' and another as 'Testing'
+<ResponseField name="transcripts" type="array of objects">
+  An array of spoken phrases during the call.
 </ResponseField>
 
-</Expandable>
-
+<ResponseField name="call_length" type="number or null">
+  The length of the call in seconds (or null if ongoing).
 </ResponseField>
 
 <RequestExample>
 
-```bash Example Request
-curl --location --request POST 'https://api.mintlify.com/api/user' \
---header 'Content-Type: application/json' \
---header 'Authorization: Token <token>' \
---data-raw '{
-    "current_token": ""
-}'
+```javascript Example Request.js
+// Headers
+const headers = {
+  Authorization:
+    "sk-a6p90s4w6k69w2ak1hanl40fuetoso5fgd1pmnt87gpsepl9dsw30stfpx7x95r469",
+};
+
+// Data
+const data = {
+  call_id: "9d404c1b-6a23-4426-953a-a52c392ff8f1",
+};
+
+// API request
+await axios.get("https://api.bland.ai/logs", data, { headers });
 ```
 
 </RequestExample>
@@ -71,13 +64,13 @@ curl --location --request POST 'https://api.mintlify.com/api/user' \
 
 ```json Response
 {
-  "success": 1,
-  "user_group": {
-    "team_id": 3,
-    "token": "<user_group_token_to_auth_dashboard>",
-    "name": "Example 1",
-    "provided_id": "example_1"
-  }
+  "c_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1",
+  "to": "‭(214) 354-3244‬‬",
+  "request_data": "{\"phone_number\":\"‭(213) 359-3264‬‬\",\"voice_to_use\":\"9zi0QxdETm3LtSjyZE7x\"}",
+  "completed": false,
+  "created_at": "2023-08-02T03:50:35.466526+00:00",
+  "transcripts": [],
+  "call_length": null
 }
 ```
 

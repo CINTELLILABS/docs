@@ -1,84 +1,77 @@
 ---
-title: "Get User"
-api: "GET https://api.mintlify.com/api/user"
-description: "This endpoint gets or creates a new user."
+title: "Make a call"
+api: "POST https://api.bland.ai/call"
+description: "This endpoint sends an outbound AI phone call."
 ---
 
 ### Body
 
-<ParamField body="name" type="string">
-  This is the name of the user group.
+<ParamField body="phone_number" type="string">
+  This is the phone number of the person or company you want to call
 </ParamField>
 
-<ParamField body="user_group_id" type="string">
-  This is the ID you use to identify this user group in your database.
+<ParamField body="voice_id" type="number">
+  This is the ID of the AI voice you'd like to use. By default we offer voices 1
+  (Kylie), 2 (Vanessa), and 3 (Aditya).
 </ParamField>
 
-<ParamField body="mapping" type="object">
-  This is a JSON mapping of schema id to either the data source that this user group should be
-  associated with or id of the datasource you provided when creating it.
+<ParamField body="request_data" type="object">
+  Provides additional context for the AI to reference during the call.
 </ParamField>
 
-<ParamField body="properties" type="object">
-  This is a JSON object for properties assigned to this user group. These will be accessible through
-  variables in the dashboards and SQL editor
+<ParamField body="reduce_latency" type="boolean">
+  Reducing latency can improve response time but may lead to issues like failed
+  calls and voice artifacts (issues with rendering voice).
+</ParamField>
+
+<ParamField body="webhook" type="string">
+  A callback url for after the call. Sends a POST request to a URL when the call
+  is finished. Will contain call id, and the transcripts.
+</ParamField>
+
+<ParamField body="amd" type="boolean">
+  Enables Automatic Machine Detection to detect if the system is speaking with a
+  robot. Useful for detecting voicemails or navigating phone trees. Should be
+  set to false if you're sure you're calling a human or need quicker response
+  time for the first reply.
 </ParamField>
 
 ### Response
 
-<ResponseField name="success" type="number">
-  Indicates whether the call was successful. 1 if successful, 0 if not.
+<ResponseField name="status" type="string">
+  Either returns 'success' or 'error'
 </ResponseField>
 
-<ResponseField name="new_user_group" type="boolean">
-  Indicates whether a new user group was created.
-</ResponseField>
-
-<ResponseField name="user_group" type="object">
-
-The contents of the user group
-
-<Expandable title="Toggle object">
-
-<ResponseField name="team_id" type="number">
-  This is the internal ID for this user group. You don't need to record this information, since
-  you will not need to use it.
-</ResponseField>
-
-<ResponseField name="token" type="string">
-  This is the user group token (userGroupToken or USER_GROUP_TOKEN) that will be used to identify
-  which user group is viewing the dashboard. You should save this on your end to use when rendering
-  an embedded dashboard.
-</ResponseField>
-
-<ResponseField name="name" type="string">
-  This is the name of the user group provided in the request body.
-</ResponseField>
-
-<ResponseField name="provided_id" type="string">
-  This is the user_group_id provided in the request body.
-</ResponseField>
-
-<ResponseField name="properties" type="JSON or null">
-  This is the properties object if it was provided in the request body
-</ResponseField>
-
-</Expandable>
-
+<ResponseField name="call_id" type="string">
+  A unique identifier for the call (present only if status is 'success')
 </ResponseField>
 
 <RequestExample>
 
-```bash Example Request
-curl --location --request GET 'https://api.mintlify.com/api/user' \
---header 'Content-Type: application/json' \
---header 'Authorization: Token <token>' \
---data-raw '{
-    "user_group_id": "example_1",
-    "name": "Example 1",
-    "mapping": {"40": "213", "134": "386"},
-    "properties": {"filterValue": "value"}
-}'
+```javascript Example Request.js
+// Headers
+const headers = {
+  Authorization:
+    "sk-a6p90s4w6k69w2ak1hanl40fuetoso5fgd1pmnt87gpsepl9dsw30stfpx7x95r469",
+};
+
+// Data
+const data = {
+  phone_number: "xxx-xxx-xxxxx",
+  voice_id: 2,
+  task: "You are calling to see if United Airlines has your bags",
+  request_data: {
+    calling: "United",
+    bag_claim: "69683",
+    airline_code: "UA123", // Additional context based on requirements
+  },
+  reduce_latency: false,
+  amd: true, // Set to false if you're sure you're calling a human or need quicker response
+  webhook: "your-url-here",
+};
+
+// API request
+await axios.post("https://api.bland.ai/call", data, { headers });
 ```
 
 </RequestExample>
@@ -87,14 +80,8 @@ curl --location --request GET 'https://api.mintlify.com/api/user' \
 
 ```json Response
 {
-  "success": 1,
-  "new_user_group": true,
-  "user_group": {
-    "team_id": 3,
-    "token": "<user_group_token_to_auth_dashboard>",
-    "name": "Example 1",
-    "provided_id": "example_1"
-  }
+  "status": "success",
+  "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1"
 }
 ```
 
