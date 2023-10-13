@@ -4,7 +4,11 @@ api: "POST https://api.bland.ai/logs"
 description: "After dispatching a phone call, you can ping this endpoint repeatedly (e.g. every two seconds) to get live updates. View the example below."
 ---
 
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/27330001-7ac5597c-12af-4a89-a44c-65dd0ef55b5c?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D27330001-7ac5597c-12af-4a89-a44c-65dd0ef55b5c%26entityType%3Dcollection%26workspaceId%3D79400b03-c195-4b0e-a5c8-86d5f13eea6f)
+### Headers
+
+<ParamField header="authorization" type="string">
+  Your API key for authentication.
+</ParamField>
 
 ### Body
 
@@ -35,11 +39,8 @@ description: "After dispatching a phone call, you can ping this endpoint repeate
 </ResponseField>
 
 <ResponseField name="transcripts" type="array of objects">
-  An array of spoken phrases during the call. Each index includes:
-  - id
-  - created_at
-  - text
-  - user (either the AI `assistant` or the human `user`)
+  An array of spoken phrases during the call. Each index includes: - id -
+  created_at - text - user (either the AI `assistant` or the human `user`)
 </ResponseField>
 
 <ResponseField name="call_length" type="number or null">
@@ -47,6 +48,7 @@ description: "After dispatching a phone call, you can ping this endpoint repeate
 </ResponseField>
 
 # Polling example
+
 To track the status of a live phone call, you can use a 'polling' technique to repeatedly ping the logs endpoint.
 
 Here's an example in Javascript and Python.
@@ -57,27 +59,28 @@ const axios = require('axios');
 
 // Headers
 const headers = {
-  'authorization': 'YOUR-API-KEY-HERE'
+'authorization': 'YOUR-API-KEY-HERE'
 };
 
 // Data
 const data = {
-  call_id: "YOUR-CALL-ID",
+call_id: "YOUR-CALL-ID",
 };
 
 // Function to make the API request
 const makeRequest = async () => {
-  try {
-    const response = await axios.post("https://api.bland.ai/logs", data, { headers });
-    console.log("Success:", response.data);
-  } catch (error) {
-    console.error("Failed:", error);
-  }
+try {
+const response = await axios.post("https://api.bland.ai/logs", data, { headers });
+console.log("Success:", response.data);
+} catch (error) {
+console.error("Failed:", error);
+}
 };
 
 // Ping the endpoint every 2 seconds (2000 milliseconds)
 setInterval(makeRequest, 2000);
-```
+
+````
 
 ```python PollLogs.py
 import requests
@@ -99,7 +102,8 @@ def make_request():
 while True:
     make_request()
     time.sleep(2)
-```
+````
+
 </CodeGroup>
 
 <RequestExample>
@@ -107,7 +111,7 @@ while True:
 ```javascript GetLogs.js
 // Headers
 const headers = {
-  'authorization': 'YOUR-API-KEY-HERE'
+  authorization: "YOUR-API-KEY-HERE",
 };
 
 // Data
@@ -140,52 +144,50 @@ response = requests.post('https://api.bland.ai/logs', json=data, headers=headers
 
 ```json Response
 {
-    "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3",
-    "to": "1112223344",
-    "request_data": "{\"phone_number\":\"1112223344\",\"voice_to_use\":\"0\"}",
-    "completed": true,
-    "created_at": "2023-09-22T19:14:27.015663+00:00",
-    "transcripts": [
-        {
-            "id": 95859,
-            "created_at": "2023-09-22T19:14:34.319713+00:00",
-            "text": "Hi this is Blandy. Im calling to say hi. How are you doing today?",
-            "user": "assistant",
-            "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
-        },
-        {
-            "id": 95860,
-            "created_at": "2023-09-22T19:14:47.176008+00:00",
-            "text": "I'm doing great. How are you doing?",
-            "user": "user",
-            "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
-        },
-        {
-            "id": 95861,
-            "created_at": "2023-09-22T19:14:48.572245+00:00",
-            "text": "Im doing well thank you for asking! Just here to assist you with any questions or concerns you may have. How can I help you today?",
-            "user": "assistant",
-            "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
-        },
-        {
-            "id": 95874,
-            "created_at": "2023-09-22T19:16:03.97614+00:00",
-            "text": "End phone call.",
-            "user": "user",
-            "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
-        },
-        {
-            "id": 95875,
-            "created_at": "2023-09-22T19:16:04.564979+00:00",
-            "text": " FINISH",
-            "user": "assistant",
-            "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
-        }
-    ],
-    "call_length": 90.245
+  "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3",
+  "to": "1112223344",
+  "request_data": "{\"phone_number\":\"1112223344\",\"voice_to_use\":\"0\"}",
+  "completed": true,
+  "created_at": "2023-09-22T19:14:27.015663+00:00",
+  "transcripts": [
+    {
+      "id": 95859,
+      "created_at": "2023-09-22T19:14:34.319713+00:00",
+      "text": "Hi this is Blandy. Im calling to say hi. How are you doing today?",
+      "user": "assistant",
+      "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
+    },
+    {
+      "id": 95860,
+      "created_at": "2023-09-22T19:14:47.176008+00:00",
+      "text": "I'm doing great. How are you doing?",
+      "user": "user",
+      "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
+    },
+    {
+      "id": 95861,
+      "created_at": "2023-09-22T19:14:48.572245+00:00",
+      "text": "Im doing well thank you for asking! Just here to assist you with any questions or concerns you may have. How can I help you today?",
+      "user": "assistant",
+      "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
+    },
+    {
+      "id": 95874,
+      "created_at": "2023-09-22T19:16:03.97614+00:00",
+      "text": "End phone call.",
+      "user": "user",
+      "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
+    },
+    {
+      "id": 95875,
+      "created_at": "2023-09-22T19:16:04.564979+00:00",
+      "text": " FINISH",
+      "user": "assistant",
+      "c_id": "0e75bfda-8c5c-424a-8d08-b497078e39b3"
+    }
+  ],
+  "call_length": 90.245
 }
 ```
 
 </ResponseExample>
-
-
