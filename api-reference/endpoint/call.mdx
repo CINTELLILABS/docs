@@ -38,10 +38,21 @@ Note: you should continually test and iterate prompts to get the best output fro
   American female
 </ParamField>
 
+<ParamField body="language" type="string" default="eng">
+  Select a supported language of your choice. 
+  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
+  
+  Supported Languages and their codes:
+  - English: "eng"
+  - Spanish: "esp"
+  - French:  "fre"
+</ParamField>
+
 <ParamField body="request_data" type="object">
-  A key value store that the AI can retrieve information from during the phone
-  call. When you want your AI to "know" a specific fact - like the caller's
-  name, etc. add that information to the parameters field.
+  When you want your AI to "know" a specific fact - like the caller's
+  name or other relevant context.
+
+  The AI agent will be aware of both the key names as well as their corresponding values.
 </ParamField>
 
 <ParamField body="webhook" type="string">
@@ -67,11 +78,13 @@ When set to true, `hq_voice` enables a slower and higher quality voice.
 </ParamField>
 
 <ParamField body="wait_for_greeting" type="boolean" default="false">
-  Makes the AI wait for a verbal acknowledgement from the person being called
-  before speaking. Can be used to create a more realistic conversation by
-  waiting for the user to say 'Hey' or similar before speaking. - When false:
-  The AI starts speaking first almost immediately after the outbound call is
-  answered. - When true: The AI will wait for the answerer to speak.
+  Makes the AI wait to speak until after speech is detected. 
+  
+  Creates more realistic conversations when answered with "Hello?", "This is \{name\} speaking." and so on.
+  
+  - When false: The AI starts speaking very shortly after the call is answered. 
+  
+  - When true: The AI will wait for the answerer to speak.
 </ParamField>
 
 ### Response
@@ -97,13 +110,14 @@ const data = {
   phone_number: "7778889999",
   task: "You are calling Fantastic Airlines on behalf of John Doe. Find out where John's Bags are located.",
   voice_id: 0,
+  language: "eng", // optional, also "esp", "fre", etc.
   request_data: {
     calling: "Fantastic Airlines",
     bag_claim: "69683",
     airline_code: "UA123",
   },
   reduce_latency: true,
-  amd: true,
+  amd: true, // false when expecting to be answered by a human
   webhook: "YOUR-WEBHOOK-HERE",
 };
 
