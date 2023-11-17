@@ -1,0 +1,192 @@
+---
+title: "Batch Calling"
+api: "POST https://api.bland.ai/batch"
+description: "Send a series of calls with a single api call"
+---
+
+### Headers
+
+<ParamField header="authorization" type="string">
+  Your API key for authentication.
+</ParamField>
+### Body
+
+<ParamField body="base_prompt" type="string" required>
+  This is the prompt or task used for all of the phone calls in the request. Information can be inserted into it surrounding variable names with \{\{curly braces\}\}.
+
+  Example: 
+  ```json
+  "You are calling {{business}} to renew their subscription to {{service}} before it expires on {{date}}."
+  ```
+</ParamField>
+
+<ParamField body="call_data" type="array" required>
+  Define a list of calls to make and their properties. Each call in call_data MUST have a "phone_number" property. Properties are case-sensitive.
+
+  Example:
+    ```json
+[
+    {   
+        "phone_number": "1234567890",
+        "business": "ABC co.",
+        "service": "Netflix",
+        "date": "September 4th"
+    },
+    {
+        "phone_number": "32176540987",
+        "business": "XYZ inc.",
+        "service": "Window Cleaning",
+        "date": "December 20th"
+    },
+    //...
+]
+```
+</ParamField>
+
+<ParamField body="label" type="string">
+  Adds a user-friendly label to your batch to keep track of it's original intention. This can help differentiate multiple call batches that are part of the same Campaign. Shown when a batch is retreived.
+</ParamField>
+
+<ParamField body="campaign_id" type="string">
+  Use ```campaign_id``` to organize related batches together. This can be set manually or auto-generated through Campaigns. 
+</ParamField>
+
+<ParamField body="test_mode" type="boolean" default="false">
+  When this is set to ```true```, only the first call of ```call_data``` will be dispatched. A common use case is to set the first ```phone_number``` value to your own to confirm everything's set up properly.
+
+  Includes additional information in the response when true so that it's easier to find any issues.
+</ParamField>
+
+<ParamField body="batch_id" type="string" default="auto-generated">
+  If you'd like, you can set a batch_id value manually. We made it auto-generate so that you don't have to keep track of batch_id values you've already used.
+
+  Situations where this comes in handy could be retrying specific calls and keeping consolidated analytics information, as an alternative to ```campaign_id```.
+</ParamField>
+
+<ParamField body="reduce_latency" type="boolean" default="true">
+  Reducing latency means that the agent will generate responses more quickly and have less of a delay. This must be set to ```true``` when using Voice Clones.
+</ParamField>
+
+<ParamField body="voice_id" type="number" default="0">
+  When reduce latency is set to `false`, we offer the following voices: 
+  - 0: American female 
+  - 1: American male 
+  - 2: British female 
+  - 3: Indian male 
+
+  When reduce latency is set to `true`, we offer only one default voice: 
+  - 0: American female
+</ParamField>
+
+<ParamField body="language" type="string" default="eng">
+  Select a supported language of your choice. 
+  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
+  
+  Supported Languages and their codes:
+  - English: ```eng```
+  - Spanish: ```esp```
+  - French:  ```fre```
+</ParamField>
+
+<ParamField body="request_data" type="object">
+  When you want your AI to "know" a specific fact - like the caller's
+  name or other relevant context.
+
+  The AI agent will be aware of both the key names as well as their corresponding values.
+</ParamField>
+
+<ParamField body="webhook" type="string">
+  The webhook should be a http / https callback url. We will send the call_id
+  and transcript to this URL after the call completes. This can be useful if you
+  want to have real time notifications when calls finish.
+</ParamField>
+
+<ParamField body="max_duration" type="float or string" default="30">
+  Set the longest you want the call to possibly go in minutes. After max_duration minutes have passed, the call will automatically end.
+  
+  Example Values: ```"45", "5.5", 20, 2.8```
+</ParamField>
+
+<ParamField body="amd" type="boolean" default="false">
+  If you want the AI to navigate a phone tree (like calling insurance or banks) or want the AI to leave voicemails, set `amd` to true.
+
+Otherwise, if you're calling a human and need quicker response times for the first reply, set `amd` to false.
+
+Functionally: We use ML to detect if we are talking to a human or machine. If we detect a machine theres an additional 1.3 second delay in between replies.
+
+</ParamField>
+
+<ParamField body="wait_for_greeting" type="boolean" default="false">
+  Makes the AI wait to speak until after speech is detected. 
+  
+  Creates more realistic conversations when answered with "Hello?", "This is \{name\} speaking." and so on.
+  
+  - When ```false```: The AI starts speaking very shortly after the call is answered. 
+  
+  - When ```true```: The AI will wait for the answerer to speak.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Can be `success` or `error`.
+</ResponseField>
+
+<ResponseField name="call_id" type="string">
+  A unique identifier for the call (present only if status is `success`)
+</ResponseField>
+
+<RequestExample>
+
+```javascript SendCall.js
+// Headers
+const headers = {
+  authorization: "YOUR-API-KEY-HERE",
+};
+
+// Data
+const data = {
+    base_prompt: "You are calling {{business}} to renew their subscription to {{service}} before it expires on {{date}}.",
+    call_data: [
+        {   
+            "phone_number": "1234567890",
+            "business": "ABC co.",
+            "service": "Netflix",
+            "date": "September 4th"
+        },
+        {
+            "phone_number": "32176540987",
+            "business": "XYZ inc.",
+            "service": "Window Cleaning",
+            "date": "December 20th"
+        },
+        //...
+    ],
+    label: "Renewal Reminder - Wednesday Afternoon with female voice",
+    voice_id: 0,
+    request_data: {
+        your_name: "Vanessa",
+        "day of week": "Wednesday"
+    },
+    max_duration: 10,
+    reduce_latency: true,
+    wait_for_greeting: true
+};
+
+
+// API request
+await axios.post("https://api.bland.ai/call", data, { headers });
+```
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+    "message": "success",
+    "batch_id": "3p$7rQ3p9sT5bzmF-gen-batch",
+    "errors": null // or an array of error message strings if any occur after call creation
+}
+```
+
+</ResponseExample>
