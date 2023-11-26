@@ -1,7 +1,7 @@
 ---
 title: "Purchase inbound number"
 api: "POST https://api.bland.ai/purchasenumber"
-description: "Purchase and configure a new inbound phone number"
+description: "Purchase and configure a new inbound phone number. ($15/mo. subscription using your stored payment method)."
 ---
 
 ### Headers
@@ -11,17 +11,13 @@ description: "Purchase and configure a new inbound phone number"
 </ParamField>
 ### Body
 
-<ParamField body="area_code" type="string">
-  Defaults to a randomly chose toll-free number. To purchase a number with a
-  specific area code, set this parameter to the desired three-digit area code. -
-  Toll-Free Numbers: Leave blank, "", or default. - Local Number Examples:
-  "212", "415", "563".
+<ParamField body="area_code" default="415" type="string">
+  Choose a three-digit area code for your phone number. If set as a parameter, a number will only be purchased by exact match if available.
 </ParamField>
 
 <ParamField body="prompt" type="string">
   This defines how the AI will start the conversation, information available to
-  it, and its behaviors. Note: you should continually test and iterate prompts
-  to get the best output from your AI.
+  it, and its behaviors. Matches how the outbound `task` parameter functions.
 </ParamField>
 
 <ParamField body="webhook" type="string">
@@ -30,27 +26,18 @@ description: "Purchase and configure a new inbound phone number"
   want to have real time notifications when calls finish.
 </ParamField>
 
+<ParamField body="phone_number" type="string">
+  Specify an exact phone number you'd like to use. If provided, will override the `area_code` parameter and does not fallback to any other number.
+
+  Example of the correct format (Note the `"+1"` is mandatory): `"+12223334444"`
+</ParamField>
+
 ### Response
 
 <ResponseField name="phone_number" type="string">
-  The created phone number, will be in the following format: +1XXXXXXXXXX -
-  Example: +18582814611
-</ResponseField>
+  The created phone number, will be in the following format: `+1XXXXXXXXXX`
 
-<ResponseField name="prorated_price" type="float">
-  The prorated price of the phone number for the remainder of the month. Note:
-  Measured in credit-minutes. - Example: Halfway through the month, the prorated
-  price would be half of the recurring_price.
-</ResponseField>
-
-<ResponseField name="recurring_price" type="float">
-  The recurring price of the phone number per month. Note: Measured in
-  credit-minutes. - Example: 16 credit-minutes per month.
-</ResponseField>
-
-<ResponseField name="remaining_credits" type="float">
-  The remaining credits in your account. Note: Measured in credit-minutes. -
-  Example: 92.8017849425806 credit-minutes.
+  Example: `+18582814611`
 </ResponseField>
 
 <RequestExample>
@@ -93,10 +80,7 @@ response = requests.post('https://api.bland.ai/purchasenumber', json=data, heade
 
 ```json Response
 {
-  "phone_number": "+18582814611",
-  "prorated_price": 14.838709677419352,
-  "recurring_price": 16.428571428571427,
-  "remaining_credits": 92.8017849425806
+  "phone_number": "+18582814611"
 }
 ```
 
