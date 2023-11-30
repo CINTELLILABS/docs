@@ -1,0 +1,185 @@
+---
+title: "Validate Dynamic Data"
+api: "POST https://api.bland.ai/dynamic_data/test"
+description: "This endpoint is designed for validating and processing dynamic data obtained from external APIs. The data is used in AI phone calls to ensure compliance with format requirements and functionality."
+
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your unique API key for authentication. This key must be included in the header of each request.
+</ParamField>
+
+### Body
+
+<ParamField body="dynamic_data" type="array" required>
+  An array of objects, each specifying an external API to fetch data from. These objects must include the API endpoint, the HTTP method, a cache flag, and details on parsing and integrating the response.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Indicates the outcome of the validation process. Possible values are `success` or `error`.
+</ResponseField>
+
+<ResponseField name="elapsed" type="number">
+  The duration in milliseconds from receiving the request to completing the data fetch.
+</ResponseField>
+
+<ResponseField name="dynamic_data_response" type="array">
+  Contains the results from the dynamic data fetch. Each object in this array shows the cache status, the name of the data, and the processed prompt with the inserted data.
+</ResponseField>
+
+<ResponseField name="dynamic_data_request" type="array">
+  Reflects the original dynamic data request for cross-reference purposes.
+</ResponseField>
+
+<RequestExample>
+
+```javascript
+// Headers
+const headers = {
+  authorization: "YOUR-API-KEY-HERE",
+};
+
+// Dynamic Data Payload
+const dynamicDataPayload = {
+  dynamic_data: [
+    {
+      url: "https://catfact.ninja/fact",
+      method: "GET",
+      cache: false,
+      response_data: [
+        {
+          name: "Cat Fact",
+          data: "fact",
+          context: "Fun fact about cats: {{Cat Fact}}"
+        }
+      ]
+    },
+    {
+      url: "https://api.coindesk.com/v1/bpi/currentprice.json",
+      method: "GET",
+      cache: true,
+      response_data: [
+        {
+          name: "BTC Price USD",
+          data: "bpi.USD.rate",
+          context: "Current Bitcoin value: ${{BTC Price USD}} USD"
+        },
+        {
+          name: "BTC Price EUR",
+          data: "bpi.EUR.rate",
+          context: "Current Bitcoin value: €{{BTC Price EUR}} EUR"
+        }
+      ]
+    }
+  ]
+};
+
+// API Request
+await axios.post("https://api.bland.ai/dynamic_data/test", dynamicDataPayload, { headers });
+```
+
+```python
+# Headers
+headers = {
+    'authorization': 'YOUR-API-KEY-HERE'
+}
+
+# Dynamic Data Payload
+dynamic_data_payload = {
+    'dynamic_data': [
+        {
+            'url': 'https://catfact.ninja/fact',
+            'method': 'GET',
+            'cache': False,
+            'response_data': [
+                {
+                    'name': 'Cat Fact',
+                    'data': 'fact',
+                    'context': 'Fun fact about cats: {{Cat Fact}}'
+                }
+            ]
+        },
+        {
+            'url': 'https://api.coindesk.com/v1/bpi/currentprice.json',
+            'method': 'GET',
+            'cache': True,
+            'response_data': [
+                {
+                    'name': 'BTC Price USD',
+                    'data': 'bpi.USD.rate',
+                    'context': 'Current Bitcoin value: ${{BTC Price USD}} USD'
+                },
+                {
+                    'name': 'BTC Price EUR',
+                    'data': 'bpi.EUR.rate',
+                    'context': 'Current Bitcoin value: €{{BTC Price EUR}} EUR'
+                }
+            ]
+        }
+    ]
+}
+
+# API Request
+response = requests.post('https://api.bland.ai/dynamic_data/test', json=dynamic_data_payload, headers=headers)
+```
+
+</RequestExample>
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "elapsed": 333,
+  "dynamic_data_response": [
+    {
+      "cached": false,
+      "name": "Cat Fact",
+      "prompt": "Fun fact about cats: In ancient Egypt, cats were worshipped as gods and considered sacred."
+    },
+    {
+      "cached": true,
+      "name": "BTC Price USD",
+      "prompt": "Current Bitcoin value: $40,000.00 USD"
+    },
+    {
+      "cached": true,
+      "name": "BTC Price EUR",
+      "prompt": "Current Bitcoin value: €35,000.00 EUR"
+    }
+  ],
+  "dynamic_data_request": [
+    {
+      "url": "https://catfact.ninja/fact",
+      "method": "GET",
+      "cache": false,
+      "response_data": [
+        {
+          "name": "Cat Fact",
+          "data": "fact",
+          "context": "Fun fact about cats: {{Cat Fact}}"
+        }
+      ]
+    },
+    {
+      "url": "https://api.coindesk.com/v1/bpi/currentprice.json",
+      "cache": true,
+      "response_data": [
+        {
+          "name": "BTC Price USD",
+          "data": "bpi.USD.rate",
+          "context": "Current Bitcoin value: ${{BTC Price USD}} USD"
+        },
+        {
+          "name": "BTC Price EUR",
+          "data": "bpi.EUR.rate",
+          "context": "Current Bitcoin value: €{{BTC Price EUR}} EUR"
+        }
+      ]
+    }
+  ]
+}
+```
+</ResponseExample>

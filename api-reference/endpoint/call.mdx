@@ -75,7 +75,7 @@ Note: you should continually test and iterate prompts to get the best output fro
 <ParamField body="amd" type="boolean" default="false">
   AMD mode helps our AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
   
-  HOWEVER: AMD mode also causes increases latency. It will cause worse performance when speaking with normal people. You should defualt to switching it off.
+  HOWEVER: AMD mode also causes increases latency. It will cause worse performance when speaking with normal people. You should default to switching it off (`false`)
 </ParamField>
 
 <ParamField body="wait_for_greeting" type="boolean" default="false">
@@ -117,11 +117,11 @@ Note: you should continually test and iterate prompts to get the best output fro
 The URL of the external API to fetch data from.
 </ParamField>
 
-<ParamField body="dynamic_data[i].method" type="string">
+<ParamField body="dynamic_data[i].method" default="GET" type="string">
 The HTTP method to use for the API call. Allows `"GET"` and `"POST"`.
 </ParamField>
 
-<ParamField body="dynamic_data[i].cache" type="boolean">
+<ParamField body="dynamic_data[i].cache" default="true" type="boolean">
 Whether to fetch the data once at the beginning of the call, or to re-check continuously for data that might change mid-call.
 </ParamField>
 
@@ -129,11 +129,13 @@ Whether to fetch the data once at the beginning of the call, or to re-check cont
 An array of objects describing how to parse and use the data fetched from the API.
 
 Each object in this array should contain:
-- `name`: A label for the fetched data.
-- `data`: The JSON path in the API response to extract the data from.
-- `context`: How this data should be incorporated into the AI's conversation.
+- `name`: A label for the fetched data. 
+- Example: `"Flight Status"`
+- `data`: The JSON path in the API response to extract the data from. 
+- Example: `"user.flights[0].status"`
+- `context`: How this data should be incorporated into the AI's knowledge. 
+- Example: `"John's flight is currently {{Flight Status}}"`
 </ParamField>
-
 
 <ParamField body="optimize_for" type="enum/string">
   Note: This is an experimental parameter and may behave unexpectedly.
