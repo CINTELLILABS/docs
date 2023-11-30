@@ -88,6 +88,53 @@ Note: you should continually test and iterate prompts to get the best output fro
   - When ```true```: The AI will wait for the answerer to speak.
 </ParamField>
 
+
+<ParamField body="dynamic_data" type="array">
+  An array of objects that allows the AI to fetch and use live data from external APIs during the call. This dynamic data can be used to provide up-to-date information or context-specific details in the conversation.
+
+  Each object in the array can specify a URL to fetch data from, the method to use (e.g., GET, POST), whether to cache the data, and how to parse and use the response data.
+
+  Example:
+```
+"dynamic_data": [
+  {
+    "url": "https://example.com/api",
+    "method": "GET",
+    "cache": true,
+    "response_data": [
+      {
+        "name": "DataName",
+        "data": "json.path.to.data",
+        "context": "Use this data like this: {{DataName}}"
+      }
+    ]
+  }
+]
+```
+</ParamField>
+
+<ParamField body="dynamic_data[i].url" type="string">
+The URL of the external API to fetch data from.
+</ParamField>
+
+<ParamField body="dynamic_data[i].method" type="string">
+The HTTP method to use for the API call. Allows `"GET"` and `"POST"`.
+</ParamField>
+
+<ParamField body="dynamic_data[i].cache" type="boolean">
+Whether to fetch the data once at the beginning of the call, or to re-check continuously for data that might change mid-call.
+</ParamField>
+
+<ParamField body="dynamic_data[i].response_data" type="array">
+An array of objects describing how to parse and use the data fetched from the API.
+
+Each object in this array should contain:
+- `name`: A label for the fetched data.
+- `data`: The JSON path in the API response to extract the data from.
+- `context`: How this data should be incorporated into the AI's conversation.
+</ParamField>
+
+
 <ParamField body="optimize_for" type="enum/string">
   Note: This is an experimental parameter and may behave unexpectedly.
 
@@ -141,7 +188,6 @@ Note: you should continually test and iterate prompts to get the best output fro
 
   Accepts decimal values between `0.1` and `5` (inclusive)
 </ParamField>
-  
 
 ### Response
 
