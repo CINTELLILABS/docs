@@ -12,18 +12,29 @@ description: "This endpoint sends an outbound AI phone call."
 ### Body
 
 <ParamField body="phone_number" type="string" required>
-  This is the phone number of the person or company you want to call. -
-  International numbers: must include the country code and may not include
-  additional formatting (like parentheses and dashes). E.g. '+447700900077'. -
-  U.S. numbers: may include formatting, but we recommend stripping all
-  additional characters.
+  The phone number to call. Country code required for non-US numbers.
+
+  Example: `+12223334444`, `+44770090000`, `+61491550156`
+</ParamField>
+
+<ParamField body="transfer_phone_number" type="string">
+  A phone number that the agent can transfer to under specific conditions, such as when the caller/callee asks to speak to a human.
+
+  For best results, specify the exact conditions to transfer under in the `task` parameter. Refer to the action as "transfer", any other phrasing such as "swap" or "switch" can cause unexpected behavior.
+
+  Example: `+12223334444`, `+44770090000`, `+61491550156`
+</ParamField>
+
+<ParamField body="from" type="string">
+  Specify a purchased Outbound Number to call from. Country code is required, spaces or parentheses must be excluded.
+
+  By default, calls are initiated from a separate pool of numbers owned by Bland.
 </ParamField>
 
 <ParamField body="task" type="string" required>
-  Define how the AI should behave. Provide the AI context about the interaction, and give it instructions.
+  Define how the AI should behave. Provide instructions, relevant information, and examples of the ideal conversation flow.
 
-Note: you should continually test and iterate prompts to get the best output from your AI.
-
+  Note: Concise prompts lead to higher performance and adherence to instructions. Overly verbose prompts 'dilute' the context if filled with unnecessary/irrelevant details.
 </ParamField>
 
 <ParamField body="reduce_latency" type="boolean" default="true">
@@ -32,6 +43,7 @@ Note: you should continually test and iterate prompts to get the best output fro
 
 <ParamField body="voice_id" type="number" default="0">
   When reduce latency is set to `true` (default):
+
   - 0: American male
   - 1: Australian female
   - 2: American female
@@ -43,39 +55,10 @@ Note: you should continually test and iterate prompts to get the best output fro
   - 3: Indian male
 </ParamField>
 
-<ParamField body="language" type="string" default="eng">
-  Select a supported language of your choice. 
-  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
-  
-  Supported Languages and their codes:
-  - English: ```eng```
-  - Spanish: ```esp```
-  - French:  ```fre```
-</ParamField>
-
-<ParamField body="request_data" type="object">
-  When you want your AI to "know" a specific fact - like the caller's
-  name or other relevant context.
-
-  The AI agent will be aware of both the key names as well as their corresponding values.
-</ParamField>
-
 <ParamField body="webhook" type="string">
   The webhook should be a http / https callback url. We will send the call_id
   and transcript to this URL after the call completes. This can be useful if you
   want to have real time notifications when calls finish.
-</ParamField>
-
-<ParamField body="max_duration" type="float or string" default="30">
-  Set the longest you want the call to possibly go in minutes. After the max_duration minutes have passed, the call will automatically end.
-  
-  Example Values: ```"45", "5.5", 20, 2.8```
-</ParamField>
-
-<ParamField body="amd" type="boolean" default="false">
-  AMD mode helps our AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
-  
-  HOWEVER: AMD mode also causes increases latency. It will cause worse performance when speaking with normal people. You should default to switching it off (`false`)
 </ParamField>
 
 <ParamField body="wait_for_greeting" type="boolean" default="false">
@@ -94,39 +77,54 @@ Note: you should continually test and iterate prompts to get the best output fro
 
 
 <ParamField body="dynamic_data" type="array">
-  An array of objects that allows the AI to fetch and use live data from external APIs during the call. This dynamic data can be used to provide up-to-date information or context-specific details in the conversation.
+  A set of external API requests to fetch at the start of the call or repeatedly.
 
-  Each object in the array can specify a URL to fetch data from, the method to use (e.g., GET, POST), whether to cache the data, and how to parse and use the response data.
+  Each request object should contain:
 
-  Example:
-```
-"dynamic_data": [
-  {
-    "url": "https://example.com/api",
-    "method": "GET",
-    "cache": true,
-    "response_data": [
-      {
-        "name": "DataName",
-        "data": "json.path.to.data",
-        "context": "Use this data like this: {{DataName}}"
-      }
+  `url`: The URL of the external API to fetch data from.
+
+  `response_data`: An array of objects describing how to parse and use the data fetched from the API. Explained in more detail below.
+
+  The following are optional:
+
+  `method`: Allows `GET` or `POST`. Default: `GET`
+
+  `cache`: Whether to fetch the data once at the beginning of the call, or to re-check continuously for data that might change mid-call. Default: `true`
+
+  `headers`: An object of headers to send with the request.
+
+  `body`: The body of the request. 
+  
+  The following variables can be injected into the dynamic request body: 
+  
+  - `{{from}}` (Ex. `+12223334444`)
+  - `{{to}}`
+  - `{{short_from}}` (Ex. `2223334444`)
+  - `{{short_to}}`
+  - `{{call_id}}`
+  
+  These string values will be replaced in each `dynamic_data[].body` where they're used by system values in each request.
+
+  Try out with this example:
+```json
+    "dynamic_data": [
+        {
+            "url": "https://api.coindesk.com/v1/bpi/currentprice.json",
+            "response_data": [
+                {
+                    "name": "BTC Price USD",
+                    "data": "bpi.USD.rate",
+                    "context": "Current BTC Price: ${{BTC Price USD}} USD"
+                },
+                {
+                    "name": "BTC Price EUR",
+                    "data": "bpi.EUR.rate",
+                    "context": "In Euros: {{BTC Price USD}} EUR"
+                }
+            ]
+        }
     ]
-  }
-]
 ```
-</ParamField>
-
-<ParamField body="dynamic_data[i].url" type="string">
-The URL of the external API to fetch data from.
-</ParamField>
-
-<ParamField body="dynamic_data[i].method" default="GET" type="string">
-The HTTP method to use for the API call. Allows `"GET"` and `"POST"`.
-</ParamField>
-
-<ParamField body="dynamic_data[i].cache" default="true" type="boolean">
-Whether to fetch the data once at the beginning of the call, or to re-check continuously for data that might change mid-call.
 </ParamField>
 
 <ParamField body="dynamic_data[i].response_data" type="array">
@@ -139,6 +137,17 @@ Each object in this array should contain:
 - Example: `"user.flights[0].status"`
 - `context`: How this data should be incorporated into the AI's knowledge. 
 - Example: `"John's flight is currently {{Flight Status}}"`
+</ParamField>
+
+<ParamField body="language" type="string" default="eng">
+  Select a supported language of your choice. 
+  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
+  
+  Supported Languages and their codes:
+  - English: ```eng```
+  - Spanish: ```esp```
+  - French:  ```fre```
+  - Polish: ```pol```
 </ParamField>
 
 <ParamField body="optimize_for" type="enum/string">
@@ -173,18 +182,6 @@ Each object in this array should contain:
   Accepts decimal values between `0` and `1` (inclusive).
 </ParamField>
 
-<ParamField body="seed" type="integer">
-  Note: This is an experimental parameter and may behave unexpectedly.
-  
-  Note #2: Setting `reduce_latency` to `false` will cause this parameter to be ignored.
-
-  By default, the audio for each sentence and word is generated with a random seed and may pronounce the same exact words/sentences with slight variations.
-
-  Setting the `seed` parameter to any integer will make the audio/enunciation deterministic and repeatable. This is most useful for particularly intricate or tricky words that you want to guarantee will be pronounced correctly.
-  
-  Accepts integer values between `0` and `1000` (inclusive).
-</ParamField>
-
 <ParamField body="speed" default="0.85" type="float">
   Note: This is an experimental parameter and may behave unexpectedly.
   
@@ -193,6 +190,25 @@ Each object in this array should contain:
   How fast your agent talks! This parameter is simply a speech-speed multiplier, and works with fractional values such as `0.5` or large ones like `2`.
 
   Accepts decimal values between `0.1` and `5` (inclusive).
+</ParamField>
+
+<ParamField body="max_duration" type="float or string" default="30">
+  Set the longest you want the call to possibly go in minutes. After the max_duration minutes have passed, the call will automatically end.
+  
+  Example Values: ```"45", "5.5", 20, 2.8```
+</ParamField>
+
+<ParamField body="amd" type="boolean" default="false">
+  AMD mode helps our AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
+  
+  NOTE: AMD mode causes increased delay for the first response, even if answered by a human. Highly recommended to set to `false` in the majority of cases.
+</ParamField>
+
+<ParamField body="request_data" type="object">
+  When you want your AI to "know" a specific fact - like the caller's
+  name or other relevant context.
+
+  The AI agent will be aware of both the key names as well as their corresponding values.
 </ParamField>
 
 ### Response
