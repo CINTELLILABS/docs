@@ -6,7 +6,7 @@ description: "Retrieves calls and batch data for a specific batch_id."
 
 ### Headers
 
-<ParamField header="authorization" type="string">
+<ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
 
@@ -16,27 +16,108 @@ description: "Retrieves calls and batch data for a specific batch_id."
   The unique identifier for the batch of calls you want to retrieve.
 </ParamField>
 
-<ParamField query="include_calls" type="boolean" default="true">
+<ParamField query="include_calls" type="boolean" default="false">
   Whether or not to include individual call data in the response.
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+
+<ResponseField name="batch_params" type="object">
+  An object containing parameters and settings for the batch.
 </ResponseField>
 
-<ResponseField name="call_id" type="string">
-  A unique identifier for the call (present only if status is `success`)
+<ResponseField name="batch_params.id" type="string">
+  The unique identifier of the batch - used as the `batch_id` parameter in other API calls.
 </ResponseField>
+
+<ResponseField name="batch_params.created_at" type="string">
+  The creation timestamp of the batch.
+</ResponseField>
+
+<ResponseField name="batch_params.label" type="string">
+  The label or description of the batch.
+</ResponseField>
+
+<ResponseField name="batch_params.base_prompt" type="string">
+  The base prompt used for the calls in this batch.
+</ResponseField>
+
+<ResponseField name="batch_params.endpoint_code" type="string">
+  The endpoint code used for API integration.
+</ResponseField>
+
+<ResponseField name="batch_params.call_params" type="object">
+  An object containing parameters for the calls in the batch.
+</ResponseField>
+
+<ResponseField name="call_data" type="array">
+  An array of objects, each representing individual call data.
+</ResponseField>
+
+<ResponseField name="call_data[].created_at" type="string">
+  The timestamp when the individual call was created.
+</ResponseField>
+
+<ResponseField name="call_data[].to" type="string">
+  The phone number the call was made to.
+</ResponseField>
+
+<ResponseField name="call_data[].from" type="string">
+  The phone number the call was made from.
+</ResponseField>
+
+<ResponseField name="call_data[].completed" type="boolean">
+  Indicates if the call was completed.
+</ResponseField>
+
+<ResponseField name="call_data[].call_id" type="string">
+  The unique identifier for each individual call.
+</ResponseField>
+
+<ResponseField name="call_data[].call_length" type="number">
+  The duration of the call in minutes.
+</ResponseField>
+
 
 <ResponseExample>
 
 ```json Response
 {
-    "message": "success",
-    "batch_id": "3p$7rQ3p9sT5bzmF-gen-batch",
-    "errors": null // or an array of error message strings if any occur after call creation
+    "batch_params": {
+        "id": "AAcQq8zXxLB56LWg-gen-batch",
+        "campaign_id": null,
+        "created_at": "2023-12-07T20:43:44.544773+00:00",
+        "label": "Customer Satisfaction Follow-up",
+        "base_prompt": "You are calling {{name}} about their recent purchase of the item: {{item}}. Ask them each of the following questions about the specific item they purchased: {{questions}}",
+        "endpoint_code": "api",
+        "call_params": {
+            "reduce_latency": true,
+            "voice_id": 0,
+            "language": "eng",
+            "max_duration": 10,
+            "wait_for_greeting": false
+        }
+    },
+    "call_data": [
+        {
+            "created_at": "2023-12-07T20:43:45.284364+00:00",
+            "to": "3334445555",
+            "from": "+14157778888",
+            "completed": true,
+            "call_id": "c52f1f8c-147e-4d0c-4b40-77214fccba29",
+            "call_length": 0.2
+        },
+        {
+            "created_at": "2023-12-07T20:43:45.261733+00:00",
+            "to": "4445556666",
+            "from": "+12223334444",
+            "completed": true,
+            "call_id": "bdd2e0b3-8459-4580-92b8-9cfc0af67330",
+            "call_length": 1.24
+        }
+        //...
+    ]
 }
 ```
 
