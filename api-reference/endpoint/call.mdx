@@ -62,7 +62,7 @@ description: "This endpoint sends an outbound AI phone call."
 </ParamField>
 
 <ParamField body="wait_for_greeting" type="boolean" default="false">
-  Makes the AI wait to speak until after speech is detected. 
+  Should the AI speak first or wait for someone else to talk?
   
   Creates more realistic conversations when answered with "Hello?", "This is \{name\} speaking." and so on.
   
@@ -75,8 +75,85 @@ description: "This endpoint sends an outbound AI phone call."
   A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
 </ParamField>
 
+<ResponseField name="voice_settings" type="Voice Settings Object">
+  <Expandable title="properties">
+  <ParamField body="stability" default="0.8" type="float">
+  Note: This is an experimental parameter and may behave unexpectedly.
+
+  Adjust the predictability and consistency of the AI agent's voice. Lower values allow larger deviations from the baseline voice, whether default or cloned. Setting this too high however can cause a monotone voice.
+
+  Accepts decimal values between `0` and `1` (inclusive).
+</ParamField>
+<ParamField body="similarity" default="0.6" type="float">
+  Note: This is an experimental parameter and may behave unexpectedly.
+
+  Higher values will make speech differences between the selected voice and others more prominent. Extremely high values can cause voice distortion.
+
+  Use lower values to lower the distinctiveness of the voice or eliminate unwanted audio static spikes.
+
+  Accepts decimal values between `0` and `1` (inclusive).
+</ParamField>
+
+<ParamField body="speed" default="0.85" type="float">
+  Note: This is an experimental parameter and may behave unexpectedly.
+  
+  Note #2: Setting `reduce_latency` to `false` will cause this parameter to be ignored.
+
+  How fast your agent talks! This parameter is simply a speech-speed multiplier, and works with fractional values such as `0.5` or large ones like `2`.
+
+  Accepts decimal values between `0.1` and `5` (inclusive).
+</ParamField>
+
+  </Expandable>
+</ResponseField>
+
+
+
+<ParamField body="language" type="string" default="eng">
+  Select a supported language of your choice. 
+  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
+  
+  Supported Languages and their codes:
+  - English: ```eng```
+  - Spanish: ```esp```
+  - French:  ```fre```
+  - Polish: ```pol```
+</ParamField>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ParamField body="max_duration" type="float or string" default="30">
+  Set the longest you want the call to possibly go in minutes. After the max_duration minutes have passed, the call will automatically end.
+  
+  Example Values: ```"45", "5.5", 20, 2.8```
+</ParamField>
+
+<ParamField body="amd" type="boolean" default="false">
+  AMD mode helps our AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
+  
+  NOTE: AMD mode causes increased delay for the first response, even if answered by a human. Highly recommended to set to `false` in the majority of cases.
+</ParamField>
+
+<ParamField body="request_data" type="object">
+  When you want your AI to "know" a specific fact - like the caller's
+  name or other relevant context.
+
+  The AI agent will be aware of both the key names as well as their corresponding values.
+</ParamField>
 
 <ParamField body="dynamic_data" type="array">
+ <Expandable title="properties">
   A set of external API requests to fetch at the start of the call or repeatedly.
 
   Each request object should contain:
@@ -125,8 +202,6 @@ description: "This endpoint sends an outbound AI phone call."
         }
     ]
 ```
-</ParamField>
-
 <ParamField body="dynamic_data[i].response_data" type="array">
 An array of objects describing how to parse and use the data fetched from the API.
 
@@ -138,77 +213,7 @@ Each object in this array should contain:
 - `context`: How this data should be incorporated into the AI's knowledge. 
 - Example: `"John's flight is currently {{Flight Status}}"`
 </ParamField>
-
-<ParamField body="language" type="string" default="eng">
-  Select a supported language of your choice. 
-  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
-  
-  Supported Languages and their codes:
-  - English: ```eng```
-  - Spanish: ```esp```
-  - French:  ```fre```
-  - Polish: ```pol```
-</ParamField>
-
-<ParamField body="optimize_for" type="enum/string">
-  Note: This is an experimental parameter and may behave unexpectedly.
-
-  Note #2: As we receive feedback, this parameter may be adjusted to perform in the best manner possible.
-
-  Adjusts several voice settings at once with a template. 
-  
-  `quality` optimizations will produce a clearer, more expressive voice at the expense of slightly slower response times.
-
-  `speed` optimizations lead to faster responses and potentially less realistic speech.
-
-  Accepts the following values: `"quality_max"`, `"quality"`, `"speed"`, `"speed_max"`.
-</ParamField>
-
-<ParamField body="stability" default="0.8" type="float">
-  Note: This is an experimental parameter and may behave unexpectedly.
-
-  Adjust the predictability and consistency of the AI agent's voice. Lower values allow larger deviations from the baseline voice, whether default or cloned. Setting this too high however can cause a monotone voice.
-
-  Accepts decimal values between `0` and `1` (inclusive).
-</ParamField>
-
-<ParamField body="similarity" default="0.6" type="float">
-  Note: This is an experimental parameter and may behave unexpectedly.
-
-  Higher values will make speech differences between the selected voice and others more prominent. Extremely high values can cause voice distortion.
-
-  Use lower values to lower the distinctiveness of the voice or eliminate unwanted audio static spikes.
-
-  Accepts decimal values between `0` and `1` (inclusive).
-</ParamField>
-
-<ParamField body="speed" default="0.85" type="float">
-  Note: This is an experimental parameter and may behave unexpectedly.
-  
-  Note #2: Setting `reduce_latency` to `false` will cause this parameter to be ignored.
-
-  How fast your agent talks! This parameter is simply a speech-speed multiplier, and works with fractional values such as `0.5` or large ones like `2`.
-
-  Accepts decimal values between `0.1` and `5` (inclusive).
-</ParamField>
-
-<ParamField body="max_duration" type="float or string" default="30">
-  Set the longest you want the call to possibly go in minutes. After the max_duration minutes have passed, the call will automatically end.
-  
-  Example Values: ```"45", "5.5", 20, 2.8```
-</ParamField>
-
-<ParamField body="amd" type="boolean" default="false">
-  AMD mode helps our AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
-  
-  NOTE: AMD mode causes increased delay for the first response, even if answered by a human. Highly recommended to set to `false` in the majority of cases.
-</ParamField>
-
-<ParamField body="request_data" type="object">
-  When you want your AI to "know" a specific fact - like the caller's
-  name or other relevant context.
-
-  The AI agent will be aware of both the key names as well as their corresponding values.
+ </Expandable>
 </ParamField>
 
 ### Response
