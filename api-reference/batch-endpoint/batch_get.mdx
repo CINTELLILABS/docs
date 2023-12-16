@@ -16,8 +16,16 @@ description: "Retrieves calls and batch data for a specific batch_id."
   The unique identifier for the batch of calls you want to retrieve.
 </ParamField>
 
-<ParamField query="include_calls" type="boolean" default="false">
+<ParamField query="include_calls" type="boolean" default="true">
   Whether or not to include individual call data in the response.
+</ParamField>
+
+<ParamField query="include_transcripts" type="boolean" default="true">
+  If calls are included, can be set to false to exclude transcripts from the response.
+</ParamField>
+
+<ParamField query="include_analysis" type="boolean" default="true">
+  If calls are included, can be set to false to exclude analysis from the response.
 </ParamField>
 
 ### Response
@@ -49,6 +57,67 @@ description: "Retrieves calls and batch data for a specific batch_id."
 
 <ResponseField name="batch_params.call_params" type="object">
   An object containing parameters for the calls in the batch.
+</ResponseField>
+
+
+<ResponseField name="analysis" type="object">
+  An object containing analysis data for the batch.
+</ResponseField>
+
+<ResponseField name="analysis.total_calls" type="object">
+  The total number of calls in the batch, including completed and in-progress calls.
+</ResponseField>
+
+<ResponseField name="analysis.completed_calls" type="object">
+  The total number of completed calls in the batch.
+</ResponseField>
+
+<ResponseField name="analysis.in_progress_calls" type="object">
+  The total number of in-progress calls in the batch.
+</ResponseField>
+
+<ResponseField name="analysis.queue_statuses" type="object">
+  An object containing the number of calls in each queue status.
+
+  Example:
+  ```json
+  {
+    "complete": 237,
+    "queued": 2,
+    "call_error": 1
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="analysis.call_lengths" type="object">
+  Contains `average`, `average_nonzero`, `summary` and `all` fields.
+
+  - `average`: The average call length in seconds.
+  - `average_nonzero`: The average call length in seconds, excluding calls with a length of less than a second.
+  - `summary`: A summary of the call lengths, grouped into ranges.
+  - `all`: Contains each call length, in case you want to use a different grouping than the default.
+</ResponseField>
+
+<ResponseField name="analysis.call_ids" type="array">
+  Contains each `call_id` in the batch.
+</ResponseField>
+
+<ResponseField name="analysis.error_messages" type="array">
+  Contains any error messages that calls in the batch may have.
+
+  Example: 
+  ```json
+  [
+    {
+      "call_id": "c52f5f8c-147e-478c-4b40-88214feeba29",
+      "error_message": "Cannot transfer to +12223334444 - Call is no longer active"
+    }
+  ]
+  ```
+</ResponseField>
+
+<ResponseField name="analysis.endpoints" type="object">
+  Contains the number of calls that have been sent to each endpoint. Applicable only to API integrations.
 </ResponseField>
 
 <ResponseField name="call_data" type="array">
@@ -98,23 +167,96 @@ description: "Retrieves calls and batch data for a specific batch_id."
       "wait_for_greeting": false
     }
   },
+  "analysis": {
+      "total_calls": 88,
+      "completed_calls": 86,
+      "in_progress_calls": 2,
+      "queue_statuses": {
+          "complete": 85,
+          "started": 2,
+          "call_error": 1
+      },
+      "call_lengths": {
+          "average": 17,
+          "average_nonzero": 31, 
+          "summary": {
+              "0-5": 18,
+              "5-10": 4,
+              "10-15": 3,
+              "15-20": 2,
+              "20-30": 14,
+              "30-45": 28,
+              "45-60": 11,
+              "60-90": 6,
+              "90-120": 1,
+              "120+": 1
+          },
+          "all": [
+              7,
+              32,
+              //...
+          ]
+      },
+      "call_ids": [
+          "ffa99be3-63dd-44dc-9523-380cd25c1b9e",
+          "591338a8-34b2-41e6-93da-b9029c9bdedc",
+          //...
+      ],
+      "error_messages": [
+        {
+          "call_id": "c52f5f8c-147e-478c-4b40-88214feeba29",
+          "error_message": "Cannot transfer to +12223334444 - Call is no longer active"
+        }
+      ],
+      "endpoints": {
+        "api.bland.ai": 88
+      }
+  },
   "call_data": [
-    {
-      "created_at": "2023-12-07T20:43:45.284364+00:00",
-      "to": "3334445555",
-      "from": "+14157778888",
-      "completed": true,
-      "call_id": "c52f1f8c-147e-4d0c-4b40-77214fccba29",
-      "call_length": 0.2
-    },
-    {
-      "created_at": "2023-12-07T20:43:45.261733+00:00",
-      "to": "4445556666",
-      "from": "+12223334444",
-      "completed": true,
-      "call_id": "bdd2e0b3-8459-4580-92b8-9cfc0af67330",
-      "call_length": 1.24
-    }
+      {
+          "status": "completed",
+          "corrected_duration": "12",
+          "end_at": "2023-12-16T00:17:38.000Z",
+          "c_id": "ffa99be3-63dd-44dc-9523-380cd25c1b9e",
+          "to": "1112223333",
+          "from": "+17473423273",
+          "completed": true,
+          "created_at": "2023-12-16T00:17:22.383682+00:00",
+          "queue_status": "complete",
+          "endpoint_url": "api.bland.ai",
+          "max_duration": 30,
+          "error_message": null,
+          "request_data": {
+              "phone_number": "1112223333",
+              "reduce_latency": true,
+              "wait": false,
+              "language": "ENG"
+          },
+          "transcripts": [
+              {
+                  "id": 1188954,
+                  "created_at": "2023-12-16T00:17:30.46833+00:00",
+                  "text": " Hi, Im calling about the laundromat for sale.  —  ",
+                  "user": "assistant",
+                  "c_id": "ffa99be3-63dd-44dc-9523-380cd25c1b9e"
+              },
+              {
+                  "id": 1188957,
+                  "created_at": "2023-12-16T00:17:35.14056+00:00",
+                  "text": "I'll get back to you as soon as you can. Just leave a message. Thank you. Bye.",
+                  "user": "user",
+                  "c_id": "ffa99be3-63dd-44dc-9523-380cd25c1b9e"
+              },
+              {
+                  "id": 1188959,
+                  "created_at": "2023-12-16T00:17:36.710551+00:00",
+                  "text": "Ended call: Goodbye",
+                  "user": "agent-action",
+                  "c_id": "ffa99be3-63dd-44dc-9523-380cd25c1b9e"
+              }
+          ],
+          "call_length": 6.242
+      },  
     //...
   ]
 }
