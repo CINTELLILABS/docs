@@ -1,7 +1,7 @@
 ---
 title: "Update Inbound Details"
-api: "POST https://api.bland.ai/v1/inbound/:phone_number/update"
-description: "Make updates to the task, voice, or dynamic data used by your inbound agent."
+api: "POST https://api.bland.ai/v1/inbound/:phone_number"
+description: "Update your inbound agent's settings and details."
 ---
 
 ### Headers
@@ -50,9 +50,75 @@ description: "Make updates to the task, voice, or dynamic data used by your inbo
     </Accordion>
 </ParamField>
 
+<ParamField body="transfer_phone_number" type="string">
+  A phone number that the agent can transfer to under specific conditions - such as being asked to speak to a human or supervisor.
+
+  Set to `null` to remove.
+
+    <Accordion title="Prompting Notes">
+        For best results:
+        - Specify conditions that the agent should transfer to a human under (examples are great!)
+        - In the `task`, refer to the action solely as "transfer" or "transferring".
+        - Alternate phrasing such as "swap" or "switch" can mislead the agent, causing the action to be ignored.
+    </Accordion>
+</ParamField>
+
 <ParamField body="voice_id" type="integer">
   Set your agent's voice - all available voices can be found with the [List Voices](/api-v1/get/voices) endpoint.
 </ParamField>
+
+<ParamField body="reduce_latency" type="boolean" default="true">
+  Reducing latency means that the agent will generate responses more quickly and have less of a delay. This must be set to ```true``` when using Voice Clones.
+</ParamField>
+
+<ParamField body="webhook" type="string">
+  The webhook should be a http / https callback url. We will send the call_id
+  and transcript to this URL after the call completes. This can be useful if you
+  want to have real time notifications when calls finish.
+
+  Set to `null` or an empty string to clear the webhook.
+</ParamField>
+
+<ParamField body="first_sentence" type="string">
+  A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
+
+  To remove, set to `null` or an empty string.
+</ParamField>
+
+<ResponseField name="voice_settings" type="Voice Settings Object">
+  Alter advanced voice settings for your agent.
+
+  To remove, set to `null` or an empty string.
+  <Expandable title="properties">
+  <ParamField body="stability" default="0.8" type="float">
+  Note: This is an experimental parameter and may behave unexpectedly.
+
+  Adjust the predictability and consistency of the AI agent's voice. Lower values allow larger deviations from the baseline voice, whether default or cloned. Setting this too high however can cause a monotone voice.
+
+  Accepts decimal values between `0` and `1` (inclusive).
+</ParamField>
+<ParamField body="similarity" default="0.6" type="float">
+  Note: This is an experimental parameter and may behave unexpectedly.
+
+  Higher values will make speech differences between the selected voice and others more prominent. Extremely high values can cause voice distortion.
+
+  Use lower values to lower the distinctiveness of the voice or eliminate unwanted audio static spikes.
+
+  Accepts decimal values between `0` and `1` (inclusive).
+</ParamField>
+
+<ParamField body="speed" default="0.85" type="float">
+  Note: This is an experimental parameter and may behave unexpectedly.
+  
+  Note #2: Setting `reduce_latency` to `false` will cause this parameter to be ignored.
+
+  How fast your agent talks! This parameter is simply a speech-speed multiplier, and works with fractional values such as `0.5` or large ones like `2`.
+
+  Accepts decimal values between `0.1` and `5` (inclusive).
+</ParamField>
+
+  </Expandable>
+</ResponseField>
 
 <ParamField body="dynamic_data" type="object">
   Integrate data from external APIs into your agent's knowledge. 
@@ -62,38 +128,46 @@ description: "Make updates to the task, voice, or dynamic data used by your inbo
   Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
 </ParamField>
 
+<ParamField body="interruption_threshold" type="integer (milliseconds)" default={50}>
+  When you increase the interruption latency, you force the AI phone agent to listen longer before responding. In practice, increasing the threshold results in less interruptions and more latency.
+
+  Try setting the threshold to `500` milliseconds. You'll encounter higher latency, but you'll be interrupted much less frequently.
+
+  Set to `null` to reset to default.
+</ParamField>
+
 ### Response
 
-<ResponseField name="id" type="integer">
-  The unique ID associated with the inbound record.
-</ResponseField>
-
-<ResponseField name="created_at" type="string">
-  The creation timestamp of the inbound record. - Example:
-  "2023-10-10T12:00:00Z"
-</ResponseField>
-
-<ResponseField name="phone_number" type="string">
-  The updated phone number. - Example: "+1234567890"
-</ResponseField>
-
-<ResponseField name="prompt" type="string">
-  The updated prompt text.
-</ResponseField>
-
 <ResponseField name="status" type="string">
-  The status of the inbound record. Typically the status is "active".
+  Whether the update was successful or not - will be either `success` or `error`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  A message describing the status of the update.
+</ResponseField>
+
+<ResponseField name="updates" type="object">
+  An object containing the updated settings for the inbound number.
+</ResponseField>
+
+<ResponseField name="failed_updates" type="object">
+  If the update was unsuccessful, this will contain the settings that failed to update. Useful to determine how your request is being interpreted on our end.
 </ResponseField>
 
 <ResponseExample>
 
 ```json Response
 {
-  "id": 1,
-  "created_at": "2023-10-10T12:00:00Z",
-  "phone_number": "+1234567890",
-  "prompt": "New Prompt Text",
-  "status": "active"
+    "status": "success",
+    "message": "Successfully updated number +18584139939.",
+    "updates": {
+        "prompt": "(Your prompt)",
+        "voice_id": 1,
+        "webhook": null,
+        "first_sentence": "Roberta speaking, how can I help you?",
+        "reduce_latency": false,
+        "record": false
+    }
 }
 ```
 
