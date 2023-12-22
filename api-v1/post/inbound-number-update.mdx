@@ -1,0 +1,100 @@
+---
+title: "Update Inbound Details"
+api: "POST https://api.bland.ai/v1/inbound/:phone_number/update"
+description: "Make updates to the task, voice, or dynamic data used by your inbound agent."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string">
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="phone_number" type="string">
+    The inbound phone number you wish to update. 
+    
+    Formatting Notes:
+    - The `'+'` or `'%2B'` prefix is optional.
+    - Will assume a US country code if no country code is provided.
+
+    Valid Examples for `+13334445555`:
+    - `%2B13334445555`
+    - `13334445555`
+    - `3334445555`
+</ParamField>
+
+### Body
+
+<ParamField body="prompt" type="string" required>
+    Provide instructions, relevant information, and examples of the ideal conversation flow. 
+
+    For inbound numbers, consider including additional context about the purpose of the call, and what types of callers to expect.
+
+    <Accordion title="Best Practices">
+        #### Out-of-the-Box Behaviors (Summarized):
+        - Speech pattern: Direct, concise, casual
+        - Spells out symbols, acronyms, abbreviations, percentages, etc. ($4,000,000 -> "four million dollars")
+        - Asks clarifying questions
+
+        #### Prompting Tips:
+        - Want to easily test out exactly how your agent will behave?
+            - [Try out Agent Testing!](https://app.bland.ai/home?page=testing)
+        - Aim for less than >2,000 characters where possible.
+        - Simple, direct prompts are the most predictable and reliable.
+        - Frame instructions positively: 
+            - `"Do this"` rather than `"Don't do this"`. 
+            - Ex. "Keep the conversation casual" rather than "Don't be too formal".
+            - This gives concrete examples of what to do, instead of leaving expected behavior open to interpretation.
+    </Accordion>
+</ParamField>
+
+<ParamField body="voice_id" type="integer">
+  Set your agent's voice - all available voices can be found with the [List Voices](/api-v1/get/voices) endpoint.
+</ParamField>
+
+<ParamField body="dynamic_data" type="object">
+  Integrate data from external APIs into your agent's knowledge. 
+
+  Set to `null` or an empty string to clear dynamic data settings.
+
+  Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="integer">
+  The unique ID associated with the inbound record.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  The creation timestamp of the inbound record. - Example:
+  "2023-10-10T12:00:00Z"
+</ResponseField>
+
+<ResponseField name="phone_number" type="string">
+  The updated phone number. - Example: "+1234567890"
+</ResponseField>
+
+<ResponseField name="prompt" type="string">
+  The updated prompt text.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The status of the inbound record. Typically "active".
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": 1,
+  "created_at": "2023-10-10T12:00:00Z",
+  "phone_number": "+1234567890",
+  "prompt": "New Prompt Text",
+  "status": "active"
+}
+```
+
+</ResponseExample>
