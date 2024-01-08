@@ -1,7 +1,7 @@
 ---
 title: "List Voice Options"
 api: "GET https://api.bland.ai/v1/voices"
-description: "Retrieves all available voices for your account."
+description: "Retrieves all available voices for your account, including custom and default presets."
 ---
 
 ### Headers
@@ -10,35 +10,65 @@ description: "Retrieves all available voices for your account."
   Your API key for authentication.
 </ParamField>
 
+### Query Parameters
+
+<ParamField query="default_only" type="boolean">
+  Filter to show only default presets, excluding user-created presets.
+</ParamField>
+
+<ParamField query="presets_only" type="boolean">
+  Filter to show only presets.
+</ParamField>
+
+<ParamField query="voices_only" type="boolean">
+  Filter to show only voices.
+</ParamField>
+
+<ParamField query="is_custom" type="boolean">
+  Filter for custom voices.
+</ParamField>
+
+<ParamField query="name" type="string">
+  Filters the `voices` array by the name of the voice.
+</ParamField>
+
+<ParamField query="voice_name" type="string">
+  Filters the `presets` array by the name of the voice.
+</ParamField>
+
+<ParamField query="voice_id" type="integer">
+  Filter by the ID of the voice.
+</ParamField>
+
+<ParamField query="reduce_latency" type="boolean">
+  Filter by latency reduction option. Use in tandem with `reduce_latency` to simulate exactly which voice your agent would use.
+</ParamField>
+
+<ParamField query="public" type="boolean">
+  Filter to show only public presets, or set to false to exclude them.
+</ParamField>
+
+<ParamField query="editable" type="boolean">
+  Filter to show only editable presets.
+</ParamField>
+
 ### Response
 
 <ResponseField type="array" name="voices">
-    Contains a list of the voices available for your account.
+    Contains a list of the voices available for your account, including custom and default presets.
 </ResponseField>
 
-<ResponseField type="integer" name="voice_id">
-    The ID of the voice. Used in conjunction with `reduce_latency` to select the specific voice in a `POST /v1/calls` request.
-</ResponseField>
-
-<ResponseField type="string" name="name">
-    The name of the voice. This is what will be shown in the dashboard.
-</ResponseField>
-
-<ResponseField type="boolean" name="is_custom">
-    Whether or not the voice is a custom cloned or uploaded voice tied to your account, or a default voice provided by Bland.
-</ResponseField>
-
-<ResponseField type="boolean" name="reduce_latency" default="true">
-    Whether the voice is optimized for low latency. Will be `true` for most voices, except for some extra-high quality voices.
+<ResponseField type="object" name="presets">
+    Contains a list of presets with their details. Each preset object includes `id`, `voice_name`, `description`, `reduce_latency`, `interruption_threshold`, `language`, `voice_settings`, `editable`, and `public`.
 </ResponseField>
 
 <ResponseExample>
-```json Response
+```json
 {
     "voices": [
         {
-            "voice_id": 1,
-            "name": "sophie-australian",
+            "voice_id": 2,
+            "name": "jen-english",
             "is_custom": false,
             "reduce_latency": true
         },
@@ -53,6 +83,19 @@ description: "Retrieves all available voices for your account."
             "name": "My Custom Voice Clone",
             "is_custom": true,
             "reduce_latency": true
+        },
+        //...
+    ],
+    "presets": [
+        {
+            "id": "857ed371-9b28-4006-99da-a28c41c6fa55",
+            "voice_name": "sophie-australian",
+            //...
+        },
+        {
+            "id": "ff2c405b-3dba-41e0-9261-bc8ee3f91f46",
+            "voice_name": "david",
+            //...
         },
         //...
     ]
