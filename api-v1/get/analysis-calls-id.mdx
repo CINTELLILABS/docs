@@ -1,0 +1,78 @@
+---
+title: "Retrieve Call Analysis"
+api: "GET https://api.bland.ai/v1/analysis/calls/:call_id"
+description: "Fetches the AI analysis results for a specific call."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField query="call_id" type="string" required>
+    The ID of the call to retrieve analysis for.
+</ParamField>
+
+### Response
+
+<ResponseField type="string" name="status">
+  Whether the request was successful or not. Possible values are `success` and `error`.
+</ResponseField>
+
+<ResponseField type="string" name="message">
+  An error message or confirmation that the request was successful.
+</ResponseField>
+
+<ResponseField type="array" name="analysis">
+  An array of analysis objects, each corresponding to a call within the batch. 
+  
+  Each analysis object includes:
+    - `call_id`, 
+    - `goal`
+    - `answers` - the results of the AI analysis
+    - `questions` - the original questions asked by the AI
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+    "status": "success",
+    "message": "Successfully fetched analysis.",
+    "analysis": [
+        {
+            "call_id": "d944870b-33fb-41a3-8595-ea9898b45807",
+            "goal": "Researching what businesses are for sale and the price they can be purchased for.",
+            "questions": [
+                [
+                    "Was the phone answered by a business owner?",
+                    "boolean"
+                ],
+                [
+                    "What is the name of the business?",
+                    "string"
+                ],
+                [
+                    "Is the business for sale?",
+                    "boolean"
+                ],
+                [
+                    "What is the lowest price the owner would be willing to sell for?",
+                    "dollar amount"
+                ]
+            ],
+            "answers": [
+                true,
+                "Example Business",
+                true,
+                1000000
+            ],
+            "created_at": "2024-01-14T03:35:17.053062+00:00"
+        },
+        //...
+    ]
+}
+```
+</ResponseExample>
