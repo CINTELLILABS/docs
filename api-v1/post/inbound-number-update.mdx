@@ -50,24 +50,50 @@ description: "Update your inbound agent's settings, prompt and other details."
     </Accordion>
 </ParamField>
 
-<ParamField body="model" type="string" default="turbo">
+<ParamField body="transfer_list" type="object">
+  Give your agent the ability to transfer calls to a set of phone numbers.
+
+  Overrides `transfer_phone_number` if a `transfer_list.default` is specified.
+
+  Will default to `transfer_list.default`, or the chosen phone number.
+
+  Example usage to route calls to different departments:
+
+  ```json
+  "transfer_list": {
+      "default": "+12223334444",
+      "sales": "+12223334444",
+      "support": "+12223334444",
+      "billing": "+12223334444"
+  }
+  ```
+</ParamField>
+
+<ParamField body="model" type="string" default="enhanced">
   Select a model to use for your call.
 
-  Options: `base`, `turbo`
+  Options: `base`, `turbo` and `enhanced`.
+
+  In nearly all cases, `enhanced` is the best choice for now.
 
   <Accordion title="Model Differences">
 
   There are three different ways to use Bland:
 
-  Base Endpoint (`api.bland.ai`):
   - `model: base`
     - The original, follows scripts/procedures most effectively.
     - Supports all features and capabilities.
     - Best for Custom Tools
   
-  - `model: turbo`
+  - `model: enhanced`
     - Much faster latency and very conversational, works best with objective-based prompts.
     - Supports all features and capabilities.
+
+  - `model: turbo`
+    - The absolute fastest latency possible, can be verbose at times
+    - Limited capabilities currently (excludes Transferring, IVR navigation, Custom Tools)
+    - Extremely realistic conversation capabilities
+
   </Accordion>
 </ParamField>
 
