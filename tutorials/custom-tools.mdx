@@ -5,32 +5,44 @@ description: "Interact with the real world mid-call using custom tools."
 
 ## Introduction
 
-Custom tools allow your agent to interact with any web API mid-call. 
+Custom tools allow your agent to interact with any web API mid-call. Do things like:
+<CardGroup cols={2}>
+  <Card title="Send a message" icon="message">
+    Dispatch SMS or emails using the person's contact info.
+  </Card>
+  <Card title="Schedule an appointment" icon="calendar">
+    Set appointments using live calendar availability.
+  </Card>
+  <Card title="Create a support ticket" icon="ticket">
+    Generate support tickets in your issue tracker.
+  </Card>
+  <Card title="Update your CRM" icon="database">
+    Update your CRM with relevant details during the call.
+  </Card>
+</CardGroup>
 
-Do things like:
-- Send emails or SMS messages
-- Create support tickets
-- Schedule appointments
-- Anything that has an API (so basically anything!)
+## Background
+To understand how custom tools work, let's take a peek under the hood of the Bland AI phone agent.
 
-## Quick reference
-- Set the `tools` property in a call request or while updating an inbound agent's details
-- `tools` is an array of [Dynamic Data](/tutorials/dynamic-data) objects that each define their own API request
-- In addition, specify a `name`, `description`, and `input_schema` property
-- Add an `example` property to the `input_schema` to provide a sample of the input data and greatly improve consistency
-- To say a message while the tool is running, specify a `speech` property
-- `input_schema` is converted into the variable `"{{input}}"` that you can use in the request body/query/headers
-- To access nested properties, use dot notation: `"{{input.property.subproperty}}"`
+During the conversation, the phone agent is constantly listening to figure out when it's supposed to respond. When the phone agent realizes it's time to respond, it reviews the tools in its toolbox and picks between them.
 
-## Getting Started
+Those tools include a `speak`, `wait`, and `button press` tool. When you create a custom tool, you add it to the existing 'toolbox' for the phone agent to pick from.
 
-Custom tools are based on the same concepts as Dynamic Data, so if you haven't already, read through the [Dynamic Data](/tutorials/dynamic-data) section to build some familiarity.
+A few natural questions arise:
+1. How do I define my custom tool?
+2. How do I make sure my tool gets picked at the right time?
+3. How does information from the call get passed to my custom tool's API request?
+4. How do I fill the silence (when my custom tool is running)?
+5. How does the response from my custom tool get added to the call?
 
-Start with the base api request that you want to make. 
+Keep reading to find out.
 
-Let's say your drive-thru restaurant uses Bland to take orders - and you want to place the customer's order during the call.
+# Creating your custom tool
 
-A request might look like this in axios or fetch:
+## Defining the API request
+Imagine you're creating an AI phone agent to take restaurant orders. You want your phone agent to have the ability to place orders, by pinging your backend API.
+
+Here's what that request might look like:
 
 ```json
 {
@@ -57,102 +69,117 @@ A request might look like this in axios or fetch:
 }
 ```
 
-We'll use this as the basis for our custom tool.
+## From API request to custom tool
 
-## Creating a Custom Tool
-
-Requirements for tools:
-- Inherited from Dynamic Data
-- `name` property - the agent will see this in the list of tools
-- `description` property - a short explanation of what the tool does
-- `input_schema` property - a JSON schema describing the input data
+The next step is to convert the API request into a custom tool. Custom tools have the following properties:
+- `name` - the agent will see this in the list of tools
+- `description` - a short explanation of what the tool does
+- `input_schema` - a JSON schema describing the input data
 - `speech` (optional) - a string that will be spoken to the agent while your tool waits for a response
+- `response_data` - An array of objects that describe how to extract data from the response. Within the response data, you can create variables that the phone agent can reference in its prompt.
 
-Let's add those here:
+### Name & Description
+The agent will see the name in the list of tools. The name, plus the description, help the AI phone agent when it decides which tool to use.
+
+For this example we'll set the name to `PlaceOrder`, and the description to `Places the final order for the drive thru`.
+
+### Input Schema
+The input schema is critical. It defines the shape of the API request, the different inputs the request can take, and also includes an example (which helps our system when creating requests).
+
+Here's what the input schema could look like:
 
 ```json
-{
-    "name": "PlaceOrder",
-    "description": "Places the final order for the drive thru.",
-    "speech": "Thank you, placing that order now.",
-    "input_schema": {
-        "example": {
-            "items": [
-                {
-                    "name": "burger",
-                    "patties": 2,
-                    "quantity": 3
-                },
-                {
-                    "name": "fry",
-                    "size": "lg",
-                    "quantity": 2
-                }
-            ]
-        },
-        "type": "object",
-        "properties": {
+"input_schema": {
+    "example": {
+        "items": [
+            {
+                "name": "burger",
+                "patties": 2,
+                "quantity": 3
+            },
+            {
+                "name": "fry",
+                "size": "lg",
+                "quantity": 2
+            }
+        ]
+    },
+    "type": "object",
+    "properties": {
+        "items": {
+            "type": "array",
             "items": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": "string"
-                        },
-                        "patties": {
-                            "type": "integer"
-                        },
-                        "size": {
-                            "type": "string",
-                            "enum": [
-                                "sm",
-                                "md",
-                                "lg"
-                            ]
-                        },
-                        "flavor": {
-                            "type": "string",
-                            "enum": [
-                                "chocolate",
-                                "strawberry",
-                                "vanilla"
-                            ],
-                            "default": "vanilla"
-                        },
-                        "quantity": {
-                            "type": "integer"
-                        }
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
                     },
-                    "required": [
-                        "name",
-                        "quantity"
-                    ]
-                }
+                    "patties": {
+                        "type": "integer"
+                    },
+                    "size": {
+                        "type": "string",
+                        "enum": [
+                            "sm",
+                            "md",
+                            "lg"
+                        ]
+                    },
+                    "flavor": {
+                        "type": "string",
+                        "enum": [
+                            "chocolate",
+                            "strawberry",
+                            "vanilla"
+                        ],
+                        "default": "vanilla"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "name",
+                    "quantity"
+                ]
             }
         }
-    },
-    "url": "https://api.your-restaurant.com/orders",
-    "method": "POST",
-    "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer ..."
-    },
-    "body": {
-        "items": "{{input.items}}" // note that this starts with {{input}} - this is how you access the input data
-    },
-    "response_data": [
-        {
-            "name": "order_price",
-            "data": "$.price"
-        }
-    ]
+    }
 }
 ```
 
-The `response_data` property is an array of objects that describe how to extract data from the response. Once they're extracted, the agent will be aware of them and can use them in the call flow.
+Two important notes about input schema:
+1. `input_schema` is converted into the variable `"{{input}}"` that you can use in the request body/query/headers
+2. To access nested properties, use dot notation: `"{{input.property.subproperty}}"`
 
-Here's what a full request that follows a procedure could look like:
+Scroll down to see the full example.
+
+### Speech
+Because requesting external APIs might take a while, we enable you to define a `speech` property. The phone agent will say the `speech` while it makes the request.
+
+An example speech might look like: `Perfect, I'll schedule that right now, give me just a second.`
+
+For the restaurant ordering example, the speech could be `Thank you, placing that order now.`
+
+### Response data
+Once your API request comes back, you need to extract the response data, and then make the phone agent aware of the new information.
+
+The `data` field determines how you extract the data while the `name` field determines the variable name for reference in the prompt.
+
+Here's an example response data:
+
+```json
+"response_data": [
+    {
+        "name": "order_price",
+        "data": "$.price"
+    }
+]
+```
+
+## Full example
+
+Below is the entire API request for sending a phone call using the outlined custom tool:
 
 ```json
 {
@@ -255,15 +282,3 @@ Here's what a full request that follows a procedure could look like:
     ]
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
