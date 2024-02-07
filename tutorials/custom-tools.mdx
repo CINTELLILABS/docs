@@ -282,3 +282,37 @@ Below is the entire API request for sending a phone call using the outlined cust
     ]
 }
 ```
+
+# Frequently asked questions
+
+<AccordionGroup>
+  <Accordion title="How does the phone agent determine what it sends an API request?">
+    The phone agent refers to the input schema and the `example` within it. Both of those pieces of information provide context about what data to pass.
+    
+    Then the phone agent extracts the information from the transcript and passes it to the request body.
+
+    You can improve the accuracy of the input data by creating a very clear `input_schema`. That includes providing a detailed `example` within.
+  </Accordion>
+
+  <Accordion title="How does the phone agent decide when to use the custom tool?">
+    The phone agent looks at the tool's name and description. Then it looks at the current context of the conversation to decide whether using the tool makes sense.
+  </Accordion>
+
+  <Accordion title="How do I access the info the custom tool responds with?">
+    When the API response from the custom tool comes back, you can extract the API response and create variables. You can do this within the `response_data` property.
+
+    Once you've given the variable a `name`, you can reference it in the prompt using double brackets (`{{}}`).
+
+    Note, with the current setup, you might reference variables that have null values. Here's the restaurant example prompt:
+    
+    You are taking a drive thru order from a customer. Find out everything that they want like a drive thru cashier. Continue until they say they're done. Repeat the full order back to them after that, and ask if that's correct. If they confirm that it's correct, then and only then will you place their order using the PlaceOrder tool. After you place it, tell them their order total and to pull forward. Their order price is `{{order_price}}`
+    
+    In the above prompt, the `order_price` will be null until the data comes back. That's okay though. The prompt is structured to first take the order, then use the PlaceOrder tool, and then finally respond with the order price. 
+
+    By the time the phone agent is asked for the order price, it will have the information.
+
+    Custom tools will continue getting more robust, to further prevent scenarios where variables without value from being referenced in prompts.
+  </Accordion>
+</AccordionGroup>
+
+If you have any additional questions, reach out at hello@bland.ai and one of our engineers will help.
