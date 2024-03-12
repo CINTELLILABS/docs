@@ -58,23 +58,63 @@ description: "Send an AI phone call with a custom objective and actions."
     </Accordion>
 </ParamField>
 
-<ParamField body="transfer_list" type="object">
-  Give your agent the ability to transfer calls to a set of phone numbers.
+<ParamField body="voice" type="string" default="RL0">
+  The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets.
 
-  Overrides `transfer_phone_number` if a `transfer_list.default` is specified.
+  Default voices can be referenced directly by their name instead of an id.
 
-  Will default to `transfer_list.default`, or the chosen phone number.
+  Usage example: `voice: "maya"`
 
-  Example usage to route calls to different departments:
+  Primary voices:
+  - `maya`
+  - `mason`
+  - `ryan`
+  - `adriana`
+  - `tina`
+  - `matt`
+  - `evelyn`
 
-  ```json
-  "transfer_list": {
-      "default": "+12223334444",
-      "sales": "+12223334444",
-      "support": "+12223334444",
-      "billing": "+12223334444"
-  }
-  ```
+  Use the [GET /v1/voices](https://api.bland.ai/voices) endpoint to see a full list of your available voices.
+
+  <Accordion title="Moving from `voice_id` to `voice`">
+    The previous structure to select voices used both `voice_id` and `reduce_latency`. To simplify the process, we've combined these into a single `voice` parameter.
+
+    - If the first two letters of `voice` are `RL`, that is equivalent to settings `reduce_latency` to `true`.
+    - Prefixing the voice ID with `HQ` will use the high fidelity version of the voice.
+    - The integer following the prefix is the `voice_id` from before.
+
+    Ex.
+    - `reduce_latency: true, voice_id: 0` is equivalent to `voice: "RL0"`
+    - `reduce_latency: false, voice_id: 3` is equivalent to `voice: "HQ3"`
+  </Accordion>
+
+  <Accordion title="Moving from `voice_preset_id` to `voice`">
+    Voice presets can be directly used with the `voice` parameter. 
+
+    For example, to use the `paola` voice preset, instead of using `voice_preset_id: "caad7545-c58b-4b37-954c-27b93aed8dbd"`, you can use `voice: "caad7545-c58b-4b37-954c-27b93aed8dbd"`.
+
+    To create a voice preset, see [Create a Voice Preset](/api-v1/post/voices).
+  </Accordion>
+</ParamField>
+
+<ParamField body="first_sentence" type="string">
+  A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
+</ParamField>
+
+<ParamField body="wait_for_greeting" type="boolean" default={false}>
+  Should the AI speak first or wait for someone else to talk?
+  
+  Creates more realistic conversations when answered with "Hello?", "This is \{name\} speaking." and so on.
+  
+  - When ```false```: The AI starts speaking shortly after the call is answered. 
+  
+  - When ```true```: The AI will wait for the answerer to speak.
+</ParamField>
+
+<ParamField body="interruption_threshold" type="number" default={50}>
+  When you increase the interruption latency, you force the AI phone agent to listen longer before responding. In practice, increasing the threshold results in less interruptions and more latency.
+
+  Try setting the threshold to `200` milliseconds. You'll encounter higher latency, but you'll be interrupted much less frequently.
 </ParamField>
 
 <ParamField body="model" type="string" default="enhanced">
@@ -109,52 +149,21 @@ description: "Send an AI phone call with a custom objective and actions."
 
   </Accordion>
 </ParamField>
-<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
-  The pronunciation guide is an `array` of `objects` that guides the LLM on how to say specific words. This is great for situations with complicated terms or names. 
-
-```json
-    [
-      {
-        "word": "example",
-        "pronunciation": "ex-am-ple",
-        "case_sensitive": "false",
-        "spaced": "false"
-      },
-      {
-        "word": "API",
-        "pronunciation": "A P I",
-        "case_sensitive": "true",
-        "spaced": "true"
-      }
-    ]
-    ```
-
-  
-  <Accordion title="Object Parameters">
-      - `word`
-        — the word you want to guide the LLM on how to pronounce
-      - `pronunciation`
-        — the word you want to guide the LLM on how to pronounce.
-      - `case_sensitive`
-        — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
-      - `spaced` 
-        — whether or not to consider spaces. When `true` the word 'high' would be flagged but NOT 'hightop'. Defaults to true. `Not required`.
-      </Accordion>
- 
-</ParamField>
-
-
-
-<ParamField body="temperature" type="float" default="0.7">
-  A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
-  
-  Example Values: ```"0.9", "0.3", "0.5"```
-</ParamField>
 
 <ParamField body="tools" type="array">
   Interact with the real world through API calls.
 
   Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
+</ParamField>
+
+<ParamField body="webhook" type="string">
+  The webhook should be a http / https callback url. We will send the call_id
+  and transcript to this URL after the call completes. This can be useful if you
+  want to have real time notifications when calls finish.
+</ParamField>
+
+<ParamField body="record" type="boolean" default="false">
+  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
 </ParamField>
 
 <ParamField body="transfer_phone_number" type="string">
@@ -168,90 +177,23 @@ description: "Send an AI phone call with a custom objective and actions."
     </Accordion>
 </ParamField>
 
-<ParamField body="answered_by_enabled" type="boolean" default={false}>
-  Enables machine detection when the call starts to determine whether the call was answered by a person or a voicemail.
+<ParamField body="transfer_list" type="object">
+  Give your agent the ability to transfer calls to a set of phone numbers.
 
-  Best Practices (when enabled):
-  - Since the determination is made at the beginning of the call, use `wait_for_greeting` to try and coax a human response.
-  - If combined with `first_sentence`, try wording it so the person answering says something back - ex. `"Hello?"` or `"Is this \{\{name\}\}?"`.
+  Overrides `transfer_phone_number` if a `transfer_list.default` is specified.
 
-  Price: `$0.02` per call, however there is no charge for unanswered calls or calls that failed to send.
-</ParamField>
+  Will default to `transfer_list.default`, or the chosen phone number.
 
-<ParamField body="from" type="string">
-  Specify a purchased Outbound Number to call from. Country code is required, spaces or parentheses must be excluded.
+  Example usage to route calls to different departments:
 
-  By default, calls are initiated from a separate pool of numbers owned by Bland.
-</ParamField>
-
-<ParamField body="reduce_latency" type="boolean" default="true">
-  Reducing latency means that the agent will generate responses more quickly and have less of a delay. This must be set to ```true``` when using Voice Clones.
-</ParamField>
-
-<ParamField body="voice_id" type="number" default="0">
-    Determines the voice of the AI agent, in conjunction with `reduce_latency`. 
-  
-    Use the [GET /v1/voices](https://api.bland.ai/voices) endpoint to see a full list of your available voices.
-
-    To create your own Voice Clone, [visit our Custom Voice Cloning page](https://app.bland.ai/home?page=voice-clone).
-
-    <Accordion title="Default Options">
-
-    (Note: The voice is accessed by the numeric ID, not the name)
-
-    Reduced Latency Voices (`reduce_latency: true`):
-        - 0: `matt`
-        - 1: `sophie-australian`
-        - 2: `jen-english`
-
-    Standard Voices (`reduce_latency: false`):
-        - 0: `grace-southern`
-        - 1: `josh`
-        - 2: `dorothy-british`
-        - 3: `ravi`
-        
-        (continues with celebrity voices)
-    </Accordion>
-</ParamField>
-
-<ParamField body="voice_preset_id" type="string">
-  Use a voice preset instead of specifying individual voice settings.
-
-  To create a voice preset, see [Create a Voice Preset](/api-v1/post/voices).
-</ParamField>
-
-<ParamField body="start_time" type="string">
-  The time you want the call to start. If you don't specify a time (or the time is in the past), the call will send immediately.
-  
-  Set your time in the format `YYYY-MM-DD HH:MM:SS -HH:MM` (ex. `2021-01-01 12:00:00 -05:00`).
-
-  The timezone is optional, and defaults to UTC if not specified.
-
-  Note: Scheduled calls can be cancelled with the [POST /v1/calls/:call_id/stop](/api-v1/post/calls-id-stop) endpoint.
-</ParamField>
-
-<ParamField body="webhook" type="string">
-  The webhook should be a http / https callback url. We will send the call_id
-  and transcript to this URL after the call completes. This can be useful if you
-  want to have real time notifications when calls finish.
-</ParamField>
-
-<ParamField body="wait_for_greeting" type="boolean" default="false">
-  Should the AI speak first or wait for someone else to talk?
-  
-  Creates more realistic conversations when answered with "Hello?", "This is \{name\} speaking." and so on.
-  
-  - When ```false```: The AI starts speaking shortly after the call is answered. 
-  
-  - When ```true```: The AI will wait for the answerer to speak.
-</ParamField>
-
-<ParamField body="first_sentence" type="string">
-  A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
-</ParamField>
-
-<ParamField body="record" type="boolean" default="false">
-  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
+  ```json
+  "transfer_list": {
+      "default": "+12223334444",
+      "sales": "+12223334444",
+      "support": "+12223334444",
+      "billing": "+12223334444"
+  }
+  ```
 </ParamField>
 
 <ParamField body="voice_settings" type="object">
@@ -294,15 +236,15 @@ description: "Send an AI phone call with a custom objective and actions."
   </Expandable>
 </ParamField>
 
-<ParamField body="language" type="string" default="eng">
+<ParamField body="language" type="string" default="ENG">
   Select a supported language of your choice. 
   Optimizes every part of our API for that language - transcription, speech, and other inner workings.
   
   Supported Languages and their codes:
-  - English: ```eng```
-  - Spanish: ```esp```
-  - French:  ```fre```
-  - Polish: ```pol```
+  - English: ```ENG```
+  - Spanish: ```ESP```
+  - French:  ```FRE```
+  - Polish: ```POL```
 </ParamField>
 
 <ParamField body="max_duration" type="integer" default="30">
@@ -311,6 +253,71 @@ description: "Send an AI phone call with a custom objective and actions."
   Example Values: ```20, 2```
 </ParamField>
 
+<ParamField body="answered_by_enabled" type="boolean" default={false}>
+  Enables machine detection when the call starts to determine whether the call was answered by a person or a voicemail.
+
+  Best Practices (when enabled):
+  - Since the determination is made at the beginning of the call, use `wait_for_greeting` to try and coax a human response.
+  - If combined with `first_sentence`, try wording it so the person answering says something back - ex. `"Hello?"` or `"Is this \{\{name\}\}?"`.
+
+  Price: `$0.02` per call, however there is no charge for unanswered calls or calls that failed to send.
+</ParamField>
+
+<ParamField body="from" type="string">
+  Specify a purchased Outbound Number to call from. Country code is required, spaces or parentheses must be excluded.
+
+  By default, calls are initiated from a separate pool of numbers owned by Bland.
+</ParamField>
+
+<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
+  The pronunciation guide is an `array` of `objects` that guides the LLM on how to say specific words. This is great for situations with complicated terms or names. 
+
+```json
+    [
+      {
+        "word": "example",
+        "pronunciation": "ex-am-ple",
+        "case_sensitive": "false",
+        "spaced": "false"
+      },
+      {
+        "word": "API",
+        "pronunciation": "A P I",
+        "case_sensitive": "true",
+        "spaced": "true"
+      }
+    ]
+    ```
+
+  
+  <Accordion title="Object Parameters">
+      - `word`
+        — the word you want to guide the LLM on how to pronounce
+      - `pronunciation`
+        — the word you want to guide the LLM on how to pronounce.
+      - `case_sensitive`
+        — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+      - `spaced` 
+        — whether or not to consider spaces. When `true` the word 'high' would be flagged but NOT 'hightop'. Defaults to true. `Not required`.
+      </Accordion>
+ 
+</ParamField>
+
+<ParamField body="temperature" type="float" default="0.7">
+  A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
+  
+  Example Values: ```"0.9", "0.3", "0.5"```
+</ParamField>
+
+<ParamField body="start_time" type="string">
+  The time you want the call to start. If you don't specify a time (or the time is in the past), the call will send immediately.
+  
+  Set your time in the format `YYYY-MM-DD HH:MM:SS -HH:MM` (ex. `2021-01-01 12:00:00 -05:00`).
+
+  The timezone is optional, and defaults to UTC if not specified.
+
+  Note: Scheduled calls can be cancelled with the [POST /v1/calls/:call_id/stop](/api-v1/post/calls-id-stop) endpoint.
+</ParamField>
 
 <ParamField body="voicemail_action" type="enum" default="hangup">
   Voicemail action tells the AI what to do when encountering a voicemail. This has 96% accuracy. There is no such thing as a perfect VM detection, but this gets close.
@@ -318,13 +325,17 @@ description: "Send an AI phone call with a custom objective and actions."
   - ```hangup```
   - ```leave_message ```  
 
-
   The default value is ```hangup``` to save money and keep most users in compliance. 
 
   **Leaving voicemails is *strongly* discouraged.** 
 </ParamField>
+
 <ParamField body="amd" type="boolean" default="false">
-  AMD mode helps our AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
+  AMD mode helps your AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
+
+  Behavioral changes:
+  - Much higher `interruption_threshold` so that the options are listened to in full.
+  - Underlying prompt is adjusted so the AI is aware it's navigating a phone tree.
   
   NOTE: AMD mode causes increased delay for the first response, even if answered by a human. Highly recommended to set to `false` in the majority of cases.
 </ParamField>
@@ -415,10 +426,51 @@ description: "Send an AI phone call with a custom objective and actions."
  </Expandable>
 </ParamField>
 
-<ParamField body="interruption_threshold" type="number" default={50}>
-  When you increase the interruption latency, you force the AI phone agent to listen longer before responding. In practice, increasing the threshold results in less interruptions and more latency.
+<ParamField body="voice_preset_id" type="string">
+  [DEPRECATED] - use `voice` instead.
 
-  Try setting the threshold to `500` milliseconds. You'll encounter higher latency, but you'll be interrupted much less frequently.
+  <Accordion title="Expand to view">
+    Use a voice preset instead of specifying individual voice settings.
+
+    To create a voice preset, see [Create a Voice Preset](/api-v1/post/voices).
+  </Accordion>
+</ParamField>
+
+<ParamField body="reduce_latency" type="boolean" default="true">
+  [DEPRECATED] - use `voice` instead.
+
+  <Accordion title="Expand to view">
+    Reducing latency means that the agent will generate responses more quickly and have less of a delay. This must be set to ```true``` when using Voice Clones.
+  </Accordion>
+</ParamField>
+
+<ParamField body="voice_id" type="number" default="0">
+  [DEPRECATED] - use `voice` instead.
+
+  <Accordion title="Expand to view">
+
+    Determines the voice of the AI agent, in conjunction with `reduce_latency`. 
+  
+    Use the [GET /v1/voices](https://api.bland.ai/voices) endpoint to see a full list of your available voices.
+
+    To create your own Voice Clone, [visit our Custom Voice Cloning page](https://app.bland.ai/home?page=voice-clone).
+
+
+    (Note: The voice is accessed by the numeric ID, not the name)
+
+    Reduced Latency Voices (`reduce_latency: true`):
+        - 0: `matt`
+        - 1: `sophie-australian`
+        - 2: `jen-english`
+
+    Standard Voices (`reduce_latency: false`):
+        - 0: `grace-southern`
+        - 1: `josh`
+        - 2: `dorothy-british`
+        - 3: `ravi`
+        
+        (continues with celebrity voices)
+    </Accordion>
 </ParamField>
 
 ### Response
