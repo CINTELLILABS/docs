@@ -58,14 +58,14 @@ description: "Send an AI phone call with a custom objective and actions."
     </Accordion>
 </ParamField>
 
-<ParamField body="voice" type="string" default="matt">
+<ParamField body="voice" type="string" default="mason">
   The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets.
 
   Default voices can be referenced directly by their name instead of an id.
 
   Usage example: `voice: "maya"`
 
-  Primary voices:
+  Bland Curated voices:
   - `maya`
   - `mason`
   - `ryan`
@@ -77,23 +77,26 @@ description: "Send an AI phone call with a custom objective and actions."
   Use the [GET /v1/voices](https://api.bland.ai/voices) endpoint to see a full list of your available voices.
 
   <Accordion title="Moving from `voice_id` to `voice`">
+
+    Note: Including `voice_id` or `reduce_latency` in your request is still supported, but not recommended.
+
     The previous structure to select voices used both `voice_id` and `reduce_latency`. To simplify the process, we've combined these into a single `voice` parameter.
 
     - If the first two letters of `voice` are `RL`, that is equivalent to settings `reduce_latency` to `true`.
     - Prefixing the voice ID with `HQ` will use the high fidelity version of the voice.
     - The integer following the prefix is the `voice_id` from before.
 
-    Ex.
+    Example:
     - `reduce_latency: true, voice_id: 0` is equivalent to `voice: "RL0"`
     - `reduce_latency: false, voice_id: 3` is equivalent to `voice: "HQ3"`
+
+    Including `reduce_latency` may override the `voice` parameter, so exclude it when using `voice`.
   </Accordion>
 
   <Accordion title="Moving from `voice_preset_id` to `voice`">
-    Voice presets can be directly used with the `voice` parameter. 
+    All presets have been migrated to the `voice` parameter and can use either the preset name or ID.
 
-    For example, to use the `paola` voice preset, instead of using `voice_preset_id: "caad7545-c58b-4b37-954c-27b93aed8dbd"`, you can use `voice: "caad7545-c58b-4b37-954c-27b93aed8dbd"`.
-
-    To create a voice preset, see [Create a Voice Preset](/api-v1/post/voices).
+    If you used to have a `voice_preset_id` of `"2f9fdbc7-4bf2-4792-8a18-21ce3c93978f"`, you can now use `voice: "2f9fdbc7-4bf2-4792-8a18-21ce3c93978f"`.
   </Accordion>
 </ParamField>
 
@@ -219,6 +222,8 @@ description: "Send an AI phone call with a custom objective and actions."
 </ParamField>
 
 <ParamField body="voice_settings" type="object">
+  Change voice settings like `quality`, `stability`, `similarity`, and `speed` for your agent.
+
   <Expandable title="properties">
 
     <ParamField body="quality" type="integer" default={1}>

@@ -1,7 +1,7 @@
 ---
-title: "List Voice Options"
+title: "List Voices"
 api: "GET https://api.bland.ai/v1/voices"
-description: "Retrieves all available voices for your account, including custom and default presets."
+description: "Retrieves all available voices for your account."
 ---
 
 ### Headers
@@ -10,56 +10,40 @@ description: "Retrieves all available voices for your account, including custom 
   Your API key for authentication.
 </ParamField>
 
-### Query Parameters
-
-<ParamField query="default_only" type="boolean">
-  Filter to show only default presets, excluding user-created presets.
-</ParamField>
-
-<ParamField query="presets_only" type="boolean">
-  Filter to show only presets.
-</ParamField>
-
-<ParamField query="voices_only" type="boolean">
-  Filter to show only voices.
-</ParamField>
-
-<ParamField query="is_custom" type="boolean">
-  Filter for custom voices.
-</ParamField>
-
-<ParamField query="name" type="string">
-  Filters the `voices` array by the name of the voice.
-</ParamField>
-
-<ParamField query="voice_name" type="string">
-  Filters the `presets` array by the name of the voice.
-</ParamField>
-
-<ParamField query="voice_id" type="integer">
-  Filter by the ID of the voice.
-</ParamField>
-
-<ParamField query="reduce_latency" type="boolean">
-  Filter by latency reduction option. Use in tandem with `reduce_latency` to simulate exactly which voice your agent would use.
-</ParamField>
-
-<ParamField query="public" type="boolean">
-  Filter to show only public presets, or set to false to exclude them.
-</ParamField>
-
-<ParamField query="editable" type="boolean">
-  Filter to show only editable presets.
-</ParamField>
-
 ### Response
 
 <ResponseField type="array" name="voices">
-    Contains a list of the voices available for your account, including custom and default presets.
-</ResponseField>
+    Contains a list of the voices available for your account.
 
-<ResponseField type="object" name="presets">
-    Contains a list of presets with their details. Each preset object includes `voice_preset_id`, `voice_name`, `description`, `reduce_latency`, `interruption_threshold`, `language`, `voice_settings`, `editable`, and `public`.
+    <ResponseField type="string" name="voices[].id">
+        The unique identifier for the voice.
+    </ResponseField>
+
+    <ResponseField type="string" name="voices[].name">
+        The name of the voice. This value can also be used in the `voice` parameter when sending calls.
+    </ResponseField>
+
+    <ResponseField type="string" name="voices[].description">
+        A brief description of the voice.
+    </ResponseField>
+
+    <ResponseField type="boolean" name="voices[].public">
+        Indicates whether the voice is publicly available or specific to your account.
+    </ResponseField>
+
+    <ResponseField type="array" name="voices[].tags">
+        A list of tags that describe the voice. We recommend "Bland Curated" voices for the best quality over the phone.
+    </ResponseField>
+
+    <ResponseField type="number" name="voices[].total_ratings">
+        The number of ratings the voice has received.
+    </ResponseField>
+
+    <ResponseField type="number" name="voices[].average_rating">
+        The average rating of the voice, out of 5.
+    </ResponseField>
+
+    Note: Ratings are under development at this time and may display incomplete/inaccurate data.
 </ResponseField>
 
 <ResponseExample>
@@ -67,35 +51,45 @@ description: "Retrieves all available voices for your account, including custom 
 {
     "voices": [
         {
-            "voice_id": 2,
-            "name": "jen-english",
-            "is_custom": false,
-            "reduce_latency": true
+            "id": "2f9fdbc7-4bf2-4792-8a18-21ce3c93978f",
+            "name": "maya",
+            "description": "Young American Female",
+            "public": true,
+            "tags": [
+                "english",
+                "soft",
+                "Bland Curated"
+            ]
         },
         {
-            "voice_id": 0,
-            "name": "matt",
-            "is_custom": false,
-            "reduce_latency": true
+            "id": "37b3f1c8-a01e-4d70-b251-294733f08371",
+            "name": "ryan",
+            "description": "Professional American Male",
+            "public": true,
+            "tags": [
+                "english",
+                "Bland Curated"
+            ]
         },
         {
-            "voice_id": 1485,
-            "name": "My Custom Voice Clone",
-            "is_custom": true,
-            "reduce_latency": true
-        },
-        //...
-    ],
-    "presets": [
-        {
-            "voice_preset_id": "857ed371-9b28-4006-99da-a28c41c6fa55",
-            "voice_name": "sophie-australian",
-            //...
+            "id": "90295ec4-f0fe-4783-ab33-8b997ddc3ae4",
+            "name": "mason",
+            "description": "American Male",
+            "public": true,
+            "tags": [
+                "english",
+                "Bland Curated"
+            ]
         },
         {
-            "voice_preset_id": "ff2c405b-3dba-41e0-9261-bc8ee3f91f46",
-            "voice_name": "david",
-            //...
+            "id": "bbeabae6-ec8d-444f-92ad-c8e620d3de8d",
+            "name": "tina",
+            "description": "Gentle American Female",
+            "public": true,
+            "tags": [
+                "english",
+                "gentle"
+            ]
         },
         //...
     ]
