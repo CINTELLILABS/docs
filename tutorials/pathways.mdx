@@ -84,6 +84,35 @@ Using the Reservation Booking Example, if the user were to ask a question like '
 
 This helps you to handle edge cases where the user might ask a question that is not related to the current conversation, and allows you to provide the user with the information they need, before returning to the conversation.
 
+Tip: The variables `{{lastUserMessage}}` and `{{prevNodePrompt}}` can be used in the Global Node to provide the agent with context on what the user said, and steering the conversation back to its own original goal. 
+
+<Accordion title="Example Global Node Prompt:">
+You are to answer any questions the user has, to the best of your knowledge. If you do not know the answer, simply say 'I don't have that information at that moment'. Do not make up any information/facts about the appointment. 
+
+After you answer the question, you are to direct the conversation back to your initial goal, which was as follows:
+
+Previous Goal:
+`{{prevNodePrompt}}`
+
+If you deem the goal as achieved, you can simply ask the user 'So, shall we proceed?' . If the goal has not been achieved, you are to steer the conversation back to achieve your goal. 
+
+If you deem the goal as achieved, simply confirm the result with the user. If the goal has not been achieved, you are to steer the conversation back to achieve your goal. 
+
+
+Examples: 
+==
+assistant: what date works for you?
+user: what day is it today?
+assistant: The day today is April 15th. So, what date works for you?
+==
+
+== 
+assistant: what date works for you?
+user: probably tomorrow, what time does the clinic open?
+assistant: The clinic opens at 9am. So, do you want to schedule for tomorrow?
+== 
+</Accordion>
+
 <img style={{ borderRadius: "0.5rem" }} src="/tutorials/global_eg.png" />
 
 
@@ -201,7 +230,23 @@ You can test the responses from your pathway agent by clicking on the 'Chat with
 
 # Variables Reference/ Extraction 
 
-You can reference variables in pathways using double curly braces like `{{first_name}}`. You can pass variables into your call by passing in the key-value pairs in the `request_data` field when sending a call. At each node, you can also extract variables from the user's response using the `Extract Variables from Call Info` field. You would put in the name of the variable you want to extract, the type of the variable (integer, string, boolean), and the description for what information you want the variable to store. You can also provide specific formats you expect and examples in the description. The more descriptive it is, the better the agent will be at extracting the variable more accurately. 
+## Variables
+
+You can reference variables in pathways using double curly braces like `{{first_name}}`. You can pass variables into your call by passing in the key-value pairs in the `request_data` field when sending a call.
+
+Some examples of variables that you can access at each node:
+
+- `{{lastUserMessage}}` - The last response from the user
+- `{{prevNodePrompt}}` - The prompt from the previous node
+- `{{now_utc}}` - The current time in UTC
+- `{{from}}` - The phone number the call is from
+- `{{to}}` - The phone number the call is to
+- `{{call_id}}` - The unique identifier for the call
+
+
+## Extracting Variables from Call/User Response
+
+At each node, you can also extract variables from the user's response using the `Extract Variables from Call Info` field. You would put in the name of the variable you want to extract, the type of the variable (integer, string, boolean), and the description for what information you want the variable to store. You can also provide specific formats you expect and examples in the description. The more descriptive it is, the better the agent will be at extracting the variable more accurately. 
 
 Do note that when enable variable extraction, and wanting to reference the variable in the subsequent nodes, it would introduce slight latency as the agent would have to extract the variable from the user's response before generating the dialogue for the next node.
 
