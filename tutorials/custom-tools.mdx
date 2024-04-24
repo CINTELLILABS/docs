@@ -46,27 +46,37 @@ Keep reading to find out.
 
 ```json
 {
-  "name": "BookAppointment",
-  "description": "Books an appointment for the customer",
-  "input_schema": {
-    "example": {
-      "speech": "Got it - one second while I book your appointment for tomorrow at 10 AM.",
-      "date": "2024-04-20",
-      "time": "10:00 AM",
-      "service": "Haircut"
+    "name": "BookAppointment",
+    "description": "Books an appointment for the customer",
+    "url": "https://your-api.com/book-appointment",
+    "method": "POST",
+    "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
     },
-    "type": "object",
-    "properties": {
-      "speech": "string",
-      "date": "YYYY-MM-DD",
-      "time": "HH:MM AM/PM",
-      "service": "Haircut, Coloring, Trim, or Other"
+    "input_schema": {
+        "example": {
+            "speech": "Got it - one second while I book your appointment for tomorrow at 10 AM.",
+            "date": "2024-04-20",
+            "time": "10:00 AM",
+            "service": "Haircut"
+        },
+        "type": "object",
+        "properties": {
+            "speech": "string",
+            "date": "YYYY-MM-DD",
+            "time": "HH:MM AM/PM",
+            "service": "Haircut, Coloring, Trim, or Other"
+        }
+    },
+    "body": {
+        "date": "{{input.date}}",
+        "time": "{{input.time}}",
+        "service": "{{input.service}}"
+    },
+    "response": {
+        "succesfully_booked_slot": "$.success",
+        "stylist_name": "$.stylist_name"
     }
-  },
-  "response": {
-    "succesfully_booked_slot": "$.success",
-    "stylist_name": "$.stylist_name"
-  }
 }
 ```
 
@@ -154,6 +164,11 @@ Below is the entire API request for sending a phone call using the outlined cust
         {
             "name": "BookAppointment",
             "description": "Books an appointment for the customer",
+            "url": "https://your-api.com/book-appointment",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer YOUR_API_KEY"
+            },
             "input_schema": {
                 "example": {
                     "speech": "Got it - one second while I book your appointment for tomorrow at 10 AM.",
@@ -168,6 +183,11 @@ Below is the entire API request for sending a phone call using the outlined cust
                     "time": "HH:MM AM/PM",
                     "service": "Haircut, Coloring, Trim, or Other"
                 }
+            },
+            "body": {
+                "date": "{{input.date}}",
+                "time": "{{input.time}}",
+                "service": "{{input.service}}"
             },
             "response": {
                 "succesfully_booked_slot": "$.success",
