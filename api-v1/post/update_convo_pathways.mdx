@@ -30,19 +30,142 @@ description: "Update a conversational pathway's fields - including name, descrip
     Data about all the nodes in the pathway.
 
     Example of a node object:
-    ```json
+
+
+<CodeGroup>
+  ```json Start Node
     {
         "id": "1",
+        "type": "Default"
         "data": {
             "name": "Start",
             "text": "Hey there, how are you doing today?",
             "isStart": true,
         },
+    
+    ```
+
+  ```json Default Node
+    {
+        "id": "randomnode_1710288871721",
         "type": "Default"
+        "data": {
+            "name": "New Node",
+            "text": "Select a node or edge and press backspace to remove it",
+            "globalPrompt": "This is a phone call. Do not use exclamation marks.\n\nConvert 24HR format timings to 12 HR format - e.g 14:00 should be written as 2 PM.",
+        },
+    }
+    ```
+    ```json End Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "End Call"
+        "data": {
+            "name": "End call",
+            "prompt": "Say goodbye to the user",
+        },
     }
     ```
 
-    <Accordion title="Node Data Object Parameters">
+    ```json Webhook Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "Webhook",
+        "data": {
+            "url": "https://api.bland.ai/reservation",
+            "body": "{\n    \"date\" : \"{{date}}\",\n    \"time\" : \"{{time}}\",\n    \"guests\": {{number_of_people}}\n}",
+            "name": "Reservation Booking",
+            "text": "Please give me a moment as I check our bookings..",
+            "method": "POST",
+            "extractVars": [
+                [
+                    "date",
+                    "string",
+                    "Desired Date of reservation, in MM/DD/YYYY format"
+                ],
+                [
+                    "time",
+                    "string",
+                    "Desired Time of Reservation in 24HR Format e.g 13:30"
+                ],
+                [
+                    "number_of_people",
+                    "integer",
+                    "Number of people for the reservation"
+                ]
+            ],
+            "responseData": [
+                {
+                    "data": "$.reserved",
+                    "name": "reservation_success",
+                    "context": ""
+                },
+                {
+                    "data": "$.available_slots",
+                    "name": "available_slots",
+                    "context": "Available slots for the date provided"
+                }
+            ],
+            "responsePathways": [
+                [
+                    "reservation_success",
+                    "==",
+                    "true",
+                    {
+                        "id": "randomnode_1710288752186",
+                        "name": "Reservation Successful"
+                    }
+                ],
+                [
+                    "reservation_success",
+                    "==",
+                    "false",
+                    {
+                        "id": "randomnode_1712265110018",
+                        "name": "Find new timeslot"
+                    }
+                ]
+            ]
+        }
+    }
+    ```
+    ```json Knowledge Base Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "Knowledge Base",
+        "data": {
+            "name": "Restaurant Questions",
+            "prompt": "Answer any questions that the user may have regarding the restaurant, by referring to the knowledge base you have. \n\nAnswer the question in 1 line, and then ask if they have any more questions."
+            "kb": "Opening Hours : 9am - 5pm\nStore Locations : \n426 Ivy Street San Francisco, \nSan Jose"
+        }
+    }
+    ```
+    ```json Global Node
+    {
+        "id": "randomnode_1710288871721",
+        "type": "Default"
+        "data": {
+            "name": "Answer any questions",
+            "prompt": "You are to answer any questions the user has.",
+            "isGlobal": true,
+            "globalLabel": "user asks a question"
+        },
+    }
+    ```
+    ```json Transfer Call Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "Transfer Call",
+        "data": {
+            "name": "Transferring the call",
+            "text": "Transferring the call now. Please hold.."
+            "transferNumber": "+19547951234"
+        }
+    }
+    ```
+  </CodeGroup>
+
+  <Accordion title="Node Data Object Parameters">
       - `name`
         — name of the node
       - `isStart`
@@ -78,7 +201,9 @@ description: "Update a conversational pathway's fields - including name, descrip
           — The temperature of the model.
       - `extractVars`
         - An array of array of strings. [[`varName`, `varType`, `varDescription`]] e.g `[["name", "string", "The name of the user"], ["age", "integer", "The age of the user"]]`
+        
       </Accordion>
+
 </ParamField>
 
 <ParamField body="edges" type="array of objects">
