@@ -1,0 +1,187 @@
+---
+title: "Update Pathway" 
+api: "POST https://api.bland.ai/v1/convo_pathway/{pathway_id}"
+description: "Update a conversational pathway's fields - including name, description, nodes and edges."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+<ParamField path="pathway_id" type="string" required>
+  The unique identifier of the conversational pathway you want to update.
+</ParamField>
+
+
+### Body
+
+<ParamField body="name" type="string">
+  The name of the conversational pathway
+</ParamField>
+
+<ParamField body="description" type="string">
+    A description of the pathway
+</ParamField>
+
+<ParamField body="nodes" type="array of objects">
+    Data about all the nodes in the pathway.
+
+    Example of a node object:
+    ```json
+    {
+        "id": "1",
+        "data": {
+            "name": "Start",
+            "text": "Hey there, how are you doing today?",
+            "isStart": true,
+        },
+        "type": "Default"
+    }
+    ```
+
+    <Accordion title="Node Data Object Parameters">
+      - `name`
+        — name of the node
+      - `isStart`
+        — whether the node is the start node. There can only be 1 start node in a pathway. Either `true` or `false`.
+      - `isGlobal` 
+        — whether the node is a global node. Global nodes are nodes that can be used in multiple pathways. Either `true` or `false`.
+      - `globalLabel`
+        — the label of the global node. Should be present if `isGlobal` is true.
+      - `type`
+        — Type of the node. Can be `Default`, `End Call`, `Transfer Node`, `Knowledge Base`, or `Webhook`.
+      - `text`
+        — If static text is chosen, this is the text that will be said to the user.
+      - `prompt`
+        — If dynamic text is chosen, this is the prompt that will be shown to the user.
+      - `condition`
+        — The condition that needs to be met to proceed from this node.
+      - `transferNumber`
+        - If the node is a transfer node, this is the number to which the call will be transferred.
+      - `kb`
+        - If the node is a knowledge base node, this is the knowledge base that will be used.
+      - `pathwayExamples`
+        - The fine-tuning examples for the agent at this node for the pathways chosen
+      - `conditionExamples`
+        - The fine-tuning examples for the condition at this node for the condition chosen
+      - `dialogueExamples`
+        - The fine-tuning examples for the dialogue at this node for the dialogue chosen.
+      - `modelOptions`
+        - `modelName`
+          — The name of the model to be used for this node.
+        - `interruptionThreshold`
+            — The sensitivity to interruptions at this node
+        - `temperature`
+          — The temperature of the model.
+      - `extractVars`
+        - An array of array of strings. [[`varName`, `varType`, `varDescription`]] e.g `[["name", "string", "The name of the user"], ["age", "integer", "The age of the user"]]`
+      </Accordion>
+</ParamField>
+
+<ParamField body="edges" type="array of objects">
+    Data about all the edges in the pathway.
+
+    <Accordion title="Edge Object Parameters">
+        - `id`
+            — unique id of the edge
+        - `source`
+            — id of the source node
+        - `target`
+            — id of the target node
+        - `label`
+            — Label for this edge. This is what the agent will use to decide which path to take.
+        </Accordion>
+</ParamField>
+
+
+### Response
+
+<ResponseField name="status" type="string">
+  Can be `success` or `error`.
+</ResponseField>
+
+<ResponseField name="pathway_id" type="string">
+  A unique identifier for the pathway (present only if status is `success`).
+</ResponseField>
+
+<ResponseField name="nodes" type="array of objects">
+  Data about all the nodes in the pathway.
+</ResponseField>
+
+<ResponseField name="edges" type="array of objects">
+    Data about all the edges in the pathway.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Pathway updated successfully",
+  "pathway_data": {
+    "pathway_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1",
+    "name": "Updated Demo Pathway",
+    "description": "This is an updated description",
+    "nodes": [
+        {
+            "id": "1",
+            "data": {
+                "name": "Start",
+                "text": "Hey there, how are you doing today?",
+                "isStart": true,
+            },
+            "type": "Default"
+        },
+        {
+            "id": "randomnode_1710288752186",
+            "data": {
+                "name": "End call",
+                "prompt": "Click 'Add New Node' on the right to add a new node",
+            },
+            "type": "End Call"
+        },
+        {
+            "id": "randomnode_1710288871721",
+            "data": {
+                "name": "New Node",
+                "prompt": "Click 'Add New Node' on the right to add a new node",
+            },
+            "type": "Default"
+        }
+    ],
+    "edges": [
+        {
+            "id": "1",
+            "source": "1",
+            "target": "randomnode_1710288752186",
+            "data": {
+                "name": "End call",
+                "prompt": "Click 'Add New Node' on the right to add a new node",
+            }
+        },
+        {
+            "id": "2",
+            "source": "1",
+            "target": "randomnode_1710288871721",
+            "data": {
+                "name": "New Node",
+                "prompt": "Click 'Add New Node' on the right to add a new node",
+            }
+        }
+    ]
+  }
+}
+```
+
+</ResponseExample>
+
+
+
+
+
+
+
+
+
