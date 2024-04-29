@@ -29,18 +29,16 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   - `user` (can be `user`, `assistant`, `robot`, or `agent-action`)
 </ResponseField>
 
-<ResponseField name="c_id" type="number">
+<ResponseField name="call_id" type="number">
   The unique identifier for the call.
 </ResponseField>
 
-<ResponseField name="variables" type="object">
-  Variables created during the call - both system variables as well as generated with `dynamic_data`.
-
-  For example, if you used a `dynamic_data` API request to generate a variable called `appointment_time`, you would see it here.
+<ResponseField name="call_length" type="number">
+  The length of the call in minutes.
 </ResponseField>
 
-<ResponseField name="concatenated_transcript" type="string">
-  A single string containing all of the text from the call. Excludes system messages and auto-generated data.
+<ResponseField name="batch_id" type="string">
+  If the call is part of a batch, it's `batch_id` will be here.
 </ResponseField>
 
 <ResponseField name="to" type="string">
@@ -51,10 +49,6 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   The phone number that made the call.
 </ResponseField>
 
-<ResponseField name="batch_id" type="string">
-  If the call is part of a batch, it's `batch_id` will be here.
-</ResponseField>
-
 <ResponseField name="request_data" type="object">
   Details about parameters in the original api request.
 </ResponseField>
@@ -63,9 +57,27 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   Whether the call has been completed. If it differs from the value of 'queue_status', this will be the most up-to-date status.
 </ResponseField>
 
+<ResponseField name="inbound" type="boolean">
+  Whether the call was inbound or outbound. Will be `false` for outbound calls.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  The timestamp for when the call request was created.
+</ResponseField>
+
+<ResponseField name="started_at" type="string">
+  The time the call was connected.
+</ResponseField>
+
+<ResponseField name="end_at" type="string">
+  The time that the call will automatically be ended at if it's still connected (because of `max_duration`).
+</ResponseField>
+
 <ResponseField name="queue_status" type="string">
   The status of the call. During extremely high volume periods, calls may be queued for a short period of time before being dispatched.
 
+
+  <Accordion title="Statuses:">
   Progresses through the following stages:
 
   - `new`: An API request has been received.
@@ -82,10 +94,25 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   - `complete_error`: Error occurred after the call was completed. Ex. A post-call webhook failed.
 
   If at any point an error occurs, it will be recorded in the `error_message` field.
+  </Accordion>
 </ResponseField>
 
-<ResponseField name="error_message" type="string or null">
+<ResponseField name="endpoint_url" type="string">
+  The url of the deployment that the call was handled on. Will always be "api.prod.bland.ai" unless the call was handled on a custom Enterprise deployment.
+</ResponseField>
+
+<ResponseField name="max_duration" type="number">
+  The maximum length of time the call was allowed to last. If the call would exceed this length, it's ended early.
+</ResponseField>
+
+<ResponseField name="error_message" type="string">
   If an error occurs, this will contain a description of the error. Otherwise, it will be null.
+</ResponseField>
+
+<ResponseField name="variables" type="object">
+  Variables created during the call - both system variables as well as generated with `dynamic_data` or Custom Tools.
+
+  For example, if you used a `dynamic_data` API request to generate a variable called `appointment_time`, you would see it here (both the agent's inputs and the response variables).
 </ResponseField>
 
 <ResponseField name="answered_by" type="string">
@@ -97,6 +124,8 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   - `no-answer`: The call was not answered.
   - `null`: Not enabled, or still processing the result.
 
+  If `answered_by_enabled` was set to `true`, then webhooks may take up to a minute to fire after the call ends while the call audio is processed.
+
   <Accordion title="Notes:">
   - Determinations are based on audio from the first five seconds of the phone call.
   - `unknown` is most likely a human, especially if there are multiple transcripts.
@@ -107,24 +136,72 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   </Accordion>
 </ResponseField>
 
-<ResponseField name="endpoint_url" type="string">
-  The URL that was called to dispatch the phone call.
+<ResponseField name="record" type="boolean">
+  Whether the call audio was recorded.
 </ResponseField>
 
-<ResponseField name="max_duration" type="number">
-  The maximum length of time the call was allowed to last. If the call would exceed this length, it's ended early.
+<ResponseField name="recording_url" type="string">
+  The URL of the recording of the call. Only available if `record` was set to `true` in the original API request.
 </ResponseField>
 
-<ResponseField name="corrected_duration" type="number">
-  The total length of time the call was connected. This differs from call_length in that it includes ringing and connection time.
+<ResponseField name="metadata" type="object">
+  Metadata about the call. This can include information about the client, customer, or any other data you want to include.
+
+  This is identical to the `metadata` that was set in the original API request to send the call.
 </ResponseField>
 
-<ResponseField name="call_length" type="number">
-  The length of the call in minutes.
+<ResponseField name="summary" type="string">
+  A short summary of the call based off of the transcript that's generated when the call ends.
 </ResponseField>
 
-<ResponseField name="created_at" type="string">
-  The timestamp for when the call was dispatched.
+<ResponseField name="price" type="number">
+  The cost of the call in USD.
+</ResponseField>
+
+<ResponseField name="local_dialing" type="boolean">
+  Whether Local Dialing was enabled for your account at the time of the call.
+</ResponseField>
+
+<ResponseField name="call_ended_by" type="string">
+  Whether the call was ended by Bland's system or the other end of the line.
+
+  - `ASSISTANT`: The agent ended the call.
+  - `USER`: The user ended the call.
+</ResponseField>
+
+<ResponseField name="pathway_logs" type="string">
+  Pathways calls will have extra logs here that have much more detailed information about the chosen nodes and internal reasoning throughout the flow.
+</ResponseField>
+
+<ResponseField name="analysis_schema" type="object">
+  The provided structure used in the post call analysis. This is the raw skeleton describing the data structure that will be filled in once the call ends.
+</ResponseField>
+
+<ResponseField name="analysis" type="object">
+  The data filled in by the post call analysis. This is the raw data that was generated by the analysis schema.
+</ResponseField>
+
+<ResponseField name="concatenated_transcript" type="string">
+  A single string containing all of the text from the call. Excludes system messages and auto-generated data.
+</ResponseField>
+
+<ResponseField name="transcripts" type="array of objects">
+  An array of phrases spoken during the call. 
+  
+  Each index includes: 
+  
+  - `id`
+  - `created_at` 
+  - `text` 
+  - `user` (can be `user`, `assistant`, `robot`, or `agent-action`)
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The status of the call. This is the most up-to-date status of the call, but is only present for calls that have been successfully created.
+</ResponseField>
+
+<ResponseField name="corrected_duration" type="string">
+  The corrected duration of the call in seconds. This is the actual length of the call, not the `max_duration`.
 </ResponseField>
 
 <ResponseExample>
