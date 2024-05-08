@@ -11,7 +11,7 @@ description: "Send an AI phone call with a custom objective and actions."
 </ParamField>
 
 <ParamField header="encrypted_key" type="string">
-  A special key for using a BYOT (Bring Your Own Twilio) account. Not required in most cases.
+  A special key for using a BYOT (Bring Your Own Twilio) account. Only required for sending calls from your own Twilio account.
 </ParamField>
 
 ### Body
@@ -19,7 +19,7 @@ description: "Send an AI phone call with a custom objective and actions."
 <ParamField body="phone_number" type="string" required>
   The phone number to call. Country code defaults to `+1` (US) if not specified. 
   
-  Formatting is flexible, however for the most predictable results use the [E.164](https://www.twilio.com/docs/glossary/what-e164#examples-of-e164-numbers) format.
+  For best results, use the [E.164](https://www.twilio.com/docs/glossary/what-e164#examples-of-e164-numbers) format.
 
     <Accordion title="Formatting Examples">
         Expected/Ideal Format:
@@ -44,23 +44,14 @@ description: "Send an AI phone call with a custom objective and actions."
 <ParamField body="task" type="string" required>
   Provide instructions, relevant information, and examples of the ideal conversation flow.
 
-    <Accordion title="Best Practices">
-        #### Out-of-the-Box Behaviors (Summarized):
-        - Speech pattern: Direct, concise, casual
-        - Spells out symbols, acronyms, abbreviations, percentages, etc. ($4,000,000 -> "four million dollars")
-        - Asks clarifying questions
-        - Ends call when objective is complete or voicemail is detected
+  This is your prompt where you are telling the agent what to do.
 
-        #### Prompting Tips:
-        - Want to easily test out exactly how your agent will behave?
-            - [Try out Agent Testing!](https://app.bland.ai/home?page=testing)
-        - Aim for less than >2,000 characters where possible.
-        - Simple, direct prompts are the most predictable and reliable.
-        - Frame instructions positively: 
-            - `"Do this"` rather than `"Don't do this"`. 
-            - Ex. "Keep the conversation casual" rather than "Don't be too formal".
-            - This gives concrete examples of what to do, instead of leaving expected behavior open to interpretation.
-    </Accordion>
+  Recommendations:
+    - Include context and a background/persona for the agent like `"You are {name}, a customer service agent at {company} calling {name} about {reason}`.
+    - Phrase instructions like you are speaking to the agent before the call.
+    - Any time you tell the agent not to do something, provide an example of what they should do instead.
+    - Keep the prompt under 2,000 characters where possible.
+    - Want to easily test out exactly how your agent will behave? [Try out Agent Testing!](https://app.bland.ai/home?page=testing)
 </ParamField>
 
 <ParamField body="voice" type="string" default="mason">
@@ -104,37 +95,6 @@ description: "Send an AI phone call with a custom objective and actions."
     If you used to have a `voice_preset_id` of `"2f9fdbc7-4bf2-4792-8a18-21ce3c93978f"`, you can now use `voice: "2f9fdbc7-4bf2-4792-8a18-21ce3c93978f"`.
   </Accordion>
 </ParamField>
-
-<ParamField body="analysis_schema" type="object">
-  Define a JSON schema for how you want to get information about the call - information like email addresses, names, appointment times or any other type of custom data.
-
-  In the webhook response or whenever you retrieve call data later, you'll get the data you defined back under `analysis`.
-
-  For example, if you wanted to retrieve this information from the call:
-
-  ```json
-  "analysis_schema": {
-    "email_address": "email",
-    "first_name": "string",
-    "last_name": "string",
-    "wants_to_book_appointment": "boolean",
-    "appointment_time": "YYYY-MM-DD HH:MM:SS"
-  }
-  ```
-
-  You would get it filled out like this in your webhook once the call completes:
-
-  ```json
-  "analysis": {
-    "email_address": "johndoe@gmail.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "wants_to_book_appointment": true,
-    "appointment_time": "2024-01-01 12:00:00"
-  }
-  ```
-</ParamField>
-
 
 <ParamField body="first_sentence" type="string">
   A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
@@ -190,7 +150,7 @@ description: "Send an AI phone call with a custom objective and actions."
 
   Options: `gpt4`, `base`, `turbo` and `enhanced`.
 
-  In nearly all cases, `enhanced` is the best choice for now.
+  In nearly all cases, `enhanced` is the best choice.
 
   <Accordion title="Model Differences">
 
@@ -239,9 +199,41 @@ description: "Send an AI phone call with a custom objective and actions."
 </ParamField>
 
 <ParamField body="webhook" type="string">
-  The webhook should be a http / https callback url. We will send the call_id
-  and transcript to this URL after the call completes. This can be useful if you
-  want to have real time notifications when calls finish.
+  When the call ends, we'll send the call details in a POST request to the URL you specify here.
+
+  The request body will match the response from the [GET /v1/calls/:call_id](/api-v1/get/calls-id) endpoint.
+</ParamField>
+
+<ParamField body="analysis_schema" type="object">
+  When the call ends, the transcript and call details will be analyzed by the AI.
+  
+  Define a JSON schema for how you want to get information about the call - information like email addresses, names, appointment times or any other type of custom data.
+
+  In the webhook response or whenever you retrieve call data later, you'll get the data you defined back under `analysis`.
+
+  For example, if you wanted to retrieve this information from the call:
+
+  ```json
+  "analysis_schema": {
+    "email_address": "email",
+    "first_name": "string",
+    "last_name": "string",
+    "wants_to_book_appointment": "boolean",
+    "appointment_time": "YYYY-MM-DD HH:MM:SS"
+  }
+  ```
+
+  You would get it filled out like this in your webhook once the call completes:
+
+  ```json
+  "analysis": {
+    "email_address": "johndoe@gmail.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "wants_to_book_appointment": true,
+    "appointment_time": "2024-01-01 12:00:00"
+  }
+  ```
 </ParamField>
 
 <ParamField body="record" type="boolean" default="false">
@@ -294,19 +286,19 @@ description: "Send an AI phone call with a custom objective and actions."
 </ParamField>
 
 <ParamField body="max_duration" type="integer" default="30">
-  Set the longest you want the call to possibly go in minutes. After the max_duration minutes have passed, the call will automatically end.
+  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
   
   Example Values: ```20, 2```
 </ParamField>
 
 <ParamField body="answered_by_enabled" type="boolean" default={false}>
-  Enables machine detection when the call starts to determine whether the call was answered by a person or a voicemail.
+  If this is set to true, we process the audio from the start of the call to determine if it was answered by a human or a voicemail.
 
-  Best Practices (when enabled):
-  - Since the determination is made at the beginning of the call, use `wait_for_greeting` to try and coax a human response.
-  - If combined with `first_sentence`, try wording it so the person answering says something back - ex. `"Hello?"` or `"Is this \{\{name\}\}?"`.
+  In the call details or webhook response, you'll see the `answered_by` field with the value `human`, `unknown` or `voicemail`.
 
-  Price: `$0.02` per call, however there is no charge for unanswered calls or calls that failed to send.
+  Notes for accuracy:
+  - When `answered_by` is `voicemail` or `human`, that is nearly 100% accurate.
+  - When it is `unknown`, try using text analysis by adding `answered_by` to your `analysis_schema`.
 </ParamField>
 
 <ParamField body="from" type="string">
@@ -404,25 +396,21 @@ description: "Send an AI phone call with a custom objective and actions."
 </ParamField>
 
 <ParamField body="request_data" type="object">
-  When you want your AI to "know" a specific fact - like the caller's
-  name or other relevant context.
+  Any JSON you put in here will be visible to the AI agent during the call - and can also be referenced with Prompt Variables.
 
-  The AI agent will be aware of both the key names as well as their corresponding values.
+  For example, let's say in your app you want to programmatically set the name of the person you're calling. You could set `request_data` to:
+  ```json
+  {
+    "phone_number": "+1...",
+    "task": "...",
+    "first_sentence": "Hello {{name}}! How are you doing today?", // also works in the prompt, tools, etc.
+    "request_data": {
+      "name": "John Doe",
+    }
+  }
+  ```
 
-    <Accordion title="Sample">
-        Example Issue: 
-        - The LLM is hallucinating specific facts. You need to provide specific information.
-        Example Solution:
-        - Use `request_data` to specify and label that data.
-
-        ```json
-        "request_data": {
-           "first_name":"John",
-           "date_of_birth":"03/14/05"
-            // additional parameters as needed
-        }
-        ```
-    </Accordion>
+  For further information about how Prompt Variables work, check out the [Custom Tools](/tutorials/custom-tools) tutorial.
 </ParamField>
 
 <ParamField body="dynamic_data" type="array">
