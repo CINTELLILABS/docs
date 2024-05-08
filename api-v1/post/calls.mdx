@@ -54,6 +54,30 @@ description: "Send an AI phone call with a custom objective and actions."
     - Want to easily test out exactly how your agent will behave? [Try out Agent Testing!](https://app.bland.ai/home?page=testing)
 </ParamField>
 
+<ParamField body="pathway_id" type="string">
+  This is the pathway ID for the pathway you have created on our dev portal. You
+  can access the ID of your pathways by clicking the 'Copy ID' button of your
+  pathway [here](https://app.bland.ai/home?page=convo-pathways)
+
+  Note: Certain parameters do not apply when using pathways. 
+
+  <Accordion title="Unused Parameters">
+  - `task` - The pathway substitutes as the agent's instructions.
+  - `model` - We use our own fine-tuned models under the hood.
+  - `tools` - Replaced by 'Webhook' Node in Pathways
+  - `transfer_list` - Replaced by 'Transfer Call' Node in Pathways
+  - `transfer_phone_number` - Replaced by 'Transfer Call' Node in Pathways
+  </Accordion>
+
+  Example Simple Request body: 
+  ```json
+  "phone_number": "+1975934749",
+  "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
+  ```
+</ParamField>
+
+### Agent Parameters (Body)
+
 <ParamField body="voice" type="string" default="mason">
   The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets.
 
@@ -97,17 +121,13 @@ description: "Send an AI phone call with a custom objective and actions."
 </ParamField>
 
 <ParamField body="first_sentence" type="string">
-  A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
+  Makes your agent say a specific phrase or sentence for it's first response.
 </ParamField>
 
 <ParamField body="wait_for_greeting" type="boolean" default={false}>
-  Should the AI speak first or wait for someone else to talk?
+  By default, the agent starts talking as soon as the call connects. 
   
-  Creates more realistic conversations when answered with "Hello?", "This is \{name\} speaking." and so on.
-  
-  - When ```false```: The AI starts speaking shortly after the call is answered. 
-  
-  - When ```true```: The AI will wait for the answerer to speak.
+  When `wait_for_greeting` is set to `true`, the agent will wait for the call recipient to speak first before responding.
 </ParamField>
 
 <ParamField body="interruption_threshold" type="number" default={100}>
@@ -121,28 +141,6 @@ description: "Send an AI phone call with a custom objective and actions."
   - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
 
   Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
-</ParamField>
-
-<ParamField body="pathway_id" type="string">
-  This is the pathway ID for the pathway you have created on our dev portal. You
-  can access the ID of your pathways by clicking the 'Copy ID' button of your
-  pathway [here](https://app.bland.ai/home?page=convo-pathways)
-
-  Note: Certain parameters do not apply when using pathways. 
-
-  <Accordion title="Unused Parameters">
-  - `task` - The pathway substitutes as the agent's instructions.
-  - `model` - We use our own fine-tuned models under the hood.
-  - `tools` - Replaced by 'Webhook' Node in Pathways
-  - `transfer_list` - Replaced by 'Transfer Call' Node in Pathways
-  - `transfer_phone_number` - Replaced by 'Transfer Call' Node in Pathways
-  </Accordion>
-
-  Example Simple Request body: 
-  ```json
-  "phone_number": "+1975934749",
-  "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
-  ```
 </ParamField>
 
 <ParamField body="model" type="string" default="enhanced">
@@ -178,66 +176,62 @@ description: "Send an AI phone call with a custom objective and actions."
   </Accordion>
 </ParamField>
 
-<ParamField body="tools" type="array">
-  Interact with the real world through API calls.
-
-  Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
-</ParamField>
-
-<ParamField body="metadata" type="object">
-  Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls.
-
-  Anything that you put here will be returned in your webhook or in the call details under `metadata`.
-
-  Example:
-  ```json
-  "metadata": {
-    "campaign_id": "1234",
-    "source": "web"
-  }
-  ```
-</ParamField>
-
-<ParamField body="webhook" type="string">
-  When the call ends, we'll send the call details in a POST request to the URL you specify here.
-
-  The request body will match the response from the [GET /v1/calls/:call_id](/api-v1/get/calls-id) endpoint.
-</ParamField>
-
-<ParamField body="analysis_schema" type="object">
-  When the call ends, the transcript and call details will be analyzed by the AI.
+<ParamField body="temperature" type="float" default="0.7">
+  A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
   
-  Define a JSON schema for how you want to get information about the call - information like email addresses, names, appointment times or any other type of custom data.
+  Example Values: ```"0.9", "0.3", "0.5"```
+</ParamField>
 
-  In the webhook response or whenever you retrieve call data later, you'll get the data you defined back under `analysis`.
+<ParamField body="keywords" type="string[]" default="[]">
+  These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
 
-  For example, if you wanted to retrieve this information from the call:
-
+  For example, if the word "Reece" is frequently transcribed as a homonym like "Reese" you could do this:
   ```json
-  "analysis_schema": {
-    "email_address": "email",
-    "first_name": "string",
-    "last_name": "string",
-    "wants_to_book_appointment": "boolean",
-    "appointment_time": "YYYY-MM-DD HH:MM:SS"
+  {
+    "keywords": ["Reece"]
   }
   ```
 
-  You would get it filled out like this in your webhook once the call completes:
-
+  For stronger keyword boosts, you can place a colon then a boost factor after the word. The default boost factor is 2.
   ```json
-  "analysis": {
-    "email_address": "johndoe@gmail.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "wants_to_book_appointment": true,
-    "appointment_time": "2024-01-01 12:00:00"
+  {
+    "keywords": ["Reece:3"]
   }
   ```
 </ParamField>
 
-<ParamField body="record" type="boolean" default="false">
-  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
+<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
+  The pronunciation guide is an `array` of `objects` that guides the agent on how to say specific words. This is great for situations with complicated terms or names. 
+
+  ```json
+    [
+      {
+        "word": "example",
+        "pronunciation": "ex-am-ple",
+        "case_sensitive": "false",
+        "spaced": "false"
+      },
+      {
+        "word": "API",
+        "pronunciation": "A P I",
+        "case_sensitive": "true",
+        "spaced": "true"
+      }
+    ]
+    ```
+
+  
+  <Accordion title="Object Parameters">
+    - `word`
+      — the word you want to guide the LLM on how to pronounce
+    - `pronunciation`
+      — the word you want to guide the LLM on how to pronounce.
+    - `case_sensitive`
+      — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+    - `spaced` 
+      — whether or not to consider spaces. When `true` the word 'high' would be flagged but NOT 'hightop'. Defaults to true. `Not required`.
+    </Accordion>
+ 
 </ParamField>
 
 <ParamField body="transfer_phone_number" type="string">
@@ -285,114 +279,12 @@ description: "Send an AI phone call with a custom objective and actions."
   - Portuguese: ```POR```
 </ParamField>
 
-<ParamField body="max_duration" type="integer" default="30">
-  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
-  
-  Example Values: ```20, 2```
-</ParamField>
+<ParamField body="timezone" type="string" default="America/Los_Angeles">
+  Set the timezone for the call. Handled automatically for calls in the US.
 
-<ParamField body="answered_by_enabled" type="boolean" default={false}>
-  If this is set to true, we process the audio from the start of the call to determine if it was answered by a human or a voicemail.
+  This helps significantly with use cases that rely on appointment setting, scheduling, or behaving differently based on the time of day.
 
-  In the call details or webhook response, you'll see the `answered_by` field with the value `human`, `unknown` or `voicemail`.
-
-  Notes for accuracy:
-  - When `answered_by` is `voicemail` or `human`, that is nearly 100% accurate.
-  - When it is `unknown`, try using text analysis by adding `answered_by` to your `analysis_schema`.
-</ParamField>
-
-<ParamField body="from" type="string">
-  Specify a purchased Outbound Number to call from. Country code is required, spaces or parentheses must be excluded.
-
-  By default, calls are initiated from a separate pool of numbers owned by Bland.
-</ParamField>
-
-<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
-  The pronunciation guide is an `array` of `objects` that guides the LLM on how to say specific words. This is great for situations with complicated terms or names. 
-
-```json
-    [
-      {
-        "word": "example",
-        "pronunciation": "ex-am-ple",
-        "case_sensitive": "false",
-        "spaced": "false"
-      },
-      {
-        "word": "API",
-        "pronunciation": "A P I",
-        "case_sensitive": "true",
-        "spaced": "true"
-      }
-    ]
-    ```
-
-  
-  <Accordion title="Object Parameters">
-      - `word`
-        — the word you want to guide the LLM on how to pronounce
-      - `pronunciation`
-        — the word you want to guide the LLM on how to pronounce.
-      - `case_sensitive`
-        — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
-      - `spaced` 
-        — whether or not to consider spaces. When `true` the word 'high' would be flagged but NOT 'hightop'. Defaults to true. `Not required`.
-      </Accordion>
- 
-</ParamField>
-
-<ParamField body="temperature" type="float" default="0.7">
-  A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
-  
-  Example Values: ```"0.9", "0.3", "0.5"```
-</ParamField>
-
-<ParamField body="start_time" type="string">
-  The time you want the call to start. If you don't specify a time (or the time is in the past), the call will send immediately.
-  
-  Set your time in the format `YYYY-MM-DD HH:MM:SS -HH:MM` (ex. `2021-01-01 12:00:00 -05:00`).
-
-  The timezone is optional, and defaults to UTC if not specified.
-
-  Note: Scheduled calls can be cancelled with the [POST /v1/calls/:call_id/stop](/api-v1/post/calls-id-stop) endpoint.
-</ParamField>
-
-<ParamField body="voicemail_message" type="string">
-  When the AI encounters a voicemail, it will leave this message after the beep and then immediately end the call.
-
-  Warning: If `amd` is set to `true` or `voicemail_action` is set to `ignore`, then this will still work for voicemails, but it will not hang up for IVR systems.
-</ParamField>
-
-<ParamField body="voicemail_action" type="enum" default="hangup">
-  This is processed separately from the AI's decision making, and overrides it.
-
-  Options:
-  - ```hangup```
-  - ```leave_message ```  
-  - ```ignore```
-
-  Examples:
-  - Call is answered by a voicemail (specifically with a beep or tone):
-    - If `voicemail_message` is set, that message will be left and then the call will end.
-    - Otherwise, the call immediately ends (regardless of `amd`)
-
-  - Call is answered by an IVR system or phone tree:
-    - If `amd` is set to `true`, the AI will navigate the system and continue as normal.
-    - If `voicemail_action` is set to `ignore`, the AI will ignore the IVR and continue as normal.
-    - Otherwise, if `voicemail_message` is set then it'll leave that message and end the call.
-    - Finally, if none of those conditions are met, the call will end immediately.
-
-  Note: If `voicemail_message` is set, then the AI will leave the message regardless of the `voicemail_action`.
-</ParamField>
-
-<ParamField body="amd" type="boolean" default="false">
-  AMD mode helps your AI navigate phone trees and IVR systems. If you know your call will hit an automated system you should switch it on. 
-
-  Behavioral changes:
-  - Much higher `interruption_threshold` so that the options are listened to in full.
-  - Underlying prompt is adjusted so the AI is aware it's navigating a phone tree.
-  
-  NOTE: AMD mode causes increased delay for the first response, even if answered by a human. Highly recommended to set to `false` in the majority of cases.
+  Timezone options are [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) in the TZ identifier column.
 </ParamField>
 
 <ParamField body="request_data" type="object">
@@ -411,6 +303,12 @@ description: "Send an AI phone call with a custom objective and actions."
   ```
 
   For further information about how Prompt Variables work, check out the [Custom Tools](/tutorials/custom-tools) tutorial.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Interact with the real world through API calls.
+
+  Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
 </ParamField>
 
 <ParamField body="dynamic_data" type="array">
@@ -477,7 +375,123 @@ description: "Send an AI phone call with a custom objective and actions."
  </Expandable>
 </ParamField>
 
+### Call Parameters (Body)
 
+<ParamField body="start_time" type="string">
+  The time you want the call to start. If you don't specify a time (or the time is in the past), the call will send immediately.
+  
+  Set your time in the format `YYYY-MM-DD HH:MM:SS -HH:MM` (ex. `2021-01-01 12:00:00 -05:00`).
+
+  The timezone is optional, and defaults to UTC if not specified.
+
+  Note: Scheduled calls can be cancelled with the [POST /v1/calls/:call_id/stop](/api-v1/post/calls-id-stop) endpoint.
+</ParamField>
+
+<ParamField body="voicemail_message" type="string">
+  When the AI encounters a voicemail, it will leave this message after the beep and then immediately end the call.
+
+  Warning: If `amd` is set to `true` or `voicemail_action` is set to `ignore`, then this will still work for voicemails, but it will not hang up for IVR systems.
+</ParamField>
+
+<ParamField body="voicemail_action" type="enum" default="hangup">
+  This is processed separately from the AI's decision making, and overrides it.
+
+  Options:
+  - ```hangup```
+  - ```leave_message ```  
+  - ```ignore```
+
+  Examples:
+  - Call is answered by a voicemail (specifically with a beep or tone):
+    - If `voicemail_message` is set, that message will be left and then the call will end.
+    - Otherwise, the call immediately ends (regardless of `amd`)
+
+  - Call is answered by an IVR system or phone tree:
+    - If `amd` is set to `true`, the AI will navigate the system and continue as normal.
+    - If `voicemail_action` is set to `ignore`, the AI will ignore the IVR and continue as normal.
+    - Otherwise, if `voicemail_message` is set then it'll leave that message and end the call.
+    - Finally, if none of those conditions are met, the call will end immediately.
+
+  Note: If `voicemail_message` is set, then the AI will leave the message regardless of the `voicemail_action`.
+</ParamField>
+
+<ParamField body="max_duration" type="integer" default="30">
+  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
+  
+  Example Values: ```20, 2```
+</ParamField>
+
+<ParamField body="record" type="boolean" default="false">
+  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
+</ParamField>
+
+<ParamField body="from" type="string">
+  Specify a phone number to call from that you own or have uploaded from your Twilio account. Country code is required, spaces or parentheses must be excluded.
+
+  By default, calls are initiated from a separate pool of numbers owned by Bland.
+</ParamField>
+
+<ParamField body="webhook" type="string">
+  When the call ends, we'll send the call details in a POST request to the URL you specify here.
+
+  The request body will match the response from the [GET /v1/calls/:call_id](/api-v1/get/calls-id) endpoint.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls.
+
+  Anything that you put here will be returned in your webhook or in the call details under `metadata`.
+
+  Example:
+  ```json
+  "metadata": {
+    "campaign_id": "1234",
+    "source": "web"
+  }
+  ```
+</ParamField>
+
+<ParamField body="analysis_schema" type="object">
+  When the call ends, the transcript and call details will be analyzed by the AI.
+  
+  Define a JSON schema for how you want to get information about the call - information like email addresses, names, appointment times or any other type of custom data.
+
+  In the webhook response or whenever you retrieve call data later, you'll get the data you defined back under `analysis`.
+
+  For example, if you wanted to retrieve this information from the call:
+
+  ```json
+  "analysis_schema": {
+    "email_address": "email",
+    "first_name": "string",
+    "last_name": "string",
+    "wants_to_book_appointment": "boolean",
+    "appointment_time": "YYYY-MM-DD HH:MM:SS"
+  }
+  ```
+
+  You would get it filled out like this in your webhook once the call completes:
+
+  ```json
+  "analysis": {
+    "email_address": "johndoe@gmail.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "wants_to_book_appointment": true,
+    "appointment_time": "2024-01-01 12:00:00"
+  }
+  ```
+</ParamField>
+
+<ParamField body="answered_by_enabled" type="boolean" default={false}>
+  If this is set to true, we process the audio from the start of the call to determine if it was answered by a human or a voicemail.
+
+  In the call details or webhook response, you'll see the `answered_by` field with the value `human`, `unknown` or `voicemail`.
+
+  Notes for accuracy:
+  - When `answered_by` is `voicemail` or `human`, that is nearly 100% accurate.
+  - When it is `unknown`, try using text analysis by adding `answered_by` to your `analysis_schema`.
+</ParamField>
 
 ### Response
 
