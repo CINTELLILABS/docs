@@ -165,12 +165,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
 </ParamField>
 
-<ParamField body="interruption_threshold" type="integer (milliseconds)" default={50}>
-  When you increase the interruption latency, you force the AI phone agent to listen longer before responding. In practice, increasing the threshold results in less interruptions and more latency.
+<ParamField body="interruption_threshold" type="number" default={100}>
+  Adjusts how patient the AI is when waiting for the user to finish speaking.
 
-  Try setting the threshold to `500` milliseconds. You'll encounter higher latency, but you'll be interrupted less frequently.
+  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
 
-  Set to `null` to reset to default.
+  Recommended range: 50-200
+  - 50: Extremely quick, back and forth conversation
+  - 100: Balanced to respond at a natural pace
+  - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
+
+  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
+</ParamField>
+
+<ParamField body="keywords" type="string[]" default="[]">
+  These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
+
+  For example, if the word "Reece" is frequently transcribed as a homonym like "Reese" you could do this:
+  ```json
+  {
+    "keywords": ["Reece"]
+  }
+  ```
+
+  For stronger keyword boosts, you can place a colon then a boost factor after the word. The default boost factor is 2.
+  ```json
+  {
+    "keywords": ["Reece:3"]
+  }
+  ```
 </ParamField>
 
 <ParamField body="max_duration" type="integer (minutes)" default={30}>
