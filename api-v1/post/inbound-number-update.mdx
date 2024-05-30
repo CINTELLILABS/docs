@@ -125,19 +125,93 @@ description: "Update your inbound agent's settings, prompt and other details."
   Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
 </ParamField>
 
-<ParamField body="language" type="string" default="ENG">
+<ParamField body="language" type="string" default="en-US">
   Select a supported language of your choice. 
   Optimizes every part of our API for that language - transcription, speech, and other inner workings.
   
-  Supported Languages and their codes:
-  - English: ```ENG```
-  - Spanish: ```ESP```
-  - French:  ```FRE```
-  - Polish: ```POL```
-  - German: ```GER```
-  - Italian: ```ITA```
-  - Brazilian Portuguese: ```PBR```
-  - Portuguese: ```POR```
+  <Accordion title="Expand to view language options">
+    The available language options are as follows:
+    - `en` - English
+    - `en-US` - English (US)
+    - `en-GB` - English (UK)
+    - `en-AU` - English (Australia)
+    - `en-NZ` - English (New Zealand)
+    - `en-IN` - English (India)
+    - `zh` - Chinese (Mandarin, Simplified)
+    - `zh-CN` - Chinese (Mandarin, Simplified, China)
+    - `zh-Hans` - Chinese (Mandarin, Simplified, Hans)
+    - `zh-TW` - Chinese (Mandarin, Traditional)
+    - `zh-Hant` - Chinese (Mandarin, Traditional, Hant)
+    - `es` - Spanish
+    - `es-419` - Spanish (Latin America)
+    - `fr` - French
+    - `fr-CA` - French (Canada)
+    - `de` - German
+    - `el` - Greek
+    - `hi` - Hindi
+    - `hi-Latn` - Hindi (Latin script)
+    - `ja` - Japanese
+    - `ko` - Korean
+    - `ko-KR` - Korean (Korea)
+    - `pt` - Portuguese
+    - `pt-BR` - Portuguese (Brazil)
+    - `it` - Italian
+    - `nl` - Dutch
+    - `pl` - Polish
+    - `ru` - Russian
+    - `sv` - Swedish
+    - `sv-SE` - Swedish (Sweden)
+    - `da` - Danish
+    - `da-DK` - Danish (Denmark)
+    - `fi` - Finnish
+    - `id` - Indonesian
+    - `ms` - Malay
+    - `tr` - Turkish
+    - `uk` - Ukrainian
+    - `bg` - Bulgarian
+    - `cs` - Czech
+    - `ro` - Romanian
+    - `sk` - Slovak
+  </Accordion>
+</ParamField>
+
+<ParamField body="language_detection_period" type="integer">
+  After this many seconds have passed, the language detection will run and change the AI's language configuration if it's different from the initial setting.
+
+  Shorter periods make the language switch faster, while longer periods are more accurate.
+
+  Valid range: 10-100 seconds.
+
+  The current language at a given moment can be accessed via the `{{language}}` prompt variable in Pathways.
+</ParamField>
+
+<ParamField body="language_detection_options" type="string[]">
+  If `language_detection_period` is set, this array can be used to narrow down the languages that the AI can switch to.
+
+  By default, these select languages can be detected (and switched to) at any time during the call:
+
+  <Accordion title="Expand to view language detection options">
+    - `es` - Spanish
+    - `en` - English
+    - `hi` - Hindi
+    - `ja` - Japanese
+    - `ru` - Russian
+    - `uk` - Ukrainian
+    - `sv` - Swedish
+    - `zh` - Chinese
+    - `pt` - Portuguese
+    - `nl` - Dutch
+    - `tr` - Turkish
+    - `fr` - French
+    - `de` - German
+    - `id` - Indonesian
+    - `ko` - Korean
+    - `it` - Italian
+  </Accordion>
+
+  Any values passed into `language_detection_options` must be from that same list.
+
+  Note: The supported languages and their mappings at any given moment can be accessed through `https://api.bland.ai/v1/languages`.
 </ParamField>
 
 <ParamField body="timezone" type="string" default="America/Los_Angeles">
@@ -266,6 +340,17 @@ description: "Update your inbound agent's settings, prompt and other details."
 <ParamField body="metadata" type="object">
   Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls.
 </ParamField>
+
+<ParamField body="summary_prompt" type="string">
+  At the end of each call, a `summary` is generated based on the transcript - you can use this field to add extra instructions and context for how it should be summarized.
+
+  For example: `"Summarize the call in French instead of English."`
+</ParamField>
+
+<ParamField body="analysis_prompt" type="string">
+  Guides the output and provides additional instructions and clarifications for the `analysis_schema`.
+</ParamField>
+
 
 <ParamField body="record" type="boolean" default="false">
   To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
