@@ -1,0 +1,275 @@
+---
+title: "Get All Pathways Information"
+api: "GET https://api.bland.ai/v1/convo_pathway"
+description: "Returns a set of information about all the conversational pathways in your account - including the name, description, nodes and edges."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="name" type="string">
+  The name of the conversational pathway.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  A description of the conversational pathway.
+</ResponseField>
+
+<ResponseField name="nodes" type="array of objects">
+  Data about all the nodes in the pathway.
+
+  Examples of JSON objects for nodes (Horizontal scroll the tab bar to see more examples)
+
+
+<CodeGroup>
+  ```json Start Node
+    {
+        "id": "1",
+        "type": "Default"
+        "data": {
+            "name": "Start",
+            "text": "Hey there, how are you doing today?",
+            "isStart": true,
+        },
+    
+    ```
+
+  ```json Default Node
+    {
+        "id": "randomnode_1710288871721",
+        "type": "Default"
+        "data": {
+            "name": "New Node",
+            "text": "Select a node or edge and press backspace to remove it",
+            "globalPrompt": "This is a phone call. Do not use exclamation marks.\n\nConvert 24HR format timings to 12 HR format - e.g 14:00 should be written as 2 PM.",
+        },
+    }
+    ```
+    ```json End Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "End Call"
+        "data": {
+            "name": "End call",
+            "prompt": "Say goodbye to the user",
+        },
+    }
+    ```
+
+    ```json Webhook Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "Webhook",
+        "data": {
+            "url": "https://api.bland.ai/reservation",
+            "body": "{\n    \"date\" : \"{{date}}\",\n    \"time\" : \"{{time}}\",\n    \"guests\": {{number_of_people}}\n}",
+            "name": "Reservation Booking",
+            "text": "Please give me a moment as I check our bookings..",
+            "method": "POST",
+            "extractVars": [
+                [
+                    "date",
+                    "string",
+                    "Desired Date of reservation, in MM/DD/YYYY format"
+                ],
+                [
+                    "time",
+                    "string",
+                    "Desired Time of Reservation in 24HR Format e.g 13:30"
+                ],
+                [
+                    "number_of_people",
+                    "integer",
+                    "Number of people for the reservation"
+                ]
+            ],
+            "responseData": [
+                {
+                    "data": "$.reserved",
+                    "name": "reservation_success",
+                    "context": ""
+                },
+                {
+                    "data": "$.available_slots",
+                    "name": "available_slots",
+                    "context": "Available slots for the date provided"
+                }
+            ],
+            "responsePathways": [
+                [
+                    "reservation_success",
+                    "==",
+                    "true",
+                    {
+                        "id": "randomnode_1710288752186",
+                        "name": "Reservation Successful"
+                    }
+                ],
+                [
+                    "reservation_success",
+                    "==",
+                    "false",
+                    {
+                        "id": "randomnode_1712265110018",
+                        "name": "Find new timeslot"
+                    }
+                ]
+            ]
+        }
+    }
+    ```
+    ```json Knowledge Base Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "Knowledge Base",
+        "data": {
+            "name": "Restaurant Questions",
+            "prompt": "Answer any questions that the user may have regarding the restaurant, by referring to the knowledge base you have. \n\nAnswer the question in 1 line, and then ask if they have any more questions."
+            "kb": "Opening Hours : 9am - 5pm\nStore Locations : \n426 Ivy Street San Francisco, \nSan Jose"
+        }
+    }
+    ```
+    ```json Global Node
+    {
+        "id": "randomnode_1710288871721",
+        "type": "Default"
+        "data": {
+            "name": "Answer any questions",
+            "prompt": "You are to answer any questions the user has.",
+            "isGlobal": true,
+            "globalLabel": "user asks a question"
+        },
+    }
+    ```
+    ```json Transfer Call Node
+    {
+        "id": "randomnode_1710288752186",
+        "type": "Transfer Call",
+        "data": {
+            "name": "Transferring the call",
+            "text": "Transferring the call now. Please hold.."
+            "transferNumber": "+19547951234"
+        }
+    }
+    ```
+  </CodeGroup>
+
+  <Accordion title="Node Data Object Parameters">
+      - `name`
+        — name of the node
+      - `isStart`
+        — whether the node is the start node. There can only be 1 start node in a pathway. Either `true` or `false`.
+      - `isGlobal` 
+        — whether the node is a global node. Global nodes are nodes that can be used in multiple pathways. Either `true` or `false`.
+      - `globalLabel`
+        — the label of the global node. Should be present if `isGlobal` is true.
+      - `type`
+        — Type of the node. Can be `Default`, `End Call`, `Transfer Node`, `Knowledge Base`, or `Webhook`.
+      - `text`
+        — If static text is chosen, this is the text that will be said to the user.
+      - `prompt`
+        — If dynamic text is chosen, this is the prompt that will be shown to the user.
+      - `condition`
+        — The condition that needs to be met to proceed from this node.
+      - `transferNumber`
+        - If the node is a transfer node, this is the number to which the call will be transferred.
+      - `kb`
+        - If the node is a knowledge base node, this is the knowledge base that will be used.
+      - `pathwayExamples`
+        - The fine-tuning examples for the agent at this node for the pathways chosen
+      - `conditionExamples`
+        - The fine-tuning examples for the condition at this node for the condition chosen
+      - `dialogueExamples`
+        - The fine-tuning examples for the dialogue at this node for the dialogue chosen.
+      - `modelOptions`
+        - `modelName`
+          — The name of the model to be used for this node.
+        - `interruptionThreshold`
+            — The sensitivity to interruptions at this node
+        - `temperature`
+          — The temperature of the model.
+      - `extractVars`
+        - An array of array of strings. [[`varName`, `varType`, `varDescription`]] e.g `[["name", "string", "The name of the user"], ["age", "integer", "The age of the user"]]`
+      </Accordion>
+
+  
+</ResponseField>
+
+<ResponseField name="edges" type="array of objects">
+    Data about all the edges in the pathway.
+
+    <Accordion title="Edge Object Parameters">
+        - `id`
+            — unique id of the edge
+        - `source`
+            — id of the source node
+        - `target`
+            — id of the target node
+        - `label`
+            — Label for this edge. This is what the agent will use to decide which path to take.
+        </Accordion>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "name": "Default Demo Pathway",
+  "description": null,
+  "nodes": [
+    {
+      "id": "1",
+      "data": {
+        "name": "Start",
+        "text": "Hey there, how are you doing today?",
+        "isStart": true,
+      },
+      "type": "Default"
+    },
+    {
+      "id": "randomnode_1710288752186",
+      "data": {
+        "name": "End call",
+        "prompt": "Click 'Add New Node' on the right to add a new node",
+      },
+      "type": "End Call"
+    },
+    {
+      "id": "randomnode_1710288871721",
+      "data": {
+        "name": "New Node",
+        "text": "Select a node or edge and press backspace to remove it",
+      },
+      "type": "Default"
+    },
+    {
+      "id": "randomnode_test123",
+      "data": {
+        "name": "Testing node",
+        "text": "Hello there"
+      },
+      "type": "Default"
+    }
+  ],
+  "edges": [
+    {
+      "id": "reactflow__edge-1-randomnode_1710288752186",
+      "label": "greeted",
+      "source": "1",
+      "target": "randomnode_1710288752186"
+    },
+    {
+      "id": "reactflow__edge-1-randomnode_1710288871721",
+      "label": "New Edge",
+      "source": "1",
+      "target": "randomnode_1710288871721"
+    }
+  ]
+}
+```
+</ResponseExample>
+
