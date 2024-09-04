@@ -1,0 +1,96 @@
+---
+title: "Get Specific Pathway Version"
+api: "GET https://api.bland.ai/v1/pathway/{pathway_id}/version/{version_id}"
+description: "Retrieves a specific version of a pathway, including its name, nodes, edges, version number, and latest status."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The ID of the pathway.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The ID of the version to retrieve. Use 0 for the live pathway.
+</ParamField>
+
+### Response
+
+<ResponseField name="name" type="string">
+  The name of the pathway version.
+</ResponseField>
+
+<ResponseField name="nodes" type="array of objects">
+  Data about all the nodes in the pathway version.
+
+  <Accordion title="Node Object Parameters">
+    - `id` — Unique identifier of the node
+    - `type` — Type of the node (e.g., "Default", "End Call", "Webhook")
+    - `data` — Object containing node-specific data
+      - `name` — Name of the node
+      - `text` or `prompt` — Text or prompt associated with the node
+      - Other properties specific to the node type
+  </Accordion>
+</ResponseField>
+
+<ResponseField name="edges" type="array of objects">
+  Data about all the edges in the pathway version.
+
+  <Accordion title="Edge Object Parameters">
+    - `id` — Unique identifier of the edge
+    - `source` — ID of the source node
+    - `target` — ID of the target node
+    - `label` — Label for this edge
+  </Accordion>
+</ResponseField>
+
+<ResponseField name="version_number" type="integer">
+  The version number of this pathway version.
+</ResponseField>
+
+<ResponseField name="is_latest" type="boolean">
+  Indicates whether this is the latest version of the pathway.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "name": "Customer Support Flow v2",
+  "nodes": [
+    {
+      "id": "1",
+      "type": "Default",
+      "data": {
+        "name": "Start",
+        "text": "Hello! How can I assist you today?",
+        "isStart": true
+      }
+    },
+    {
+      "id": "2",
+      "type": "End Call",
+      "data": {
+        "name": "End call",
+        "prompt": "Thank you for contacting us. Have a great day!"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1-2",
+      "source": "1",
+      "target": "2",
+      "label": "Issue resolved"
+    }
+  ],
+  "version_number": 2,
+  "is_latest": true
+}
+```
+</ResponseExample>

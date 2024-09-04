@@ -1,0 +1,92 @@
+---
+title: "Create Pathway Version"
+api: "POST https://api.bland.ai/v1/pathway/{pathway_id}/version"
+description: "Creates a new version of a specific pathway, including its name, nodes, and edges."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The ID of the pathway for which to create a new version.
+</ParamField>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  The name of the new pathway version.
+</ParamField>
+
+<ParamField body="nodes" type="array of objects" required>
+  An array of node objects defining the structure of the pathway.
+
+  <Accordion title="Node Object Parameters">
+    - `id` — Unique identifier of the node
+    - `type` — Type of the node (e.g., "Default", "End Call", "Webhook")
+    - `data` — Object containing node-specific data
+      - `name` — Name of the node
+      - `text` or `prompt` — Text or prompt associated with the node
+      - Other properties specific to the node type
+  </Accordion>
+</ParamField>
+
+<ParamField body="edges" type="array of objects" required>
+  An array of edge objects defining the connections between nodes.
+
+  <Accordion title="Edge Object Parameters">
+    - `id` — Unique identifier of the edge
+    - `source` — ID of the source node
+    - `target` — ID of the target node
+    - `label` — Label for this edge
+  </Accordion>
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  The status of the operation (e.g., "success").
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  A message describing the result of the operation.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="created_at" type="string">
+      The timestamp when the new version was created.
+    </ResponseField>
+
+    <ResponseField name="id" type="string">
+      The unique identifier of the newly created version.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      The name of the newly created version.
+    </ResponseField>
+
+    <ResponseField name="version_number" type="integer">
+      The version number of the newly created version.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Version created successfully",
+  "data": {
+    "created_at": "2024-03-07T10:15:30Z",
+    "id": "v3_ghi789",
+    "name": "Improved Customer Flow",
+    "version_number": 3
+  }
+}
+```
+</ResponseExample>
