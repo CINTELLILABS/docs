@@ -1,0 +1,70 @@
+---
+title: "Update Pathway Version"
+api: "POST https://api.bland.ai/v1/pathway/{pathway_id}/version/{version_number}"
+description: "Updates a specific version of a pathway, including its version name, nodes, and edges."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The ID of the pathway for which to create a new version.
+</ParamField>
+
+<ParamField path="version_number" type="integer" required>
+  The version number of the pathway to update.
+</ParamField>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  The name of the new pathway version.
+</ParamField>
+
+<ParamField body="nodes" type="array of objects" required>
+  An array of node objects defining the structure of the pathway.
+
+  <Accordion title="Node Object Parameters">
+    - `id` — Unique identifier of the node
+    - `type` — Type of the node (e.g., "Default", "End Call", "Webhook")
+    - `data` — Object containing node-specific data
+      - `name` — Name of the node
+      - `text` or `prompt` — Text or prompt associated with the node
+      - Other properties specific to the node type
+  </Accordion>
+</ParamField>
+
+<ParamField body="edges" type="array of objects" required>
+  An array of edge objects defining the connections between nodes.
+
+  <Accordion title="Edge Object Parameters">
+    - `id` — Unique identifier of the edge
+    - `source` — ID of the source node
+    - `target` — ID of the target node
+    - `label` — Label for this edge
+  </Accordion>
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  The status of the operation (e.g., "success").
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  A message describing the result of the operation.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Version updated successfully"
+}
+```
+</ResponseExample>
