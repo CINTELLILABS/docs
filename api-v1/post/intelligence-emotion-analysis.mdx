@@ -1,0 +1,89 @@
+---
+title: "Analyze Call Emotions"
+api: "POST https://api.example.com/emotion_analysis/analyze"
+description: "Analyze the emotional content of a call recording using AI intelligence."
+---
+
+## Overview
+
+Use advanced AI to analyze the emotional content of a call recording and determine the dominant emotion expressed during the conversation. This intelligence endpoint processes audio recordings up to 25MB in size and returns the primary detected emotion along with analysis metadata.
+
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be set to `application/json`.
+</ParamField>
+
+---
+
+### Body
+
+<ParamField body="call_id" type="string" required>
+  The unique identifier of the call to analyze. This should be a call ID from a previous call made through the system.
+</ParamField>
+
+---
+
+### Response
+
+<ResponseField name="data" type="object">
+  The outer response wrapper.
+
+  <Expandable title="properties">
+    <ResponseField name="status" type="string">
+      The status of the analysis request. Will be "success" for successful analyses.
+    </ResponseField>
+
+    <ResponseField name="data" type="object">
+      Object containing the analysis results.
+      
+      <Expandable title="properties">
+        <ResponseField name="emotion" type="string">
+          The dominant emotion detected in the call. Can be one of: "neutral", "happy", "angry", "sad", or "fear".
+        </ResponseField>
+
+        <ResponseField name="callId" type="string">
+          The ID of the analyzed call.
+        </ResponseField>
+
+        <ResponseField name="analyzedAt" type="string">
+          ISO timestamp indicating when the analysis was completed.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="object">
+  Will be null for successful requests. Contains error details when the request fails.
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "status": "success",
+    "data": {
+      "emotion": "angry",
+      "callId": "682a5074-d28c-4a5b-8663-4288197858b7",
+      "analyzedAt": "2025-01-07T00:52:43.960Z"
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+### Error Responses
+
+- **413 Payload Too Large**: Returned when the audio file exceeds the 25MB size limit
+- **404 Not Found**: Returned when the specified call_id does not exist
+- **401 Unauthorized**: Returned when the API key is invalid or missing 
