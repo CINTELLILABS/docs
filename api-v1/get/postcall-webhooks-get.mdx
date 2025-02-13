@@ -1,0 +1,80 @@
+---
+title: "Get Post Call Webhook"
+api: "GET https://api.bland.ai/v1/postcall/webhooks/{call_id}"
+description: "Get the post call webhook data for a specific call."
+---
+
+## Overview
+
+Retrieve the post call webhook data for a specific call using its call ID. This endpoint returns the webhook data that was sent when the call completed.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your org API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The unique identifier of the call to get the webhook data for.
+</ParamField>
+
+---
+
+## Response
+<ResponseField name="data" type="object">
+  The post call webhook and send history for this call.
+  <Expandable title="Properties">
+    <ResponseField name="payload" type="object">
+      The post call webhook payload, contains information about the call.
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      The URL the payload inforamtion was sent to
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Timestamp of when the webhook was first sent
+    </ResponseField>
+    <ResponseField name="call_id" type="string">
+      The call ID associated with this webhook
+    </ResponseField>
+    <ResponseField name="user_id" type="string">
+      The ID of the org this webhook was sent from
+    </ResponseField>
+    <ResponseField name="metadata" type="array">
+      Array of objects containing metadata about webhook spawns, creates, and resends. Each object has the following properties:
+      <Expandable title="Array Item Properties">
+        <ResponseField name="sent_at" type="string">
+          Timestamp of when this webhook attempt was sent
+        </ResponseField>
+        <ResponseField name="response_code" type="integer">
+          HTTP response code received from the webhook endpoint
+        </ResponseField>
+        <ResponseField name="response_time" type="string">
+          Time taken to receive a response from the webhook endpoint, appended with "ms"
+        </ResponseField>
+        <ResponseField name="send_type" type="string">
+          How this webhook was triggered. Can be:
+          - "resend": Webhook was manually resent
+          - "create": Webhook was recreated outside normal flow
+          - "spawn": Webhook was created by normal call flow
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="errors" type="array">
+  Array of error objects if returned.
+  <Expandable title="Array Item Properties">
+    <ResponseField name="error" type="string">
+      The error code.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      The error message.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

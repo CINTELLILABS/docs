@@ -1,0 +1,86 @@
+---
+title: "Resend Post Call Webhook" 
+api: "POST https://api.bland.ai/v1/postcall/webhooks/resend"
+description: "Resend post call webhooks for specified calls."
+---
+
+## Overview
+
+Resend post call webhooks for one or more call IDs. This endpoint allows you to manually trigger a resend of webhooks that were previously sent when calls completed. This endpoint can only re-send webhooks that were previously sent when calls completed. Webhooks will be re-sent to the same URL they were previously sent to.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="call_ids" type="array" required>
+  Array of call IDs to resend webhooks for. Each call ID must be unique within the array.
+  <Expandable title="Array Item Properties">
+    <ResponseField name="call_id" type="string">
+      The unique identifier of a call to resend the webhook for.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of webhook log objects for each resent webhook.
+  <Expandable title="Array Item Properties">
+    <ResponseField name="call_id" type="string">
+      The unique identifier of the call this webhook is for.
+    </ResponseField>
+    <ResponseField name="payload" type="object">
+      The webhook payload data that was resent.
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      The URL the webhook was resent to.
+    </ResponseField>
+    <ResponseField name="user_id" type="string">
+      The ID of the user/org that owns this webhook.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Timestamp of when the webhook was originally created.
+    </ResponseField>
+    <ResponseField name="metadata" type="array">
+      Array of metadata objects about webhook send attempts.
+      <Expandable title="Array Item Properties">
+        <ResponseField name="sent_at" type="string">
+          Timestamp of when this webhook attempt was sent.
+        </ResponseField>
+        <ResponseField name="response_code" type="integer">
+          HTTP response code received from the webhook endpoint.
+        </ResponseField>
+        <ResponseField name="response_time" type="string">
+          Time taken to receive a response from the webhook endpoint.
+        </ResponseField>
+        <ResponseField name="send_type" type="string">
+          How this webhook was triggered (will be "resend" in this case).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Array of error objects if any errors occurred.
+  <Expandable title="Array Item Properties">
+    <ResponseField name="error" type="string">
+      The error code. Possible values:
+      - "invalid_parameter": Invalid request parameters
+      - "INTERNAL_SERVER_ERROR": Server error occurred
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Detailed error message.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
