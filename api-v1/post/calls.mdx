@@ -132,6 +132,38 @@ In nearly all cases, enhanced is the best choice.
   Example Values: "0.9", "0.3", "0.5"
 
 </ParamField>
+
+<ParamField body="dynamic_data" type="object[]">
+  Integrate data from external APIs into your agent's knowledge. 
+
+  Set to `null` or an empty string to clear dynamic data settings.
+
+  ```json
+    "dynamic_data": [
+      {
+        "url": "endpoint",
+        "method": "GET",
+        "body": [],
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "query": [],
+        "cache": true,
+        "response_data": [
+          {
+            "context": "",
+            "data": "$",
+            "name": ""
+          }
+        ]
+      }
+    ],
+  ```
+</ParamField>
+
 <ParamField body="keywords" type="string[]" default="[]">
   These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
 
@@ -269,9 +301,12 @@ Example usage to route calls to different departments:
     - `hu` -  
     - `no` - Norwegian
     - `vi` - Vietnamese
-    - `babel` - Babel (Experimental)
+    - `babel` - Babel (Experimental<sup>1</sup>)
 
+    <sup>1</sup> The Bland Babel Transcription Engine (BETA) is our new proprietary transcription engine! Babel can handle multilingual conversations by identifying and switching languages on the fly. It's now in beta and available under the "babel" language mode.
+**Note: For pathway calls and prompts, make sure to prompt your agent to respond in the language they are spoken to.**
   </Accordion>
+  
 </ParamField>
 <ParamField body="pathway_version" type="integer">
   The version number of the pathway to use for the call. Defaults to the production version.
@@ -310,46 +345,7 @@ The times will be automatically converted to UTC for processing. If the end time
 <ParamField body="ignore_button_press" type="boolean" default="false">
   When `true`, DTMF (digit) presses are ignored, disabling menu navigation or call transfers triggered by keypad input.
 </ParamField>
-<ParamField body="language_detection_period" type="integer">
-  After this many seconds have passed, the language detection will run and change the AI's language configuration if it's different from the initial setting.
 
-
-Shorter periods make the language switch faster, while longer periods are more accurate.
-
-Valid range: 10-100 seconds.
-
-The current language at a given moment can be accessed via the \{\{language\}\} prompt variable in Pathways.
-
-</ParamField>
-<ParamField body="language_detection_options" type="string[]">
-  If `language_detection_period` is set, this array can be used to narrow down the languages that the AI can switch to.
-
-
-By default, these select languages can be detected (and switched to) at any time during the call:
-
-  <Accordion title="Expand to view language detection options">
-    - `es` - Spanish
-    - `en` - English
-    - `hi` - Hindi
-    - `ja` - Japanese
-    - `ru` - Russian
-    - `uk` - Ukrainian
-    - `sv` - Swedish
-    - `zh` - Chinese
-    - `pt` - Portuguese
-    - `nl` - Dutch
-    - `tr` - Turkish
-    - `fr` - French
-    - `de` - German
-    - `id` - Indonesian
-    - `ko` - Korean
-    - `it` - Italian
-  </Accordion>
-
-Any values passed into language_detection_options must be from that same list.
-
-Note: The supported languages and their mappings at any given moment can be accessed through https://api.bland.ai/v1/languages.
-</ParamField>
 <ParamField body="timezone" type="string" default="America/Los_Angeles">
   Set the timezone for the call. Handled automatically for calls in the US.
 

@@ -132,6 +132,19 @@ description: "Update your inbound agent's settings, prompt and other details."
   </Accordion>
 </ParamField>
 
+<ParamField body="request_data" type="object" default="{}">
+  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task. This data is accessible in variables if the call is answered.
+  For example, let's say in your app you want to programmatically set the name of the person you're calling. You could set `request_data` to:
+```json Example
+  {
+    "task": "Say hello to the user, who's name is {{name}}", // also works in the prompt, tools, etc.
+    "request_data": {
+      "name": "John Doe"
+    }
+  }
+```
+</ParamField>
+
 <ParamField body="tools" type="array">
   Interact with the real world through API calls.
 
@@ -194,45 +207,6 @@ description: "Update your inbound agent's settings, prompt and other details."
   </Accordion>
 </ParamField>
 
-<ParamField hidden="language_detection_period" type="integer">
-  After this many seconds have passed, the language detection will run and change the AI's language configuration if it's different from the initial setting.
-
-  Shorter periods make the language switch faster, while longer periods are more accurate.
-
-  Valid range: 10-100 seconds.
-
-  The current language at a given moment can be accessed via the `{{language}}` prompt variable in Pathways.
-</ParamField>
-
-<ParamField hidden="language_detection_options" type="string[]">
-  If `language_detection_period` is set, this array can be used to narrow down the languages that the AI can switch to.
-
-  By default, these select languages can be detected (and switched to) at any time during the call:
-
-  <Accordion title="Expand to view language detection options">
-    - `es` - Spanish
-    - `en` - English
-    - `hi` - Hindi
-    - `ja` - Japanese
-    - `ru` - Russian
-    - `uk` - Ukrainian
-    - `sv` - Swedish
-    - `zh` - Chinese
-    - `pt` - Portuguese
-    - `nl` - Dutch
-    - `tr` - Turkish
-    - `fr` - French
-    - `de` - German
-    - `id` - Indonesian
-    - `ko` - Korean
-    - `it` - Italian
-  </Accordion>
-
-  Any values passed into `language_detection_options` must be from that same list.
-
-  Note: The supported languages and their mappings at any given moment can be accessed through `https://api.bland.ai/v1/languages`.
-</ParamField>
-
 <ParamField body="timezone" type="string" default="America/Los_Angeles">
   Set the timezone for the call. Handled automatically for calls in the US.
 
@@ -278,7 +252,7 @@ description: "Update your inbound agent's settings, prompt and other details."
 
   Set to `null` or an empty string to clear dynamic data settings.
 
-  Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
+  Detailed usage in the [Send Call](/api-v1/post/calls#param-dynamic-data) endpoint.
 </ParamField>
 
 <ParamField body="interruption_threshold" type="number" default={100}>
