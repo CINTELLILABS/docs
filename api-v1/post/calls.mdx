@@ -132,6 +132,38 @@ In nearly all cases, enhanced is the best choice.
   Example Values: "0.9", "0.3", "0.5"
 
 </ParamField>
+
+<ParamField body="dynamic_data" type="object[]">
+  Integrate data from external APIs into your agent's knowledge. 
+
+  Set to `null` or an empty string to clear dynamic data settings.
+
+  ```json
+    "dynamic_data": [
+      {
+        "url": "endpoint",
+        "method": "GET",
+        "body": [],
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "query": [],
+        "cache": true,
+        "response_data": [
+          {
+            "context": "",
+            "data": "$",
+            "name": ""
+          }
+        ]
+      }
+    ],
+  ```
+</ParamField>
+
 <ParamField body="keywords" type="string[]" default="[]">
   These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
 
@@ -223,38 +255,40 @@ Example usage to route calls to different departments:
 
   <Accordion title="Expand to view language options">
     The available language options are as follows:
+    - `auto` - Auto Detect
     - `en` - English
-    - `en-US` - English (US)
-    - `en-GB` - English (UK)
-    - `en-AU` - English (Australia)
-    - `en-NZ` - English (New Zealand)
-    - `en-IN` - English (India)
+        - `en-US` - English (US)
+        - `en-GB` - English (UK)
+        - `en-AU` - English (Australia)
+        - `en-NZ` - English (New Zealand)
+        - `en-IN` - English (India)
     - `zh` - Chinese (Mandarin, Simplified)
-    - `zh-CN` - Chinese (Mandarin, Simplified, China)
-    - `zh-Hans` - Chinese (Mandarin, Simplified, Hans)
+        - `zh-CN` - Chinese (Mandarin, Simplified, China)
+        - `zh-Hans` - Chinese (Mandarin, Simplified, Hans)
     - `zh-TW` - Chinese (Mandarin, Traditional)
-    - `zh-Hant` - Chinese (Mandarin, Traditional, Hant)
+        - `zh-Hant` - Chinese (Mandarin, Traditional, Hant)
     - `es` - Spanish
-    - `es-419` - Spanish (Latin America)
+        - `es-419` - Spanish (Latin America)
     - `fr` - French
-    - `fr-CA` - French (Canada)
+        - `fr-CA` - French (Canada)
     - `de` - German
     - `el` - Greek
     - `hi` - Hindi
-    - `hi-Latn` - Hindi (Latin script)
+        - `hi-Latn` - Hindi (Latin script)
     - `ja` - Japanese
     - `ko` - Korean
-    - `ko-KR` - Korean (Korea)
+        - `ko-KR` - Korean (Korea)
     - `pt` - Portuguese
-    - `pt-BR` - Portuguese (Brazil)
+        - `pt-BR` - Portuguese (Brazil)
+        - `pt-PT` - Portuguese (Portugal)
     - `it` - Italian
     - `nl` - Dutch
     - `pl` - Polish
     - `ru` - Russian
     - `sv` - Swedish
-    - `sv-SE` - Swedish (Sweden)
+        - `sv-SE` - Swedish (Sweden)
     - `da` - Danish
-    - `da-DK` - Danish (Denmark)
+        - `da-DK` - Danish (Denmark)
     - `fi` - Finnish
     - `id` - Indonesian
     - `ms` - Malay
@@ -264,7 +298,15 @@ Example usage to route calls to different departments:
     - `cs` - Czech
     - `ro` - Romanian
     - `sk` - Slovak
+    - `hu` - Hungarian
+    - `no` - Norwegian
+    - `vi` - Vietnamese
+    - `babel` - Babel (Experimental<sup>1</sup>)
+
+    <sup>1</sup> The Bland Babel Transcription Engine (BETA) is our new proprietary transcription engine! Babel can handle multilingual conversations by identifying and switching languages on the fly. It's now in beta and available under the "babel" language mode.
+**Note: For pathway calls and prompts, make sure to prompt your agent to respond in the language they are spoken to.**
   </Accordion>
+  
 </ParamField>
 <ParamField body="pathway_version" type="integer">
   The version number of the pathway to use for the call. Defaults to the production version.
@@ -303,46 +345,7 @@ The times will be automatically converted to UTC for processing. If the end time
 <ParamField body="ignore_button_press" type="boolean" default="false">
   When `true`, DTMF (digit) presses are ignored, disabling menu navigation or call transfers triggered by keypad input.
 </ParamField>
-<ParamField body="language_detection_period" type="integer">
-  After this many seconds have passed, the language detection will run and change the AI's language configuration if it's different from the initial setting.
 
-
-Shorter periods make the language switch faster, while longer periods are more accurate.
-
-Valid range: 10-100 seconds.
-
-The current language at a given moment can be accessed via the \{\{language\}\} prompt variable in Pathways.
-
-</ParamField>
-<ParamField body="language_detection_options" type="string[]">
-  If `language_detection_period` is set, this array can be used to narrow down the languages that the AI can switch to.
-
-
-By default, these select languages can be detected (and switched to) at any time during the call:
-
-  <Accordion title="Expand to view language detection options">
-    - `es` - Spanish
-    - `en` - English
-    - `hi` - Hindi
-    - `ja` - Japanese
-    - `ru` - Russian
-    - `uk` - Ukrainian
-    - `sv` - Swedish
-    - `zh` - Chinese
-    - `pt` - Portuguese
-    - `nl` - Dutch
-    - `tr` - Turkish
-    - `fr` - French
-    - `de` - German
-    - `id` - Indonesian
-    - `ko` - Korean
-    - `it` - Italian
-  </Accordion>
-
-Any values passed into language_detection_options must be from that same list.
-
-Note: The supported languages and their mappings at any given moment can be accessed through https://api.bland.ai/v1/languages.
-</ParamField>
 <ParamField body="timezone" type="string" default="America/Los_Angeles">
   Set the timezone for the call. Handled automatically for calls in the US.
 
@@ -353,7 +356,7 @@ Timezone options are here in the TZ identifier column.
 
 </ParamField>
 <ParamField body="request_data" type="object">
-  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task.
+  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task. This data is accessible in variables if the call is answered.
   For example, let's say in your app you want to programmatically set the name of the person you're calling. You could set `request_data` to:
 ```json
   {
@@ -385,7 +388,7 @@ Note: Scheduled calls can be cancelled with the POST /v1/calls/:call_id/stop end
   When the AI encounters a voicemail, it will leave this message after the beep and then immediately end the call.
 
 
-Warning: If amd is set to true or voicemail_action is set to ignore, then this will still work for voicemails, but it will not hang up for IVR systems.
+Warning: If ivr_mode is set to true or voicemail_action is set to ignore, then this will still work for voicemails, but it will not hang up for IVR systems.
 
 </ParamField>
 <ParamField body="voicemail_action" type="enum" default="hangup">
@@ -393,19 +396,19 @@ Warning: If amd is set to true or voicemail_action is set to ignore, then this w
 
 
 Options:
-	•	hangup
-	•	leave_message
-	•	ignore
+- hangup
+- leave_message
+- ignore
 
 Examples:
-	•	Call is answered by a voicemail (specifically with a beep or tone):
-	•	If voicemail_message is set, that message will be left and then the call will end.
-	•	Otherwise, the call immediately ends (regardless of amd)
-	•	Call is answered by an IVR system or phone tree:
-	•	If amd is set to true, the AI will navigate the system and continue as normal.
-	•	If voicemail_action is set to ignore, the AI will ignore the IVR and continue as normal.
-	•	Otherwise, if voicemail_message is set then it’ll leave that message and end the call.
-	•	Finally, if none of those conditions are met, the call will end immediately.
+- Call is answered by a voicemail (specifically with a beep or tone):
+- If voicemail_message is set, that message will be left and then the call will end.
+- Otherwise, the call immediately ends (regardless of ivr_mode)
+- Call is answered by an IVR system or phone tree:
+- If ivr_mode is set to true, the AI will navigate the system and continue as normal.
+- If voicemail_action is set to ignore, the AI will ignore the IVR and continue as normal.
+- Otherwise, if voicemail_message is set then it’ll leave that message and end the call.
+- Finally, if none of those conditions are met, the call will end immediately.
 
 Note: If voicemail_message is set, then the AI will leave the message regardless of the voicemail_action.
 </ParamField>
@@ -447,8 +450,6 @@ By default, calls are initiated from a separate pool of numbers owned by Bland. 
 </ParamField>
 <ParamField body="webhook" type="string">
   When the call ends, call information is sent to this webhook URL.
-
-
 </ParamField>
 <ParamField body="webhook_events" type="string[]">
     Specify which events you want to stream to the webhook, during the call.
@@ -475,7 +476,7 @@ Example Payload:
 
 </ParamField>
 <ParamField body="metadata" type="object">
-  Add any additional information you want to associate with the call. This can be used to track calls or add custom data to the call.
+Add any additional information you want to associate with the call. This data is accessible for all calls, regardless of if they are picked up or not. This can be used to track calls or add custom data to the call.
 
 
 Anything that you put here will be returned in the post call webhook under metadata.
@@ -505,6 +506,29 @@ Example:
   }
   ```
 </ParamField>
+<ParamField body="available_tags" type="string[]">
+ An array of disposition tags. Uopon call completion, the AI will evaluate the transcripts of the call and assign one of the tags to the "disposition_tag" field. Tags are assigned exclusively by looking at the transcript and no other information.
+
+Example:
+
+```json
+  {
+    "available_tags": ["got_full_name_and_number", "no_information_provided", "transferred_to_agent"]
+  }
+  ```
+</ParamField>
+
+<ParamField body="geospatial_dialing" type="string">
+  The geospatial dialing pool UUID. This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
+
+Example:
+
+```json
+  {
+    "geospatial_dialing": "bd039087-decb-435a-a6e3-ca1ffbf89974"
+  }
+  ```
+</ParamField>
 <ResponseField name="status" type="string">
   Can be `success` or `error`.
 </ResponseField>
@@ -514,13 +538,9 @@ Example:
 <ResponseField name="batch_id" type="string">
   The batch ID of the call (present only if status is `success`).
 </ResponseField>
-
-
 <ResponseField name="message" type="string">
   A message explaining the status of the call.
 </ResponseField>
-
-
 <ResponseField name="errors" type="array">
   For validation errors, a detailed list of each field with an error and it's error message.
 
