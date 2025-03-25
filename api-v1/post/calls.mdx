@@ -106,23 +106,26 @@ Recommended range: 50-200
 Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
 
 </ParamField>
-<ParamField body="model" type="string" default="enhanced">
+<ParamField body="model" type="string" default="base">
   Select a model to use for your call.
 
+  Options: `base` or `turbo`.
 
-Options: base, turbo and enhanced.
-
-In nearly all cases, enhanced is the best choice.
+  In nearly all cases, `base` is the best choice.
 
   <Accordion title="Model Differences">
-	model: enhanced
-	- Much faster latency and very conversational, works best with objective-based prompts.
-	- Supports all features and capabilities.
-  
-	model: turbo
-	- The absolute fastest latency possible, can be verbose at times
-	- Limited capabilities currently (excludes Transferring, IVR navigation, Custom Tools)
-	- Extremely realistic conversation capabilities
+
+  There are two different ways to use Bland:
+
+  - `model: base`
+    - The original, follows scripts/procedures most effectively.
+    - Supports all features and capabilities.
+    - Best for Custom Tools
+
+  - `model: turbo`
+    - The absolute fastest latency possible, can be verbose at times
+    - Limited capabilities currently (excludes Transferring, IVR navigation, Custom Tools)
+    - Extremely realistic conversation capabilities
 
   </Accordion>
 </ParamField>
@@ -314,8 +317,20 @@ Example usage to route calls to different departments:
 <ParamField body="local_dialing" type="boolean" default="false">
   When `true`, automatically selects a "from" number that matches the callee's area code for US-based calls. Must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
 </ParamField>
-<ParamField body="voicemail_sms" type="boolean" default="false">
-  When `true`, if a voicemail is left, an SMS is also sent to the callee (requires SMS configuration).
+<ParamField body="voicemail_sms" type="object">
+  Configure SMS settings for voicemail notifications. If a voicemail is left, an SMS message is sent to the "to" number. Requires SMS configuration.
+
+  Properties:
+  - `from` (string): The phone number to send the SMS from
+  - `message` (string): The message template to send when a voicemail is left
+
+  Example:
+  ```json
+  {
+    "to": "+18001234567",
+    "message": "You have a new voicemail!"
+  }
+  ```
 </ParamField>
 <ParamField body="dispatch_hours" type="object">
   Restricts calls to certain hours in your timezone. Specify the timezone and time windows using 24-hour format.
