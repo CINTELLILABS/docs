@@ -1,0 +1,101 @@
+---
+title: "Get Batch Logs"
+api: "GET https://api.bland.ai/v2/batches/{batch_id}/logs"
+description: "Retrieve logs for a specific batch."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="batch_id" type="string" required>
+  The unique identifier of the batch whose logs you want to fetch.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="take" type="integer">
+  Optional. The number of log entries to return.
+</ParamField>
+
+<ParamField query="skip" type="integer">
+  Optional. The number of log entries to skip (used for pagination).
+</ParamField>
+
+<ParamField query="direction" type="string">
+  Optional. Sort order of logs.
+  <br/>Valid values: `"asc"` or `"desc"` (default is `"desc"`).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  A list of log entries related to the batch's lifecycle and execution.
+</ResponseField>
+
+<ResponseField name="data[].id" type="string">
+  The unique identifier for the log entry.
+</ResponseField>
+
+<ResponseField name="data[].batch_id" type="string">
+  The ID of the batch associated with the log.
+</ResponseField>
+
+<ResponseField name="data[].org_id" type="string">
+  The organization ID tied to the batch.
+</ResponseField>
+
+<ResponseField name="data[].event_type" type="string">
+  The type of log event.  
+  <br/>Examples: `"lifecycle"`, `"complete"`
+</ResponseField>
+
+<ResponseField name="data[].timestamp" type="string (ISO 8601)">
+  The time the log was generated.
+</ResponseField>
+
+<ResponseField name="data[].payload" type="object">
+  Additional information related to the event. Contents vary depending on the `event_type`.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "6398342c-d7de-4a11-ba86-3d86e5746699",
+      "batch_id": "f6ef9224-0ec3-43e4-98a1-bb2a8765d110",
+      "org_id": "f52eb4b2-c8b6-44a6-a36c-2749aa930c86",
+      "event_type": "complete",
+      "timestamp": "2025-05-08T19:28:42.748Z",
+      "payload": {
+        "calls_total": 1,
+        "calls_failed": 0,
+        "calls_successful": 1
+      }
+    },
+    {
+      "id": "a24616b4-be8f-42e4-be29-4c5ec005756c",
+      "batch_id": "f6ef9224-0ec3-43e4-98a1-bb2a8765d110",
+      "org_id": "f52eb4b2-c8b6-44a6-a36c-2749aa930c86",
+      "event_type": "lifecycle",
+      "timestamp": "2025-05-08T19:28:15.560Z",
+      "payload": {
+        "message": "Requested: 1. Validated: 1. Dispatched: 1. CPS: 1.12.",
+        "state_change": "in_progress"
+      }
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
