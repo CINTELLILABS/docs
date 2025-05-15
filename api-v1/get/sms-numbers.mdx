@@ -1,0 +1,103 @@
+---
+title: "List SMS Numbers"
+api: "GET https://api.bland.ai/v1/sms/numbers"
+description: "Retrieve all phone numbers configured for SMS, along with their configuration and conversation counts."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  A list of phone numbers with SMS configurations.
+</ResponseField>
+
+<ResponseField name="data[].phone_number" type="string">
+  The E.164 formatted phone number assigned to the user.
+</ResponseField>
+
+<ResponseField name="data[].sms_config" type="object">
+  The configuration used when handling inbound SMS messages.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.webhook" type="string">
+ When the agent sends a response, we’ll send the message details in a POST request to the URL you specify here, along with chat history.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.request_data" type="object">
+  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task. 
+</ResponseField>
+
+<ResponseField name="data[].sms_config.time_out" type="number">
+  Maximum time to wait for a response. Default is no timeout.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.messaging_service_sid" type="string">
+  Twilio Messaging Service SID, if set.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.objective" type="string">
+  The assistant’s objective or system instruction.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.tools" type="array">
+  A list of tools available to the assistant.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.temperature" type="number">
+  The model’s temperature setting, controlling creativity.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.pathway_id" type="string">
+  The ID of the linked conversational pathway (if any).
+</ResponseField>
+
+<ResponseField name="data[].sms_config.pathway_version" type="string">
+  The specific version of the pathway to use.
+</ResponseField>
+
+<ResponseField name="data[].sms_config.start_node_id" type="string">
+  The ID of the first node to enter in the pathway.
+</ResponseField>
+
+<ResponseField name="data[].conversation_count" type="integer">
+  The number of SMS conversations handled by this number.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": [
+    {
+      "phone_number": "+14155552671",
+      "sms_config": {
+        "webhook": "https://example.com/sms-webhook",
+        "request_data": { "ref": "campaign_123" },
+        "time_out": 15,
+        "messaging_service_sid": "MG1234567890abcdef",
+        "objective": "Provide quick support to customers.",
+        "tools": ["lookup", "escalate"],
+        "temperature": 0.7,
+        "pathway_id": "abc123",
+        "pathway_version": "latest",
+        "start_node_id": "entry-node"
+      },
+      "conversation_count": 34
+    }
+  ],
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+

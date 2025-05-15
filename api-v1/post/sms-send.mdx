@@ -1,0 +1,65 @@
+---
+title: "Send SMS Message"
+api: "POST https://api.bland.ai/v1/sms/send"
+description: "Send an SMS message from an agent to a user. This creates or resumes a conversation and triggers processing workflows."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. Use the format: `Bearer YOUR_API_KEY`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="user_number" type="string" required>
+  The E.164 formatted phone number of the user receiving the message.
+</ParamField>
+
+<ParamField body="agent_number" type="string" required>
+  The E.164 formatted phone number used to send the message (must belong to the authenticated account).
+</ParamField>
+
+<ParamField body="agent_message" type="string" required>
+  The content of the SMS message to send.
+</ParamField>
+
+<ParamField body="request_data" type="object" required={false}>
+  Optional metadata to associate with the conversation or message. Used for custom routing or analytics.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  An object confirming the message was sent and referencing the triggered workflow.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Confirmation text for the successful send.
+</ResponseField>
+
+<ResponseField name="data.conversation_id" type="string">
+  ID of the conversation that was created or resumed.
+</ResponseField>
+
+<ResponseField name="data.workflow_id" type="string">
+  ID of the Temporal workflow triggered to process the message.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "SMS sent successfully",
+    "conversation_id": "convo_abc123",
+    "workflow_id": "workflow_xyz789"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+

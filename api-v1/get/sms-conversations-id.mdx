@@ -1,0 +1,139 @@
+---
+title: "Get Conversation by ID"
+api: "GET https://api.bland.ai/v1/sms/conversations/{id}"
+description: "Retrieve a single SMS conversation and its messages by its ID"
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique ID of the conversation to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The full conversation object, including its messages.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  The unique ID of the conversation.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp for when the conversation was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO timestamp for when the conversation was last updated.
+</ResponseField>
+
+<ResponseField name="data.user_number" type="string">
+  The user's phone number in the conversation.
+</ResponseField>
+
+<ResponseField name="data.agent_number" type="string">
+  The assistant's phone number in the conversation.
+</ResponseField>
+
+<ResponseField name="data.variables" type="object|null">
+  Variables stored on the conversation, or `null` if none.
+</ResponseField>
+
+<ResponseField name="data.current_node_id" type="string|null">
+  The current node ID in the pathway, if any.
+</ResponseField>
+
+<ResponseField name="data.is_active" type="boolean">
+  Whether the conversation is still active.
+</ResponseField>
+
+<ResponseField name="data.messages" type="array">
+  An array of message objects in the conversation, sorted chronologically.
+</ResponseField>
+
+<ResponseField name="data.messages[].id" type="string">
+  Unique ID of the message.
+</ResponseField>
+
+<ResponseField name="data.messages[].created_at" type="string">
+  ISO timestamp of when the message was created.
+</ResponseField>
+
+<ResponseField name="data.messages[].message" type="string">
+  The message body.
+</ResponseField>
+
+<ResponseField name="data.messages[].from" type="string">
+  Sender phone number.
+</ResponseField>
+
+<ResponseField name="data.messages[].to" type="string">
+  Receiver phone number.
+</ResponseField>
+
+<ResponseField name="data.messages[].sender" type="string">
+  Either `"user"` or `"agent"` to indicate who sent the message.
+</ResponseField>
+
+<ResponseField name="data.messages[].status" type="string">
+  Delivery status of the message (e.g. `"delivered"`, `"failed"`).
+</ResponseField>
+
+<ResponseField name="data.messages[].error_code" type="string|null">
+  Twilio error code if the message failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if a failure occurred.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "convo_abc123",
+    "created_at": "2025-05-13T20:50:59.233Z",
+    "updated_at": "2025-05-13T20:50:59.233Z",
+    "user_id": "user_abc123",
+    "user_number": "+15550001111",
+    "agent_number": "+15550002222",
+    "inbound_id": 123456,
+    "variables": null,
+    "current_node_id": null,
+    "last_message_at": "2025-05-13T20:50:59.233Z",
+    "is_active": true,
+    "messages": [
+      {
+        "created_at": "2025-05-13T20:50:59.708Z",
+        "message": "<Call Connected>",
+        "from": "+15550002222",
+        "to": "+15550001111",
+        "sender": "USER",
+        "id": 100001,
+        "status": null,
+        "error_code": null
+      },
+      {
+        "created_at": "2025-05-13T20:51:00.917Z",
+        "message": "Hey, what's up?",
+        "from": "+15550002222",
+        "to": "+15550001111",
+        "sender": "AGENT",
+        "id": 100002,
+        "status": "delivered",
+        "error_code": null
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+

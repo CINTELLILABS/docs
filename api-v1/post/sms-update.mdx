@@ -1,0 +1,109 @@
+---
+title: "Update SMS Configuration"
+api: "POST https://api.bland.ai/v1/sms/number/update"
+description: "Update the SMS configuration for a phone number owned by the authenticated user."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The E.164 formatted phone number to update (must belong to the authenticated user).
+</ParamField>
+
+<ParamField body="webhook" type="string" required={false}>
+  When the agent sends a response, we’ll send the message details in a POST request to the URL you specify here, along with chat history.
+</ParamField>
+
+<ParamField body="request_data" type="object|array" required={false}>
+  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task.
+</ParamField>
+
+<ParamField body="time_out" type="number" required={false}>
+  Maximum time to wait for a response. Default is no timeout.
+</ParamField>
+
+<ParamField body="messaging_service_sid" type="string" required={false}>
+  Twilio Messaging Service SID, if set.
+</ParamField>
+
+<ParamField body="objective" type="string" required={false}>
+  Assistant system prompt or conversational goal.
+</ParamField>
+
+<ParamField body="tools" type="array" required={false}>
+  List of tools available to the assistant.
+</ParamField>
+
+<ParamField body="temperature" type="number" required={false}>
+  The model’s temperature setting, controlling creativity.
+</ParamField>
+
+<ParamField body="pathway_id" type="string" required={false}>
+  The ID of the linked conversational pathway (if any).
+</ParamField>
+
+<ParamField body="pathway_version" type="string" required={false}>
+  The specific version of the pathway to use.
+</ParamField>
+
+<ParamField body="start_node_id" type="string" required={false}>
+  Entry point node ID for the pathway.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Contains a confirmation message and the updated SMS configuration.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming the update.
+</ResponseField>
+
+<ResponseField name="data.sms_config" type="object">
+  The updated and sanitized SMS configuration object.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success. If an error occurs, this will be an array of error objects.
+</ResponseField>
+
+<ResponseField name="errors[].message" type="string">
+  A human-readable description of the error.
+</ResponseField>
+
+<ResponseField name="errors[].error" type="string">
+  A machine-readable error code.
+</ResponseField>
+
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "message": "SMS config updated for number +15550001111",
+    "sms_config": {
+      "webhook": null,
+      "request_data": [],
+      "time_out": null,
+      "messaging_service_sid": null,
+      "objective": "Chat with the user",
+      "tools": [],
+      "temperature": 0,
+      "pathway_id": null,
+      "pathway_version": null,
+      "start_node_id": null
+    }
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
