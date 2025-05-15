@@ -1,0 +1,149 @@
+---
+title: "List Conversations"
+api: "GET https://api.bland.ai/v1/sms/conversations"
+description: "Retrieve a paginated list of SMS conversations for the authenticated user, with filtering, sorting, and metadata."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="page" type="number" required={false}>
+  The page number to retrieve. Defaults to `1`.
+</ParamField>
+
+<ParamField query="pageSize" type="number" required={false}>
+  The number of conversations per page. Defaults to `25`.
+</ParamField>
+
+<ParamField query="sortBy" type="string" required={false}>
+  Field to sort by. Allowed values: `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`. Defaults to `created_at`.
+</ParamField>
+
+<ParamField query="sortDir" type="string" required={false}>
+  Direction of sorting. Either `asc` or `desc`. Defaults to `desc`.
+</ParamField>
+
+<ParamField query="filters" type="object[]" required={false}>
+  A JSON-encoded array of filter objects. Each object should contain:
+  - `field`: one of `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `variables`, `current_node_id`
+  - `operator`: one of `eq`, `contains`, `startsWith`, `endsWith`, `gt`, `gte`, `lt`, `lte`
+  - `value`: the filter value
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  A list of conversations matching the query.
+</ResponseField>
+
+<ResponseField name="data[].id" type="string">
+  Unique ID of the conversation.
+</ResponseField>
+
+<ResponseField name="data[].created_at" type="string">
+  ISO timestamp when the conversation was created.
+</ResponseField>
+
+<ResponseField name="data[].updated_at" type="string">
+  ISO timestamp when the conversation was last updated.
+</ResponseField>
+
+<ResponseField name="data[].user_number" type="string">
+  The user-facing phone number in the conversation.
+</ResponseField>
+
+<ResponseField name="data[].agent_number" type="string">
+  The assistant's phone number in the conversation.
+</ResponseField>
+
+<ResponseField name="data[].variables" type="object">
+  Arbitrary variables associated with the conversation.
+</ResponseField>
+
+<ResponseField name="data[].current_node_id" type="string">
+  ID of the current node in the conversational pathway.
+</ResponseField>
+
+<ResponseField name="data[].is_active" type="boolean">
+  Indicates whether the conversation is still active.
+</ResponseField>
+
+<ResponseField name="data[].message_count" type="number">
+  Number of messages in the conversation.
+</ResponseField>
+
+<ResponseField name="data[].last_message" type="string|null">
+  The content of the most recent message, if available.
+</ResponseField>
+
+<ResponseField name="data[].last_message_timestamp" type="string|null">
+  The timestamp of the most recent message.
+</ResponseField>
+
+<ResponseField name="data[].pathway_id" type="string" required={false}>
+  Optional ID of the conversational pathway, if configured.
+</ResponseField>
+
+<ResponseField name="data[].convo_pathways" type="object" required={false}>
+  Optional pathway metadata if available.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of errors on failure.
+</ResponseField>
+
+<ResponseField name="extra.pagination.totalItems" type="number">
+  Total number of conversations matching the query.
+</ResponseField>
+
+<ResponseField name="extra.pagination.totalPages" type="number">
+  Total number of pages available.
+</ResponseField>
+
+<ResponseField name="extra.pagination.currentPage" type="number">
+  The current page of the response.
+</ResponseField>
+
+<ResponseField name="extra.pagination.pageSize" type="number">
+  Number of items per page in the current response.
+</ResponseField>
+
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "convo_abc123",
+      "created_at": "2024-11-20T14:01:00.000Z",
+      "updated_at": "2024-11-21T09:12:00.000Z",
+      "user_number": "+15550001111",
+      "agent_number": "+15552223333",
+      "variables": { "campaign_id": "xyz789" },
+      "current_node_id": "node_intro",
+      "is_active": true,
+      "message_count": 5,
+      "last_message": "Hi there, how can I help you?",
+      "last_message_timestamp": "2024-11-21T09:12:00.000Z",
+      "pathway_id": "pathway_support"
+    }
+  ],
+  "errors": null,
+  "extra": {
+    "pagination": {
+      "totalItems": 42,
+      "totalPages": 5,
+      "currentPage": 1,
+      "pageSize": 10
+    }
+  }
+}
+```
+
+</ResponseExample>
+
