@@ -1,69 +1,51 @@
 ---
-title: "Audio Recording"  
-api: "GET https://api.bland.ai/v1/calls/{call_id}/recording"
-description: "Retrieve your call's audio recording."
+title: "Get Call Recording"
+api: "GET https://api.bland.ai/v1/recordings/{call_id}"
+description: "Retrieve an audio stream for a call recording."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string">
+<ParamField header="authorization" type="string" required={true}>
   Your API key for authentication.
 </ParamField>
 
-<ParamField header="accept" type="string">
-  Must be `application/json` to receive a url, or `audio/mpeg` to receive the audio file.
+<ParamField header="content-type" type="string" required={false}>
+  Audio content type requested: `"audio/mpeg"` (MP3) or `"audio/wav"` (WAV). Defaults to WAV.
 </ParamField>
 
 ### Path Parameters
 
-<ParamField path="call_id" type="string">
-  The ID of the call to retrieve the recording for.
+<ParamField path="call_id" type="string" required>
+  The unique identifier of the call for which you want to retrieve its recording.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="..." type="any" required={false}>
+  Any additional query parameters will be passed through to the underlying recording URL.
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="data" type="audio stream">
+  The audio recording stream of the call, in the requested or default format (WAV).
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  If the status is `success`, the `url` field will be present.
-  
-  A 404 error will be returned if the call does not exist or the recording is not available. We can only retrieve recordings if the call was created with `record` set to `true`.
-
-  A 400/500 error will be returned if there is an error retrieving the recording.
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if access fails.
 </ResponseField>
-
-<ResponseField name="url" type="string">
-  If the status is `success`, the `url` will provide the exact location of the MP3 file storing the call's audio.
-</ResponseField>
-
 
 <ResponseExample>
-
-```json Success response
+```json Response (not found)
 {
-  "status": "success",
-  "url": "https://URL-TO-FILE.mp3"
+  "data": null,
+  "errors": [
+    {
+      "error": "CALL_RECORDING_NOT_FOUND",
+      "message": "Call recording not found"
+    }
+  ]
 }
 ```
-
-```json Success response 'audio/mpeg'
-(returns the audio file)
-```
-
-```json Error response
-{
-  "status": "error",
-  "message": "Error fetching recording"
-}
-```
-
 </ResponseExample>
-
-
-
-
-
-
-
