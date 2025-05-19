@@ -13,20 +13,27 @@ Pre-requisites:
 ## Step 1: Creating an Encrypted Key with your Twilio Credentials
 
 1. Go to your [Twilio Console](https://www.twilio.com/console) and get your Account SID and Auth Token.
-2. Create an `encrypted_key` by [sending an API request](/api-v1/post/accounts) to Bland. 
+2. Create an `encrypted_key` by:
+    - [Sending an API request](/api-v1/post/accounts) to Bland. 
+    - Going to the BYOT page in the [Bland Dashboard](https://app.bland.ai/dashboard/add-ons) and clicking "Generate New Key"
 
 This is the only time that your `encrypted_key` will be returned to you. Make sure to store it securely, and new keys will need to be generated if lost.
 
 ## Step 2: Using the Encrypted Key in Outbound Calls
 
-Include `encrypted_key` in the headers (in addition to the `Authorization` header) of your API requests, and we'll use that account's credentials to make the call.
+Include `encrypted_key` in the body (in addition to the `Authorization` header) of your API requests, and we'll use that account's credentials to make the call.
 
 For example:
 
-```json
-{
-    "Authorization": "BLAND_API_KEY",
-    "encrypted_key": "YOUR_ENCRYPTED_KEY"
+```bash
+curl --location 'https://api.bland.ai/v1/calls' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: [YOUR_BLAND_API_KEY]' \
+--data '{
+  "from": "+1234567890",
+  "phone_number": "+10987654321",
+  "encrypted_key": "[YOUR_ENCRYPTED_KEY]",
+  "task": "Ask the user how their day is going"
 }
 ```
 
