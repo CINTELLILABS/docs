@@ -29,10 +29,15 @@ The request must be sent as `multipart/form-data` with the following fields:
   
   **Requirements:**
   - At least one audio file is required
-  - Supported formats: WAV
+  - Maximum 5 files per upload
+  - Supported formats: WAV, MP3, and other common audio formats
+  - Maximum file size: 10MB per file
+  - Maximum total upload size: 25MB
+  - Audio duration: 1-60 seconds per sample
+  - Maximum 5 samples per voice (total across all uploads)
   - Higher quality audio samples produce better voice clones
   - Recommended: 10-30 seconds of clear speech per sample
-  - 1-2 samples is recommended.
+  - 1-2 samples is recommended for optimal results
 </ParamField>
 
 <ParamField body="gender" type="string">
@@ -53,6 +58,17 @@ The request must be sent as `multipart/form-data` with the following fields:
   **Usage:**
   - Provides additional context to underlying model for tone/style/etc.
 </ParamField>
+
+## Audio Validation Limits
+
+The following limits are enforced for audio file uploads:
+
+- **Maximum file size**: 10MB per individual file
+- **Maximum total upload size**: 25MB per request
+- **Maximum files per upload**: 5 files
+- **Maximum samples per voice**: 5 samples total (across all uploads)
+- **Audio duration range**: 1-60 seconds per sample
+- **Minimum duration**: 1 second per sample
 
 ## Response
 
@@ -210,7 +226,85 @@ result = response.json()
   "errors": [
     {
       "error": "Validation Error",
-      "message": "No audio files provided"
+      "message": "No files provided for voice cloning."
+    }
+  ]
+}
+```
+
+```json 400 - Too Many Files
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Too many files (6). Maximum allowed is 5 files per upload."
+    }
+  ]
+}
+```
+
+```json 400 - File Too Large
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "File \"sample.wav\" is too large (12.5MB). Maximum allowed size is 10MB."
+    }
+  ]
+}
+```
+
+```json 400 - Total Upload Too Large
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Total upload size is too large (30.2MB). Maximum allowed total size is 25MB."
+    }
+  ]
+}
+```
+
+```json 400 - Audio Too Short
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "File \"sample.wav\" is too short (estimated 0.5s). Minimum duration is 1 seconds."
+    }
+  ]
+}
+```
+
+```json 400 - Audio Too Long
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "File \"sample.wav\" is too long (estimated 75.3s). Maximum duration is 60 seconds."
+    }
+  ]
+}
+```
+
+```json 400 - Too Many Samples Per Voice
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Cannot add 2 sample(s). Voice already has 4 samples. Maximum allowed is 5 samples per voice."
     }
   ]
 }
@@ -237,6 +331,32 @@ result = response.json()
     {
       "error": "Processing Error",
       "message": "Failed to process audio with beige model"
+    }
+  ]
+}
+```
+
+```json 400 - Failed to Add Sample
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Processing Error",
+      "message": "Failed to add sample to voice"
+    }
+  ]
+}
+```
+
+```json 400 - Failed to Add Samples
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Processing Error",
+      "message": "Failed to add samples to voice"
     }
   ]
 }
