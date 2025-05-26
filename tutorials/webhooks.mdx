@@ -1,57 +1,91 @@
 ---
-title: "Webhooks"
----
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/webhook.png" />
+title: "Webhooks"
+description: "Configure outbound API requests inside your pathways using the webhook node."
+-------------------------------------------------------------------------------------------
 
 ## Introduction
 
-This is a quick tutorial to help you set up and test your Bland AI webhook. We'll include instructions both for inbound and outbound phone calls.
+The webhook node enables outbound API requests to external services during a live call. It can be used to retrieve data, trigger workflows, or pass information to third-party systems.
 
-We'll start with inbound because it's more popular.
+To add a webhook node:
 
-## Step 1: Create your webhook
+* Open your pathway
+* Click **New Node** in the top left
+* Select the **Webhook** icon
 
-To create a test webhook visit [Webhook.site](https://webhook.site/)
+---
 
-The website will automatically provide you a unique webhook URL.
+## Node Configuration
 
-## Step 2: Connect to your inbound phone number
+Once added to your pathway, the webhook node includes several configuration options:
 
-Open your [developer portal](https://app.bland.ai) and visit the [inbound phone numbers](https://app.bland.ai/home?page=inbound-number) page.
+<img 
+  src="../tutorials/tutorials-assets/webhook_node.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Webhook Node"
+/>
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/inbound-number-webhook.png" />
+### 1. Node Name
 
-Paste your webhook into the `webhook` field. Make sure to remove the initial `https://` when you insert the URL. Then click `test webhook`.
+* Assign a unique name to help identify the webhook's purpose.
 
-## Step 3: Verifying your outputs
+### 2. Extract Call Info into Variables
 
-Navigate to webhook.site page, and check if the test webhook fired correctly. You'll know it worked because a new record will populate.
+* When enabled, this mirrors the variable extraction behavior from previous nodes.
+* Variables captured earlier in the call will be passed into the webhook context.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/webhook-fires-successfully.png" />
+### 3. Webhook Configuration
 
-At this point, if your record fails to populate, double check that you provided the correct URL - and that you REMOVED the initial `https://` from it.
+This section defines how the outbound request is sent:
 
-Otherwise, if issues persist, jump into the [discord](https://discord.gg/QvxDz8zcKe) - one of our teammates will help you asap.
+* **Request Type**: Choose HTTP method (GET, POST, etc.)
+* **URL**: Endpoint of the external service
+* **Authorization**: Enable and configure token or basic auth if required
+* **Headers**: Add key-value pairs for custom headers
+* **Body**: Compose payload for POST or PUT requests
 
-## Step 4: test a live phone call
+### 4. Advanced Settings
 
-Call your inbound phone number. Once it ends, visit the Webhook site and confirm once again that a new record populated.
+* **Timeout**: Maximum wait time before considering the request failed
+* **Retries**: Number of retry attempts on failure
+* **Reroute through server**: Rerouting through the server helps prevent CORS issues. Disable only if you're experiencing problems with the rerouted requests.
+* **Test API Request**: Send a live test request and view raw response or errors
 
-If that's working, then you're set!
+---
 
-## Step 5: Testing for outbound calls
+## Response Data Mapping
 
-To test for outbound calls, once again create your webhook by referring back to step 1.
+If the webhook returns a JSON response, you can extract specific values into variables for use in subsequent nodes:
 
-Then, follow the [send phone call docs](https://docs.bland.ai/api-v1/post/calls) to create and send a phone call. Make sure you include the `webhook` as a parameter in your request. After, confirm that the webhook data populated on your webhook site page.
+* Enable **Response Data**
+* For each value to extract:
 
-And again, if you encounter issues, jump into [discord](https://discord.gg/QvxDz8zcKe) and message us - we will help asap.
+  * Define a **Variable Name** (single string, e.g. `user_id`)
+  * Provide the **JSON Path** (e.g. `$.data.id`)
+  * Optionally add a **Description** for additional context
 
+---
 
+## Pathway Routing After Response
 
+Define where to route the agent based on the webhook result:
 
+* This allows conditional routing based on status codes or outcomes.
+* Example: route to different nodes if response status is 200 vs. 500.
 
+---
 
+## Speech During Webhook
 
+Enable the agent to speak while the webhook is processing:
 
+* Useful for avoiding awkward silences during longer API requests
+* Example speech: *"One moment while I look up your information."*
+* This speech can be static text or AI-generated based on prompting.
+
+---
+
+## Summary
+
+Webhook nodes are a flexible way to integrate real-time external logic into your pathways. With full support for request setup, variable extraction, conditional routing, and speech, they offer a robust tool for dynamic agent workflows.
