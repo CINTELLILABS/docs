@@ -26,16 +26,30 @@ Once added to your pathway, the webhook node includes several configuration opti
   alt="Webhook Node"
 />
 
-### 1. Node Name
+### 1. Extract Call Info into Variables
 
-* Assign a unique name to help identify the webhook's purpose.
+* When enabled, this mirrors the variable extraction behavior found in other default nodes.
+* Based on the conversation up until the point of this node, variables will be extracted based on their name and description.
 
-### 2. Extract Call Info into Variables
+<img 
+  src="../tutorials/tutorials-assets/webhook_variable_extraction.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Webhook Node Extract"
+/>
 
-* When enabled, this mirrors the variable extraction behavior from previous nodes.
-* Variables captured earlier in the call will be passed into the webhook context.
+In the above example, the variables `user_name` and `user_interested` are being extracted from the conversation. Up until this node, the objective was given to the agent to discuss the user's basic information and their availability. Based on what was discussed, the agent will extract the user's name, along with a True or False value based on whether the user is interested in a follow up meeting.
 
-### 3. Webhook Configuration
+These variables can then be included in the webhook. Here is an example body:
+
+```json
+{
+  "name": "{{user_name}}",
+  "interested": "{{user_interested}}"
+}
+```
+
+
+### 2. Webhook Configuration
 
 This section defines how the outbound request is sent:
 
@@ -45,7 +59,7 @@ This section defines how the outbound request is sent:
 * **Headers**: Add key-value pairs for custom headers
 * **Body**: Compose payload for POST or PUT requests
 
-### 4. Advanced Settings
+### 3. Advanced Settings
 
 * **Timeout**: Maximum wait time before considering the request failed
 * **Retries**: Number of retry attempts on failure
@@ -83,9 +97,3 @@ Enable the agent to speak while the webhook is processing:
 * Useful for avoiding awkward silences during longer API requests
 * Example speech: *"One moment while I look up your information."*
 * This speech can be static text or AI-generated based on prompting.
-
----
-
-## Summary
-
-Webhook nodes are a flexible way to integrate real-time external logic into your pathways. With full support for request setup, variable extraction, conditional routing, and speech, they offer a robust tool for dynamic agent workflows.
