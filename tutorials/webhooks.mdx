@@ -53,11 +53,64 @@ These variables can then be included in the webhook. Here is an example body:
 
 This section defines how the outbound request is sent:
 
-* **Request Type**: Choose HTTP method (GET, POST, etc.)
-* **URL**: Endpoint of the external service
-* **Authorization**: Enable and configure token or basic auth if required
-* **Headers**: Add key-value pairs for custom headers
-* **Body**: Compose payload for POST or PUT requests
+#### Request Type
+
+Choose HTTP method (GET, POST, etc.)
+
+#### URL
+
+The endpoint of the external service.
+
+The URL may include query parameters. For example:
+
+`https://api.example.com/users?id=123&type=new`
+
+These query parameters can also be interpolated using variables captured throughout your pathway. For example:
+
+`https://api.example.com/users?id={{user_id}}&type={{user_type}}`
+
+#### Authorization and Headers
+
+Authorization can be configured as:
+
+- None: No Authorization header is included.
+- Bearer: Use this option to authenticate with a bearer token. (Only input the raw token — the Bearer prefix is automatically added)
+- Basic: Authenticate with a username and password in base64 format.
+
+Headers and auth tokens can reference [Bland Secrets](/tutorials/secrets) for secure credential management.
+
+#### Body
+
+Compose a payload for your requests.
+
+The body can include static values or variables captured throughout your pathway. For example:
+
+```json
+{
+  "name": "{{user_name}}",
+  "interested": "{{user_interested}}",
+  "service": "consultation"
+}
+```
+
+In addition to the custom variables you create throughout your pathway, you also have access to Bland's built-in variables:
+
+<AccordionGroup>
+  <Accordion title="Built-in Variables">
+    - `{{phone_number}}` - Always the other party's number
+    - `{{country}}` - The country code (ex. US)
+    - `{{state}}` - The state or province's abbreviation (ex. CA for California)
+    - `{{city}}` - The full city name, capitalized
+    - `{{zip}}` - The zip code
+    - `{{call_id}}` - The unique ID of the current call
+    - `{{now}}` - Current time in the call's timezone
+    - `{{now_utc}}` - Current time in UTC format
+    - `{{from}}` - The outbound number in E.164 format
+    - `{{to}}` - The inbound number in E.164 format
+    - `{{short_from}}` - outbound number with country code removed
+    - `{{short_to}}` - inbound number with country code removed
+  </Accordion>
+</AccordionGroup>
 
 ### 3. Advanced Settings
 
@@ -87,6 +140,8 @@ Define where to route the agent based on the webhook result:
 
 * This allows conditional routing based on status codes or outcomes.
 * Example: route to different nodes if response status is 200 vs. 500.
+
+> Note: Every webhook node requires a route for default API Request Completion before saving for the first time.
 
 ---
 
