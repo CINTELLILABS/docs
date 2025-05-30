@@ -201,9 +201,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
   ```
 </ParamField>
-
-<ParamField body="pronunciation_guide" type="array">
-  The pronunciation guide is an `array` of `objects` that guides the agent on how to say specific words. This is great for situations with complicated terms or names.
+<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
+  The pronunciation guide is an `array` of `objects` that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
 
   ```json
     [
@@ -226,11 +225,11 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `word`
       — the word you want to guide the LLM on how to pronounce
     - `pronunciation`
-      — the word you want to guide the LLM on how to pronounce.
+      — how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
     - `case_sensitive`
       — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
-    - `spaced`
-      — whether or not to consider spaces. When `true` the word 'high' would be flagged but NOT 'hightop'. Defaults to true. `Not required`.
+    - `spaced` 
+      — whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
   </Accordion>
 </ParamField>
 
@@ -376,13 +375,10 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="sensitive_voicemail_detection" default="false" type="boolean">
   When `true`, uses LLM-based analysis to detect frequent voicemails.
 </ParamField>
-
-<ParamField body="noise_cancellation" default="false" type="boolean">
-  Toggles noise filtering or suppression in the audio stream to filter out background noise.
-</ParamField>
-
-<ParamField body="ignore_button_press" default="false" type="boolean">
-  When `true`, DTMF (digit) presses are ignored, disabling menu navigation or call transfers triggered by keypad input.
+<ParamField body="ignore_button_press" type="boolean" default="false">
+  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0–9, *, #).  
+  This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.  
+  Useful when your agent should handle the entire call conversationally, without responding to button presses.
 </ParamField>
 
 <ParamField body="timezone" default="America/Los_Angeles" type="string">
@@ -394,17 +390,19 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 </ParamField>
 
 <ParamField body="request_data" type="object">
-  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task. This data is accessible in variables if the call is answered.
-  For example, let's say in your app you want to programmatically set the name of the person you're calling. You could set `request_data` to:
+  Custom key-value data you send with the call. This information is available as variables inside your prompt, pathway, or tools — but only if the call is answered.
 
-  ```json
-    {
-      "task": "Say hello to the user, who's name is {{name}}", // also works in the prompt, tools, etc.
-      "request_data": {
-        "name": "John Doe"
-      }
+```json
+  {
+    "task": "Say hello to the user, who's name is {{name}}",
+    "request_data": {
+      "name": "John Doe"
     }
-  ```
+  }
+```
+
+In this case, the AI would say: "Hello, John".
+
 </ParamField>
 
 <ParamField body="tools" type="array">
