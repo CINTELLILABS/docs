@@ -1,0 +1,209 @@
+---
+title: "Update Geospatial Dialing Pool"
+api: "POST https://us.api.bland.ai/v1/geospatial-dialing-pools/{pool_id}/update"
+description: "Update an existing geospatial dialing pool with new phone numbers or credentials."
+---
+
+<Info>
+  **Enterprise Feature** - Geospatial dialing is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+Update an existing geospatial dialing pool by replacing its phone numbers and/or Twilio credentials. This operation will completely replace the existing phone numbers with the new ones provided.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pool_id" type="string" required>
+  The unique identifier (UUID) of the geospatial dialing pool to update.
+  
+  **Format**: UUID format (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+</ParamField>
+
+### Body
+
+<ParamField body="phone_numbers" type="array" required>
+  Array of phone numbers to replace the existing numbers in the pool. All numbers must be valid US phone numbers with +1 prefix.
+  
+  **Format**: Each phone number must be exactly 12 characters: `+1` followed by 10 digits.
+  
+  **Example**: `["+12345678901", "+19876543210"]`
+  
+  <Warning>
+    This will completely replace all existing phone numbers in the pool. Any numbers not included in this array will be removed.
+  </Warning>
+</ParamField>
+
+<ParamField body="encrypted_key" type="string">
+  Optional UUID of Twilio credentials to associate with this pool. If provided, must be valid credentials that belong to your account. To remove credentials, pass `null`.
+  
+  **Format**: UUID format (e.g., `550e8400-e29b-41d4-a716-446655440000`) or `null`
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Can be `success` or `error`.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated geospatial dialing pool object (present only if status is `success`).
+  
+  <Expandable title="data properties">
+    <ResponseField name="id" type="string">
+      Unique identifier for the pool.
+    </ResponseField>
+    
+    <ResponseField name="owner_id" type="string">
+      Organization ID that owns this pool.
+    </ResponseField>
+    
+    <ResponseField name="phone_numbers" type="array">
+      Array of phone numbers in the pool (updated).
+    </ResponseField>
+    
+    <ResponseField name="encrypted_key" type="string">
+      UUID of associated Twilio credentials (or null if none).
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Timestamp when the pool was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Array of error objects (present only if status is `error`).
+  
+  <Expandable title="error object properties">
+    <ResponseField name="error" type="string">
+      Error code indicating the type of error.
+    </ResponseField>
+    
+    <ResponseField name="message" type="string">
+      Human-readable error message.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://us.api.bland.ai/v1/geospatial-dialing-pools/550e8400-e29b-41d4-a716-446655440001/update" \
+  -H "Authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+12345678901", "+19876543210", "+15551234567", "+17775551234"],
+    "encrypted_key": "550e8400-e29b-41d4-a716-446655440000"
+  }'
+```
+
+```javascript JavaScript
+const poolId = '550e8400-e29b-41d4-a716-446655440001';
+const response = await fetch(`https://us.api.bland.ai/v1/geospatial-dialing-pools/${poolId}/update`, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    phone_numbers: ['+12345678901', '+19876543210', '+15551234567', '+17775551234'],
+    encrypted_key: '550e8400-e29b-41d4-a716-446655440000'
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+```python Python
+import requests
+
+pool_id = "550e8400-e29b-41d4-a716-446655440001"
+url = f"https://us.api.bland.ai/v1/geospatial-dialing-pools/{pool_id}/update"
+headers = {
+    "Authorization": "YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+data = {
+    "phone_numbers": ["+12345678901", "+19876543210", "+15551234567", "+17775551234"],
+    "encrypted_key": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+response = requests.post(url, headers=headers, json=data)
+print(response.json())
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "status": "success",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "owner_id": "550e8400-e29b-41d4-a716-446655440002",
+    "phone_numbers": ["+12345678901", "+19876543210", "+15551234567", "+17775551234"],
+    "encrypted_key": "550e8400-e29b-41d4-a716-446655440000",
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response - Pool Not Found
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "POOL_NOT_FOUND",
+      "message": "Geospatial dialing pool not found"
+    }
+  ]
+}
+```
+
+```json Error Response - Invalid Phone Numbers
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PHONE_NUMBERS",
+      "message": "All phone numbers must be valid US numbers with +1 prefix"
+    }
+  ]
+}
+```
+
+```json Error Response - Invalid Credentials
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_CREDENTIALS",
+      "message": "Twilio credentials not found or do not belong to your account"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Removing Credentials
+
+To remove Twilio credentials from a pool, set `encrypted_key` to `null`:
+
+```json
+{
+  "phone_numbers": ["+12345678901", "+19876543210"],
+  "encrypted_key": null
+}
+``` 

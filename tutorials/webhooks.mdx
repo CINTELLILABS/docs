@@ -1,57 +1,154 @@
 ---
-title: "Webhooks"
----
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/webhook.png" />
+title: "Webhooks"
+description: "Configure outbound API requests inside your pathways using the webhook node."
+---
 
 ## Introduction
 
-This is a quick tutorial to help you set up and test your Bland AI webhook. We'll include instructions both for inbound and outbound phone calls.
+The webhook node enables outbound API requests to external services during a live call. It can be used to retrieve data, trigger workflows, or pass information to third-party systems.
 
-We'll start with inbound because it's more popular.
+To add a webhook node:
 
-## Step 1: Create your webhook
+* Open your pathway
+* Click **New Node** in the top left
+* Select the **Webhook** icon
 
-To create a test webhook visit [Webhook.site](https://webhook.site/)
+---
 
-The website will automatically provide you a unique webhook URL.
+## Node Configuration
 
-## Step 2: Connect to your inbound phone number
+Once added to your pathway, the webhook node includes several configuration options:
 
-Open your [developer portal](https://app.bland.ai) and visit the [inbound phone numbers](https://app.bland.ai/home?page=inbound-number) page.
+<img 
+  src="../tutorials/tutorials-assets/webhook_node.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Webhook Node"
+/>
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/inbound-number-webhook.png" />
+### 1. Extract Call Info into Variables
 
-Paste your webhook into the `webhook` field. Make sure to remove the initial `https://` when you insert the URL. Then click `test webhook`.
+* When enabled, this mirrors the variable extraction behavior found in other default nodes.
+* Based on the conversation up until the point of this node, variables will be extracted based on their name and description.
 
-## Step 3: Verifying your outputs
+<img 
+  src="../tutorials/tutorials-assets/webhook_variable_extraction.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Webhook Node Extract"
+/>
 
-Navigate to webhook.site page, and check if the test webhook fired correctly. You'll know it worked because a new record will populate.
+In the above example, the variables `user_name` and `user_interested` are being extracted from the conversation. Up until this node, the objective was given to the agent to discuss the user's basic information and their availability. Based on what was discussed, the agent will extract the user's name, along with a True or False value based on whether the user is interested in a follow up meeting.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/webhook-fires-successfully.png" />
+These variables can then be included in the webhook. Here is an example body:
 
-At this point, if your record fails to populate, double check that you provided the correct URL - and that you REMOVED the initial `https://` from it.
-
-Otherwise, if issues persist, jump into the [discord](https://discord.gg/QvxDz8zcKe) - one of our teammates will help you asap.
-
-## Step 4: test a live phone call
-
-Call your inbound phone number. Once it ends, visit the Webhook site and confirm once again that a new record populated.
-
-If that's working, then you're set!
-
-## Step 5: Testing for outbound calls
-
-To test for outbound calls, once again create your webhook by referring back to step 1.
-
-Then, follow the [send phone call docs](https://docs.bland.ai/api-v1/post/calls) to create and send a phone call. Make sure you include the `webhook` as a parameter in your request. After, confirm that the webhook data populated on your webhook site page.
-
-And again, if you encounter issues, jump into [discord](https://discord.gg/QvxDz8zcKe) and message us - we will help asap.
-
-
+```json
+{
+  "name": "{{user_name}}",
+  "interested": "{{user_interested}}"
+}
+```
 
 
+### 2. Webhook Configuration
 
+This section defines how the outbound request is sent:
 
+#### Request Type
 
+Choose HTTP method (GET, POST, etc.)
 
+#### URL
+
+The endpoint of the external service.
+
+The URL may include query parameters. For example:
+
+`https://api.example.com/users?id=123&type=new`
+
+These query parameters can also be interpolated using variables captured throughout your pathway. For example:
+
+`https://api.example.com/users?id={{user_id}}&type={{user_type}}`
+
+#### Authorization and Headers
+
+Authorization can be configured as:
+
+- None: No Authorization header is included.
+- Bearer: Use this option to authenticate with a bearer token. (Only input the raw token — the Bearer prefix is automatically added)
+- Basic: Authenticate with a username and password in base64 format.
+
+Headers and auth tokens can reference [Bland Secrets](/tutorials/secrets) for secure credential management.
+
+#### Body
+
+Compose a payload for your requests.
+
+The body can include static values or variables captured throughout your pathway. For example:
+
+```json
+{
+  "name": "{{user_name}}",
+  "interested": "{{user_interested}}",
+  "service": "consultation"
+}
+```
+
+In addition to the custom variables you create throughout your pathway, you also have access to Bland's built-in variables:
+
+<AccordionGroup>
+  <Accordion title="Built-in Variables">
+    - `{{phone_number}}` - Always the other party's number
+    - `{{country}}` - The country code (ex. US)
+    - `{{state}}` - The state or province's abbreviation (ex. CA for California)
+    - `{{city}}` - The full city name, capitalized
+    - `{{zip}}` - The zip code
+    - `{{call_id}}` - The unique ID of the current call
+    - `{{now}}` - Current time in the call's timezone
+    - `{{now_utc}}` - Current time in UTC format
+    - `{{from}}` - The outbound number in E.164 format
+    - `{{to}}` - The inbound number in E.164 format
+    - `{{short_from}}` - outbound number with country code removed
+    - `{{short_to}}` - inbound number with country code removed
+  </Accordion>
+</AccordionGroup>
+
+### 3. Advanced Settings
+
+* **Timeout**: Maximum wait time before considering the request failed
+* **Retries**: Number of retry attempts on failure
+* **Reroute through server**: Rerouting through the server helps prevent CORS issues. Disable only if you're experiencing problems with the rerouted requests.
+* **Test API Request**: Send a live test request and view raw response or errors
+
+---
+
+## Response Data Mapping
+
+If the webhook returns a JSON response, you can extract specific values into variables for use in subsequent nodes:
+
+* Enable **Response Data**
+* For each value to extract:
+
+  * Define a **Variable Name** (single string, e.g. `user_id`)
+  * Provide the **JSON Path** (e.g. `$.data.id`)
+  * Optionally add a **Description** for additional context
+
+---
+
+## Pathway Routing After Response
+
+Define where to route the agent based on the webhook result:
+
+* This allows conditional routing based on status codes or outcomes.
+* Example: route to different nodes if response status is 200 vs. 500.
+
+> Note: Every webhook node requires a route for default API Request Completion before saving for the first time.
+
+---
+
+## Speech During Webhook
+
+Enable the agent to speak while the webhook is processing:
+
+* Useful for avoiding awkward silences during longer API requests
+* Example speech: *"One moment while I look up your information."*
+* This speech can be static text or AI-generated based on prompting.
