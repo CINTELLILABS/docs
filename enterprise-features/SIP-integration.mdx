@@ -1,0 +1,215 @@
+---
+
+title: "SIP Integration"
+description: "Configure and manage SIP for inbound call routing via Bland."
+
+---
+
+## Overview
+
+Bland supports **inbound SIP termination**, allowing customers to direct calls from their SIP provider to Bland for handling.
+
+This guide provides:
+
+* SIP connection details
+* Requirements and security settings
+* Instructions for attaching, updating, and detaching SIP routes via Bland's API
+* Schema definitions and usage patterns
+
+---
+
+## Entitlement Requirement
+
+All `/sip` endpoints are protected by an entitlement check.
+
+Your organization must have the `SIP` entitlement enabled to use SIP features. If not, all requests to the `/sip` routes will return:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SIP_NOT_ENABLED",
+      "message": "SIP is not enabled for this organization"
+    }
+  ]
+}
+```
+
+Contact support to have SIP enabled for your Enterprise organization.
+
+---
+
+## SIP Termination Details
+
+**SIP Signaling Endpoint:**
+
+```
+us1.sip.bland.ai:5061;transport=tls
+```
+
+**Static IP Addresses of the SIP Signalling Server(s):**
+
+```
+35.80.235.26
+54.189.4.67
+```
+
+**Supported Codecs:**
+
+* Currently Supported: PCMU, PCMA
+* Coming Soon: Opus, G722
+
+
+**Security Requirements:**
+
+* SIP Signaling: TLS 1.2 or higher
+* RTP Media: SRTP using AES_CM_128_HMAC_SHA1_80
+
+
+**Other Configurations:**
+
+* RTCP: Uses port RTP + 1
+* DTMF: RFC 2833 (Out-of-band via RTP payload)
+
+
+* Number Format: +E.164 or E.164 (both supported for origination and termination)
+* SIP Registration: Not required (Bland determines routing based on predefined configurations)
+
+
+
+---
+
+## API Reference
+
+### Attach SIP Endpoint
+
+`POST /sip/attach`
+
+Attach a SIP configuration to a phone number.
+
+<ParamField query="phone_number" type="string">
+  The phone number to associate with the SIP configuration. Must be in E.164 format.
+</ParamField>
+
+<ParamField query="directions" type="array">
+  An array of directions for the SIP routing. Valid values: `inbound`, `outbound`. If outbound, you must also provide a `sip_endpoint`.
+</ParamField>
+
+<ParamField query="service" type="string">
+  Must be set to `sip`.
+</ParamField>
+
+```bash Example Request
+curl -X POST https://api.bland.ai/v1/sip/attach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "directions": [
+      { "type": "inbound" }
+      { "type": "outbound", "sip_endpoint": "sip.customer.com" } // Either inbound or outbound can be provided
+    ],
+    "service": "sip"
+  }'
+```
+
+---
+
+### Update SIP Direction
+
+`POST /sip/update`
+
+Update a phone number’s SIP routing direction.
+
+<ParamField query="phone_number" type="string">
+  The phone number for which to update the direction.
+</ParamField>
+
+<ParamField query="updates" type="object">
+  The updated direction object. Use `type: outbound` and provide `sip_endpoint`, or `type: inbound`.
+</ParamField>
+
+```bash Example Request
+curl -X POST https://api.bland.ai/v1/sip/update \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "updates": {
+      "type": "outbound",
+      "sip_endpoint": "sip:user@your.provider.com"
+    }
+  }'
+```
+
+---
+
+### Detach SIP Endpoint
+
+`POST /sip/detach`
+
+Remove SIP configuration from a number.
+
+<ParamField query="phone_number" type="string">
+  The phone number to detach SIP routing from.
+</ParamField>
+
+<ParamField query="directions" type="array">
+  Direction(s) to remove. Either `inbound` or `outbound`.
+</ParamField>
+
+<ParamField query="service" type="string">
+  Must be set to `sip`.
+</ParamField>
+
+```bash Example Request
+curl -X POST https://api.bland.ai/v1/sip/detach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "directions": [
+      { "type": "inbound" }
+    ],
+    "service": "sip"
+  }'
+```
+
+---
+
+### Get SIP Config
+
+`GET /sip?inbound_id={inbound_id}`
+
+Returns current SIP configuration (if any) for a given `inbound_id`.
+
+<ParamField query="inbound_id" type="number">
+  (Optional) The ID of the inbound number to fetch SIP configuration for.
+</ParamField>
+
+```bash Example Request
+curl -X GET 'https://api.bland.ai/v1/sip?inbound_id=12345' \
+  -H "Authorization: Bearer <token>"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "phone_number": "+14150000000",
+    "directions": [ "inbound" ]
+  },
+  "errors": null
+}
+```
+
+---
+
+## Notes
+
+- SIP media handling currently supports inbound-only termination.
+- Phone numbers can be attached independently for inbound and outbound routing via the API.
+- All requests must conform to the expected schema; invalid payloads will be rejected with a 400 response.
+- Each API response includes a success status and, if applicable, an error message to aid debugging.
