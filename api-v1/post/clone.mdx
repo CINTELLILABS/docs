@@ -1,0 +1,421 @@
+---
+title: "Clone"
+api: "POST /v1/voices/clone"
+description: "Create a custom voice clone using Bland's BTTS (Beige Text-to-Speech)"
+contentType: 'multipart/form-data'
+---
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+Your API key for authentication.
+</ParamField>
+
+## Request Body
+
+The request must be sent as `multipart/form-data` with the following fields:
+
+<ParamField body="name" type="string" required>
+  The name for your voice clone. Must be 30 characters or less.
+  
+  **Validation:**
+  - Required field
+  - Maximum 30 characters
+  - Will be used as the display name in your voice library
+</ParamField>
+
+<ParamField body="samples" type="file[]" required>
+  Audio files containing voice samples for cloning. Multiple files can be uploaded.
+  
+  **Requirements:**
+  - At least one audio file is required
+  - Maximum 5 files per upload
+  - Supported formats: WAV, MP3, and other common audio formats
+  - Maximum file size: 10MB per file
+  - Maximum total upload size: 25MB
+  - Audio duration: 1-60 seconds per sample
+  - Maximum 5 samples per voice (total across all uploads)
+  - Higher quality audio samples produce better voice clones
+  - Recommended: 10-30 seconds of clear speech per sample
+  - 1-2 samples is recommended for optimal results
+</ParamField>
+
+<ParamField body="gender" type="string">
+  The gender of the voice being cloned.
+  
+  **Valid values:**
+  - `"male"`
+  - `"female"`
+  
+  **Usage:**
+  - Optional but recommended for better voice modeling
+  - Helps the BTTS system optimize voice characteristics
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the voice clone.
+  
+  **Usage:**
+  - Provides additional context to underlying model for tone/style/etc.
+</ParamField>
+
+## Audio Validation Limits
+
+The following limits are enforced for audio file uploads:
+
+- **Maximum file size**: 10MB per individual file
+- **Maximum total upload size**: 25MB per request
+- **Maximum files per upload**: 5 files
+- **Maximum samples per voice**: 5 samples total (across all uploads)
+- **Audio duration range**: 1-60 seconds per sample
+- **Minimum duration**: 1 second per sample
+
+## Response
+
+<ResponseField name="status" type="number">
+  HTTP status code (200 for success)
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Success Response Data">
+    <ResponseField name="voice_id" type="string">
+      Unique identifier for the created BTTS voice clone. Use this ID for text-to-speech requests and adding additional samples.
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      The name of the voice clone as provided in the request.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Array of error objects (null on success)
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/voices/clone" \
+  -H "Authorization: Bearer your_jwt_token_here" \
+  -F "name=Professional Voice" \
+  -F "samples=@voice_sample1.wav" \
+  -F "samples=@voice_sample2.wav" \
+  -F "gender=female" \
+```
+
+```javascript JavaScript
+const formData = new FormData();
+formData.append('name', 'Blandie');
+formData.append('samples', audioFile1);
+formData.append('samples', audioFile2);
+formData.append('gender', 'female');
+
+const response = await fetch('https://api.bland.ai/v1/voices/clone', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'your_api_key_here',
+  },
+  body: formData
+});
+
+const result = await response.json();
+```
+
+```python Python
+import requests
+
+# Prepare files
+files = [
+    ('samples', ('voice_sample1.wav', open('voice_sample1.wav', 'rb'), 'audio/wav')),
+    ('samples', ('voice_sample2.wav', open('voice_sample2.wav', 'rb'), 'audio/wav'))
+]
+
+# Prepare form data
+data = {
+    'name': 'Blandie',
+    'gender': 'female',
+}
+
+# Headers
+headers = {
+    'Authorization': 'your_api_key_here',
+}
+
+# Make request
+response = requests.post(
+    'https://api.bland.ai/v1/voices/clone',
+    headers=headers,
+    data=data,
+    files=files
+)
+
+result = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success
+{
+  "status": 200,
+  "data": {
+    "voice_id": "4cc89edf-c4b7-4df8-98c5-f8548fcd7c62",
+    "name": "Blandie"
+  },
+  "errors": null
+}
+```
+
+```json 400 - Voice Name Required
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Voice name is required"
+    }
+  ]
+}
+```
+
+```json 400 - Voice Name Too Long
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Voice name too long"
+    }
+  ]
+}
+```
+
+```json 400 - Voice Name Already Taken
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Voice name is already taken"
+    }
+  ]
+}
+```
+
+```json 400 - Invalid Gender
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Invalid gender"
+    }
+  ]
+}
+```
+
+```json 400 - No Audio Files
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "No files provided for voice cloning."
+    }
+  ]
+}
+```
+
+```json 400 - Too Many Files
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Too many files (6). Maximum allowed is 5 files per upload."
+    }
+  ]
+}
+```
+
+```json 400 - File Too Large
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "File \"sample.wav\" is too large (12.5MB). Maximum allowed size is 10MB."
+    }
+  ]
+}
+```
+
+```json 400 - Total Upload Too Large
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Total upload size is too large (30.2MB). Maximum allowed total size is 25MB."
+    }
+  ]
+}
+```
+
+```json 400 - Audio Too Short
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "File \"sample.wav\" is too short (estimated 0.5s). Minimum duration is 1 seconds."
+    }
+  ]
+}
+```
+
+```json 400 - Audio Too Long
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "File \"sample.wav\" is too long (estimated 75.3s). Maximum duration is 60 seconds."
+    }
+  ]
+}
+```
+
+```json 400 - Too Many Samples Per Voice
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Validation Error",
+      "message": "Cannot add 2 sample(s). Voice already has 4 samples. Maximum allowed is 5 samples per voice."
+    }
+  ]
+}
+```
+
+```json 400 - Voice Limit Exceeded
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Limit Exceeded",
+      "message": "You have reached the maximum number of voices for your plan."
+    }
+  ]
+}
+```
+
+```json 400 - BTTS Processing Failed
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Processing Error",
+      "message": "Failed to process audio with beige model"
+    }
+  ]
+}
+```
+
+```json 400 - Failed to Add Sample
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Processing Error",
+      "message": "Failed to add sample to voice"
+    }
+  ]
+}
+```
+
+```json 400 - Failed to Add Samples
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    {
+      "error": "Processing Error",
+      "message": "Failed to add samples to voice"
+    }
+  ]
+}
+```
+
+```json 401 - Unauthorized
+{
+  "status": 401,
+  "data": null,
+  "errors": [
+    {
+      "error": "Authentication Error",
+      "message": "Invalid token"
+    }
+  ]
+}
+```
+
+```json 405 - Method Not Allowed
+{
+  "status": 405,
+  "data": null,
+  "errors": [
+    {
+      "error": "Method Error",
+      "message": "Method not allowed"
+    }
+  ]
+}
+```
+
+```json 500 - Database Error
+{
+  "status": 500,
+  "data": null,
+  "errors": [
+    {
+      "error": "Server Error",
+      "message": "Failed to create voice entry"
+    }
+  ]
+}
+```
+
+```json 500 - Generic Server Error
+{
+  "status": 500,
+  "data": null,
+  "errors": [
+    {
+      "error": "Server Error",
+      "message": "An unknown error occurred"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Usage in Text-to-Speech
+
+Once created, your BTTS voice clone can be used from our /speak endpoint, by referencing the returned `voice_id` or `name`.
