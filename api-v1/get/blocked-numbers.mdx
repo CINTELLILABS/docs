@@ -1,0 +1,75 @@
+---
+title: "List Block Rules"
+api: "GET https://api.bland.ai/v1/blocked_numbers"
+description: "Retrieve block rules associated with your inbound numbers."
+---
+
+<Info>
+  **Block Rule Management** – This endpoint returns block rules for either all global blocks or a specific inbound number, depending on the query parameters.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="inbound_number" type="string" required={false}>
+  The E.164 formatted inbound number to filter results by. If omitted, returns only global block rules.
+</ParamField>
+
+<ParamField query="active_only" type="boolean" required={false}>
+  Whether to only return currently active block rules. Default is `true`. Set to `false` to include deleted or inactive rules.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Returns a list of block rules that match the provided filters.
+</ResponseField>
+
+<ResponseField name="data.blocks" type="array">
+  Array of block rule objects.
+</ResponseField>
+
+<ResponseField name="data.total_count" type="number">
+  The number of block rules returned by this request.
+</ResponseField>
+
+<ResponseField name="data.filters" type="object">
+  Echoes the filters used in the request (`inbound_number`, `active_only`).
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if validation fails.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "blocks": [
+      {
+        "id": 456,
+        "blocked_number": "+10000000000",
+        "is_global": false,
+        "inbound_number": "+19999999999",
+        "org_id": "1a2b3c4d-5e6f-7a8b-9c0d-ef1234567890",
+        "reason": null,
+        "is_active": true,
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "updated_at": "2025-01-01T00:00:00.000Z"
+      }
+    ],
+    "total_count": 1,
+    "filters": {
+      "inbound_number": "+19999999999",
+      "active_only": true
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>

@@ -1,0 +1,76 @@
+---
+title: "Create Block Rules"
+api: "POST https://api.bland.ai/v1/blocked_numbers"
+description: "Create one or more block rules to prevent specific phone numbers from reaching your inbound numbers."
+---
+
+<Info>
+  **Call Blocking** – Blocked numbers will be rejected before reaching any agent. Blocking can apply globally or to specific inbound lines.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="numbers" type="string[]" required>
+  A list of phone numbers to block, formatted in E.164 (e.g., `+14155551234`). Maximum 10 numbers per request.
+</ParamField>
+
+<ParamField body="is_global" type="boolean" required>
+  Set to `true` to block the numbers globally across all inbound numbers. Set to `false` to scope the block to a specific `inbound_number`. You cannot enable both `is_global` and `inbound_number` in the same request.
+</ParamField>
+
+<ParamField body="inbound_number" type="string" required={false}>
+  The E.164 formatted inbound number to associate the block with. Required when `is_global` is `false`.
+</ParamField>
+
+<ParamField body="reason" type="string" required={false}>
+  Optional text to describe the reason for blocking.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Contains the number of rules created and the list of created blocks.
+</ResponseField>
+
+<ResponseField name="data.created_count" type="number">
+  Number of block rules successfully created.
+</ResponseField>
+
+<ResponseField name="data.blocks" type="array">
+  List of block rule objects that were created.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if validation fails.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "created_count": 1,
+    "blocks": [
+      {
+        "id": 123,
+        "blocked_number": "+10000000000",
+        "is_global": true,
+        "inbound_number": null,
+        "org_id": "b7d3e9fc-5c4a-4c2a-9b8f-d1e1d1a2e333",
+        "reason": null,
+        "is_active": true,
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "updated_at": "2025-01-01T00:00:00.000Z"
+      }
+    ]
+  },
+  "errors": null
+}
+
+```
+</ResponseExample>

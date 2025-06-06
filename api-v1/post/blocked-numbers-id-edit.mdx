@@ -1,0 +1,96 @@
+---
+title: "Edit Block Rule"
+api: "POST https://api.bland.ai/v1/blocked_numbers/{block_id}/edit"
+description: "Update attributes of an existing block rule."
+---
+
+<Info>
+  You can only update fields like `reason` or `is_active`. Phone numbers and scope (global/inbound) are immutable after creation.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="block_id" type="number" required>
+  The unique ID of the block rule to update.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="reason" type="string" required={false}>
+  Optional reason for blocking. Set to `null` to remove an existing reason.
+</ParamField>
+
+<ParamField body="is_active" type="boolean" required={false}>
+  Controls whether the block rule is currently enforced. Set to `false` to disable or `true` to re-enable. Use `null` to leave unchanged.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated block rule object.
+</ResponseField>
+
+<ResponseField name="data.id" type="number">
+  Unique ID of the block rule.
+</ResponseField>
+
+<ResponseField name="data.blocked_number" type="string">
+  The phone number being blocked.
+</ResponseField>
+
+<ResponseField name="data.is_global" type="boolean">
+  Indicates if the block applies globally.
+</ResponseField>
+
+<ResponseField name="data.inbound_number" type="string|null">
+  The specific inbound number the block applies to (if not global).
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  UUID of the owning organization.
+</ResponseField>
+
+<ResponseField name="data.reason" type="string|null">
+  Reason for the block, if present.
+</ResponseField>
+
+<ResponseField name="data.is_active" type="boolean">
+  Whether the block rule is currently active.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp when the rule was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO timestamp of the last update.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of validation or lookup errors.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": 123,
+    "blocked_number": "+10000000000",
+    "is_global": false,
+    "inbound_number": "+18888888888",
+    "org_id": "b7d3e9fc-5c4a-4c2a-9b8f-d1e1d1a2e333",
+    "reason": "User requested block",
+    "is_active": false,
+    "created_at": "2025-01-01T00:00:00.000Z",
+    "updated_at": "2025-01-10T12:00:00.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
