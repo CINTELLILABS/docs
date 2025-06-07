@@ -143,6 +143,26 @@ Define where to route the agent based on the webhook result:
 
 > Note: Every webhook node requires a route for default API Request Completion before saving for the first time.
 
+Pathways are evaluated from top to bottom, and each condition can overwrite the previous result:
+
+* If the first pathway to follow points to node "a" and evaluates to true, the next node is set to "a".
+* If the second pathway to follow points to node "b" and also evaluates to true, it will overwrite the previous result — the next node will now be "b".
+
+In the following example, if the variable "logged_status" extracted from the webhook response is "confirmed", the agent will evaluate the first condition to true. It will then evaluate the second condition to true. Since we overwrite and save the last true pathway, the agent will go to the End Call node.
+
+<img 
+  src="../tutorials/tutorials-assets/pathway_after_webhook.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Webhook Pathway Routing"
+/>
+
+
+
+
+After all conditions are evaluated, the last true condition determines which pathway is followed.
+
+> Important: If any pathway uses **API Request Completion (Default)**, and it evaluates to true, it will take precedence and override all other conditions.
+
 ---
 
 ## Speech During Webhook
