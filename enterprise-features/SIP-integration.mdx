@@ -1,19 +1,19 @@
 ---
 
 title: "SIP Integration"
-description: "Configure and manage SIP for inbound call routing via Bland."
+description: "Configure and manage SIP for call routing to and from Bland."
 
 ---
 
 ## Overview
 
-Bland supports **inbound SIP termination**, allowing customers to direct calls from their SIP provider to Bland for handling.
+Bland supports **inbound and outbound SIP**, allowing customers to direct calls from their SIP provider to Bland for handling - or to direct Bland to make contact with their SIP provider.
 
 This guide provides:
 
 * SIP connection details
 * Requirements and security settings
-* Instructions for attaching, updating, and detaching SIP routes via Bland's API
+* Instructions for attaching, verifying, updating, and detaching SIP routes via Bland's API
 * Schema definitions and usage patterns
 
 ---
@@ -69,6 +69,14 @@ US1:
 
 35.80.235.26
 54.189.4.67
+54.172.60.0
+54.172.60.1
+54.172.60.2
+54.172.60.3
+54.244.51.0
+54.244.51.1
+54.244.51.2
+54.244.51.3
 
 --
 EU1:
@@ -90,7 +98,6 @@ Bland does not provide static addresses for Media Stream Servers. As part of the
 * Currently Supported: PCMU, PCMA
 * Coming Soon: Opus, G722
 
-
 **Security Requirements:**
 
 * SIP Signaling: TLS 1.2 or higher
@@ -106,8 +113,6 @@ Bland does not provide static addresses for Media Stream Servers. As part of the
 
 * Number Format: +E.164 or E.164 (both supported for origination and termination)
 * SIP Registration: Not required (Bland determines routing based on predefined configurations configurable below.)
-
-
 
 ---
 
@@ -138,10 +143,41 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
   -d '{
     "phone_number": "+14150000000",
     "directions": [
-      { "type": "inbound" }
-      { "type": "outbound", "sip_endpoint": "sip.customer.com" } // Either inbound or outbound can be provided
+      { "type": "inbound" },
+      { 
+          "type": "outbound", 
+          "sip_endpoint": "sip:your.provider.com", // FQDN Only. Port must be defined here, or in options. Prefixed with `sip:`
+          "options": {
+              "port": 1234, // Will overwrite any port defined in your sip_endpoint.
+              "transport": "tls", // Other available: tls, tcp
+              "secure_media": "true", // True, False
+              "sip_username": "bland", // Optional
+              "sip_password": "password" // Optional
+          }
+      }
     ],
     "service": "sip"
+  }'
+```
+
+### Verify SIP Number (Outbound)
+
+`PUT /sip/verify`
+
+To prove that you own the number, you'll need to perform a one-time verification.
+
+Be ready! Once you make this request, you'll receive a phone call to the specified phone number, from `+14157234000` - which will require you to input the code returned from the below request into your keypad.
+
+<ParamField query="phone_number" type="string">
+  The phone number to verify SIP calling from. It must be attached to your organization first before attempting to verify.
+</ParamField>
+
+```bash Example Request
+curl -X PUT https://api.bland.ai/v1/sip/verify \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
   }'
 ```
 
@@ -169,7 +205,14 @@ curl -X POST https://api.bland.ai/v1/sip/update \
     "phone_number": "+14150000000",
     "updates": {
       "type": "outbound",
-      "sip_endpoint": "sip:user@your.provider.com"
+      "sip_endpoint": "sip:your.provider.com" // Only available for outbound SIP Types.
+      "options": { // Only available for outbound SIP Types.
+          "port": 1234, // Will overwrite any port defined in your sip_endpoint.
+          "transport": "tls", // Other available: tls, tcp
+          "secure_media": "true", // True, False
+          "sip_username": "bland", // Optional
+          "sip_password": "password" // Optional
+      }
     }
   }'
 ```
@@ -209,18 +252,35 @@ curl -X POST https://api.bland.ai/v1/sip/detach \
 
 ---
 
+### Making your first SIP Call (Outbound)
+
+To use a number that was registered for SIP, in an outbound direction - all that is required is to specify this as your from number.
+
+Note: You'll need to ensure that you've verified your number ahead of time, as instructed above.
+
+```bash Example Request
+curl -X POST https://api.bland.ai/v1/calls \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "Say hi to the nice person!",
+    "from": "+12341234123", // The number above registered as a SIP Outbound number.
+    "phone_number": "<the callee's phone number>"
+  }'
+```
+
 ### Get SIP Config
 
-`GET /sip?inbound_id={inbound_id}`
+`GET /sip?phone_number={phone_number}`
 
-Returns current SIP configuration (if any) for a given `inbound_id`.
+Returns current SIP configuration (if any) for a given `phone_number`.
 
-<ParamField query="inbound_id" type="number">
-  (Optional) The ID of the inbound number to fetch SIP configuration for.
+<ParamField query="phone_number" type="string">
+  The phone number of the number to fetch SIP configuration for.
 </ParamField>
 
 ```bash Example Request
-curl -X GET 'https://api.bland.ai/v1/sip?inbound_id=12345' \
+curl -X GET 'https://api.bland.ai/v1/sip?phone_number=+1231231234' \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -229,8 +289,30 @@ curl -X GET 'https://api.bland.ai/v1/sip?inbound_id=12345' \
 ```json
 {
   "data": {
-    "phone_number": "+14150000000",
-    "directions": [ "inbound" ]
+    "inbound": { // May be null if not present.
+      number: string;
+      id: string;
+      org_id: string;
+      direction: string;
+      sip_endpoint: string | null;
+      created_at: Date;
+      updated_at: Date;
+      headers: Object | null;
+      options: Object | null; // As above
+      inbound_id: bigint | null;
+    },
+    "outbound": { // May be null if not present.
+      number: string;
+      id: string;
+      org_id: string;
+      direction: string;
+      sip_endpoint: string | null;
+      created_at: Date;
+      updated_at: Date;
+      headers: Object | null;
+      options: Object | null; // As above
+      inbound_id: bigint | null;
+    }
   },
   "errors": null
 }
@@ -240,7 +322,6 @@ curl -X GET 'https://api.bland.ai/v1/sip?inbound_id=12345' \
 
 ## Notes
 
-- SIP media handling currently supports inbound-only termination.
 - Phone numbers can be attached independently for inbound and outbound routing via the API.
 - All requests must conform to the expected schema; invalid payloads will be rejected with a 400 response.
 - Each API response includes a success status and, if applicable, an error message to aid debugging.
