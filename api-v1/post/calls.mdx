@@ -31,7 +31,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="from" type="string">
   Specify a phone number to call from that you own or have uploaded from your Twilio account. Country code is required, spaces or parentheses must be excluded.
 
-  By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encryped_key in the create call request headers.
+  By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
 </ParamField>
 
 <ParamField body="pathway_id" type="string">
@@ -86,7 +86,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="background_track" type="string">
   Select an audio track that you'd like to play in the background during the call. The audio will play continuously when the agent isn't speaking, and is incorporated into it's speech as well.
 
-  Use this to provide a more natural, seamless, engaging experience for the conversation. We’ve found this creates a significantly smoother call experience by minimizing the stark differences between total silence and the agent’s speech.
+  Use this to provide a more natural, seamless, engaging experience for the conversation. We've found this creates a significantly smoother call experience by minimizing the stark differences between total silence and the agent's speech.
 
   Options:
 
@@ -185,7 +185,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="keywords" default="[]" type="string[]">
   These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
 
-  For example, if the word Blandy is frequently transcribed as a homonym like “Reese” you could do this:
+  For example, if the word Blandy is frequently transcribed as a homonym like "Reese" you could do this:
 
   ```json
     {
@@ -239,7 +239,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   <Accordion title="Prompting Notes">
     For best results:
 
-    - Specify conditions that the agent should transfer to a human under (examples are great\!)
+    - Specify conditions that the agent should transfer to a human under (examples are great!)
     - In the `task`, refer to the action solely as "transfer" or "transferring".
     - Alternate phrasing such as "swap" or "switch" can mislead the agent, causing the action to be ignored.
   </Accordion>
@@ -273,41 +273,48 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   <Accordion title="Expand to view language options">
     The available language options are as follows:
 
-    - `auto` - Auto Detect
+    - `babel` - Babel (All Languages) - Experimental<sup>1</sup>
     - `en` - English
-      - `en-US` - English (US)
-      - `en-GB` - English (UK)
-      - `en-AU` - English (Australia)
-      - `en-NZ` - English (New Zealand)
-      - `en-IN` - English (India)
-    - `zh` - Chinese (Mandarin, Simplified)
-      - `zh-CN` - Chinese (Mandarin, Simplified, China)
-      - `zh-Hans` - Chinese (Mandarin, Simplified, Hans)
-    - `zh-TW` - Chinese (Mandarin, Traditional)
-      - `zh-Hant` - Chinese (Mandarin, Traditional, Hant)
+    - `babel-en` - English (Babel)
+    - `en-US` - English (US)
+    - `en-GB` - English (UK)
+    - `en-AU` - English (Australia)
+    - `en-NZ` - English (New Zealand)
+    - `en-IN` - English (India)
     - `es` - Spanish
-      - `es-419` - Spanish (Latin America)
+    - `babel-es` - Spanish (Babel)
+    - `es-419` - Spanish (Latin America)
     - `fr` - French
-      - `fr-CA` - French (Canada)
+    - `babel-fr` - French (Babel)
+    - `fr-CA` - French (Canada)
     - `de` - German
+    - `babel-de` - German (Babel)
     - `el` - Greek
     - `hi` - Hindi
-      - `hi-Latn` - Hindi (Latin script)
+    - `hi-Latn` - Hindi (Latin script)
+    - `hu` - Hungarian
     - `ja` - Japanese
     - `ko` - Korean
-      - `ko-KR` - Korean (Korea)
+    - `ko-KR` - Korean (Korea)
+    - `vi` - Vietnamese
     - `pt` - Portuguese
-      - `pt-BR` - Portuguese (Brazil)
-      - `pt-PT` - Portuguese (Portugal)
+    - `pt-BR` - Portuguese (Brazil)
+    - `pt-PT` - Portuguese (Portugal)
+    - `zh` - Chinese (Mandarin, Simplified)
+    - `zh-CN` - Chinese (Mandarin, Simplified, China)
+    - `zh-Hans` - Chinese (Mandarin, Simplified, Hans)
+    - `zh-TW` - Chinese (Mandarin, Traditional)
+    - `zh-Hant` - Chinese (Mandarin, Traditional, Hant)
     - `it` - Italian
     - `nl` - Dutch
     - `pl` - Polish
     - `ru` - Russian
     - `sv` - Swedish
-      - `sv-SE` - Swedish (Sweden)
+    - `sv-SE` - Swedish (Sweden)
     - `da` - Danish
-      - `da-DK` - Danish (Denmark)
+    - `da-DK` - Danish (Denmark)
     - `fi` - Finnish
+    - `no` - Norwegian
     - `id` - Indonesian
     - `ms` - Malay
     - `tr` - Turkish
@@ -316,12 +323,9 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `cs` - Czech
     - `ro` - Romanian
     - `sk` - Slovak
-    - `hu` - Hungarian
-    - `no` - Norwegian
-    - `vi` - Vietnamese
-    - `babel` - Babel (Experimental<sup>1</sup>)
+    - `auto` - Auto Detect (English & Spanish)
 
-    <sup>1</sup> The Bland Babel Transcription Engine (BETA) is our new proprietary transcription engine\! Babel can handle multilingual conversations by identifying and switching languages on the fly. It's now in beta and available under the "babel" language mode.
+    <sup>1</sup> The Bland Babel Transcription Engine (BETA) is our new proprietary transcription engine! Babel can handle multilingual conversations by identifying and switching languages on the fly. It's now in beta and available under the "babel" language mode.
     **Note: For pathway calls and prompts, make sure to prompt your agent to respond in the language they are spoken to.**
   </Accordion>
 </ParamField>
@@ -356,9 +360,9 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   Restricts calls to certain hours in your timezone. Specify the timezone and time windows using 24-hour format.
 
   Supported time formats:
-  •	24-hour: “13:00”, “09:30”
-  •	12-hour: “1:00pm”, “9:30am”
-  •	Military: “1300”, “0930”
+  •	24-hour: "13:00", "09:30"
+  •	12-hour: "1:00pm", "9:30am"
+  •	Military: "1300", "0930"
 
   Example:
 
@@ -369,14 +373,14 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  The times will be automatically converted to UTC for processing. If the end time is before the start time (e.g. “22:00” to “06:00”), it will be interpreted as spanning overnight.
+  The times will be automatically converted to UTC for processing. If the end time is before the start time (e.g. "22:00" to "06:00"), it will be interpreted as spanning overnight.
 </ParamField>
 
 <ParamField body="sensitive_voicemail_detection" default="false" type="boolean">
   When `true`, uses LLM-based analysis to detect frequent voicemails.
 </ParamField>
 <ParamField body="ignore_button_press" type="boolean" default="false">
-  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0–9, *, #).  
+  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0-9, *, #).  
   This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.  
   Useful when your agent should handle the entire call conversationally, without responding to button presses.
 </ParamField>
@@ -444,7 +448,7 @@ In this case, the AI would say: "Hello, John".
   - Call is answered by an IVR system or phone tree:
   - If ivr_mode is set to true, the AI will navigate the system and continue as normal.
   - If voicemail_action is set to ignore, the AI will ignore the IVR and continue as normal.
-  - Otherwise, if voicemail_message is set then it’ll leave that message and end the call.
+  - Otherwise, if voicemail_message is set then it'll leave that message and end the call.
   - Finally, if none of those conditions are met, the call will end immediately.
 
   Note: If voicemail_message is set, then the AI will leave the message regardless of the voicemail_action.
