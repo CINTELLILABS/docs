@@ -1,0 +1,123 @@
+---
+title: "Citations"
+description: "Extract structured insights from post-call transcripts using custom schemas."
+---
+
+## Introduction
+
+Citations allow you to define structured post-call analytics for enterprise use cases. By configuring schemas of variables and logic, you can automatically extract key information from call transcripts — no manual review required.
+
+Potential use cases such as:
+
+<CardGroup cols={2}>
+  <Card title="Collect User Details" icon="user">
+    Extract caller information such as names, contact info, preferences, or identifiers.
+  </Card>
+  <Card title="Track Transfers & Escalations" icon="phone">
+    Monitor when calls are transferred, escalated, or handed off to other teams.
+  </Card>
+  <Card title="Confirm Issue Resolution" icon="circle-check">
+    Determine whether a caller’s issue was addressed or remains unresolved.
+  </Card>
+  <Card title="Summarize Key Moments" icon="book-open">
+    Capture important moments like intent, objections, or outcomes across conversations.
+  </Card>
+</CardGroup>
+
+---
+
+## Creating a Citation Schema
+
+To get started, go to the **Analytics → Citations** tab in your sidebar.
+
+Click **Create new schema** and give it a name and description.
+
+From there, you'll enter the citation builder. Schemas are composed of:
+
+* **Variables** — the data points you want to extract  
+* **Groupings** — optional collections of related variables  
+* **Conditions** — logic for flagging calls or setting output rules  
+* **Analysis** — an overview of schema-level performance and extraction metrics
+
+---
+
+## Defining Variables
+
+The most essential step is defining the variables your schema should extract. These are the individual values or signals pulled from the call transcript.
+
+Click **Add variable**, then provide:
+
+* **Name** — a human-readable label  
+* **Description** — instructions for the LLM to understand and extract this value  
+* **Type** — the format of the extracted data
+
+<img 
+  src="../tutorials/tutorials-assets/citation_variable_create.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Create Citation Variable"
+/>
+
+Supported types include:
+
+| Type      | Description                                                             |
+|-----------|-------------------------------------------------------------------------|
+| String    | Freeform text (e.g. “unhappy”, “San Francisco”)                |
+| Number    | Any numeric quantity (e.g. ages, durations, dollar values)              |
+| Boolean   | True or False                                                           |
+| Array     | List of values (e.g. multiple products mentioned)                       |
+| Category  | Used to extract a single value from a list of options   |
+
+Once saved, variables will appear in the **Variables** tab.
+
+<img 
+  src="../tutorials/tutorials-assets/citation_variable_table.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Citation Variable Table"
+/>
+
+---
+
+## Optional: Groupings and Conditions
+
+To better organize your schema, you can group related variables under a common theme.
+
+Navigate to the **Groupings** tab and click **Add Grouping**. For example, you might group variables under:
+
+- Demographics  
+- Call Outcomes  
+- Escalation Signals  
+
+The **Conditions** tab allows you to write logic that will capture variables based on the passing logic of others. For example, you might only want to capture certain variables if the user meets your specific criteria.
+
+<img 
+  src="../tutorials/tutorials-assets/citation_condition.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Citation Groupings"
+/>
+
+---
+
+## Analysis and Monitoring
+
+Once your schema is used in live calls, visit the **Analysis** tab to view metrics:
+
+* **Total Variables Extracted**  
+* **Average Extraction Rate**  
+* **Total Calls Processed**  
+* **Trends and Distribution Graphs**
+
+You can filter by time ranges (e.g. Today, Last Week, Last 2 Months) and inspect specific performance metrics.
+
+<img 
+  src="../tutorials/tutorials-assets/citation_analysis.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Citation Analytics"
+/>
+
+---
+
+## API Integration
+
+Citations can be included in your outbound or inbound calls using the `citation_schema_ids` parameter in the [Send Call](/api-v1/post/calls#param-citation-schema-ids) or [Update Inbound Number](/api-v1/post/inbound-number-update#param-citation-schema-ids) API endpoints.
+
+Additionally, if you would like to receive citations via webhook after a call has finished, you can do so by adding the `citations` event to your live webhook events list in the [Send Call](/api-v1/post/calls#param-webhook-events) or [Update Inbound Number](/api-v1/post/inbound-number-update#param-webhook-events) API endpoints.
