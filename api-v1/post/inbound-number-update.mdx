@@ -319,6 +319,206 @@ description: "Update your inbound agent's settings, prompt and other details."
   The request body will match the response from the [GET /v1/calls/:call_id](/api-v1/get/calls-id) endpoint.
 </ParamField>
 
+<ParamField body="webhook_events" type="string[]">
+  Specify which events you want to stream to the webhook, during the call.
+
+  Options:
+
+  - `queue`
+  - `call`
+  - `latency`
+  - `webhook`
+  - `tool`
+  - `dynamic_data`
+  - `citations` (Sent separately, Enterprise only)
+
+Example payloads:
+  <CodeGroup>
+
+```json queue
+// ex 1
+{
+  "message": "Call enqueued",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "queue",
+  "log_level": "info"
+}
+```
+
+```json call
+// ex 1
+{
+  "message": "Call connected",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "call",
+  "log_level": "info"
+}
+// ex 2
+{
+  "message": "Sending first sentence: Hello, thank you for reaching out. I'd like to get to know you a bit better. How are you feeling today?",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "call",
+  "log_level": "info"
+}
+// ex 3
+{
+  "message": "Agent speech: Hello, thank you for reaching out.",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "call",
+  "log_level": "info"
+}
+// ex 4
+{
+  "message": "Handling user speech: Yeah. I'm thirty six. And I'm five foot nine.",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "call",
+  "log_level": "info"
+}
+// ex 5
+{
+  "message": "Webhook Response: 200  | Webhook Response Data: [object Object] | Response Time: 689ms",
+  "call_id": "87654321-4321-4321-4321-cba987654321",
+  "category": "call",
+  "log_level": "info"
+}
+```
+
+```json latency
+// ex 1
+{
+  "message": "TTS: 218ms",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "latency",
+  "log_level": "performance"
+}
+// ex 2
+{
+  "message": "LLM: 266ms",
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "category": "latency",
+  "log_level": "performance"
+}
+```
+
+```json webhook
+{
+  "message": "Storing dynamic data messages: \n\n answer : \"true\"",
+  "call_id": "87654321-4321-4321-4321-cba987654321",
+  "category": "call",
+  "log_level": "info"
+}
+```
+
+```json tool
+{
+  "message": "Executing custom tool: Test Tool 4 with input: [object Object]",
+  "call_id": "abcdef12-3456-7890-abcd-ef1234567890",
+  "category": "call",
+  "log_level": "info"
+}
+```
+
+```json dynamic_data
+{
+  "message": "Storing dynamic data: \n\n vector_data : {\"data\":{\"results\":[{\"id\":\"fedcba98-7654-3210-fedc-ba9876543210\",\"input_text\":\"Here are details on the restaurant...\",\"similarity\":0.103339002763233,\"chunk_index\":0}]},\"errors\":null}",
+  "call_id": "abcdef12-3456-7890-abcd-ef1234567890",
+  "category": "call",
+  "log_level": "info"
+}
+```
+
+```json citations
+{
+  "call_id": "12345678-1234-1234-1234-123456789abc",
+  "user_id": "11111111-2222-3333-4444-555555555555",
+  "event_type": "citations",
+  "timestamp": "2025-07-03T16:41:15.231Z",
+  "citations": [
+    {
+      "call_id": "12345678-1234-1234-1234-123456789abc",
+      "variable_name": "User height",
+      "variable_type": "boolean",
+      "value": true,
+      "cited_utterances": [
+        {
+          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          "idx": 3,
+          "start_time": 24.096,
+          "end_time": 27.424,
+          "confidence": 0.17166666666666666,
+          "channel": 1,
+          "transcript": "I am 36 and I am 5'9\".",
+          "speaker_id": "SPEAKER_1_0",
+          "speaker_name": null,
+          "speaker_description": null,
+          "topics": [
+            "customer_information_provided"
+          ],
+          "topics_meta": "{\"customer_information_provided\":\"customer providing personal details\"}",
+          "utterance_type": "answer"
+        }
+      ],
+      "schema_id": "99999999-8888-7777-6666-555555555555"
+    },
+    {
+      "call_id": "12345678-1234-1234-1234-123456789abc",
+      "variable_name": "Caller Age",
+      "variable_type": "number",
+      "value": 36,
+      "cited_utterances": [
+        {
+          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          "idx": 3,
+          "start_time": 24.096,
+          "end_time": 27.424,
+          "confidence": 0.17166666666666666,
+          "channel": 1,
+          "transcript": "I am 36 and I am 5'9\".",
+          "speaker_id": "SPEAKER_1_0",
+          "speaker_name": null,
+          "speaker_description": null,
+          "topics": [
+            "customer_information_provided"
+          ],
+          "topics_meta": "{\"customer_information_provided\":\"customer providing personal details\"}",
+          "utterance_type": "answer"
+        },
+        {
+          "id": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+          "idx": 4,
+          "start_time": 30.56,
+          "end_time": 35.455,
+          "confidence": 0.5672727272727273,
+          "channel": 0,
+          "transcript": "All right. So you're 36 years old and five foot nine. That's great. How's your day been so far? Anything exciting happened?",
+          "speaker_id": "SPEAKER_0_0",
+          "speaker_name": null,
+          "speaker_description": null,
+          "topics": [
+            "day_review_inquiry"
+          ],
+          "topics_meta": "{\"day_review_inquiry\":\"agent inquiring about the customer's day and any exciting events\"}",
+          "utterance_type": "question"
+        }
+      ],
+      "schema_id": "99999999-8888-7777-6666-555555555555"
+    },
+    {
+      "call_id": "12345678-1234-1234-1234-123456789abc",
+      "variable_name": "Caller feeling",
+      "variable_type": "string",
+      "value": null,
+      "cited_utterances": [],
+      "schema_id": "99999999-8888-7777-6666-555555555555"
+    }
+  ]
+}
+```
+
+</CodeGroup>
+
+</ParamField>
+
 <ParamField body="analysis_schema" type="object">
   Define a JSON schema for how you want to get information about the call - information like email addresses, names, appointment times or any other type of custom data.
 
