@@ -1,0 +1,162 @@
+---
+title: "SSO Support"
+description: "Configure single sign-on using OpenID Connect with your identity provider."
+---
+
+## Introduction
+
+Bland supports OIDC-based Single Sign-On (SSO) for enterprise workspaces. This enables your users to authenticate with their existing identity provider (IdP) — such as Google Workspace, Okta, or Azure Active Directory — instead of managing separate Bland credentials.
+
+Once connected, users from your domain can log in with Sign in with SSO, and new users will be provisioned automatically into your workspace.
+
+---
+
+## Overview
+
+To configure OIDC SSO, you will:
+
+1. Create a new client credential in your identity provider  
+2. Register that credential in Bland as a new provider  
+3. Whitelist the redirect URI from Bland using the provider ID
+
+You will need:
+
+- Client ID and Client Secret from your IdP  
+- Issuer URL (varies by provider)  
+- Authorized Redirect URI (generated using your Bland Provider ID)
+
+---
+
+## 1. Google Workspace
+
+To create OIDC credentials in Google Cloud Console:
+
+1. Go to [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Click Create Credentials → OAuth client ID
+3. Choose Web application
+4. Enter a name for your client
+5. Leave the authorized redirect URI field blank for now — you’ll return to this after creating your provider in Bland, where the required URI (including the Provider ID) will be generated.
+6. Click Create
+7. Copy the Client ID and Client Secret
+8. Use `https://accounts.google.com` as your Issuer URL
+
+Once created:
+
+- Navigate to the SSO tab in your Bland workspace settings
+- Click Create New Provider
+- Fill in the domain, issuer URL, and your new client credentials
+- After creation, copy the Provider ID
+- Return to your Google OAuth client and add the redirect URI using your Provider ID
+
+> You can find detailed help in:  
+> [Google OIDC Client Setup](https://developers.google.com/identity/protocols/oauth2/openid-connect)
+
+---
+
+## 2. Okta
+
+To create an OIDC app integration in Okta:
+
+1. Log into the [Okta Admin Dashboard](https://admin.okta.com/)
+2. Go to Applications → Create App Integration
+3. Choose:
+   - Sign-in method: OIDC – OpenID Connect  
+   - Application type: Web Application  
+4. Name your app
+5. Ensure Authorization Code is checked
+6. Leave the Sign-in Redirect URI empty for now — after creating your provider in Bland, you’ll receive a full redirect URI with your Provider ID to paste here.
+7. Click Save
+8. Copy the Client ID and Client Secret
+9. Use your issuer URL in the format:  
+   `https://<yourOktaDomain>/oauth2/default`
+
+Then:
+
+- Go to the SSO tab in Bland  
+- Create a new provider with your domain, issuer, and credentials  
+- Copy the Provider ID  
+- Return to Okta and add the redirect URI using that Provider ID
+
+> Reference:  
+> [Okta OIDC App Guide](https://developer.okta.com/docs/guides/implement-auth-code/)  
+> [SysCloud Okta SSO Setup](https://kb.syscloud.com/okta)
+
+---
+
+## 3. Azure Active Directory
+
+To register an application in Azure AD:
+
+1. Log in to the [Azure Portal](https://portal.azure.com/)
+2. Go to Azure Active Directory → App registrations
+3. Click New registration
+4. Name your app
+5. Under **Redirect URI**, select **Web** and leave it empty for now — you’ll fill it in after creating your provider in Bland, which will generate the full URI using your Provider ID.
+6. Click Register
+7. In the app overview, copy the Application (client) ID (this is your Client ID)
+8. Go to Certificates & Secrets → New client secret to generate your Client Secret
+9. Your Issuer URL is typically:  
+   `https://login.microsoftonline.com/<tenant_id>/v2.0`  
+   And your OIDC metadata document:  
+   `https://login.microsoftonline.com/<tenant_id>/v2.0/.well-known/openid-configuration`
+
+After that:
+
+- Go to the SSO tab in Bland  
+- Create your provider and input the client ID, secret, and issuer  
+- Copy the Provider ID  
+- Return to Azure and add the corresponding redirect URI to your app
+
+> Learn more:  
+> [Azure AD OIDC Setup Guide](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc)
+
+---
+
+## Logging In with SSO
+
+Once your provider is live, users can click Sign In with SSO from the Bland login page.
+
+- **Existing users**: Will be matched by email and converted to SSO login. All profile info remains intact.  
+- **New users**: Will be automatically provisioned into your org after first login.
+
+No manual invite steps are required for SSO provisioned accounts.
+
+---
+
+## Redirect URI Format
+
+The redirect URI will follow this format:
+
+`https://app.bland.ai/auth/oidc/callback/<provider_id>`
+
+You’ll see the full value in the Bland UI once your provider is created. This must be whitelisted in your identity provider’s application settings.
+
+---
+
+## Important Notes
+
+- Users signing in via SSO will still need to verify their phone number during first-time setup.
+- SSO users will be automatically added to this organization with the "operator" role, unless they have an admin role defined in the SSO provider.
+- Each email domain can only be configured for one organization.
+- The redirect URI for your OIDC provider should be:  
+  `https://api.bland.ai/authorization/sso/callback/[provider-id]`  
+  using the provider ID from the table above. Whitelist this URI after connecting the provider to Bland.
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="Can I test the connection after setup?">
+    Yes — after saving your provider and whitelisting the redirect URI, attempt a Sign in with SSO using an account in the domain you configured.
+  </Accordion>
+  <Accordion title="What if my domain is already registered?">
+    If a domain is already attached to another provider, contact Bland support to reset or reassign it.
+  </Accordion>
+  <Accordion title="Can I have multiple SSO providers?">
+    Yes — multiple providers can be configured for different domains or identity systems.
+  </Accordion>
+  <Accordion title="What happens to existing users after enabling SSO?">
+    Their accounts will be linked automatically the next time they log in using SSO.
+  </Accordion>
+</AccordionGroup>
