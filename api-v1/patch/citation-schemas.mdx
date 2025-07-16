@@ -1,0 +1,186 @@
+---
+title: "Update Citation Schema"
+api: "PATCH https://api.bland.ai/v1/citation_schemas/"
+description: "Update an existing citation schema's name, description, or schema configuration."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="id" type="string" required>
+  The unique identifier of the citation schema to update.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  The updated name for the citation schema.
+</ParamField>
+
+<ParamField body="description" type="string">
+  The updated description for the citation schema.
+</ParamField>
+
+<ParamField body="schema" type="object">
+  The updated JSON schema configuration for citation extraction. This completely replaces the existing schema configuration.
+
+  The schema object can contain:
+  - `variables`: Array of variable definitions for data extraction
+  - `groupings`: Array of related variable collections  
+  - `conditions`: Array of conditional logic rules
+
+  Example structure:
+  ```json
+  {
+    "variables": [
+      {
+        "name": "Customer Name",
+        "description": "The full name of the customer",
+        "type": "string"
+      },
+      {
+        "name": "Lead Score",
+        "description": "Numeric score indicating lead quality (1-10)",
+        "type": "number"
+      }
+    ],
+    "groupings": [
+      {
+        "name": "Lead Information",
+        "variables": ["Customer Name", "Lead Score"]
+      }
+    ],
+    "conditions": []
+  }
+  ```
+</ParamField>
+
+<Info>
+  At least one field (name, description, or schema) must be provided in the request body.
+</Info>
+
+### Response
+
+<ResponseField name="status" type="integer">
+  HTTP status code (200 for success).
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The updated citation schema object.
+
+  <ResponseField name="id" type="string">
+    The unique identifier for the citation schema (UUID format).
+  </ResponseField>
+
+  <ResponseField name="name" type="string">
+    The updated name of the citation schema.
+  </ResponseField>
+
+  <ResponseField name="description" type="string">
+    The updated description of the citation schema.
+  </ResponseField>
+
+  <ResponseField name="org_id" type="string">
+    The organization ID that owns this schema.
+  </ResponseField>
+
+  <ResponseField name="schema" type="object">
+    The updated JSON schema configuration for citation extraction.
+  </ResponseField>
+
+  <ResponseField name="created_at" type="string">
+    The timestamp when the citation schema was originally created (ISO 8601 format).
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be null for successful requests.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 Bad Request">
+  Returned when:
+  - The schema ID parameter is missing
+  - No update fields are provided in the request body
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Returned when the specified citation schema is not found or doesn't belong to your organization.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": 200,
+  "data": {
+    "id": "3f4a2b1c-8e9d-4c7f-b2a1-5e8d9c7f6a2b",
+    "name": "Enhanced Customer Information Extraction",
+    "description": "Extracts comprehensive customer demographics, contact information, and lead qualification data from call transcripts",
+    "org_id": "7c8b9a2d-3e4f-5c6b-8a9d-2e3f4c5b6a7c",
+    "schema": {
+      "variables": [
+        {
+          "name": "Customer Name",
+          "description": "The full name of the customer",
+          "type": "string"
+        },
+        {
+          "name": "Customer Email",
+          "description": "The email address provided by the customer",
+          "type": "string"
+        },
+        {
+          "name": "Phone Number",
+          "description": "The customer's phone number",
+          "type": "string"
+        },
+        {
+          "name": "Lead Score",
+          "description": "Numeric score indicating lead quality (1-10)",
+          "type": "number"
+        },
+        {
+          "name": "Interested in Demo",
+          "description": "Whether the customer wants to schedule a demo",
+          "type": "boolean"
+        }
+      ],
+      "groupings": [
+        {
+          "name": "Contact Information",
+          "variables": ["Customer Name", "Customer Email", "Phone Number"]
+        },
+        {
+          "name": "Lead Qualification",
+          "variables": ["Lead Score", "Interested in Demo"]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": {
+            "value": "5",
+            "operator": ">=",
+            "variable": "Lead Score"
+          },
+          "variables": [
+            {
+              "name": "Follow-up Priority",
+              "type": "string",
+              "description": "Priority level for follow-up (high, medium, low)"
+            }
+          ]
+        }
+      ]
+    },
+    "created_at": "2023-12-15T14:30:00.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

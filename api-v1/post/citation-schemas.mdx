@@ -1,0 +1,198 @@
+---
+title: "Create Citation Schema"
+api: "POST https://api.bland.ai/v1/citation_schemas/"
+description: "Create a new citation schema for extracting structured data from call transcripts."
+---
+
+## Overview
+
+Create a citation schema to define what data should be extracted from call transcripts. Citation schemas allow you to automatically capture structured information like customer details, call outcomes, or any custom variables relevant to your use case.
+
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  The name of the citation schema. This should be descriptive and help you identify the schema's purpose.
+</ParamField>
+
+<ParamField body="description" type="string">
+  An optional description explaining what this schema extracts and its intended use case.
+</ParamField>
+
+<ParamField body="schema" type="object">
+  The JSON schema configuration that defines variables, groupings, and conditions for citation extraction. If not provided, an empty schema will be created that can be configured later.
+
+  The schema object can contain:
+  - `variables`: Array of variable definitions for data extraction
+  - `groupings`: Array of related variable collections  
+  - `conditions`: Array of conditional logic rules that trigger additional variable extraction
+
+  Example structure:
+  ```json
+  {
+    "variables": [
+      {
+        "name": "Customer Name",
+        "description": "The full name of the customer",
+        "type": "string"
+      },
+      {
+        "name": "Customer Email",
+        "description": "The customer's email address",
+        "type": "string"
+      },
+      {
+        "name": "Customer Age",
+        "description": "The customer's age in years",
+        "type": "number"
+      },
+      {
+        "name": "Interested in Demo",
+        "description": "Whether the customer wants to schedule a demo",
+        "type": "boolean"
+      }
+    ],
+    "groupings": [
+      {
+        "name": "Contact Information",
+        "variables": [
+          "Customer Name",
+          "Customer Email"
+        ],
+        "description": "The customer's contact details"
+      },
+      {
+        "name": "Demographics",
+        "variables": [
+          "Customer Age"
+        ],
+        "description": "The customer's demographic information"
+      }
+    ],
+    "conditions": [
+      {
+        "condition": {
+          "value": "true",
+          "operator": "===",
+          "variable": "Interested in Demo"
+        },
+        "variables": [
+          {
+            "name": "Demo Preference",
+            "type": "string",
+            "description": "Type of demo preferred (in-person, virtual, etc.)"
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="integer">
+  HTTP status code (200 for success).
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created citation schema object.
+
+  <ResponseField name="id" type="string">
+    The unique identifier for the created citation schema (UUID format).
+  </ResponseField>
+
+  <ResponseField name="name" type="string">
+    The name of the citation schema.
+  </ResponseField>
+
+  <ResponseField name="description" type="string">
+    The description of the citation schema.
+  </ResponseField>
+
+  <ResponseField name="org_id" type="string">
+    The organization ID that owns this schema.
+  </ResponseField>
+
+  <ResponseField name="schema" type="object">
+    The JSON schema configuration for citation extraction.
+  </ResponseField>
+
+  <ResponseField name="created_at" type="string">
+    The timestamp when the citation schema was created (ISO 8601 format).
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be null for successful requests.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 Bad Request">
+  Returned when the required `name` parameter is missing.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": 200,
+  "data": {
+    "id": "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+    "name": "Customer Information Extraction",
+    "description": "Extracts customer demographics and contact information from call transcripts",
+    "org_id": "9b59f853-c2c7-4e3a-b5d6-8f7e9a1b2c3d",
+    "schema": {
+      "variables": [
+        {
+          "name": "Customer Name",
+          "description": "The full name of the customer",
+          "type": "string"
+        },
+        {
+          "name": "Customer Email",
+          "description": "The email address provided by the customer",
+          "type": "string"
+        },
+        {
+          "name": "Interested in Demo",
+          "description": "Whether the customer wants to schedule a demo",
+          "type": "boolean"
+        }
+      ],
+      "groupings": [
+        {
+          "name": "Contact Information",
+          "variables": ["Customer Name", "Customer Email"]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": {
+            "value": "true",
+            "operator": "===",
+            "variable": "Interested in Demo"
+          },
+          "variables": [
+            {
+              "name": "Demo Preference",
+              "type": "string",
+              "description": "Type of demo the customer prefers (in-person, virtual, etc.)"
+            }
+          ]
+        }
+      ]
+    },
+    "created_at": "2023-12-15T14:30:00.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

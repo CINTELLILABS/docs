@@ -1,0 +1,95 @@
+---
+title: "Backfill Citation Schema"
+api: "POST https://api.bland.ai/v1/citation_schemas/backfill"
+description: "Retroactively apply a citation schema to extract data from an existing call transcript."
+---
+
+## Overview
+
+The backfill endpoint allows you to apply a citation schema to a call that has already been completed. This is useful when you create a new schema and want to extract data from historical calls, or when you need to re-analyze a call with an updated schema.
+
+<Info>
+  This is an **Enterprise-only feature**. Contact your Bland representative or reach out to sales to enable this functionality.
+</Info>
+
+<Warning>
+  Backfilling will overwrite any existing citation data for the specified call and schema combination. This operation cannot be undone.
+</Warning>
+
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="schema_id" type="string" required>
+  The unique identifier of the citation schema to apply to the call.
+</ParamField>
+
+<ParamField body="call_id" type="string" required>
+  The unique identifier of the completed call to analyze with the citation schema.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The backfill operation result data.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The status of the backfill operation ("success" or "error").
+</ResponseField>
+
+<ResponseField name="call_id" type="string">
+  The call ID that was processed.
+</ResponseField>
+
+<ResponseField name="schema_id" type="string">
+  The schema ID that was applied.
+</ResponseField>
+
+<ResponseField name="variables_extracted" type="integer">
+  The number of variables that were successfully extracted from the call.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be null for successful requests.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 Bad Request">
+  Returned when:
+  - Required parameters (schema_id or call_id) are missing
+  - The call has already been processed with this schema
+  - The call does not have a transcript available
+</ResponseField>
+
+<ResponseField name="403 Forbidden">
+  Returned when the account does not have enterprise features enabled.
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Returned when:
+  - The specified call ID is not found
+  - The specified schema ID is not found
+  - Either resource doesn't belong to your organization
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "status": "success",
+    "call_id": "8f2c4a1b-7d9e-4f6a-b3c8-2e5d7a9f1c4b",
+    "schema_id": "4e7b2f8a-6c1d-4a9e-8f3b-7c2e9a4f6d1b",
+    "variables_extracted": 3
+  },
+  "errors": null
+}
+```
+</ResponseExample>
