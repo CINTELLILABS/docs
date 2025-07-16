@@ -1,0 +1,122 @@
+---
+title: "Get Citation Schema"
+api: "GET https://api.bland.ai/v1/citation_schemas/"
+description: "Retrieve a specific citation schema by ID."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="id" type="string" required>
+  The unique identifier of the citation schema to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="integer">
+  HTTP status code (200 for success).
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The citation schema object.
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  The unique identifier for the citation schema (UUID format).
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The name of the citation schema.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The description of the citation schema.
+</ResponseField>
+
+<ResponseField name="org_id" type="string">
+  The organization ID that owns this schema.
+</ResponseField>
+
+<ResponseField name="schema" type="object">
+  The JSON schema configuration containing variables, groupings, and conditions for citation extraction.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  The timestamp when the citation schema was created (ISO 8601 format).
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be null for successful requests.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 Bad Request">
+  Returned when the schema ID parameter is missing.
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Returned when the specified citation schema is not found or doesn't belong to your organization.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": 200,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Customer Information Extraction",
+    "description": "Extracts customer demographics and contact information from call transcripts",
+    "org_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+    "schema": {
+      "variables": [
+        {
+          "name": "Customer Name",
+          "description": "The full name of the customer",
+          "type": "string"
+        },
+        {
+          "name": "Customer Age", 
+          "description": "The age of the customer in years",
+          "type": "number"
+        },
+        {
+          "name": "Interested in Product",
+          "description": "Whether the customer expressed interest in the product",
+          "type": "boolean"
+        }
+      ],
+      "groupings": [
+        {
+          "name": "Demographics",
+          "variables": ["Customer Name", "Customer Age"]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": {
+            "value": "true",
+            "operator": "===",
+            "variable": "Interested in Product"
+          },
+          "variables": [
+            {
+              "name": "Product Interest Details",
+              "type": "string",
+              "description": "Specific details about which product features interest the customer"
+            }
+          ]
+        }
+      ]
+    },
+    "created_at": "2023-12-15T14:30:00.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
