@@ -1,0 +1,82 @@
+---
+title: "Update SMS Conversation"
+api: "PATCH https://api.bland.ai/v1/sms/conversations/{conversation_id}"
+description: "Updates properties of an existing SMS conversation."
+---
+
+<Info>
+  **Enterprise Feature** - This endpoint is available for enterprise customers only.
+</Info>
+
+### Headers
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+<ParamField path="conversation_id" type="string" required>
+  The unique identifier of the SMS conversation to update.
+</ParamField>
+
+### Body Parameters
+<ParamField body="is_active" type="boolean">
+  Sets the active status of the conversation. When set to `false`, the conversation will be marked as inactive.
+</ParamField>
+
+### Response
+<ResponseField name="message" type="string">
+  Confirmation message indicating the conversation was updated successfully.
+</ResponseField>
+
+<ResponseField name="conversation" type="object">
+  The updated conversation object containing the new values.
+</ResponseField>
+
+<ResponseField name="conversation.id" type="string">
+  The unique identifier of the conversation.
+</ResponseField>
+
+<ResponseField name="conversation.is_active" type="boolean">
+  The current active status of the conversation.
+</ResponseField>
+
+<ResponseField name="conversation.updated_at" type="string">
+  ISO 8601 timestamp of when the conversation was last updated.
+</ResponseField>
+
+<ResponseExample>
+```json Success Response
+{
+  "message": "Conversation updated successfully",
+  "conversation": {
+    "id": "conv_1234567890",
+    "is_active": false,
+    "updated_at": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+```json 400 Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Conversation ID is required",
+      "error": "CONVERSATION_ID_REQUIRED"
+    }
+  ]
+}
+```
+
+```json 404 Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Conversation not found",
+      "error": "CONVERSATION_NOT_FOUND"
+    }
+  ]
+}
+```
+</ResponseExample>
