@@ -1,0 +1,98 @@
+---
+title: "Add Call to Memory"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/add-call"
+description: "Add an existing call to a memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory to add the call to.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="call_id" type="string" required>
+  The unique identifier of the call to add to the memory. Must be an existing call in your account.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Response data confirming call addition.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming call was added to memory.
+</ResponseField>
+
+<ResponseField name="data.call" type="object">
+  Information about the call that was added.
+</ResponseField>
+
+<ResponseField name="data.call.call_id" type="string">
+  The call identifier that was added.
+</ResponseField>
+
+<ResponseField name="data.call.memory_id" type="string">
+  The memory identifier the call was added to.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "Call added to memory successfully",
+    "call": {
+      "call_id": "call_abc123",
+      "memory_id": "mem_123abc"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Missing Call ID
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Call ID is required."
+    }
+  ]
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_ADD_CALL_ERROR",
+      "message": "Failed to add call to memory."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Notes
+
+- The call must already exist in your account before it can be added to a memory
+- The call must be connected to a user existing in the memory
+- Adding a call to a memory will automatically associate it with the phone number involved in the call

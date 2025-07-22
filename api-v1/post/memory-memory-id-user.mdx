@@ -1,0 +1,117 @@
+---
+title: "Get User Memory Details"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/user"
+description: "Retrieve detailed memory information for a specific user/phone number."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number of the user to retrieve memory details for.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  User memory data.
+</ResponseField>
+
+<ResponseField name="data.metadata" type="string">
+  Custom metadata text associated with this user's memory entry.
+</ResponseField>
+
+<ResponseField name="data.summary" type="string">
+  AI-generated summary of interactions with this user.
+</ResponseField>
+
+<ResponseField name="data.last_call_at" type="string">
+  ISO timestamp of the most recent call with this user.
+</ResponseField>
+
+<ResponseField name="data.call_count" type="number">
+  Total number of calls with this user.
+</ResponseField>
+
+<ResponseField name="data.calls" type="array">
+  Array of call objects associated with this user.
+</ResponseField>
+
+<ResponseField name="data.calls[].c_id" type="string">
+  Unique identifier for the call.
+</ResponseField>
+
+<ResponseField name="data.calls[].created_at" type="string">
+  ISO timestamp when the call was made.
+</ResponseField>
+
+<ResponseField name="data.calls[].summary" type="string">
+  AI-generated summary of this specific call.
+</ResponseField>
+
+<ResponseField name="data.calls[].answered_by" type="string">
+  Who answered the call (e.g., "human", "ai").
+</ResponseField>
+
+<ResponseField name="data.calls[].call_length" type="number">
+  Call duration in minutes.
+</ResponseField>
+
+<ResponseField name="data.calls[].inbound" type="boolean">
+  Whether this was an inbound call (true) or outbound call (false).
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "metadata": "25 year old customer from New York",
+    "summary": "The user had previously discussed their startup and had a follow-up conversation, asking questions about AI and the future of their business.",
+    "last_call_at": "2025-07-22T05:19:46.000Z",
+    "call_count": 1,
+    "calls": [
+      {
+        "c_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeffffgggg",
+        "created_at": "2025-07-22T05:19:37.314Z",
+        "summary": "The call appears to be a follow-up conversation about the user's startup, asking questions about AI and the future of their business.",
+        "answered_by": "human",
+        "call_length": 0.3,
+        "inbound": false
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_ERROR",
+      "message": "Failed to retrieve memory data."
+    }
+  ]
+}
+```
+</ResponseExample>

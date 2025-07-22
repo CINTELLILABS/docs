@@ -1,0 +1,112 @@
+---
+title: "Get Memory Details"
+api: "GET https://api.bland.ai/v1/memory/{memory_id}"
+description: "Retrieve detailed information about a specific memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Detailed memory data organized by users.
+</ResponseField>
+
+<ResponseField name="data.memory_id" type="string">
+  Unique identifier for the memory.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Name of the memory.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp when the memory was created.
+</ResponseField>
+
+<ResponseField name="data.users" type="array">
+  Array of user objects with their associated data.
+</ResponseField>
+
+<ResponseField name="data.users[].phone_number" type="string">
+  The phone number associated with this memory entry.
+</ResponseField>
+
+<ResponseField name="data.users[].created_at" type="string">
+  ISO timestamp when this user was added to the memory.
+</ResponseField>
+
+<ResponseField name="data.users[].call_count" type="number">
+  Total number of calls with this phone number.
+</ResponseField>
+
+<ResponseField name="data.users[].metadata" type="string">
+  Custom metadata text associated with this phone number.
+</ResponseField>
+
+<ResponseField name="data.users[].last_call_at" type="string|null">
+  ISO timestamp of the most recent call with this phone number, or null if no calls yet.
+</ResponseField>
+
+<ResponseField name="data.users[].summary" type="string">
+  AI-generated summary of interactions with this phone number.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "memory_id": "12345678-1234-1234-1234-123456789012",
+    "name": "Customer Support",
+    "created_at": "2025-07-20T23:32:19.840Z",
+    "users": [
+      {
+        "phone_number": "+12345678900",
+        "created_at": "2025-07-21T07:09:04.372Z",
+        "call_count": 0,
+        "metadata": "25 year old customer from New York",
+        "last_call_at": null,
+        "summary": "Previous call discussion was on the topic of startups"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+### Error Responses
+
+```json Memory Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_NOT_FOUND",
+      "message": "Memory not found."
+    }
+  ]
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_ERROR",
+      "message": "Failed to retrieve memory data."
+    }
+  ]
+}
+```
+</ResponseExample>
