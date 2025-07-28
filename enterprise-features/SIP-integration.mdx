@@ -22,53 +22,51 @@ This guide provides:
 
 All `/sip` endpoints are protected by an entitlement check.
 
-Your organization must have the `SIP` entitlement enabled to use SIP features. If not, all requests to the `/sip` routes will return:
-
-```json
-{
-  "data": null,
-  "errors": [
-    {
-      "error": "SIP_NOT_ENABLED",
-      "message": "SIP is not enabled for this organization"
-    }
-  ]
-}
-```
+Your organization must have the `SIP` entitlement enabled to use SIP features. If not, all requests to the `/sip` routes will return an error.
 
 Contact support to have SIP enabled for your Enterprise organization.
 
 ---
 
-## SIP Termination Details
+## SIP Connection Details
 
-**SIP Signaling Endpoint:**
+**SIP Signaling Endpoint FQDN(s):**
 
-You must use TCP over TLS. Bland does not accept UDP for SIP messages. We do support UDP over S/RTP for media streams. mTLS is not required at this time.
+- You **must** use TCP over TLS for all SIP signaling.
+- You **must** use Secure Media / SRTP for all media streams.
+- Bland **does not** accept UDP for SIP signaling. 
+- You **must** whitelist all IP addresses listed below in your firewall to allow inbound and outbound SIP traffic.
+- If required, we provide which IP addresses are used for incoming SIP messages, and which are used for outgoing SIP messages.
+
 ```
-US1:
+US1 (Oregon):
 
 us1.sip.bland.ai:5061;transport=tls
 
 --
-EU1:
+EU1 (Ireland):
 
-Coming Soon
+eu1.sip.bland.ai:5061;transport=tls
 
 --
-AU1:
+ASIA1 (Sydney):
 
-Coming Soon
+asia1.sip.bland.ai:5061;transport=tls
 ```
-
 
 **Static IP Addresses of the SIP Signalling Server(s):**
 
 ```
-US1:
+US1 (Oregon):
+
+(These IP addresses accept incoming SIP messages from your infrastructure.)
 
 35.80.235.26
 54.189.4.67
+
+-----------
+(These IP addresses will be used to send outgoing SIP messages to your infrastructure.)
+
 54.172.60.0
 54.172.60.1
 54.172.60.2
@@ -77,21 +75,53 @@ US1:
 54.244.51.1
 54.244.51.2
 54.244.51.3
+```
 
---
-EU1:
+```
+EU1 (Ireland):
 
-Coming Soon
+(These IP addresses accept incoming SIP messages from your infrastructure.)
 
---
-AU1:
+52.17.69.204
+52.210.181.150
 
-Coming Soon
+-----------
+(These IP addresses will be used to send outgoing SIP messages to your infrastructure.)
+
+54.171.127.192
+54.171.127.193
+54.171.127.194
+54.171.127.195
+35.156.191.128
+35.156.191.129
+35.156.191.130
+35.156.191.131
+```
+
+```
+ASIA1 (Sydney):
+
+(These IP addresses accept incoming SIP messages from your infrastructure.)
+
+13.237.152.149
+3.104.178.155
+
+-----------
+(These IP addresses will be used to send outgoing SIP messages to your infrastructure.)
+
+54.252.254.64
+54.252.254.65
+54.252.254.66
+54.252.254.67
 ```
 
 **Static IP Addresses of the Media Stream Server(s):**
 
-Bland does not provide static addresses for Media Stream Servers. As part of the SDP negotiation, our SIP Signalling Servers will provide you with the location of an available Media Stream endpoint. Through this, Bland is able to confidently scale our Media Stream capabilities without the need for NAT.
+Bland **does not provide** static addresses for Media Stream Servers. As part of the SDP negotiation, our SIP Signalling Servers will provide you with the location of an available Media Stream endpoint. Through this, Bland is able to confidently scale our Media Stream capabilities without the need for NAT.
+
+Bland **does not provide** subnets for our Media Stream Servers, as they are not provided sequentially (in the same CIDR blocks) by our provider. Instead, you will receive the IP address of the Media Stream Server in the SDP negotiation.
+
+## Requirements and Security Settings
 
 **Supported Codecs:**
 
@@ -109,7 +139,6 @@ Bland does not provide static addresses for Media Stream Servers. As part of the
 * RTCP: Uses port RTP + 1
 * DTMF: RFC 2833 (Out-of-band via RTP payload)
 * Transport: TCP over TLS
-
 
 * Number Format: +E.164 or E.164 (both supported for origination and termination)
 * SIP Registration: Not required (Bland determines routing based on predefined configurations configurable below.)
@@ -149,8 +178,8 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
           "sip_endpoint": "sip:your.provider.com", // FQDN Only. Port must be defined here, or in options. Prefixed with `sip:`
           "options": {
               "port": 1234, // Will overwrite any port defined in your sip_endpoint.
-              "transport": "tls", // Other available: tls, tcp
-              "secure_media": "true", // True, False
+              "transport": "tls", // Other available: tls, tcp, udp
+              "secure_media": true, // True, False
               "sip_username": "bland", // Optional
               "sip_password": "password" // Optional
           }
@@ -208,8 +237,8 @@ curl -X POST https://api.bland.ai/v1/sip/update \
       "sip_endpoint": "sip:your.provider.com" // Only available for outbound SIP Types.
       "options": { // Only available for outbound SIP Types.
           "port": 1234, // Will overwrite any port defined in your sip_endpoint.
-          "transport": "tls", // Other available: tls, tcp
-          "secure_media": "true", // True, False
+          "transport": "tls", // Other available: tls, tcp, udp
+          "secure_media": true, // True, False
           "sip_username": "bland", // Optional
           "sip_password": "password" // Optional
       }

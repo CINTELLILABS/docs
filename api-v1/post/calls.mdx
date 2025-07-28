@@ -24,46 +24,10 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 ## Body Parameters
 
+### Basic Parameters
+
 <ParamField body="phone_number" type="string" required>
   The phone number to call. Must be a valid phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format.
-</ParamField>
-
-<ParamField body="from" type="string">
-  Specify a phone number to call from that you own or have uploaded from your Twilio account. Country code is required, spaces or parentheses must be excluded.
-
-  By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
-</ParamField>
-
-<ParamField body="pathway_id" type="string">
-  This is the pathway ID for the pathway you have created on our dev portal. You
-  can access the ID of your pathways by clicking the 'Copy ID' button of your
-  pathway [here](https://app.bland.ai/home?page=convo-pathways)
-
-  Note: Certain parameters do not apply when using pathways.
-
-  Example Simple Request body:
-
-  ```json
-  {
-    "phone_number": "+1975934749",
-    "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
-  }
-  ```
-</ParamField>
-
-<ParamField body="task" type="string" required>
-  Note: Do not specify if using a pathway.
-
-  Provide instructions, relevant information, and examples of the ideal conversation flow.
-
-  This is your prompt where you are telling the agent what to do.
-
-  Recommendations:
-
-  - Include context and a background/persona for the agent like `"You are {name}, a customer service agent at {company} calling {name} about {reason}`.
-  - Phrase instructions like you are speaking to the agent before the call.
-  - Any time you tell the agent not to do something, provide an example of what they should do instead.
-  - Keep the prompt under 2,000 characters where possible.
 </ParamField>
 
 <ParamField body="voice" type="string">
@@ -83,6 +47,46 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   - Paige
 </ParamField>
 
+<ParamField body="pathway_id" type="string">
+  This is the pathway ID for the pathway you have created on our dev portal. You
+  can access the ID of your pathways by clicking the 'Copy ID' button of your
+  pathway [here](https://app.bland.ai/home?page=convo-pathways)
+
+  Note: Certain parameters do not apply when using pathways.
+
+  Example Simple Request body:
+
+  ```json
+  {
+    "phone_number": "+1975934749",
+    "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
+  }
+  ```
+</ParamField>
+
+<ParamField body="pathway_version" type="integer">
+  The version number of the pathway to use for the call. Defaults to the production version.
+</ParamField>
+
+<ParamField body="task" type="string" required>
+  Note: Do not specify if using a pathway.
+
+  Provide instructions, relevant information, and examples of the ideal conversation flow.
+
+  This is your prompt where you are telling the agent what to do.
+
+  Recommendations:
+
+  - Include context and a background/persona for the agent like `"You are {name}, a customer service agent at {company} calling {name} about {reason}`.
+  - Phrase instructions like you are speaking to the agent before the call.
+  - Any time you tell the agent not to do something, provide an example of what they should do instead.
+  - Keep the prompt under 2,000 characters where possible.
+</ParamField>
+
+<ParamField body="first_sentence" type="string">
+  Makes your agent say a specific phrase or sentence for it's first response.
+</ParamField>
+
 <ParamField body="persona_id" type="string">
   The ID of the persona to use for the call.
 
@@ -93,57 +97,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   You can access your persona IDs by clicking the "Personas" button at the bottom of the Send Call page, and then "Use and Manage".
 </ParamField>
 
-<ParamField body="background_track" type="string">
-  Select an audio track that you'd like to play in the background during the call. The audio will play continuously when the agent isn't speaking, and is incorporated into it's speech as well.
-
-  Use this to provide a more natural, seamless, engaging experience for the conversation. We've found this creates a significantly smoother call experience by minimizing the stark differences between total silence and the agent's speech.
-
-  Options:
-
-  - null - Default, will play audible but quiet phone static.
-  - office - Office-style soundscape. Includes faint typing, chatter, clicks, and other office sounds.
-  - cafe - Cafe-like soundscape. Includes faint talking, clinking, and other cafe sounds.
-  - restaurant - Similar to cafe, but more subtle.
-  - none - Minimizes background noise
-</ParamField>
-
-<ParamField body="first_sentence" type="string">
-  Makes your agent say a specific phrase or sentence for it's first response.
-</ParamField>
-
-<ParamField body="summary_prompt" type="string">
-  (Optional) Custom instructions for how the call summary should be generated after the call completes. Use this to provide specific guidance or context for the AI when writing the post-call summary. Maximum length: 2000 characters.
-
-  Example:
-  ```json
-  {
-    "summary_prompt": "Summarize the call in 2-3 sentences, focusing on the customer's main concern and any next steps discussed."
-  }
-  ```
-</ParamField>
-
-<ParamField body="wait_for_greeting" default="false" type="boolean">
-  By default, the agent starts talking as soon as the call connects.
-
-  When wait_for_greeting is set to true, the agent will wait for the call recipient to speak first before responding.
-</ParamField>
-
-<ParamField body="block_interruptions" default="false" type="boolean">
-  When set to `true`, the AI will not respond or process interruptions from the user.
-</ParamField>
-
-<ParamField body="interruption_threshold" default="100" type="number">
-  Adjusts how patient the AI is when waiting for the user to finish speaking.
-
-  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
-
-  Recommended range: 50-200
-  •	50: Extremely quick, back and forth conversation
-  •	100: Balanced to respond at a natural pace
-  •	200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
-
-  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
-</ParamField>
+### Model Parameters
 
 <ParamField body="model" default="base" type="string">
   Select a model to use for your call.
@@ -164,127 +118,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
       - Limited capabilities currently (excludes Transferring, IVR navigation, Custom Tools)
       - Extremely realistic conversation capabilities
   </Accordion>
-</ParamField>
-
-<ParamField body="temperature" default={0.7} type="float">
-  A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
-
-  Example Values: "0.9", "0.3", "0.5"
-</ParamField>
-
-<ParamField body="dynamic_data" type="object[]">
-  Integrate data from external APIs into your agent's knowledge.
-
-  Set to `null` or an empty string to clear dynamic data settings.
-
-  ```json
-    "dynamic_data": [
-      {
-        "url": "endpoint",
-        "method": "GET",
-        "body": [],
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "query": [],
-        "cache": true,
-        "response_data": [
-          {
-            "context": "",
-            "data": "$",
-            "name": ""
-          }
-        ]
-      }
-    ],
-  ```
-</ParamField>
-
-<ParamField body="keywords" default="[]" type="string[]">
-  These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
-
-  For example, if the word Blandy is frequently transcribed as a homonym like "Reese" you could do this:
-
-  ```json
-    {
-      "keywords": ["Blandy"]
-    }
-  ```
-
-  For stronger keyword boosts, you can place a colon then a boost factor after the word. The default boost factor is 2.
-
-  ```json
-    {
-      "keywords": ["Blandy:3"]
-    }
-  ```
-</ParamField>
-<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
-  The pronunciation guide is an `array` of `objects` that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
-
-  ```json
-    [
-      {
-        "word": "example",
-        "pronunciation": "ex-am-ple",
-        "case_sensitive": "false",
-        "spaced": "false"
-    },
-    {
-      "word": "API",
-      "pronunciation": "A P I",
-      "case_sensitive": "true",
-      "spaced": "true"
-    }
-  ]
-  ```
-
-  <Accordion title="Object Parameters">
-    - `word`
-      — the word you want to guide the LLM on how to pronounce
-    - `pronunciation`
-      — how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
-    - `case_sensitive`
-      — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
-    - `spaced` 
-      — whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
-  </Accordion>
-</ParamField>
-
-<ParamField body="transfer_phone_number" type="string">
-  A phone number that the agent can transfer to under specific conditions - such as being asked to speak to a human or supervisor. This option will be ignored for pathways.
-
-  <Accordion title="Prompting Notes">
-    For best results:
-
-    - Specify conditions that the agent should transfer to a human under (examples are great!)
-    - In the `task`, refer to the action solely as "transfer" or "transferring".
-    - Alternate phrasing such as "swap" or "switch" can mislead the agent, causing the action to be ignored.
-  </Accordion>
-</ParamField>
-
-<ParamField body="transfer_list" type="object">
-  Give your agent the ability to transfer calls to a set of phone numbers. This option will be ignored for pathways.
-
-  Overrides transfer_phone_number if a transfer_list.default is specified.
-
-  Will default to transfer_list.default, or the chosen phone number.
-
-  Example usage to route calls to different departments:
-
-  ```json
-  {
-    "transfer_list": {
-        "default": "+12223334444",
-        "sales": "+12223334444",
-        "support": "+12223334444",
-        "billing": "+12223334444"
-    }
-  }
-  ```
 </ParamField>
 
 <ParamField body="language" default="en-US" type="string">
@@ -351,59 +184,85 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   </Accordion>
 </ParamField>
 
-<ParamField body="pathway_version" type="integer">
-  The version number of the pathway to use for the call. Defaults to the production version.
+<ParamField body="wait_for_greeting" default="false" type="boolean">
+  By default, the agent starts talking as soon as the call connects.
+
+  When wait_for_greeting is set to true, the agent will wait for the call recipient to speak first before responding.
+</ParamField>
+
+<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
+  The pronunciation guide is an `array` of `objects` that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
+
+  ```json
+    [
+      {
+        "word": "example",
+        "pronunciation": "ex-am-ple",
+        "case_sensitive": "false",
+        "spaced": "false"
+    },
+    {
+      "word": "API",
+      "pronunciation": "A P I",
+      "case_sensitive": "true",
+      "spaced": "true"
+    }
+  ]
+  ```
+
+  <Accordion title="Object Parameters">
+    - `word`
+      — the word you want to guide the LLM on how to pronounce
+    - `pronunciation`
+      — how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
+    - `case_sensitive`
+      — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+    - `spaced` 
+      — whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
+  </Accordion>
+</ParamField>
+
+<ParamField body="temperature" default={0.7} type="float">
+  A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
+
+  Example Values: "0.9", "0.3", "0.5"
+</ParamField>
+
+<ParamField body="interruption_threshold" default="100" type="number">
+  Adjusts how patient the AI is when waiting for the user to finish speaking.
+
+  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
+
+  Recommended range: 50-200
+  •	50: Extremely quick, back and forth conversation
+  •	100: Balanced to respond at a natural pace
+  •	200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
+
+  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
+</ParamField>
+
+### Dispatch Parameters
+
+<ParamField body="from" type="string">
+  Specify a phone number to call from that you own or have uploaded from your Twilio account. Country code is required, spaces or parentheses must be excluded.
+
+  By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
+</ParamField>
+
+<ParamField body="geospatial_dialing" type="string">
+  The geospatial dialing pool UUID. This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
+
+  Example:
+
+  ```json
+    {
+      "geospatial_dialing": "bd039087-decb-435a-a6e3-ca1ffbf89974"
+    }
+  ```
 </ParamField>
 
 <ParamField body="local_dialing" default="false" type="boolean">
   When `true`, automatically selects a "from" number that matches the callee's area code for US-based calls. Must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
-</ParamField>
-
-<ParamField body="voicemail_sms" type="object">
-  Configure SMS settings for voicemail notifications. If a voicemail is left, an SMS message is sent to the "to" number. Requires SMS configuration.
-
-  Properties:
-
-  - `from` (string): The phone number to send the SMS from
-  - `message` (string): The message template to send when a voicemail is left
-
-  Example:
-
-  ```json
-  {
-    "to": "+18001234567",
-    "message": "You have a new voicemail!"
-  }
-  ```
-</ParamField>
-
-<ParamField body="dispatch_hours" type="object">
-  Restricts calls to certain hours in your timezone. Specify the timezone and time windows using 24-hour format.
-
-  Supported time formats:
-  •	24-hour: "13:00", "09:30"
-  •	12-hour: "1:00pm", "9:30am"
-  •	Military: "1300", "0930"
-
-  Example:
-
-  ```json
-  {
-    "start": "09:00",
-    "end": "17:00"
-  }
-  ```
-
-  The times will be automatically converted to UTC for processing. If the end time is before the start time (e.g. "22:00" to "06:00"), it will be interpreted as spanning overnight.
-</ParamField>
-
-<ParamField body="sensitive_voicemail_detection" default="false" type="boolean">
-  When `true`, uses LLM-based analysis to detect frequent voicemails.
-</ParamField>
-<ParamField body="ignore_button_press" type="boolean" default="false">
-  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0-9, *, #).  
-  This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.  
-  Useful when your agent should handle the entire call conversationally, without responding to button presses.
 </ParamField>
 
 <ParamField body="timezone" default="America/Los_Angeles" type="string">
@@ -413,6 +272,230 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
   Timezone options are here in the TZ identifier column.
 </ParamField>
+
+<ParamField body="start_time" type="string">
+  The time you want the call to start. If you don't specify a time (or the time is in the past), the call will send immediately.
+
+  Set your time in the format YYYY-MM-DD HH:MM:SS -HH:MM (ex. 2021-01-01 12:00:00 -05:00).
+
+  The timezone is optional, and defaults to UTC if not specified.
+
+  Note: Scheduled calls can be cancelled with the POST /v1/calls/:call_id/stop endpoint.
+</ParamField>
+
+<ParamField body="transfer_phone_number" type="string">
+  A phone number that the agent can transfer to under specific conditions - such as being asked to speak to a human or supervisor. This option will be ignored for pathways.
+
+  <Accordion title="Prompting Notes">
+    For best results:
+
+    - Specify conditions that the agent should transfer to a human under (examples are great!)
+    - In the `task`, refer to the action solely as "transfer" or "transferring".
+    - Alternate phrasing such as "swap" or "switch" can mislead the agent, causing the action to be ignored.
+  </Accordion>
+</ParamField>
+
+<ParamField body="transfer_list" type="object">
+  Give your agent the ability to transfer calls to a set of phone numbers. This option will be ignored for pathways.
+
+  Overrides transfer_phone_number if a transfer_list.default is specified.
+
+  Will default to transfer_list.default, or the chosen phone number.
+
+  Example usage to route calls to different departments:
+
+  ```json
+  {
+    "transfer_list": {
+        "default": "+12223334444",
+        "sales": "+12223334444",
+        "support": "+12223334444",
+        "billing": "+12223334444"
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="max_duration" default="30" type="integer">
+  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
+
+  Example Values: 20, 2
+</ParamField>
+
+### Knowledge Parameters
+
+<ParamField body="tools" type="array">
+  Add custom tools and knowledge bases to your call for your agent to call upon.
+
+  Example:
+  ```json
+  {
+    "tools": [
+      "TL-ba6c4237-67c2-40e8-868b-60d429a84eda",
+      "KB-30d465c0-22d0-41e0-a63d-61bcacc277e7"
+    ]
+  }
+  ```
+
+  Read more about custom tools [here](https://docs.bland.ai/tutorials/custom-tools#custom-tools)
+</ParamField>
+
+### Audio Parameters
+
+<ParamField body="background_track" type="string">
+  Select an audio track that you'd like to play in the background during the call. The audio will play continuously when the agent isn't speaking, and is incorporated into it's speech as well.
+
+  Use this to provide a more natural, seamless, engaging experience for the conversation. We've found this creates a significantly smoother call experience by minimizing the stark differences between total silence and the agent's speech.
+
+  Options:
+
+  - null - Default, will play audible but quiet phone static.
+  - office - Office-style soundscape. Includes faint typing, chatter, clicks, and other office sounds.
+  - cafe - Cafe-like soundscape. Includes faint talking, clinking, and other cafe sounds.
+  - restaurant - Similar to cafe, but more subtle.
+  - none - Minimizes background noise
+</ParamField>
+
+<ParamField body="noise_cancellation" default="false" type="boolean">
+  Toggles noise filtering or suppression in the audio stream to filter out background noise.
+</ParamField>
+
+<ParamField body="block_interruptions" default="false" type="boolean">
+  When set to `true`, the AI will not respond or process interruptions from the user.
+</ParamField>
+
+<ParamField body="record" default="false" type="boolean">
+  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.
+</ParamField>
+
+### Voicemail Parameters
+
+<ParamField body="voicemail" type="object">
+  Configuration for handling voicemails during outbound calls. This object controls how the AI behaves when it encounters a voicemail, including whether to leave a message, send an SMS notification, or detect voicemails more intelligently using AI.
+
+  It has the following parameters:
+
+  - `message` (string): The message the AI will leave if a voicemail is detected. This message will be played after the beep, then the call will end. This field is required if `action` is set to `leave_message`.
+
+  <br />
+
+  - `action` (enum): What the AI should do when it detects a voicemail. The default is `"hangup"`. Available options:
+    - `"hangup"`: Immediately end the call without leaving a message.
+    - `"leave_message"`: Play the `message` and then end the call.
+    - `"ignore"`: Continue the call as if no voicemail was detected (used for IVRs or special routing).
+
+  <br />
+
+  - `sms` (object): Optional. Configuration for sending an SMS notification when a voicemail is left. Contains:
+    - `to` (string): The phone number to send the SMS to (usually the same as the original callee).
+    - `from` (string): The phone number to send the SMS from (must be a number you own and have SMS permissions for).
+    - `message` (string): The body of the SMS message. Keep concise and clear.
+
+  <br />
+
+  - `sensitive` (boolean): When `true`, uses LLM-based analysis to detect frequent voicemails. The default is `false`.
+
+  Example:
+
+  ```json
+  {
+    "voicemail": {
+      "message": "Hi, just calling to follow up. Please call us back when you can.",
+      "action": "leave_message",
+      "sms": {
+        "to": "+18005550123",
+        "from": "+18005550678",
+        "message": "We just left you a voicemail. Call us back anytime!"
+      },
+      "sensitive": true
+    }
+  }
+  ```
+</ParamField>
+
+### Analysis Parameters
+
+<ParamField body="citation_schema_ids" type="string[]">
+  The citation schema is an incredibly powerful tool for running **_post call analysis_**, including specific variable extractions, conditional logic, and more.
+
+  You can build a citation schema [here](https://app.bland.ai/dashboard/analytics?tab=citations).
+
+  After building the citation schema (or schemas), you can copy their UUIDs and reference them in your API request for outgoing calls (and you can also attach them to your inbound phone numbers).
+
+  Here's an example:
+
+  ```json
+  {
+    "citation_schema_ids": ["dcad76eb-57b6-4be6-922f-8a5a95e2ffrt"]
+  }
+  ```
+
+  > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
+
+</ParamField>
+
+<ParamField body="analysis_preset" type="string">
+  The analysis preset UUID used to analyze the call, must be created on the [analysis presets page](https://app.bland.ai/dashboard/analytics?tab=analysis_presets).
+
+  All fields in the preset configuration are filled at the end of the call by analyzing the transcript.
+
+  Example:
+
+  ```json
+    {
+      "analysis_preset": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
+    }
+  ```
+</ParamField>
+
+### Post Call Parameters
+
+<ParamField body="summary_prompt" type="string">
+  (Optional) Custom instructions for how the call summary should be generated after the call completes. Use this to provide specific guidance or context for the AI when writing the post-call summary. Maximum length: 2000 characters.
+
+  Example:
+  ```json
+  {
+    "summary_prompt": "Summarize the call in 2-3 sentences, focusing on the customer's main concern and any next steps discussed."
+  }
+  ```
+</ParamField>
+
+<ParamField body="retry" type="object">
+  If the call goes to voicemail, you can set up the call to retry, after a configurable delay. You can also update the voicemail_action, and voicemail_message in the retry object, for the re-tried call.
+
+  Takes in the following parameters:
+
+  - `wait` (integer): The delay in seconds before the call is retried.
+  - `voicemail_action` (enum): The action to take when the call goes to voicemail. Options: `hangup`, `leave_message`, `ignore`.
+  - `voicemail_message` (string): The message to leave when the call goes to voicemail.
+
+  Example:
+
+  ```json
+  {
+      "retry": {
+          "wait": 10,
+          "voicemail_action": "leave_message",
+          "voicemail_message": "Hello, this is a test message."
+      }
+  }
+  ```
+</ParamField>
+
+<ParamField body="available_tags" type="string[]">
+  An array of disposition tags. Upon call completion, the AI will evaluate the transcripts of the call and assign one of the tags to the "disposition_tag" field. Tags are assigned exclusively by looking at the transcript and no other information.
+
+  Example:
+
+  ```json
+    {
+      "available_tags": ["got_full_name_and_number", "no_information_provided", "transferred_to_agent"]
+    }
+  ```
+</ParamField>
+
+### Advanced Parameters
 
 <ParamField body="request_data" type="object">
   Custom key-value data you send with the call. This information is available as variables inside your prompt, pathway, or tools — but only if the call is answered.
@@ -430,81 +513,22 @@ In this case, the AI would say: "Hello, John".
 
 </ParamField>
 
-<ParamField body="tools" type="array">
-  Interact with the real world through API calls.
+<ParamField body="metadata" type="object">
+  Add any additional information you want to associate with the call. This data is accessible for all calls, regardless of if they are picked up or not. This can be used to track calls or add custom data to the call.
 
-  Detailed tutorial here: [Custom Tools](https://docs.bland.ai/tutorials/custom-tools#custom-tools)
-</ParamField>
-
-<ParamField body="start_time" type="string">
-  The time you want the call to start. If you don't specify a time (or the time is in the past), the call will send immediately.
-
-  Set your time in the format YYYY-MM-DD HH:MM:SS -HH:MM (ex. 2021-01-01 12:00:00 -05:00).
-
-  The timezone is optional, and defaults to UTC if not specified.
-
-  Note: Scheduled calls can be cancelled with the POST /v1/calls/:call_id/stop endpoint.
-</ParamField>
-
-<ParamField body="voicemail_message" type="string">
-  When the AI encounters a voicemail, it will leave this message after the beep and then immediately end the call.
-
-  Warning: If ivr_mode is set to true or voicemail_action is set to ignore, then this will still work for voicemails, but it will not hang up for IVR systems.
-</ParamField>
-
-<ParamField body="voicemail_action" default="hangup" type="enum">
-  This is processed separately from the AI's decision making, and overrides it.
-
-  Options:
-
-  - hangup
-  - leave_message
-  - ignore
-
-  Examples:
-
-  - Call is answered by a voicemail (specifically with a beep or tone):
-  - If voicemail_message is set, that message will be left and then the call will end.
-  - Otherwise, the call immediately ends (regardless of ivr_mode)
-  - Call is answered by an IVR system or phone tree:
-  - If ivr_mode is set to true, the AI will navigate the system and continue as normal.
-  - If voicemail_action is set to ignore, the AI will ignore the IVR and continue as normal.
-  - Otherwise, if voicemail_message is set then it'll leave that message and end the call.
-  - Finally, if none of those conditions are met, the call will end immediately.
-
-  Note: If voicemail_message is set, then the AI will leave the message regardless of the voicemail_action.
-</ParamField>
-
-<ParamField body="retry_config" type="object">
-  If the call goes to voicemail, you can set up the call to retry, after a configurable delay. You can also update the voicemail_action, and voicemail_message in the retry object, for the re-tried call.
-
-  Takes in the following parameters:
-
-  - `wait` (integer): The delay in seconds before the call is retried.
-  - `voicemail_action` (enum): The action to take when the call goes to voicemail. Options: `hangup`, `leave_message`, `ignore`.
-  - `voicemail_message` (string): The message to leave when the call goes to voicemail.
+  Anything that you put here will be returned in the post call webhook under metadata.
 
   Example:
 
   ```json
   {
-      "retry_config": {
-          "wait": 10,
-          "voicemail_action": "leave_message",
-          "voicemail_message": "Hello, this is a test message."
-      }
+    "metadata": {
+      "campaign_id": "1234",
+      "source": "web"
+    }
   }
   ```
-</ParamField>
 
-<ParamField body="max_duration" default="30" type="integer">
-  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
-
-  Example Values: 20, 2
-</ParamField>
-
-<ParamField body="record" default="false" type="boolean">
-  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.
 </ParamField>
 
 <ParamField body="webhook" type="string">
@@ -711,79 +735,61 @@ Example payloads:
 
 </ParamField>
 
-<ParamField body="metadata" type="object">
-  Add any additional information you want to associate with the call. This data is accessible for all calls, regardless of if they are picked up or not. This can be used to track calls or add custom data to the call.
+<ParamField body="dynamic_data" type="object[]">
+  Integrate data from external APIs into your agent's knowledge.
 
-  Anything that you put here will be returned in the post call webhook under metadata.
-
-  Example:
+  Set to `null` or an empty string to clear dynamic data settings.
 
   ```json
-  {
-    "metadata": {
-      "campaign_id": "1234",
-      "source": "web"
-    }
-  }
+    "dynamic_data": [
+      {
+        "url": "endpoint",
+        "method": "GET",
+        "body": [],
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "query": [],
+        "cache": true,
+        "response_data": [
+          {
+            "context": "",
+            "data": "$",
+            "name": ""
+          }
+        ]
+      }
+    ],
   ```
-
 </ParamField>
 
-<ParamField body="citation_schema_ids" type="string[]">
-  The citation schema is an incredibly powerful tool for running **_post call analysis_**, including specific variable extractions, conditional logic, and more.
+<ParamField body="keywords" default="[]" type="string[]">
+  These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
 
-  You can build a citation schema [here](https://app.bland.ai/dashboard/analytics?tab=citations).
-
-  After building the citation schema (or schemas), you can copy their UUIDs and reference them in your API request for outgoing calls (and you can also attach them to your inbound phone numbers).
-
-  Here's an example:
-
-  ```json
-  {
-    "citation_schema_ids": ["dcad76eb-57b6-4be6-922f-8a5a95e2ffrt"]
-  }
-  ```
-
-  > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
-
-</ParamField>
-
-<ParamField body="analysis_preset" type="string">
-  The analysis preset UUID used to analyze the call, must be created on the [analysis presets page](https://app.bland.ai/dashboard/analytics?tab=analysis_presets).
-
-  All fields in the preset configuration are filled at the end of the call by analyzing the transcript.
-
-  Example:
+  For example, if the word Blandy is frequently transcribed as a homonym like "Reese" you could do this:
 
   ```json
     {
-      "analysis_preset": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
+      "keywords": ["Blandy"]
+    }
+  ```
+
+  For stronger keyword boosts, you can place a colon then a boost factor after the word. The default boost factor is 2.
+
+  ```json
+    {
+      "keywords": ["Blandy:3"]
     }
   ```
 </ParamField>
 
-<ParamField body="available_tags" type="string[]">
-  An array of disposition tags. Uopon call completion, the AI will evaluate the transcripts of the call and assign one of the tags to the "disposition_tag" field. Tags are assigned exclusively by looking at the transcript and no other information.
-
-  Example:
-
-  ```json
-    {
-      "available_tags": ["got_full_name_and_number", "no_information_provided", "transferred_to_agent"]
-    }
-  ```
-</ParamField>
-
-<ParamField body="geospatial_dialing" type="string">
-  The geospatial dialing pool UUID. This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
-
-  Example:
-
-  ```json
-    {
-      "geospatial_dialing": "bd039087-decb-435a-a6e3-ca1ffbf89974"
-    }
-  ```
+<ParamField body="ignore_button_press" type="boolean" default="false">
+  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0-9, *, #).  
+  This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.  
+  Useful when your agent should handle the entire call conversationally, without responding to button presses.
 </ParamField>
 
 <ParamField body="precall_dtmf_sequence" type="string">
@@ -797,8 +803,14 @@ Example payloads:
   ```
 </ParamField>
 
+## Response
+
 <ResponseField name="status" type="string">
   Can be `success` or `error`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  A message explaining the status of the call.
 </ResponseField>
 
 <ResponseField name="call_id" type="string">
@@ -809,9 +821,6 @@ Example payloads:
   The batch ID of the call (present only if status is `success`).
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  A message explaining the status of the call.
-</ResponseField>
 
 <ResponseField name="errors" type="array">
   For validation errors, a detailed list of each field with an error and it's error message.

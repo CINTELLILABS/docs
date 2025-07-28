@@ -1,0 +1,118 @@
+---
+title: "Update User Memory Data"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/user/update"
+description: "Update the metadata and summary information for a specific user within a memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory containing the user to update.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number of the user to update within the memory.
+</ParamField>
+
+<ParamField body="metadata" type="string" optional>
+  Updated metadata to associate with this user. Can include any key-value pairs relevant to your use case.
+</ParamField>
+
+<ParamField body="summary" type="string" optional>
+  Updated summary text for this user's interactions.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Response data confirming user update.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming user memory data was updated.
+</ResponseField>
+
+<ResponseField name="data.user" type="object">
+  The updated user object.
+</ResponseField>
+
+<ResponseField name="data.user.id" type="string">
+  Unique identifier for the user entry in the memory.
+</ResponseField>
+
+<ResponseField name="data.user.memory_id" type="string">
+  The memory identifier this user belongs to.
+</ResponseField>
+
+<ResponseField name="data.user.phone_number" type="string">
+  The phone number that was updated.
+</ResponseField>
+
+<ResponseField name="data.user.metadata" type="string">
+  The updated metadata text associated with this user.
+</ResponseField>
+
+<ResponseField name="data.user.summary" type="string">
+  The updated summary text for this user.
+</ResponseField>
+
+<ResponseField name="data.user.created_at" type="string">
+  ISO timestamp when this user was originally added to the memory.
+</ResponseField>
+
+<ResponseField name="data.user.call_count" type="number">
+  Number of calls associated with this user.
+</ResponseField>
+
+<ResponseField name="data.user.last_call_at" type="string|null">
+  ISO timestamp of the most recent call, or null if no calls yet.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "User memory data updated successfully",
+    "user": {
+      "id": "11111111-2222-3333-4444-555566667777",
+      "memory_id": "12345678-1234-1234-1234-123456789012",
+      "phone_number": "+12345678900",
+      "metadata": "Test here with string metadtata",
+      "summary": "I'm thinking yeah...",
+      "created_at": "2025-07-22T05:32:32.233Z",
+      "call_count": 0,
+      "last_call_at": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_UPDATE_USER_ERROR",
+      "message": "Failed to update user memory data."
+    }
+  ]
+}
+```
+</ResponseExample>

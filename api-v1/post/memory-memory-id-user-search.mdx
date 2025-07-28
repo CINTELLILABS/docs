@@ -1,0 +1,115 @@
+---
+title: "Search User Calls in Memory"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/user/search"
+description: "Retrieve call history and data for a specific user/phone number within a memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory to search within.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number of the user to search for calls.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of call objects for this user within the memory.
+</ResponseField>
+
+<ResponseField name="data[].c_id" type="string">
+  Unique identifier for the call.
+</ResponseField>
+
+<ResponseField name="data[].created_at" type="string">
+  ISO timestamp when the call was made.
+</ResponseField>
+
+<ResponseField name="data[].summary" type="string">
+  AI-generated summary of this specific call.
+</ResponseField>
+
+<ResponseField name="data[].answered_by" type="string">
+  Who answered the call (e.g., "human", "ai").
+</ResponseField>
+
+<ResponseField name="data[].call_length" type="number">
+  Call duration in minutes.
+</ResponseField>
+
+<ResponseField name="data[].inbound" type="boolean">
+  Whether this was an inbound call (true) or outbound call (false).
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "c_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeffffgggg",
+      "created_at": "2025-07-22T05:19:37.314Z",
+      "summary": "The call appears to be a follow-up conversation about the user's startup, asking questions about AI and the future of their business.",
+      "answered_by": "human",
+      "call_length": 0.3,
+      "inbound": false
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Missing Phone Number
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Phone number is required in request body."
+    }
+  ]
+}
+```
+
+```json Memory Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_NOT_FOUND",
+      "message": "Memory not found or you don't have access to it."
+    }
+  ]
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_ERROR",
+      "message": "Failed to retrieve memory user data."
+    }
+  ]
+}
+```
+</ResponseExample>

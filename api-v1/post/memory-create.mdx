@@ -1,0 +1,86 @@
+---
+title: "Create Memory"
+api: "POST https://api.bland.ai/v1/memory/create"
+description: "Create a new memory to organize and track call interactions by phone numbers."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  The name for the new memory. Used to identify and organize your memories.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created memory object.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the newly created memory.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp when the memory was created.
+</ResponseField>
+
+<ResponseField name="data.user_id" type="string">
+  Unique identifier for the user who owns the memory.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Name of the created memory.
+</ResponseField>
+
+<ResponseField name="data.memory_duration" type="null">
+  Duration setting for the memory (null indicates no duration limit).
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "12345678-1234-1234-1234-123456789012",
+    "created_at": "2025-07-21T07:24:49.883Z",
+    "user_id": "87654321-4321-4321-4321-210987654321",
+    "name": "Docs Example",
+    "memory_duration": null
+  },
+  "errors": null
+}
+```
+
+```json Missing Name
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Memory name is required."
+    }
+  ]
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_CREATE_ERROR",
+      "message": "Failed to create memory."
+    }
+  ]
+}
+```
+</ResponseExample>

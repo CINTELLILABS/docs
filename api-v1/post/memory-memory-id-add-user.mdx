@@ -1,0 +1,131 @@
+---
+title: "Add User to Memory"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/add-user"
+description: "Add a new user/phone number to an existing memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory to add the user to.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number of the user to add to the memory.
+</ParamField>
+
+<ParamField body="metadata" type="string" optional>
+  Custom metadata text to associate with this user in the memory.
+</ParamField>
+
+<ParamField body="summary" type="string" optional>
+  Initial summary text for this user's interactions.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Response data confirming user addition.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming user was added to memory.
+</ResponseField>
+
+<ResponseField name="data.user" type="object">
+  The user object that was added to the memory.
+</ResponseField>
+
+<ResponseField name="data.user.id" type="string">
+  Unique identifier for the user entry in the memory.
+</ResponseField>
+
+<ResponseField name="data.user.memory_id" type="string">
+  The memory identifier this user was added to.
+</ResponseField>
+
+<ResponseField name="data.user.phone_number" type="string">
+  The phone number that was added.
+</ResponseField>
+
+<ResponseField name="data.user.metadata" type="string">
+  The metadata text associated with this user.
+</ResponseField>
+
+<ResponseField name="data.user.summary" type="string">
+  The summary text for this user.
+</ResponseField>
+
+<ResponseField name="data.user.created_at" type="string">
+  ISO timestamp when this user was added to the memory.
+</ResponseField>
+
+<ResponseField name="data.user.call_count" type="number">
+  Number of calls associated with this user.
+</ResponseField>
+
+<ResponseField name="data.user.last_call_at" type="string|null">
+  ISO timestamp of the most recent call, or null if no calls yet.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Request
+{
+  "phone_number": "+12345678900",
+  "metadata": "25 year old customer",
+  "summary": "The user described their age"
+}
+```
+
+```json Response
+{
+  "data": {
+    "message": "User added to memory successfully",
+    "user": {
+      "id": "11111111-2222-3333-4444-555566667777",
+      "memory_id": "12345678-1234-1234-1234-123456789012",
+      "phone_number": "+12345678900",
+      "metadata": "25 year old customer",
+      "summary": "The user described their age",
+      "created_at": "2025-07-22T05:26:49.139Z",
+      "call_count": 0,
+      "last_call_at": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_ADD_USER_ERROR",
+      "message": "Failed to add user to memory."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Notes
+- If the phone number already exists in the memory, this endpoint will error with a `MEMORY_ADD_USER_ERROR`
+- Metadata can be any text string relevant to your use case
+- The summary will be enhanced over time as more calls are added to this user's record

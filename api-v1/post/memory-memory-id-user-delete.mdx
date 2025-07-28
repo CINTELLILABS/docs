@@ -1,0 +1,87 @@
+---
+title: "Remove User from Memory"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/user/delete"
+description: "Remove a specific user/phone number and all their associated data from a memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory to remove the user from.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number of the user to remove from the memory.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Response data confirming user removal.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming user was removed from memory.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "message": "User +1234567890 removed from memory successfully"
+  },
+  "errors": null
+}
+```
+
+```json Missing Phone Number
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Phone number is required."
+    }
+  ]
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_REMOVE_USER_ERROR",
+      "message": "Failed to remove user from memory."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### ⚠️ Warning
+
+This action will permanently remove:
+- The user's entry from the memory
+- All associated metadata for this user
+- The user's summary and interaction history
+- All call associations for this user within this memory
+
+The actual calls will remain in your account, but their association with this memory will be removed.

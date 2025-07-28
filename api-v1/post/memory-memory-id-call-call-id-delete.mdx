@@ -1,0 +1,82 @@
+---
+title: "Remove Call from Memory"
+api: "POST https://api.bland.ai/v1/memory/{memory_id}/call/{call_id}/delete"
+description: "Remove a specific call from a memory."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the memory containing the call.
+</ParamField>
+
+<ParamField path="call_id" type="string" required>
+  The unique identifier of the call to remove from the memory.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number associated with the call to be removed.
+</ParamField>
+
+<ParamField body="external_memory_key" type="string" optional>
+  Optional external key for additional memory validation or cross-referencing.
+</ParamField>
+
+### Response
+<ResponseField name="data" type="object">
+  Response data confirming call removal and updated summary.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming call was removed and summary updated.
+</ResponseField>
+
+<ResponseField name="data.summary" type="string">
+  The updated AI-generated summary for the user after call removal.
+</ResponseField>
+
+<ResponseField name="data.call_count" type="number">
+  The updated call count for the user after removal.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "Call removed from memory successfully and updated summary",
+    "summary": "Customer had initial billing inquiry which was resolved. Prefers email communication for follow-ups.",
+    "call_count": 2
+  },
+  "errors": null
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MEMORY_REMOVE_CALL_ERROR",
+      "message": "Failed to remove call from memory."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Notes
+
+- Removing a call will automatically update the user's summary to reflect the remaining interactions
+- The call itself is not deleted from your account, only its association with this memory is removed
