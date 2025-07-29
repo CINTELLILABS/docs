@@ -1,0 +1,120 @@
+---
+title: "Custom Code Node"
+description: "Execute custom JavaScript code within conversational pathways"
+---
+
+## Overview
+The Custom Code Node lets you run JavaScript within your conversations for advanced data processing, calculations, API calls, and business logic—all securely on Bland’s infrastructure, with fast performance and no need for outside services.
+
+**Prerequisites:**
+- A Bland Enterprise account with Custom Code Node access (reach out to Bland support to get access)
+- A Bland Pathway configured for your use case
+- Basic knowledge of JavaScript programming
+- Understanding of JSON data structures
+
+## Overall Call Flow
+The custom code node follows this execution flow:
+1. Agent enters the custom code node during pathway execution
+2. Variables from the conversation are extracted and made available to your code
+3. Your custom JavaScript code executes with access to these variables
+4. The code processes the data and returns a JSON response
+5. Returned data becomes available as variables in subsequent pathway nodes
+6. Agent continues to the next node in the pathway
+
+## The Custom Code Node
+
+### Node Configuration
+When you add a Custom Code Node to your pathway, you'll see a comprehensive interface for configuring your code execution:
+<img
+  src="../changelog_assets/05_12_2025/custom_code.png"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Custom Code Node Configuration"
+/>
+
+### Reference Variables
+The first section allows you to define variables to be used wihtin your custom code execution. These variables can be of two types:
+- **Static Variables**: Constants that are definied in this section, and will be the same throughout all your calls.
+- **Dynamic Variables**: Variables that are defined based on variables extracted previously in the pathway.
+
+Below is an example of both:
+<img
+  src="../enterprise-features/enterprise-features-assets/custom_code_reference_variables.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Custom Code Node Variables"
+/>
+
+<Accordion title="Example">
+```javascript
+export default {
+    async fetch(request, env, ctx) {
+        const json = await request.json();
+
+        const age = json["user_age"]
+        const county = json["county"]
+        
+        if (age > 25){
+            return Response.json({
+                "qualified": true,
+                "county": county
+            })
+        } else {
+            return Response.json({
+                "qualified": false,
+                "county": county
+            })
+        }
+    }
+}
+```
+</Accordion>
+
+Using dynamic variables allows you to build flexible custom code nodes that adapt to each user’s unique information.
+
+> For instance, in the example shown, any caller under 25 will have their request automatically rejected.
+
+To easily generate extraction code for your pathway variables, you can click the "Generate variable extraction code" button, and it will automatically insert into the editor.
+
+In the example above, the following will be inserted:
+
+```javascript
+const age = json["user_age"]
+const county = json["county"]
+```
+
+### Code Editor
+The main code editor provides:
+- **Syntax highlighting** for JavaScript
+- **Auto-completion** and IntelliSense
+- **Error detection** and debugging support
+- **Code formatting** and indentation
+
+### Test Mode
+The Custom Code Node includes a robust testing environment:
+
+**Test Mode Toggle**: Switch between normal editing and test mode
+- **Normal Mode**: Configure actual variables that will be extracted from conversations
+- **Test Mode**: Set mock values for testing your code logic
+**Mock Test Variables**: In test mode, you can provide sample data to test your code:
+**Run Test Button**: Execute your code with the mock data to see returned variables immediately
+
+### Response Handling
+The response from your custom code becomes available as variables in subsequent pathway nodes. Your code must return a JSON response using `Response.json()`.
+Example response:
+```javascript
+return Response.json({
+  processed_total: calculatedAmount,
+  discount_applied: discountPercentage,
+  final_price: finalAmount,
+  customer_tier: tierLevel
+});
+```
+These returned values (`processed_total`, `discount_applied`, `final_price`, `customer_tier`) become available as variables you can reference in later nodes using `{{processed_total}}`, `{{discount_applied}}`, etc.
+
+## Security Considerations
+
+### Secure Execution Environment
+- **Isolated Runtime**: Code runs in a secure, sandboxed environment
+- **Memory Limits**: Execution is limited to prevent resource exhaustion
+- **Time Limits**: Code execution times out after 30 seconds
+
+For additional questions or advanced use cases, please reach out to hello@bland.ai or through our support channels.
