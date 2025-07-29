@@ -251,41 +251,26 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
 </ParamField>
 
-<ParamField body="geospatial_dialing" type="string">
-  The geospatial dialing pool UUID. This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
-
-  Example:
-
-  ```json
-    {
-      "geospatial_dialing": "bd039087-decb-435a-a6e3-ca1ffbf89974"
-    }
-  ```
-</ParamField>
-
 <ParamField body="dialing_strategy" type="object" optional="true">
   Controls how the caller ID number (`from`) is selected when placing an outbound call.
 
-  Use this field to influence how the system chooses a number that appears local or relevant to the callee, improving pickup rates. There are three supported strategies:
+  Use this field to influence how the system chooses a number that appears local or relevant to the callee, improving pickup rates. There are two supported strategies:
 
-  #### 1. `regional_auto`
-  Automatically selects a caller ID number with the same area code as the callee (U.S. only).
-  Ideal for improving answer rates through local presence.
-  Requires the Local Dialing add-on.
+  #### 1. `local`
+
+  Automatically selects a `from` number that matches the callee's area code for **US-based calls**. You must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
 
   Example:
   ```json
   {
-    "dialing_strategy": {
-      "type": "regional_auto"
-    }
+    "dialing_strategy": { "type": "local" }
   }
   ```
 
   #### 2. `custom_pool`
-  Selects a number from your own pre-configured pool of phone numbers based on geographic proximity to the callee.
-  Designed for organizations that want full control over the caller IDs being used.
-  Requires Enterprise access and a pool ID provided by your Bland representative.
+  Selects a number from your own pre-configured pool of phone numbers. Designed for organizations that want full control over the caller IDs being used. 
+
+  This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
 
   Example:
   ```json
@@ -296,10 +281,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
   }
   ```
-</ParamField>
 
-<ParamField body="local_dialing" default="false" type="boolean">
-  When `true`, automatically selects a "from" number that matches the callee's area code for US-based calls. Must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
+  By default, Bland will choose a US-based number from our own pool of numbers.
 </ParamField>
 
 <ParamField body="timezone" default="America/Los_Angeles" type="string">
