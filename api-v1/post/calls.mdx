@@ -251,20 +251,38 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
 </ParamField>
 
-<ParamField body="geospatial_dialing" type="string">
-  The geospatial dialing pool UUID. This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
+<ParamField body="dialing_strategy" type="object" optional="true">
+  Controls how the caller number (`from`) is selected when placing an outbound call.
+
+  Use this field to influence how the system chooses a number that appears local or relevant to the callee, improving pickup rates. There are two supported strategies:
+
+  #### 1. `local`
+
+  Automatically selects a `from` number that matches the callee's area code for **US-based calls**. You must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
 
   Example:
-
   ```json
-    {
-      "geospatial_dialing": "bd039087-decb-435a-a6e3-ca1ffbf89974"
-    }
+  {
+    "dialing_strategy": { "type": "local" }
+  }
   ```
-</ParamField>
 
-<ParamField body="local_dialing" default="false" type="boolean">
-  When `true`, automatically selects a "from" number that matches the callee's area code for US-based calls. Must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
+  #### 2. `custom_pool`
+  Selects a number from your own pre-configured pool of phone numbers. Designed for organizations that want full control over the caller IDs being used. 
+
+  This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
+
+  Example:
+  ```json
+  {
+    "dialing_strategy": {
+      "type": "custom_pool",
+      "pool_id": "bd039087-decb-435a-a6e3-ca1ffbf89974"
+    }
+  }
+  ```
+
+  By default, Bland will choose a US-based number from our own pool of numbers.
 </ParamField>
 
 <ParamField body="timezone" default="America/Los_Angeles" type="string">
