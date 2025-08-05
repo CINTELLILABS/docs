@@ -207,6 +207,37 @@ description: "Retrieve detailed information, metadata and transcripts for a call
 
 <ResponseField name="status" type="string">
   The status of the call. This is the most up-to-date status of the call, but is only present for calls that have been successfully created.
+
+  <Accordion title="Call Status Values">
+    **Possible status values:**
+
+    - `completed` - Call was successfully completed, this can be both human or voicemail answered (see [answered_by](/api-v1/get/calls-id#param-answered-by) for details on who the call was answered by)
+    - `failed` - Call failed to connect or complete (see `error_message` for details)
+    - `busy` - Called number was busy
+    - `no-answer` - Call was not answered
+    - `canceled` - Call was canceled before completion
+    - `unknown` - Status could not be determined
+
+    **Common failure reasons and troubleshooting:**
+
+    When `status` is `failed`, check the `error_message` field for specific details:
+
+    - **"The number you dialed is not found."** 
+      - The phone number is invalid or not in service
+      - Verify the phone number format and that it's currently active
+
+    - **"The number you dialed is temporarily unavailable."** 
+      - Network issues or temporary service disruption
+      - Retry the call after a short delay
+
+    - **"The number you dialed is busy. Please try again later."** 
+      - Called party is on another call without call waiting
+      - Try calling at a different time
+
+    - **"Service Provider Blocked Call due to Spam or Number Reputation. Try a different number."** 
+      - Call blocked by carrier due to spam filtering
+      - Use a different `from` number or contact your carrier
+  </Accordion>
 </ResponseField>
 
 <ResponseField name="corrected_duration" type="string">
