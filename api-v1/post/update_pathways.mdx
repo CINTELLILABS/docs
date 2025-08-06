@@ -27,9 +27,23 @@ description: "Update a conversational pathway's fields - including name, descrip
 </ParamField>
 
 <ParamField body="nodes" type="object[]">
-    Data about all the nodes in the pathway.
+    An array of node objects representing the conversation flow points in your pathway. Each node contains:
 
-    Example of a node object:
+    **Common Node Structure:**
+    ```json
+    {
+        "id": "unique_node_identifier",
+        "type": "Node_Type",
+        "data": {
+            "name": "Display Name",
+            // Node-specific configuration goes here
+        }
+    }
+    ```
+
+    **Available Node Types:** `Default`, `End Call`, `Transfer Call`, `Webhook`, `Knowledge Base`, `SMS`, `Custom Code`, `Press Button`, `Wait for Response`, `Transfer Pathway`, `Scheduling`, and more.
+
+    **Node Examples:**
 
 
 <CodeGroup>
@@ -205,6 +219,7 @@ description: "Update a conversational pathway's fields - including name, descrip
         
       </Accordion>
 
+
   Update the pathway's [**global prompt**](/tutorials/pathways#global-prompt-for-all-nodes) by adding an object to the array of nodes.
 
   ```json Global Prompt
@@ -222,7 +237,20 @@ description: "Update a conversational pathway's fields - including name, descrip
 </ParamField>
 
 <ParamField body="edges" type="object[]">
-    Data about all the edges in the pathway.
+    An array of edge objects that define the connections and flow between nodes in your pathway. Each edge contains:
+
+    **Common Edge Structure:**
+    ```json
+    {
+        "source": "source_node_id",
+        "target": "target_node_id",
+        "data": {
+            "label": "When this path should be taken",
+            // Optional: conditions, descriptions, etc.
+        }
+    }
+    ```
+
 
     <Accordion title="Edge Object Parameters">
         - `id`
@@ -234,8 +262,20 @@ description: "Update a conversational pathway's fields - including name, descrip
         - `label`
             — Label for this edge. This is what the agent will use to decide which path to take.
         </Accordion>
+
 </ParamField>
 
+## Complete JSON Structure Example
+
+For a comprehensive example of how pathways are structured with multiple nodes and edges in a realistic use case, download our example template:
+
+[Download pathway example](../../tutorials/tutorials-assets/pathway_json_example.json)
+
+This example contains a complete car rental pathway with:
+- Multiple node types (Default, Transfer Call, Webhook, End Call, etc.)
+- Complex edge routing and conditions  
+- Variable extraction and model configuration
+- Real-world conversation flow patterns
 
 ### Response
 
