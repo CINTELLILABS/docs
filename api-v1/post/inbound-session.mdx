@@ -1,0 +1,78 @@
+---
+title: "Create Inbound Session"
+api: "POST https://api.bland.ai/v1/inbound/session"
+description: "Create a session token that can be used to pass variables to inbound calls via SIP headers. This allows you to tie specific data to a call session before the call is initiated."
+---
+
+This endpoint creates a session token that can be used to pass variables to inbound calls when connecting via SIP. When you create a session using this endpoint, you receive a token that can be passed as the `x-bland-session-id` SIP header. Any call made to your inbound number with this header will automatically include the variables you specified when creating the session.
+
+**Use Case**: This is particularly useful when you need to pass context or variables to an inbound call before the caller connects. For example, you might want to include customer information, campaign data, or other relevant context that your pathway can access during the call.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_number" type="string" required>
+  The inbound phone number that this session will be associated with. This should be a phone number you own and have configured for inbound calls.
+  
+  Example format: `"+12223334444"`
+</ParamField>
+
+<ParamField body="request_data" type="object">
+  Optional variables that will be available in your pathway when a call is made using this session token. These variables can include any data you want to pass to the call context.
+  
+  Example:
+  ```json
+  {
+    "customer_id": "12345",
+    "campaign_name": "summer_promotion",
+    "user_tier": "premium"
+  }
+  ```
+</ParamField>
+
+### Response
+
+<ResponseField name="token" type="string">
+  The session token that should be passed as the `x-bland-session-id` SIP header when making the inbound call.
+</ResponseField>
+
+<ResponseField name="expires_at" type="string">
+  ISO 8601 timestamp indicating when this session token expires. Sessions have a limited lifetime for security purposes. The default is 1 hour.
+</ResponseField>
+
+### SIP Integration
+
+To use the session token:
+
+1. Create a session using this endpoint
+2. When making a SIP call to your inbound number, include the header: `x-bland-session-id: <token>`
+3. Your Bland call will have access to any variables you specified in the `request_data` field, in addition to any variables you had initially set up for the inbound number.
+
+### Example
+
+```bash
+curl -X POST https://api.bland.ai/v1/inbound/session \
+  -H "authorization: sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+12223334444",
+    "request_data": {
+      "customer_id": "12345",
+      "campaign_name": "summer_promotion",
+      "priority": "high"
+    }
+  }'
+```
+
+Response:
+```json
+{
+  "token": "550e8400-e29b-41d4-a716-446655440000",
+  "expires_at": "2024-01-15T10:30:00Z"
+}
+```
