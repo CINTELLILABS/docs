@@ -1,0 +1,106 @@
+---
+title: "Chat with Knowledge Base"
+api: "POST https://api.bland.ai/v1/knowledge/chat"
+description: "Performs a conversational query against knowledge bases with context."
+---
+
+Query a knowledge base using natural language and receive contextual responses. This endpoint supports both direct queries and conversational context through message history.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="messages" type="array">
+  Array of chat messages for conversational context. Use this for multi-turn conversations.
+
+  <ParamField body="messages[].role" type="string" required>
+    The role of the message sender (e.g., "user", "assistant", "system").
+  </ParamField>
+
+  <ParamField body="messages[].content" type="string" required>
+    The content of the message.
+  </ParamField>
+</ParamField>
+
+<ParamField body="knowledge_base_id" type="string" required>
+  The ID of the knowledge base to query against.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Chat response with contextual information.
+
+  <ResponseField name="data.response" type="string">
+    The AI-generated response based on the knowledge base content.
+  </ResponseField>
+
+  <ResponseField name="data.context" type="string">
+    Additional context information used to generate the response.
+  </ResponseField>
+
+  <ResponseField name="data.sources" type="array">
+    Array of source documents that were used to generate the response.
+
+    <ResponseField name="data.sources[].id" type="string">
+      Unique identifier of the source document.
+    </ResponseField>
+
+    <ResponseField name="data.sources[].content" type="string">
+      Relevant content from the source document.
+    </ResponseField>
+
+    <ResponseField name="data.sources[].metadata" type="object">
+      Additional metadata about the source document.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful query.
+</ResponseField>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "response": "Our refund policy allows for full refunds within 30 days of purchase. For products purchased more than 30 days ago, we offer store credit or exchanges. Please contact our customer service team at support@example.com to initiate a refund request.",
+    "context": "Based on company policy documentation regarding refunds and returns",
+    "sources": [
+      {
+        "id": "doc_01H8X9QK5R2N7P3M6Z8W4Y1V7V",
+        "content": "Refund Policy: Full refunds are available within 30 days of purchase...",
+        "metadata": {
+          "document_type": "policy",
+          "section": "refunds",
+          "last_updated": "2025-01-01"
+        }
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Knowledge base not found or not accessible"
+    }
+  ]
+}
+```
+
+</ResponseExample>
