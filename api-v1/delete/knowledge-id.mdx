@@ -1,0 +1,77 @@
+---
+title: "Delete Knowledge Base"
+api: "DELETE https://api.bland.ai/v1/knowledge/{knowledge_base_id}"
+description: "Soft deletes a knowledge base by setting its status to 'DELETED'."
+---
+
+Marks a knowledge base as deleted by setting its status to `"DELETED"`. This is a soft delete operation - the knowledge base data is retained but becomes inaccessible for normal operations.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Deletion confirmation object.
+
+  <ResponseField name="data.success" type="boolean">
+    Always `true` when the deletion is successful.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Confirmation message about the deletion.
+  </ResponseField>
+
+  <ResponseField name="data.knowledge_base_id" type="string">
+    The ID of the deleted knowledge base.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful deletion.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Knowledge base successfully deleted",
+    "knowledge_base_id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T"
+  },
+  "errors": null
+}
+```
+
+```json Not Found Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "KB not found or access denied"
+    }
+  ]
+}
+```
+
+</ResponseExample>

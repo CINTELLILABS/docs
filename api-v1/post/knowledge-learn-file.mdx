@@ -1,0 +1,162 @@
+---
+title: "Upload File"
+api: "POST https://api.bland.ai/v1/knowledge/learn"
+description: "Creates a new knowledge base by uploading a file."
+---
+
+Upload a file to create a knowledge base that can be used to provide contextual information to your AI agents. Supported file formats include PDF, Word documents, text files, and more.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `multipart/form-data` for file uploads.
+</ParamField>
+
+### Body Parameters (multipart/form-data)
+
+<ParamField body="type" type="string" required default="file">
+  Must be `"file"` for file uploads.
+</ParamField>
+
+<ParamField body="name" type="string">
+  KB name (defaults to filename if not provided).
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description of the knowledge base content.
+</ParamField>
+
+<ParamField body="file" type="file" required>
+  The file to upload and process into a knowledge base.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created knowledge base object.
+
+  <ResponseField name="data.id" type="string">
+    Unique identifier for the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.name" type="string">
+    Name of the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.description" type="string">
+    Description of the knowledge base (if provided).
+  </ResponseField>
+
+  <ResponseField name="data.status" type="string">
+    Current status: `"PROCESSING"`, `"COMPLETED"`, `"FAILED"`, or `"DELETED"`.
+  </ResponseField>
+
+  <ResponseField name="data.type" type="string">
+    Will be `"FILE"` for file-based knowledge bases.
+  </ResponseField>
+
+  <ResponseField name="data.created_at" type="string">
+    ISO timestamp of creation.
+  </ResponseField>
+
+  <ResponseField name="data.updated_at" type="string">
+    ISO timestamp of last update.
+  </ResponseField>
+
+  <ResponseField name="data.error_message" type="string">
+    Error message if status is `"FAILED"`.
+  </ResponseField>
+
+  <ResponseField name="data.file" type="object">
+    File information for the uploaded file.
+
+    <ResponseField name="data.file.file_name" type="string">
+      Original filename.
+    </ResponseField>
+
+    <ResponseField name="data.file.file_size" type="number">
+      File size in bytes.
+    </ResponseField>
+
+    <ResponseField name="data.file.file_type" type="string">
+      MIME type of the file.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful creation.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/learn \
+  -H "authorization: YOUR_API_KEY" \
+  -F "type=file" \
+  -F "name=Company FAQs" \
+  -F "description=Frequently asked questions and policies" \
+  -F "file=@company_faqs.pdf"
+```
+
+```bash With Default Name
+curl -X POST https://api.bland.ai/v1/knowledge/learn \
+  -H "authorization: YOUR_API_KEY" \
+  -F "type=file" \
+  -F "description=Product documentation" \
+  -F "file=@product_docs.pdf"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T",
+    "name": "Company FAQs",
+    "description": "Frequently asked questions and policies",
+    "status": "PROCESSING",
+    "type": "FILE",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:30:00Z",
+    "file": {
+      "file_name": "company_faqs.pdf",
+      "file_size": 2048576,
+      "file_type": "application/pdf"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_UPLOAD_LIMIT_EXCEEDED",
+      "message": "You have reached your knowledge base upload limit"
+    }
+  ]
+}
+```
+
+```json Rate Limited Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_UPLOAD_RATE_LIMITED",
+      "message": "Please wait 10 seconds between knowledge base uploads, or wait for your current upload to complete."
+    }
+  ]
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,104 @@
+---
+title: "Discover Sitemap URLs"
+api: "POST https://api.bland.ai/v1/knowledge/crawl"
+description: "Discovers URLs from a website's sitemap for web scraping."
+---
+
+Analyzes a website to discover available URLs from its sitemap. This is useful for finding all the pages available on a website before creating a web scraping knowledge base.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="url" type="string" required>
+  The base URL of the website to discover sitemap URLs from.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Discovered URLs and sitemap information.
+
+  <ResponseField name="data.urls" type="string[]">
+    Array of discovered URLs from the website's sitemap.
+  </ResponseField>
+
+  <ResponseField name="data.sitemap_url" type="string">
+    The sitemap URL that was found and processed (if any).
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful discovery.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/crawl \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "url": "https://example.com"
+  }'
+```
+
+```json Request Body
+{
+  "url": "https://docs.example.com"
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "urls": [
+      "https://example.com/",
+      "https://example.com/about",
+      "https://example.com/products",
+      "https://example.com/contact",
+      "https://example.com/docs/getting-started",
+      "https://example.com/docs/api-reference",
+      "https://example.com/docs/tutorials"
+    ],
+    "sitemap_url": "https://example.com/sitemap.xml"
+  },
+  "errors": null
+}
+```
+
+```json No Sitemap Found
+{
+  "data": {
+    "urls": [],
+    "sitemap_url": null
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_INPUT",
+      "message": "Invalid URL provided"
+    }
+  ]
+}
+```
+
+</ResponseExample>

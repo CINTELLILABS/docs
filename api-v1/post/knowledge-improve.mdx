@@ -1,0 +1,134 @@
+---
+title: "Create Suggestion"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/improve"
+description: "Creates a new suggestion (Q&A pair) for a knowledge base."
+---
+
+Add a question and answer pair to improve a knowledge base. These suggestions help enhance the knowledge base's ability to respond to specific queries that may not be well-covered by the existing content.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base to add the suggestion to.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="question" type="string" required>
+  The question that should trigger this response.
+</ParamField>
+
+<ParamField body="answer" type="string" required>
+  The answer that should be provided when this question is asked.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Creation confirmation and suggestion details.
+
+  <ResponseField name="data.success" type="boolean">
+    Always `true` when the suggestion is successfully created.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Confirmation message about the suggestion creation.
+  </ResponseField>
+
+  <ResponseField name="data.suggestion" type="object">
+    The created suggestion object.
+
+    <ResponseField name="data.suggestion.id" type="string">
+      Unique identifier for the suggestion.
+    </ResponseField>
+
+    <ResponseField name="data.suggestion.knowledge_base_id" type="string">
+      The ID of the knowledge base this suggestion belongs to.
+    </ResponseField>
+
+    <ResponseField name="data.suggestion.question" type="string">
+      The question part of the suggestion.
+    </ResponseField>
+
+    <ResponseField name="data.suggestion.answer" type="string">
+      The answer part of the suggestion.
+    </ResponseField>
+
+    <ResponseField name="data.suggestion.created_at" type="string">
+      ISO timestamp of creation.
+    </ResponseField>
+
+    <ResponseField name="data.suggestion.updated_at" type="string">
+      ISO timestamp of last update.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful creation.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T/improve \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "question": "What is the warranty period for your products?",
+    "answer": "All our products come with a 2-year manufacturer warranty that covers defects in materials and workmanship. Extended warranty options are available for purchase."
+  }'
+```
+
+```json Request Body
+{
+  "question": "How do I reset my password?",
+  "answer": "To reset your password, click the 'Forgot Password' link on the login page, enter your email address, and follow the instructions in the email we send you. The reset link will expire after 24 hours."
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Suggestion created successfully",
+    "suggestion": {
+      "id": "sug_01H8X9QK5R2N7P3M6Z8W4Y1V8W",
+      "knowledge_base_id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T",
+      "question": "What is the warranty period for your products?",
+      "answer": "All our products come with a 2-year manufacturer warranty that covers defects in materials and workmanship. Extended warranty options are available for purchase.",
+      "created_at": "2025-01-15T16:30:00Z",
+      "updated_at": "2025-01-15T16:30:00Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Knowledge base not found or access denied"
+    }
+  ]
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,150 @@
+---
+title: "Update Knowledge Base"
+api: "PUT https://api.bland.ai/v1/knowledge/{knowledge_base_id}"
+description: "Updates a knowledge base's name and/or description."
+---
+
+Updates the metadata (name and description) of an existing knowledge base. This endpoint does not modify the content of the knowledge base, only its descriptive information.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base to update.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  New name for the knowledge base. If not provided, the current name is retained.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description for the knowledge base. Pass `null` to remove the description entirely.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated knowledge base object.
+
+  <ResponseField name="data.id" type="string">
+    Unique identifier for the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.name" type="string">
+    Updated name of the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.description" type="string">
+    Updated description of the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.status" type="string">
+    Current status: `"PROCESSING"`, `"COMPLETED"`, `"FAILED"`, or `"DELETED"`.
+  </ResponseField>
+
+  <ResponseField name="data.type" type="string">
+    Type of knowledge base: `"FILE"`, `"WEB_SCRAPE"`, or `"TEXT"`.
+  </ResponseField>
+
+  <ResponseField name="data.source_urls" type="string">
+    Source URLs for web scrape type (comma-separated).
+  </ResponseField>
+
+  <ResponseField name="data.base_url" type="string">
+    Base URL for web scrape type.
+  </ResponseField>
+
+  <ResponseField name="data.created_at" type="string">
+    ISO timestamp of creation.
+  </ResponseField>
+
+  <ResponseField name="data.updated_at" type="string">
+    ISO timestamp of last update.
+  </ResponseField>
+
+  <ResponseField name="data.error_message" type="string">
+    Error message if status is `"FAILED"`.
+  </ResponseField>
+
+  <ResponseField name="data.file" type="object">
+    File information for file-type knowledge bases.
+
+    <ResponseField name="data.file.file_name" type="string">
+      Original filename.
+    </ResponseField>
+
+    <ResponseField name="data.file.file_size" type="number">
+      File size in bytes.
+    </ResponseField>
+
+    <ResponseField name="data.file.file_type" type="string">
+      MIME type of the file.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful update.
+</ResponseField>
+
+<RequestExample>
+
+```bash Update Name Only
+curl -X PUT https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "name": "Updated Company FAQs"
+  }'
+```
+
+```json Update Both Name and Description
+{
+  "name": "Updated Company FAQs",
+  "description": "Updated frequently asked questions and company policies for 2025"
+}
+```
+
+```json Remove Description
+{
+  "name": "Company FAQs",
+  "description": null
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T",
+    "name": "Updated Company FAQs",
+    "description": "Updated frequently asked questions and company policies for 2025",
+    "status": "COMPLETED",
+    "type": "FILE",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T15:45:00Z",
+    "file": {
+      "file_name": "company_faqs.pdf",
+      "file_size": 2048576,
+      "file_type": "application/pdf"
+    }
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
