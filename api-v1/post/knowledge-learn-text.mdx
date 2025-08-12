@@ -1,0 +1,133 @@
+---
+title: "Upload Text"
+api: "POST https://api.bland.ai/v1/knowledge/learn"
+description: "Creates a new knowledge base from direct text input."
+---
+
+Create a knowledge base by providing text content directly in the request. This is ideal for when you have structured text content that you want to make searchable for your AI agents.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json` for text-based knowledge bases.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="type" type="string" required default="text">
+  Must be `"text"` for text-based knowledge bases.
+</ParamField>
+
+<ParamField body="name" type="string" required default="Product Information">
+  Name for the knowledge base.
+</ParamField>
+
+<ParamField body="description" type="string" default="Product specifications, features, and technical details">
+  Optional description of the knowledge base content.
+</ParamField>
+
+<ParamField body="text" type="string" required default="Our flagship product offers advanced AI capabilities with industry-leading accuracy. Features include:\n\n1. Multi-language support\n2. Real-time processing\n3. Seamless API integration\n4. 24/7 technical support\n5. Comprehensive documentation\n\nFor technical specifications, please contact our support team.">
+  Text content to be stored in the knowledge base (maximum 1MB).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created knowledge base object.
+
+  <ResponseField name="data.id" type="string">
+    Unique identifier for the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.name" type="string">
+    Name of the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.description" type="string">
+    Description of the knowledge base (if provided).
+  </ResponseField>
+
+  <ResponseField name="data.status" type="string">
+    Current status: `"PROCESSING"`, `"COMPLETED"`, `"FAILED"`, or `"DELETED"`.
+  </ResponseField>
+
+  <ResponseField name="data.type" type="string">
+    Will be `"TEXT"` for text-based knowledge bases.
+  </ResponseField>
+
+  <ResponseField name="data.created_at" type="string">
+    ISO timestamp of creation.
+  </ResponseField>
+
+  <ResponseField name="data.updated_at" type="string">
+    ISO timestamp of last update.
+  </ResponseField>
+
+  <ResponseField name="data.error_message" type="string">
+    Error message if status is `"FAILED"`.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful creation.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/learn \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "type": "text",
+    "name": "Product Information",
+    "description": "Product specifications and features",
+    "text": "Our flagship product offers advanced AI capabilities with industry-leading accuracy. It supports multiple languages, real-time processing, and seamless integration with existing systems. The product includes comprehensive APIs, detailed documentation, and 24/7 support."
+  }'
+```
+
+```json Request Body
+{
+  "type": "text",
+  "name": "Company Policies",
+  "description": "Internal policies and procedures",
+  "text": "1. Work Hours: Standard work hours are 9 AM to 5 PM, Monday through Friday.\n2. Remote Work: Employees may work remotely up to 3 days per week with manager approval.\n3. Time Off: All employees accrue 15 days of PTO annually.\n4. Equipment: Company laptops must be returned within 30 days of termination."
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V6U",
+    "name": "Product Information",
+    "description": "Product specifications and features",
+    "status": "PROCESSING",
+    "type": "TEXT",
+    "created_at": "2025-01-15T11:00:00Z",
+    "updated_at": "2025-01-15T11:00:00Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_INPUT",
+      "message": "Text content exceeds maximum size of 1MB"
+    }
+  ]
+}
+```
+
+</ResponseExample>
