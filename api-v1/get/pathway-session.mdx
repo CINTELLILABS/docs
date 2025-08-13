@@ -1,0 +1,68 @@
+---
+title: "Get Pathway Session Token"
+api: "GET https://api.bland.ai/v1/pathway/session"
+description: "Creates a new pathway session token for the authenticated user. This token can be used to access pathway chat and expires after 1 hour."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="token" type="string">
+  The generated pathway session token.
+</ResponseField>
+
+<ResponseField name="expires_at" type="string">
+  ISO 8601 timestamp indicating when the token expires (1 hour from creation).
+</ResponseField>
+
+### Response Codes
+
+<ResponseField name="201" type="success">
+  Token created successfully.
+</ResponseField>
+
+<ResponseField name="401" type="error">
+  Unauthorized - User authentication required.
+</ResponseField>
+
+<ResponseField name="500" type="error">
+  Internal server error - Token creation failed or unexpected error occurred.
+</ResponseField>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_at": "2024-01-15T15:30:00.000Z"
+}
+```
+
+```json Error Response (401)
+{
+  "errors": [
+    {
+      "error": "UNAUTHORIZED",
+      "message": "User authentication required"
+    }
+  ]
+}
+```
+
+```json Error Response (500)
+{
+  "errors": [
+    {
+      "error": "TOKEN_CREATION_FAILED", 
+      "message": "Failed to create pathway session token"
+    }
+  ]
+}
+```
+
+</ResponseExample>
