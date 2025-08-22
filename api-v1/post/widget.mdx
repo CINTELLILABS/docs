@@ -1,0 +1,78 @@
+---
+title: "Create Widget"
+api: "POST https://api.bland.ai/v1/widget"
+description: "Creates a new widget."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="pathway_id" type="string" required>
+  UUID of the pathway to associate with the widget.
+</ParamField>
+
+<ParamField body="allowed_domains" type="string[]" required>
+  Array of domains where the widget can be embedded.
+</ParamField>
+
+<ParamField body="messages_per_minute" type="number" required>
+  Rate limit for messages (minimum: 0).
+</ParamField>
+
+<ParamField body="config" type="any" required>
+  Widget configuration object (flexible JSON).
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  Optional UUID of agent to associate with widget.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="number">
+  HTTP status code (200 for success).
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The created widget object containing:
+  
+  - `id` (string): Generated widget UUID
+  - `pathway_id` (string): Associated pathway UUID
+  - `agent_id` (string | null): Associated agent UUID or null
+  - `allowed_domains` (string[]): Array of allowed domains
+  - `messages_per_minute` (number): Rate limit for messages
+  - `config` (object): Widget configuration object
+  - `created_at` (string): ISO timestamp
+  - `updated_at` (string): ISO timestamp
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always null on successful response.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": 200,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7",
+    "agent_id": null,
+    "allowed_domains": ["example.com", "subdomain.example.com"],
+    "messages_per_minute": 10,
+    "config": {
+      "theme": "light",
+      "position": "bottom-right"
+    },
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

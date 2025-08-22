@@ -1,0 +1,96 @@
+---
+title: "Get Widget Threads"
+api: "GET https://api.bland.ai/v1/widget/{id}/threads"
+description: "Retrieves all conversation threads for a specific widget. Returns threads ordered by creation date (newest first) with associated messages ordered chronologically."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the widget to retrieve threads for.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="number">
+  HTTP status code (200 for success).
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of thread objects, each containing:
+  
+  - `id` (string): Thread UUID
+  - `created_at` (string): ISO timestamp
+  - `visitor_id` (string | null): UUID of visitor (if available)
+  - `messages` (array): Array of message objects, each containing:
+    - `id` (string): Message UUID
+    - `sender_type` (string): Either "USER" or "ASSISTANT"
+    - `created_at` (string): ISO timestamp
+    - `content` (string): Message content
+</ResponseField>
+
+
+<Note>
+This endpoint does not return 404 if no threads exist; it returns an empty array instead.
+</Note>
+
+<ResponseExample>
+```json Response
+{
+  "status": 200,
+  "data": [
+    {
+      "id": "thread_550e8400-e29b-41d4-a716-446655440000",
+      "created_at": "2024-01-15T14:30:00Z",
+      "visitor_id": "visitor_123456789",
+      "messages": [
+        {
+          "id": "msg_001",
+          "sender_type": "USER",
+          "created_at": "2024-01-15T14:30:00Z",
+          "content": "Hello, I need help with my order"
+        },
+        {
+          "id": "msg_002",
+          "sender_type": "ASSISTANT",
+          "created_at": "2024-01-15T14:30:15Z",
+          "content": "I'd be happy to help you with your order! Can you please provide your order number?"
+        },
+        {
+          "id": "msg_003",
+          "sender_type": "USER",
+          "created_at": "2024-01-15T14:30:45Z",
+          "content": "It's order #12345"
+        }
+      ]
+    },
+    {
+      "id": "thread_660f9511-f3ac-52e5-b827-557766551111",
+      "created_at": "2024-01-15T13:15:00Z",
+      "visitor_id": null,
+      "messages": [
+        {
+          "id": "msg_101",
+          "sender_type": "USER",
+          "created_at": "2024-01-15T13:15:00Z",
+          "content": "What are your business hours?"
+        },
+        {
+          "id": "msg_102",
+          "sender_type": "ASSISTANT",
+          "created_at": "2024-01-15T13:15:05Z",
+          "content": "Our business hours are Monday through Friday, 9 AM to 6 PM EST."
+        }
+      ]
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
