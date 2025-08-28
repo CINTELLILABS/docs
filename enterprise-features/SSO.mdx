@@ -85,8 +85,14 @@ Before configuring SSO, ensure you have:
     ```
     <Warning>You'll get the exact provider-id after creating the provider in Bland</Warning>
     
+    **Sign-out redirect URIs:** (Optional)
+    ```
+    https://app.bland.ai/logout
+    ```
+    
     **Controlled access:**
-    - Select **Allow everyone in your organization to access** (recommended)
+    - **Allow everyone in your organization to access** (recommended for company-wide SSO)
+    - **Limit access to selected groups** (if you want to control access)
     
     Click **Save**
   </Accordion>
@@ -100,6 +106,7 @@ Before configuring SSO, ensure you have:
        - **Include in**: ID Token, Access Token
        - **Value type**: Groups
        - **Filter**: `.*` (for all groups)
+       - **Include in**: Any scope
     4. Click **Create**
   </Accordion>
   
@@ -294,6 +301,19 @@ Before configuring SSO, ensure you have:
   </Accordion>
 </AccordionGroup>
 
+### Azure AD Compliance & Advanced Features
+
+**Compliance Considerations:**
+- Azure AD provides detailed audit logs with configurable retention
+- Use **Privileged Identity Management (PIM)** for just-in-time admin access
+- Enable **Identity Protection** for risk-based conditional access
+- Configure log retention per compliance requirements (GDPR, HIPAA, etc.)
+
+**Advanced Security:**
+- **Conditional Access Policies**: Require MFA, restrict by location/device
+- **Risk-Based Policies**: Block or challenge risky sign-ins
+- **Device Compliance**: Require managed/compliant devices
+
 ---
 
 ## Google Workspace
@@ -352,11 +372,37 @@ Google Workspace only supports SAML for third-party applications. OIDC is reserv
     2. Update Google app with generated Provider ID
     3. Enable app for organizational units
   </Step>
+  
+  <Step title="Test Configuration">
+    **From Google Admin Console:**
+    - In the Bland SSO app, click **Test SAML login**
+    - This opens the SSO flow in a new tab
+    
+    **From Bland:**
+    - Use the Test button in SSO settings
+    - Or test with an incognito browser window
+  </Step>
 </Steps>
 
 <Warning>
 Google Workspace changes can take up to 24 hours to propagate, though typically activate within 15 minutes.
 </Warning>
+
+### Google Workspace Security Features
+
+**Context-Aware Access:**
+- Configure access levels based on device trust status, IP location, and user/group membership
+
+**Compliance and Logging:**
+- **Access Transparency**: Logs of admin actions (Enterprise editions)
+- **Data Regions**: Configure data residency requirements
+- **Audit Logs**: Export SAML events to BigQuery for analysis
+- **SIEM Integration**: Connect logs to security monitoring tools
+
+**Password Security:**
+- Enable password alert for compromised passwords
+- Configure strong password requirements
+- Regular rotation policies
 
 ---
 
@@ -492,6 +538,21 @@ Supports both protocols. Create app from catalog or custom connector using Bland
 2. **Check Browser Console**: Open Developer Tools (F12) → Network tab for detailed errors
 3. **Verify in IdP**: Check IdP audit logs for authentication attempts
 4. **Test with Different User**: Try a non-admin account to verify permissions
+5. **Test in Incognito Mode**: Always test in incognito/private browsing mode to avoid cached sessions
+
+### Advanced Debugging Tools
+
+**For SAML:**
+- [SAML Chrome Panel](https://chrome.google.com/webstore/detail/saml-chrome-panel) - Chrome extension
+- [SAML-tracer](https://addons.mozilla.org/en-US/firefox/addon/saml-tracer/) - Firefox addon
+- Capture and decode SAML responses to verify attributes
+
+**For OIDC:**
+- Use [jwt.io](https://jwt.io) to decode ID tokens
+- Verify `iss` (issuer), `aud` (audience), and claims
+
+**Network Analysis:**
+- Export HAR file from browser Network tab for support
 
 ### Debug Checklist
 
@@ -511,13 +572,19 @@ Supports both protocols. Create app from catalog or custom connector using Bland
 ### Certificate & Secret Management
 
 <Warning>
-**Critical**: Set calendar reminders for certificate and secret expiration!
+**Critical**: Set calendar reminders 30 days before certificate and secret expiration!
 </Warning>
 
-- **SAML Certificates**: Rotate before expiration (typically 1-3 years)
-- **OIDC Secrets**: Rotate every 6-12 months
+- **SAML Certificates**: 
+  - Monitor expiration dates (typically 1-3 years)
+  - Rotate during low-usage periods
+  - Keep backup of current working certificates
+- **OIDC Secrets**: 
+  - Rotate every 6-12 months
+  - Regenerate in IdP first, then update in Bland immediately
+  - Never share secrets via email or chat
 - **Document rotation procedures** for your team
-- **Test immediately** after rotation
+- **Test immediately** after rotation with non-admin account
 
 ### Access Control
 
@@ -529,9 +596,30 @@ Supports both protocols. Create app from catalog or custom connector using Bland
 ### Monitoring
 
 - Enable SSO audit logging in your IdP
-- Monitor failed authentication attempts
+- Monitor failed authentication attempts  
 - Set up alerts for unusual patterns
 - Review logs during security incidents
+- **Regular Reviews:**
+  - Audit user access monthly
+  - Review IdP logs weekly  
+  - Check for deprecated features quarterly
+
+### Platform-Specific Security Recommendations
+
+**Okta:**
+- Don't assign to "Everyone" unless intended
+- Use Okta Verify or hardware tokens for higher security
+- Review system logs for suspicious activity regularly
+
+**Azure AD:**
+- Use Conditional Access for location/device restrictions
+- Enable risk-based authentication policies
+- Implement Privileged Identity Management (PIM)
+
+**Google Workspace:**
+- Enable Context-Aware Access levels
+- Use Security Keys for admin accounts
+- Configure data residency requirements
 
 ---
 
@@ -572,12 +660,16 @@ Contact support for custom role mapping requirements.
     - You want simpler configuration
     - You need refresh tokens
     - You're building mobile apps
+    - Starting fresh with SSO
+    - Want better mobile app support
     
     **Choose SAML if:**
     - Required by your IdP (Google Workspace)
-    - Mandated by security policy
+    - Mandated by security policy  
     - You need encrypted assertions
     - Integrating with legacy systems
+    - Your organization already uses SAML for other applications
+    - You require specific SAML features like encrypted assertions
   </Accordion>
   
   <Accordion title="Can I have multiple SSO providers?">
@@ -608,7 +700,7 @@ Contact support for custom role mapping requirements.
   </Accordion>
   
   <Accordion title="What if my domain is already registered?">
-    Contact support@bland.ai to transfer or reset domain ownership.
+    Contact hello@bland.ai to transfer or reset domain ownership.
   </Accordion>
   
   <Accordion title="Do you support SCIM for user provisioning?">
@@ -652,7 +744,7 @@ When contacting support, provide:
 
 ### Contact Information
 
-- **Email**: support@bland.ai
+- **Email**: hello@bland.ai
 - **Documentation**: This guide
 - **Status Page**: status.bland.ai
 
