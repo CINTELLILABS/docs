@@ -4,9 +4,6 @@ api: "POST https://api.bland.ai/v1/sms/analyze"
 description: "Answer questions and extract information from an SMS conversation."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
 
 ### Headers
 
@@ -15,43 +12,99 @@ description: "Answer questions and extract information from an SMS conversation.
 </ParamField>
 ### Body
 
-
-<ParamField body="goal" type="string" required>
-An overarching goal for the information you want to extract from the SMS messages.
+<ParamField body="schema_id" type="string" required>
+The ID of the citation schema to use for extracting variables from the SMS conversation.
 </ParamField>
 
-<ParamField body="answers" type="array" required>
-An array of questions that you want the AI to answer, along with their return types.
-
-For example:
-```json
-{
-    "answers": [
-        [ "When does Bob want to move?", "time" ],
-        [ "Summarize the call.", "summary" ]
-    ]
-}
-```
+<ParamField body="conversation_id" type="string" required>
+The ID of the SMS conversation to analyze.
 </ParamField>
 
-<ParamField body="to" type="string" required>
-The phone number that received the messages.
-</ParamField>
+### Response
 
-<ParamField body="from" type="string" required>
-The human/other phone number in the conversation.
-</ParamField>
+<ResponseField name="data" type="object">
+  The response data containing analysis results.
+
+  <Expandable title="data">
+    <ResponseField name="status" type="string">
+      The status of the analysis operation. Returns "success" on successful completion.
+    </ResponseField>
+
+    <ResponseField name="conversation_id" type="string">
+      The ID of the SMS conversation that was analyzed.
+    </ResponseField>
+
+    <ResponseField name="schema_id" type="string">
+      The ID of the citation schema that was used for analysis.
+    </ResponseField>
+
+    <ResponseField name="schema_name" type="string">
+      The name of the citation schema that was used.
+    </ResponseField>
+
+    <ResponseField name="variables_extracted" type="number">
+      The total number of variables that were successfully extracted from the conversation.
+    </ResponseField>
+
+    <ResponseField name="extracted_variables" type="object">
+      An object containing the extracted variables as key-value pairs, where keys are variable names and values are the extracted data.
+    </ResponseField>
+
+    <ResponseField name="citations" type="array">
+      An array of citation objects that reference where each variable was found in the conversation.
+      
+      <Expandable title="citation object">
+        <ResponseField name="variable" type="string">
+          The name of the variable this citation references.
+        </ResponseField>
+        
+        <ResponseField name="message" type="string">
+          The message text where the variable was found.
+        </ResponseField>
+        
+        <ResponseField name="confidence" type="number">
+          The confidence score (0-1) for this extraction.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="messages_processed" type="number">
+      The total number of messages in the conversation that were processed.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  An array of error objects. Empty array when the request is successful.
+</ResponseField>
 
 <ResponseExample>
 
 ```json Response
 {
-    "status": "success",
-    "message": "Successfully analyzed SMS messages.",
-    "answers": [
-        "Bob prefers to have movers come in the morning.",
-        "..."
-    ]
+    "data": {
+        "status": "success",
+        "conversation_id": "conv_123456",
+        "schema_id": "schema_789",
+        "schema_name": "Customer Intent Analysis",
+        "variables_extracted": 5,
+        "extracted_variables": {
+            "customer_name": "John Smith",
+            "preferred_time": "morning",
+            "service_type": "moving",
+            "urgency": "high",
+            "budget_range": "$500-1000"
+        },
+        "citations": [
+            {
+                "variable": "customer_name",
+                "message": "Hi, this is John Smith calling about...",
+                "confidence": 0.95
+            }
+        ],
+        "messages_processed": 12
+    },
+    "errors": []
 }
 ```
 
