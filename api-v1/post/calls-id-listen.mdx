@@ -1,0 +1,209 @@
+---
+title: "Listen to Active Call"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/listen"
+description: "Initiate a live listen session for an active call"
+---
+
+Starts a live listen session for an active call, returning a WebSocket URL for real-time audio streaming.
+
+## Authentication
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The unique identifier of the call to listen to
+</ParamField>
+
+## Prerequisites
+
+- Live listen must be enabled in organization preferences (`live_listen_enabled: true`)
+- Call must be in active status (not completed)
+- Call must belong to the authenticated organization
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="url" type="string">
+      WebSocket URL for connecting to the live audio stream
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array" default="null">
+  Array of error objects if request failed
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/calls/call_123456/listen" \
+  -H "Authorization: YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.bland.ai/v1/calls/call_123456/listen', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'YOUR_API_KEY'
+  }
+});
+
+const data = await response.json();
+console.log(data.data.url); // WebSocket URL
+```
+
+```python Python
+import requests
+
+url = "https://api.bland.ai/v1/calls/call_123456/listen"
+headers = {"Authorization": "YOUR_API_KEY"}
+
+response = requests.post(url, headers=headers)
+data = response.json()
+print(data["data"]["url"])  # WebSocket URL
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "status": "success",
+  "data": {
+    "url": "wss://api.bland.ai/ws/listen/call_123456"
+  },
+  "errors": null
+}
+```
+
+```json Organization Not Configured
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_ORG_PREFERENCES",
+      "message": "Org preferences do not allow live listening"
+    }
+  ]
+}
+```
+
+```json Call Not Found
+{
+  "status": "error", 
+  "data": null,
+  "errors": [
+    {
+      "error": "CALL_NOT_FOUND",
+      "message": "Call not found"
+    }
+  ]
+}
+```
+
+```json Call Not Active
+{
+  "status": "error",
+  "data": null, 
+  "errors": [
+    {
+      "error": "INVALID_CALL_STATUS",
+      "message": "Call is not in progress"
+    }
+  ]
+}
+```
+
+```json Call Not Available for Streaming
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "CALL_NOT_FOUND", 
+      "message": "Call was either not found or not started"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## WebSocket Connection
+
+After receiving the WebSocket URL, connect to it to receive real-time audio data:
+
+### Connection Details
+
+- **URL**: Use the `url` returned in the response
+- **Protocol**: WebSocket (WSS)
+- **Binary Type**: `arraybuffer`
+- **Authentication**: Handled via the URL token
+
+### Audio Data Format
+
+The WebSocket streams binary audio data with these specifications:
+
+- **Format**: PCM Int16 (16-bit signed integers)
+- **Sample Rate**: 16,000 Hz  
+- **Channels**: Mono (1 channel)
+- **Byte Order**: Little-endian
+- **Data**: Combined audio from all call participants
+
+### WebSocket Implementation Example
+
+```javascript
+// Connect to WebSocket
+const socket = new WebSocket(websocketUrl);
+socket.binaryType = 'arraybuffer';
+
+socket.onmessage = (event) => {
+  // Convert ArrayBuffer to Int16Array
+  const dataView = new DataView(event.data);
+  const int16Array = new Int16Array(dataView.byteLength / 2);
+  
+  for (let i = 0; i < int16Array.length; i++) {
+    int16Array[i] = dataView.getInt16(i * 2, true); // Little-endian
+  }
+  
+  // Process audio data (convert to Float32 for Web Audio API)
+  const float32Array = new Float32Array(int16Array.length);
+  for (let i = 0; i < int16Array.length; i++) {
+    float32Array[i] = int16Array[i] / 32768; // Normalize to [-1, 1]
+  }
+  
+  // Use audio data for playback
+};
+
+socket.onclose = () => {
+  console.log('Live listen session ended');
+};
+```
+
+## Error Codes
+
+| Error Code | Description |
+|------------|-------------|
+| `MISSING_CALL_ID` | Call ID parameter is required |
+| `INVALID_ORG_PREFERENCES` | Live listen is not enabled for organization |
+| `CALL_NOT_FOUND` | Call does not exist or does not belong to organization |
+| `INVALID_CALL_STATUS` | Call is not currently active |
+| `INTERNAL_SERVER_ERROR` | Server error occurred |
+
+## Notes
+
+- WebSocket connection automatically closes when the call ends
+- Multiple concurrent listeners can subscribe to the same call
+- Audio stream includes all participants in the call (combined)
+- The WebSocket URL can be used by multiple connections simultaneously
