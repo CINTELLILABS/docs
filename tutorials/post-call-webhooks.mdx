@@ -2,56 +2,366 @@
 title: "Post Call Webhooks"
 ---
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhook.png" />
+## What are Post-Call Webhooks?
 
-## Introduction
+Post-call webhooks are HTTP notifications that Bland AI automatically sends to your server after a phone call completes. Think of them as real-time alerts that deliver call data directly to your application, enabling you to:
 
-This is a quick tutorial to help you set up and test your Bland AI webhook. We'll include instructions both for inbound and outbound phone calls.
+- **Process call outcomes immediately** - Trigger follow-up actions based on call results
+- **Integrate with your CRM or database** - Automatically update customer records with call transcripts and extracted data
+- **Build custom analytics** - Track call performance and agent effectiveness 
+- **Create automated workflows** - Send emails, create tickets, or update dashboards based on call data
+- **Access rich call data** - Get complete transcripts, extracted variables, call duration, and more
 
-We'll start with inbound because it's more popular.
+Webhooks make it easy to integrate with Bland, so your system can react to call completions right away, no need to keep polling our API.
 
-## Step 1: Create your webhook
+## About This Tutorial
 
-To create a test webhook visit [Webhook.site](https://webhook.site/)
+This tutorial will help you set up and test your Bland AI webhooks for both inbound and outbound phone calls. 
 
-The website will automatically provide you a unique webhook URL.
+## Step 1: Create your test webhook
 
-## Step 2: Connect to your inbound phone number
+For testing purposes, we'll use [Webhook.site](https://webhook.site/) to create a temporary webhook endpoint. Webhook.site generates instant webhook URLs with no setup required and captures all incoming requests so you can see webhook deliveries in real-time.
 
-Open your [developer portal](https://app.bland.ai) and visit the [inbound phone numbers](https://app.bland.ai/home?page=inbound-number) page.
+When you visit Webhook.site, it automatically provides you a unique webhook URL that will capture any HTTP requests sent to it. This is perfect for testing before you implement your own webhook endpoint.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/inbound-number-webhook.png" />
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhooksite.jpeg" />
 
-Paste your webhook into the `webhook` field. Make sure to remove the initial `https://` when you insert the URL. Then click `test webhook`.
+Copy your unique webhook URL - you'll need it in the next step.
 
-## Step 3: Verifying your outputs
+## Step 2: Configure webhook for inbound calls
 
-Navigate to webhook.site page, and check if the test webhook fired correctly. You'll know it worked because a new record will populate.
+### Navigate to Inbound Numbers
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhook-fires-successfully.png" />
+1. Open your [Bland AI developer portal](https://app.bland.ai)
+2. Go to the [Inbound Phone Numbers](https://app.bland.ai/home?page=inbound-number) page from the sidebar
 
-At this point, if your record fails to populate, double check that you provided the correct URL - and that you REMOVED the initial `https://` from it.
+### Configure Your Webhook
 
-Otherwise, if issues persist, jump into the [discord](https://discord.gg/QvxDz8zcKe) - one of our teammates will help you asap.
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhook-url.jpeg" />
 
-## Step 4: test a live phone call
+1. **Find your phone number** in the list of inbound numbers
+2. **Click to expand the Advanced section** of your inbound number details
+3. **Locate the webhook field** - this is where you'll configure your post-call webhook
+4. **Paste your webhook URL** - Use the Webhook.site URL from Step 1
+5. **Click "Test Webhook"** - This sends a test payload to verify your webhook is working
 
-Call your inbound phone number. Once it ends, visit the Webhook site and confirm once again that a new record populated.
+**Need live events during the call?** This webhook parameter sends data after the call completes. If you want to receive webhook events during the call (like when the call starts, transfers, or ends), check out the `webhook_events` parameter in our [Send Call API documentation](https://docs.bland.ai/api-v1/post/calls#webhook-events).
 
-If that's working, then you're set!
+## Step 3: Verify webhook test
 
-## Step 5: Testing for outbound calls
+Navigate back to your Webhook.site page and check if the test webhook fired correctly. You'll know it worked because a new HTTP request will appear in the list.
 
-To test for outbound calls, once again create your webhook by referring back to step 1.
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhooksite-result.jpeg" />
 
-Then, follow the [send phone call docs](https://docs.bland.ai/api-v1/post/calls) to create and send a phone call. Make sure you include the `webhook` as a parameter in your request. After, confirm that the webhook data populated on your webhook site page.
+**If the test fails:**
+- Double-check that you provided the correct URL
+- Make sure there are no extra spaces or characters
 
-And again, if you encounter issues, jump into [discord](https://discord.gg/QvxDz8zcKe) and message us - we will help asap.
+If issues persist, reach out in our [Discord community](https://discord.gg/QvxDz8zcKe) or ask for technical support from hello@bland.ai.
 
+## Step 4: Test with a live phone call
 
+Now test with an actual phone call:
 
+1. **Call your inbound phone number** and have a conversation with your AI agent
+2. **End the call** completely 
+3. **Return to Webhook.site** and you should see a new webhook delivery with the complete call data
+4. **Inspect the payload** to see the full transcript, call duration, and other call metadata
 
+If you see the webhook payload appear after your call, your inbound webhook is working perfectly!
 
+## Step 5: Configure webhooks for outbound calls
 
+Outbound calls handle webhooks differently than inbound calls. You have two options for configuring webhooks:
 
+### Option 1: Per-call webhook (Recommended)
 
+When making API calls to create outbound calls, include the `webhook` parameter in your request:
+
+```json
+{
+  "phone_number": "+1234567890",
+  "task": "Your call task here",
+  "webhook": "webhook.site/#!/your-unique-id",
+  "voice": "maya"
+}
+```
+
+See the [Send Phone Call API documentation](https://docs.bland.ai/api-v1/post/calls) for complete request details.
+
+### Option 2: Dashboard configuration
+
+You can also configure a webhook when creating outbound calls in the dashboard:
+
+1. **Navigate to the Send Call page** in your [developer portal](https://app.bland.ai)
+2. **Click to expand the Advanced section** (similar to inbound numbers)
+3. **Add your webhook URL** to the webhook field
+4. **Send your call**
+
+This webhook will receive the post-call data when that specific call completes.
+
+### Testing your outbound webhook
+
+1. **Create a test call** using the API with your webhook URL
+2. **Wait for the call to complete**
+3. **Check Webhook.site** for the incoming webhook payload
+4. **Verify the payload** contains your outbound call data
+
+If you encounter any issues, reach out in our [Discord community](https://discord.gg/QvxDz8zcKe) for support.
+
+---
+
+## Webhook Payload Examples
+
+Understanding the structure of webhook payloads helps you build better integrations. Here are examples of the actual data your webhook endpoint will receive:
+
+### Standard Post-Call Webhook
+
+This is the immediate webhook sent right after a call completes:
+
+<Accordion title="View Standard Post-Call Webhook Payload">
+
+```json
+{
+  "call_id": "12345678-1234-1234-1234-123456789012",
+  "c_id": "12345678-1234-1234-1234-123456789012",
+  "call_length": 0.183333333333333,
+  "batch_id": null,
+  "to": "+15551234567",
+  "from": "+15559876543",
+  "completed": true,
+  "created_at": "2025-09-12T20:39:03.168+00:00",
+  "inbound": false,
+  "queue_status": "complete",
+  "max_duration": 12,
+  "error_message": null,
+  "variables": {
+    "now": "Friday, September 12, 2025 1:39 PM",
+    "now_utc": "Friday, September 12, 2025 8:39 PM",
+    "short_from": "5559876543",
+    "short_to": "5551234567",
+    "from": "+15559876543",
+    "to": "+15551234567",
+    "call_id": "12345678-1234-1234-1234-123456789012",
+    "phone_number": "+15551234567",
+    "country": "US",
+    "state": "CA",
+    "language": "English",
+    "timestamp": "2025-09-12T13:39:11-07:00",
+    "timezone": "America/Los_Angeles"
+  },
+  "answered_by": "human",
+  "record": true,
+  "recording_url": "https://api.twilio.com/2010-04-01/Accounts/ACexample123/Recordings/REexample456",
+  "metadata": {},
+  "summary": "The call was a brief test call from Bland, during which the assistant confirmed the connection and exchanged polite pleasantries with the user before ending the call.",
+  "price": 0.017,
+  "started_at": "2025-09-12T20:39:03.168Z",
+  "local_dialing": false,
+  "call_ended_by": "ASSISTANT",
+  "pathway_logs": null,
+  "analysis_schema": null,
+  "analysis": null,
+  "transferred_to": null,
+  "pathway_tags": [],
+  "recording_expiration": null,
+  "status": "completed",
+  "pathway_id": null,
+  "is_proxy_agent_call": false,
+  "citation_schema_ids": [],
+  "warm_transfer_calls": null,
+  "concatenated_transcript": "user: Hello?  \n assistant: This is a test call from Bland. \n user: Cool. Thank you very much. \n assistant: You're welcome, have a great day, goodbye. \n agent-action: Ended call \n ",
+  "transcripts": [
+    {
+      "id": 123456789,
+      "user": "user",
+      "text": "Hello? ",
+      "created_at": "2025-09-12T20:39:13.173+00:00"
+    },
+    {
+      "id": 123456790,
+      "user": "assistant",
+      "text": "This is a test call from Bland.",
+      "created_at": "2025-09-12T20:39:13.566+00:00"
+    },
+    {
+      "id": 123456791,
+      "user": "user",
+      "text": "Cool. Thank you very much.",
+      "created_at": "2025-09-12T20:39:17.748+00:00"
+    },
+    {
+      "id": 123456792,
+      "user": "assistant",
+      "text": "You're welcome, have a great day, goodbye.",
+      "created_at": "2025-09-12T20:39:19.186+00:00"
+    },
+    {
+      "id": 123456793,
+      "user": "agent-action",
+      "text": "Ended call",
+      "created_at": "2025-09-12T20:39:20.53+00:00"
+    }
+  ],
+  "corrected_duration": "11",
+  "end_at": "2025-09-12T20:39:21.000Z",
+  "disposition_tag": "COMPLETED_ACTION"
+}
+```
+
+</Accordion>
+
+### Delayed Webhook with Citations and Corrected Transcript
+
+When you enable citation extraction, you can choose to delay the post-call webhook until citations are processed. This combined webhook includes all call data plus citation information and corrected transcripts:
+
+<Accordion title="View Delayed Webhook with Citations Payload">
+
+```json
+{
+  "to": "+15551234567",
+  "c_id": "87654321-8765-4321-8765-876543218765",
+  "from": "+15559876543",
+  "price": 0.054,
+  "end_at": "2025-09-12T20:56:27.000Z",
+  "record": true,
+  "status": "completed",
+  "call_id": "87654321-8765-4321-8765-876543218765",
+  "inbound": false,
+  "summary": "The call was a test call from Bland to confirm that the line is working properly. The user acknowledged the test and the call was ended shortly after, with no issues or concerns discussed.",
+  "analysis": null,
+  "batch_id": null,
+  "metadata": {},
+  "completed": true,
+  "variables": {
+    "to": "+15551234567",
+    "now": "Friday, September 12, 2025 1:56 PM",
+    "from": "+15559876543",
+    "state": "CA",
+    "call_id": "87654321-8765-4321-8765-876543218765",
+    "country": "US",
+    "now_utc": "Friday, September 12, 2025 8:56 PM",
+    "language": "English",
+    "short_to": "5551234567",
+    "timezone": "America/Los_Angeles",
+    "timestamp": "2025-09-12T13:56:07-07:00",
+    "short_from": "5559876543",
+    "phone_number": "+15551234567"
+  },
+  "created_at": "2025-09-12T20:55:44.132+00:00",
+  "pathway_id": null,
+  "started_at": "2025-09-12T20:55:44.132Z",
+  "answered_by": "human",
+  "call_length": 0.6,
+  "transcripts": [
+    {
+      "id": 987654321,
+      "text": "This is a test call from Bland.",
+      "user": "assistant",
+      "created_at": "2025-09-12T20:56:09.49+00:00"
+    },
+    {
+      "id": 987654322,
+      "text": "Hello? Who is this?",
+      "user": "user",
+      "created_at": "2025-09-12T20:56:14.453+00:00"
+    },
+    {
+      "id": 987654323,
+      "text": "This is a test call from Bland, I'm just calling to confirm that our line is working properly.",
+      "user": "assistant",
+      "created_at": "2025-09-12T20:56:20.457+00:00"
+    },
+    {
+      "id": 987654324,
+      "text": "Oh, okay. Acknowledged.",
+      "user": "user",
+      "created_at": "2025-09-12T20:56:22.768+00:00"
+    },
+    {
+      "id": 987654325,
+      "text": "Alright, thank you for confirming. Have a great day, goodbye.",
+      "user": "assistant",
+      "created_at": "2025-09-12T20:56:25.592+00:00"
+    },
+    {
+      "id": 987654326,
+      "text": "Ended call",
+      "user": "agent-action",
+      "created_at": "2025-09-12T20:56:26.803+00:00"
+    }
+  ],
+  "max_duration": 12,
+  "pathway_logs": null,
+  "pathway_tags": [],
+  "queue_status": "complete",
+  "call_ended_by": "ASSISTANT",
+  "error_message": null,
+  "local_dialing": false,
+  "recording_url": "https://api.twilio.com/2010-04-01/Accounts/ACexample123/Recordings/REexample789",
+  "transferred_to": null,
+  "analysis_schema": null,
+  "disposition_tag": "COMPLETED_ACTION",
+  "corrected_duration": "36",
+  "citation_schema_ids": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  ],
+  "is_proxy_agent_call": false,
+  "warm_transfer_calls": null,
+  "recording_expiration": null,
+  "concatenated_transcript": "assistant: This is a test call from Bland. \n user: Hello? Who is this? \n assistant: This is a test call from Bland, I'm just calling to confirm that our line is working properly. \n user: Oh, okay. Acknowledged. \n assistant: Alright, thank you for confirming. Have a great day, goodbye. \n agent-action: Ended call \n ",
+  "citations": [
+    {
+      "call_id": "87654321-8765-4321-8765-876543218765",
+      "variable_name": "User Acknowledged Test",
+      "variable_type": "boolean",
+      "value": true,
+      "cited_utterances": [
+        {
+          "id": "87654321-8765-4321-8765-876543218765_3",
+          "idx": 3,
+          "start_time": 27.968,
+          "end_time": 29.184,
+          "confidence": 0.34,
+          "channel": 1,
+          "transcript": "Oh, okay. Acknowledged.",
+          "speaker_id": "SPEAKER_1_0",
+          "speaker_name": "Customer",
+          "speaker_description": "The individual who received the test call.",
+          "topics": [
+            "acknowledgement"
+          ],
+          "topics_meta": "{\"acknowledgement\":\"The user confirms they have understood the agent's explanation.\"}",
+          "utterance_type": "acknowledge"
+        }
+      ],
+      "schema_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    },
+    {
+      "call_id": "87654321-8765-4321-8765-876543218765",
+      "variable_name": "User Age",
+      "variable_type": "string",
+      "value": null,
+      "cited_utterances": [],
+      "schema_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    }
+  ],
+  "corrected_transcript": "Assistant: This is a test call from Bland.\n User: Hello, who is this?\n Assistant: This is a test call from Bland. I'm just calling to confirm that our line is working properly.\n User: Oh, okay. Acknowledged.\n Assistant: All right. Thank you for confirming. Have a great day. Goodbye.\n"
+}
+```
+
+</Accordion>
+
+### Key Differences
+
+**Standard Post-Call Webhook:**
+- Sent immediately after call completion
+- Contains call metadata, transcripts, and basic variables
+- No citations or corrected transcript
+
+**Delayed Webhook with Citations:**
+- Sent after post-call processing (30-60 seconds later)
+- Includes `corrected_transcript` with improved formatting and accuracy
+- Contains detailed `citations` array with extracted variables linked to specific utterances
+
+**Configuration Note:** When you enable citation extraction, you can choose to delay the post-call webhook until citations are processed and include citation data in a single webhook. When disabled, the post-call webhook fires immediately, and citations are sent via a separate webhook.
