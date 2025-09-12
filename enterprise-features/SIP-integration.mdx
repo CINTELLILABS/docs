@@ -56,17 +56,29 @@ asia1.sip.bland.ai:5061;transport=tls
 
 **Static IP Addresses of the SIP Signalling Server(s):**
 
+You must whitelist **all** IP addresses for your region. Failure to do so can lead to connectivity issues.
+
 ```
 US1 (Oregon):
 
-(These IP addresses accept incoming SIP messages from your infrastructure.)
-
 35.80.235.26
 54.189.4.67
-
------------
-(These IP addresses will be used to send outgoing SIP messages to your infrastructure.)
-
+100.20.173.20
+35.161.106.231
+35.81.41.38
+35.82.125.138
+35.82.184.232
+35.84.252.131
+44.224.206.111
+44.224.67.132
+44.225.32.9
+44.235.59.237
+44.240.150.132
+44.252.152.176
+52.27.109.95
+52.38.0.204
+52.41.242.206
+52.42.27.92
 54.172.60.0
 54.172.60.1
 54.172.60.2
@@ -80,14 +92,8 @@ US1 (Oregon):
 ```
 EU1 (Ireland):
 
-(These IP addresses accept incoming SIP messages from your infrastructure.)
-
 52.17.69.204
 52.210.181.150
-
------------
-(These IP addresses will be used to send outgoing SIP messages to your infrastructure.)
-
 54.171.127.192
 54.171.127.193
 54.171.127.194
@@ -101,14 +107,8 @@ EU1 (Ireland):
 ```
 ASIA1 (Sydney):
 
-(These IP addresses accept incoming SIP messages from your infrastructure.)
-
 13.237.152.149
 3.104.178.155
-
------------
-(These IP addresses will be used to send outgoing SIP messages to your infrastructure.)
-
 54.252.254.64
 54.252.254.65
 54.252.254.66
@@ -117,16 +117,13 @@ ASIA1 (Sydney):
 
 **Static IP Addresses of the Media Stream Server(s):**
 
-Bland **does not provide** static addresses for Media Stream Servers. As part of the SDP negotiation, our SIP Signalling Servers will provide you with the location of an available Media Stream endpoint. Through this, Bland is able to confidently scale our Media Stream capabilities without the need for NAT.
-
-Bland **does not provide** subnets for our Media Stream Servers, as they are not provided sequentially (in the same CIDR blocks) by our provider. Instead, you will receive the IP address of the Media Stream Server in the SDP negotiation.
+IP Addresses listed above for SIP Signalling are used equivocally for Media Stream Servers. These connections will be opened between ports `16384` and `32768`.
 
 ## Requirements and Security Settings
 
 **Supported Codecs:**
 
-* Currently Supported: PCMU, PCMA
-* Coming Soon: Opus, G722
+* Currently Supported: PCMU, PCMA, Opus
 
 **Security Requirements:**
 
@@ -139,6 +136,7 @@ Bland **does not provide** subnets for our Media Stream Servers, as they are not
 * RTCP: Uses port RTP + 1
 * DTMF: RFC 2833 (Out-of-band via RTP payload)
 * Transport: TCP over TLS
+* Methods: INVITE, ACK, BYE, CANCEL, OPTIONS, REFER
 
 * Number Format: +E.164 or E.164 (both supported for origination and termination)
 * SIP Registration: Not required (Bland determines routing based on predefined configurations configurable below.)
@@ -172,17 +170,63 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
   -d '{
     "phone_number": "+14150000000",
     "directions": [
-      { "type": "inbound" },
       { 
-          "type": "outbound", 
-          "sip_endpoint": "sip:your.provider.com", // FQDN Only. Port must be defined here, or in options. Prefixed with `sip:`
-          "options": {
-              "port": 1234, // Will overwrite any port defined in your sip_endpoint.
-              "transport": "tls", // Other available: tls, tcp, udp
-              "secure_media": true, // True, False
-              "sip_username": "bland", // Optional
-              "sip_password": "password" // Optional
-          }
+        "type": "inbound", 
+        "headers": {
+          "direction": "inbound", // Must be set to the parent objects direction.
+          "headers": [
+            // Passthrough Off. We take the incoming SIP header's value for "X-Cool-Guy" and assign it to the pathway variable's value for "First_Name".
+            { "type": "custom", "key": "X-Cool-Guy", "value": "First_Name" },
+            // Passthrough On. We inject this header key value pair directly into the pathway variable state.
+            { "type": "custom", "key": "Account_Type", "value": "VIP", "passthrough": true },
+            // Inbound UUI Example. If an inbound UUI header with purpose=bland arrives,
+            // its decoded value will be stored in the pathway variable "CustomerId".
+            // For example, a wire header like:
+            //   SipHeader_user-to-user: 3432;encoding=hex;purpose=bland;content=id
+            // will decode hex(3432) -> "42", then assign { "CustomerId": "42" }.
+            { "type": "uui", "target": "CustomerId", "purpose": "bland", "encoding": "hex", "content": "id" }
+          ]
+        }
+      },
+      { 
+        "type": "outbound", 
+        "sip_endpoint": "sip:your.provider.com", // FQDN Only. Port must be defined here, or in options. Prefixed with `sip:`
+        "options": {
+          "port": 1234, // Will overwrite any port defined in your sip_endpoint.
+          "transport": "tls", // Other available: tls, tcp, udp
+          "secure_media": true, // True, False
+          "sip_username": "bland", // Optional
+          "sip_password": "password" // Optional
+        },
+        "headers": {
+          "direction": "outbound", // Must be set to the parent objects direction.
+          "headers": [
+            // Passthrough off. We bind a specific header's **value** to a pathway variable provided for (if available). So the value of "X-Favorite-Color" is assigned
+            // as the value for "Favorite_Color".
+            {
+              "type": "custom", // "custom" or "uui" supported.
+              "key": "Favorite_Color",
+              "value": "X-Favorite-Color"
+            },
+            // Passthrough on. We directly pass the key and value as-is.
+            {
+              "type": "custom",
+              "key": "x-custom-id",
+              "value": "12345",
+              "passthrough": true
+            },
+            // Outbound UUI Example. If the pathway variable "CustomerKV" has a value,
+            // it will be hex-encoded and sent in a UUI header with purpose=bland and content=customerid_1234.
+            // For example, { "CustomerKV": "id=12345" } becomes:
+            //   SipHeader_user-to-user: 69643d3132333435;encoding=hex;purpose=bland;content=customerid_1234
+            {
+              "type": "uui",
+              "target": "CustomerKV", // Variable to look up in pathway state.
+              "purpose": "bland",     // Outbound purpose field in the UUI header.
+              "content": "customerid_1234", // Used as the "content" parameter in the UUI header.
+              "
+          ]
+        }
       }
     ],
     "service": "sip"
