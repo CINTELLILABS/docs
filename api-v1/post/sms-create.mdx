@@ -1,0 +1,92 @@
+---
+title: "Create SMS Conversation"
+api: "POST https://api.bland.ai/v1/sms/create"
+description: "Create an SMS conversation with specific pathway state without triggering immediate message sending."
+---
+
+<Info>
+  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="user_number" type="string" required>
+  The E.164 formatted phone number of the user in the conversation.
+</ParamField>
+
+<ParamField body="agent_number" type="string" required>
+  The E.164 formatted phone number used by the agent (must belong to the authenticated account).
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  The content of the message to be stored in the conversation history.
+</ParamField>
+
+<ParamField body="message_sid" type="string" required={false}>
+  Optional Twilio message SID for tracking and correlation purposes.
+</ParamField>
+
+<ParamField body="curr_pathway_id" type="string" required={false}>
+  The UUID of the current pathway being used in this conversation.
+</ParamField>
+
+<ParamField body="curr_pathway_version" type="string" required={false}>
+  The specific version of the pathway to use (e.g., "latest", "v1.0").
+</ParamField>
+
+<ParamField body="current_node_id" type="string" required={false}>
+  The ID of the current node in the conversational pathway where this conversation is positioned.
+</ParamField>
+
+<ParamField body="request_data" type="object" required={false}>
+  Optional metadata to associate with the conversation. Used for custom routing or analytics.
+</ParamField>
+
+<ParamField body="new_conversation" type="boolean" required={false}>
+  When set to true, forces creation of a new conversation, archiving any existing active conversation between these numbers.
+</ParamField>
+
+<ParamField body="sender" type="string" required={false}>
+  Specifies who sent this message. Allowed values: "USER" or "AGENT". Defaults to "USER" if not specified.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  An object confirming the conversation was created successfully.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Confirmation text for the successful conversation creation.
+</ResponseField>
+
+<ResponseField name="data.conversation_id" type="string">
+  ID of the conversation that was created.
+</ResponseField>
+
+<ResponseField name="data.workflow_id" type="string">
+  ID of the Temporal workflow triggered to process the conversation setup.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "SMS conversation created successfully",
+    "conversation_id": "conv_abc123",
+    "workflow_id": "workflow_xyz789"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

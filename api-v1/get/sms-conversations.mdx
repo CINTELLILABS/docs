@@ -25,7 +25,7 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
 </ParamField>
 
 <ParamField query="sortBy" type="string" required={false}>
-  Field to sort by. Allowed values: `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`. Defaults to `created_at`.
+  Field to sort by. Allowed values: `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`. Defaults to `created_at`.
 </ParamField>
 
 <ParamField query="sortDir" type="string" required={false}>
@@ -34,7 +34,7 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
 
 <ParamField query="filters" type="object[]" required={false}>
   A JSON-encoded array of filter objects. Each object should contain:
-  - `field`: one of `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `variables`, `current_node_id`
+  - `field`: one of `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `variables`, `current_node_id`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`
   - `operator`: one of `eq`, `contains`, `startsWith`, `endsWith`, `gt`, `gte`, `lt`, `lte`
   - `value`: the filter value
 </ParamField>
@@ -71,6 +71,18 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
 
 <ResponseField name="data[].current_node_id" type="string">
   ID of the current node in the conversational pathway.
+</ResponseField>
+
+<ResponseField name="data[].curr_pathway_id" type="string|null">
+  The UUID of the current pathway being used in this conversation.
+</ResponseField>
+
+<ResponseField name="data[].curr_pathway_version" type="string|null">
+  The specific version of the pathway being used.
+</ResponseField>
+
+<ResponseField name="data[].timed_out_at" type="string|null">
+  ISO timestamp when the conversation timed out due to inactivity, if applicable.
 </ResponseField>
 
 <ResponseField name="data[].is_active" type="boolean">
@@ -130,6 +142,9 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
       "agent_number": "+15552223333",
       "variables": { "campaign_id": "xyz789" },
       "current_node_id": "node_intro",
+      "curr_pathway_id": "pathway_abc123",
+      "curr_pathway_version": "latest",
+      "timed_out_at": null,
       "is_active": true,
       "message_count": 5,
       "last_message": "Hi there, how can I help you?",
