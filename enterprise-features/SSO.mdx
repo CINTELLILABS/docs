@@ -32,22 +32,23 @@ Before configuring SSO, ensure you have:
 <Steps>
   <Step title="Choose Your Protocol">
     **OIDC** - Recommended for: Okta, Azure AD, Auth0, modern IdPs
-    
-    **SAML** - Required for: Google Workspace, legacy systems, or when mandated by security policy
+
+    **SAML** - Required for: Google Workspace, Microsoft ADFS, or when mandated by security policy
   </Step>
-  
-  <Step title="Configure Your IdP">
-    Create an application in your identity provider with placeholder URLs (you'll update these after creating the provider in Bland)
+
+  <Step title="Plan Your Provider ID">
+    Choose a unique Provider ID (e.g., `company-okta` or `company-saml`). This will be used in all your URLs.
+    You can customize this or let Bland auto-generate it from your domain.
   </Step>
-  
+
   <Step title="Create Provider in Bland">
-    Navigate to **Settings → SSO** in Bland and add your provider configuration
+    Navigate to **Settings → SSO** in Bland and add your provider configuration with your chosen Provider ID
   </Step>
-  
-  <Step title="Update URLs">
-    Copy the generated Provider ID and update the redirect/callback URLs in your IdP
+
+  <Step title="Configure Your IdP">
+    Create an application in your identity provider using the URLs generated with your Provider ID
   </Step>
-  
+
   <Step title="Test Connection">
     Use the Test button in Bland to verify the configuration works
   </Step>
@@ -73,17 +74,17 @@ Before configuring SSO, ensure you have:
     **General Settings:**
     - **App integration name**: `Bland SSO`
     - **Logo**: (Optional) Upload your company logo
-    
+
     **Grant Type:**
     - ✅ Authorization Code
     - ✅ Refresh Token (recommended)
     - ❌ Implicit (not recommended)
-    
+
     **Sign-in redirect URIs:**
     ```
     https://api.bland.ai/authorization/sso/callback/[provider-id]
     ```
-    <Warning>You'll get the exact provider-id after creating the provider in Bland</Warning>
+    <Info>Replace `[provider-id]` with your chosen Provider ID (e.g., `company-okta`)</Info>
     
     **Sign-out redirect URIs:** (Optional)
     ```
@@ -124,15 +125,18 @@ Before configuring SSO, ensure you have:
   
   <Accordion title="Step 5: Configure in Bland">
     1. Go to **Settings** → **SSO** → **Add Provider**
-    2. Select **OIDC** as Provider Type
+    2. Select **OIDC (OpenID Connect)** as Provider Type
     3. Enter:
+       - **Provider ID**: Your chosen ID (e.g., `company-okta`) or leave blank to auto-generate
        - **Email Domain**: `company.com`
-       - **Issuer URL**: From Okta
+       - **Issuer URL**: From Okta (e.g., `https://dev-12345.okta.com`)
        - **Client ID**: From Okta
        - **Client Secret**: From Okta
-    4. Click **Add Provider**
-    5. Copy the generated Provider ID
-    6. Return to Okta and update the redirect URI with the actual ID
+    4. Optional: Configure scopes (defaults to `openid email profile`)
+    5. Optional: Enable PKCE for enhanced security (recommended)
+    6. Click **Add Provider**
+
+    <Note>Bland will automatically discover OIDC endpoints from the issuer URL. If auto-discovery fails, you can manually specify endpoints in the Optional Endpoints section.</Note>
   </Accordion>
 </AccordionGroup>
 
@@ -190,12 +194,22 @@ Before configuring SSO, ensure you have:
   
   <Accordion title="Step 5: Configure in Bland">
     1. Go to **Settings** → **SSO** → **Add Provider**
-    2. Select **SAML** as Provider Type
-    3. Enter domain and issuer
-    4. Either:
-       - Paste the **X.509 Certificate** and **Entry Point URL**, or
-       - Provide the **Metadata URL** or **Metadata XML**
-    5. Save and update Okta with the generated Provider ID
+    2. Select **SAML 2.0** as Provider Type
+    3. Enter basic configuration:
+       - **Provider ID**: Your chosen ID (e.g., `company-okta-saml`) or leave blank to auto-generate
+       - **Email Domain**: `company.com`
+       - **Issuer URL**: Identity Provider Issuer from Okta
+    4. Choose configuration method:
+
+       **Option 1: Metadata Import (Recommended)**
+       - Paste the metadata XML from Okta, or
+       - Provide the metadata URL (may have CORS issues locally)
+
+       **Option 2: Manual Configuration**
+       - **Entry Point**: Identity Provider Single Sign-On URL from Okta
+       - **X.509 Certificate**: Paste the entire certificate including BEGIN/END lines
+    5. Click **Add Provider**
+    6. Download SP metadata using the "Metadata" button and upload to Okta if needed
   </Accordion>
 </AccordionGroup>
 
@@ -214,6 +228,7 @@ Before configuring SSO, ensure you have:
        - **Name**: `Bland SSO`
        - **Supported account types**: Accounts in this organizational directory only
        - **Redirect URI**: Web → `https://api.bland.ai/authorization/sso/callback/[provider-id]`
+         (Replace `[provider-id]` with your chosen ID, e.g., `company-azure`)
     5. Click **Register**
     6. Copy the **Application (client) ID** and **Directory (tenant) ID**
   </Accordion>
@@ -249,12 +264,18 @@ Before configuring SSO, ensure you have:
   
   <Accordion title="Step 5: Configure in Bland">
     1. In Bland, go to **Settings** → **SSO** → **Add Provider**
-    2. Select **OIDC**
+    2. Select **OIDC (OpenID Connect)**
     3. Enter:
+       - **Provider ID**: Your chosen ID (e.g., `company-azure`) or leave blank to auto-generate
+       - **Email Domain**: `company.com`
        - **Issuer URL**: `https://login.microsoftonline.com/[tenant-id]/v2.0`
+         (Replace `[tenant-id]` with your Directory (tenant) ID)
        - **Client ID**: Application (client) ID from Azure
        - **Client Secret**: Secret value from Azure
-    4. Save and update Azure with the generated Provider ID
+    4. Optional: Configure scopes (defaults to `openid email profile`)
+    5. Click **Add Provider**
+
+    <Note>Azure AD endpoints will be automatically discovered. The issuer URL must include `/v2.0` for the v2.0 endpoint.</Note>
   </Accordion>
 </AccordionGroup>
 
@@ -273,6 +294,7 @@ Before configuring SSO, ensure you have:
     1. Go to **Single sign-on** → Select **SAML**
     2. Edit **Basic SAML Configuration**:
        - **Identifier (Entity ID)**: `https://api.bland.ai/sp/[provider-id]`
+         (Replace `[provider-id]` with your chosen ID, e.g., `company-azure-saml`)
        - **Reply URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
        - **Sign on URL**: `https://app.bland.ai/login`
   </Accordion>
@@ -296,8 +318,23 @@ Before configuring SSO, ensure you have:
   </Accordion>
   
   <Accordion title="Step 5: Configure in Bland">
-    1. Add SAML provider with Azure configuration
-    2. Update Azure URLs with generated Provider ID
+    1. Go to **Settings** → **SSO** → **Add Provider**
+    2. Select **SAML 2.0** as Provider Type
+    3. Enter basic configuration:
+       - **Provider ID**: Your chosen ID (e.g., `company-azure-saml`) or leave blank to auto-generate
+       - **Email Domain**: `company.com`
+       - **Issuer URL**: Azure AD Identifier from Step 4
+    4. Choose configuration method:
+
+       **Option 1: Manual Configuration**
+       - **Entry Point**: Login URL from Azure
+       - **X.509 Certificate**: Paste the downloaded certificate (Base64)
+
+       **Option 2: Metadata Import**
+       - Download Federation Metadata XML from Azure
+       - Paste the entire XML in the IdP Metadata XML field
+    5. Click **Add Provider**
+    6. Download SP metadata using the "Metadata" button if needed by Azure
   </Accordion>
 </AccordionGroup>
 
@@ -349,6 +386,7 @@ Google Workspace only supports SAML for third-party applications. OIDC is reserv
   <Step title="Configure Service Provider">
     Enter:
     - **ACS URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
+      (Replace `[provider-id]` with your chosen ID, e.g., `company-google`)
     - **Entity ID**: `https://api.bland.ai/sp/[provider-id]`
     - **Start URL**: `https://app.bland.ai/login` (optional)
     - **Signed response**: ✅ Checked
@@ -368,9 +406,18 @@ Google Workspace only supports SAML for third-party applications. OIDC is reserv
   </Step>
   
   <Step title="Configure in Bland">
-    1. Add SAML provider using Google's metadata
-    2. Update Google app with generated Provider ID
-    3. Enable app for organizational units
+    1. Go to **Settings** → **SSO** → **Add Provider**
+    2. Select **SAML 2.0** as Provider Type
+    3. Enter:
+       - **Provider ID**: Your chosen ID (e.g., `company-google`) or leave blank to auto-generate
+       - **Email Domain**: `company.com`
+       - **Issuer URL**: Entity ID from Google
+    4. Choose configuration method:
+       - **Option 1: Metadata Import** - Paste the metadata XML from Google
+       - **Option 2: Manual Configuration** - Enter SSO URL and Certificate
+    5. Click **Add Provider**
+    6. If you let Bland auto-generate the Provider ID, update your Google Workspace app configuration with the generated ID
+    7. Enable the app for desired organizational units in Google Admin Console
   </Step>
   
   <Step title="Test Configuration">
@@ -415,10 +462,14 @@ Google Workspace changes can take up to 24 hours to propagate, though typically 
     1. Create new Application → Regular Web Application
     2. Settings:
        - **Allowed Callback URLs**: `https://api.bland.ai/authorization/sso/callback/[provider-id]`
+         (Replace `[provider-id]` with your chosen ID, e.g., `company-auth0`)
        - **Allowed Web Origins**: `https://app.bland.ai`
-    3. Use:
+    3. In Bland, configure with:
+       - **Provider ID**: Your chosen ID or leave blank to auto-generate
+       - **Email Domain**: Your organization's email domain
        - **Issuer**: `https://[your-domain].auth0.com/`
        - **Client ID** and **Client Secret** from Auth0
+    4. Auth0 endpoints will be auto-discovered from the issuer URL
   </Accordion>
   
   <Accordion title="SAML Configuration">
@@ -426,17 +477,27 @@ Google Workspace changes can take up to 24 hours to propagate, though typically 
     2. Enable SAML2 Web App addon
     3. Configure:
        - **Application Callback URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
-       - **Settings**: Use provided JSON for attribute mapping
+         (Replace `[provider-id]` with your chosen ID)
+       - **Settings**: Configure attribute mappings for email, firstName, lastName
+    4. In Bland, add SAML provider with:
+       - **Provider ID**: Your chosen ID or leave blank to auto-generate
+       - Auth0's metadata or manual configuration
   </Accordion>
 </AccordionGroup>
 
 ### Ping Identity
 
-Both OIDC and SAML supported. Use PingOne or PingFederate admin console to configure with Bland's endpoints.
+Both OIDC and SAML supported:
+- **OIDC**: Configure redirect URI with your chosen provider ID
+- **SAML**: Use SP Entity ID format `https://api.bland.ai/sp/[provider-id]`
+- Provider ID can be specified or auto-generated in Bland
 
 ### OneLogin
 
-Supports both protocols. Create app from catalog or custom connector using Bland's metadata.
+Supports both protocols:
+- Create app from catalog or custom connector
+- Configure with your chosen provider ID in all endpoints
+- Download SP metadata from Bland after provider creation for SAML
 
 ---
 
@@ -444,18 +505,22 @@ Supports both protocols. Create app from catalog or custom connector using Bland
 
 ### OIDC Endpoints
 
-| Endpoint | URL Format |
-|----------|------------|
-| Redirect URI | `https://api.bland.ai/authorization/sso/callback/[provider-id]` |
-| Discovery | Auto-discovery from issuer URL |
+| Endpoint | URL Format | Notes |
+|----------|------------|--------|
+| Redirect URI | `https://api.bland.ai/authorization/sso/callback/[provider-id]` | Replace `[provider-id]` with your chosen ID |
+| Discovery | Auto-discovery from issuer URL | Endpoints fetched automatically |
 
 ### SAML Endpoints
 
-| Endpoint | URL Format |
-|----------|------------|
-| ACS URL | `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]` |
-| SP Entity ID | `https://api.bland.ai/sp/[provider-id]` |
-| SP Metadata | Available after provider creation |
+| Endpoint | URL Format | Notes |
+|----------|------------|--------|
+| ACS URL | `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]` | Assertion Consumer Service URL |
+| SP Entity ID | `https://api.bland.ai/sp/[provider-id]` | Service Provider identifier |
+| SP Metadata | Generated after provider creation | Download from SSO settings |
+
+<Note>
+**Provider ID**: You can specify your own provider ID (e.g., `company-okta`, `acme-azure`) or leave it blank to auto-generate. Once created, the provider ID cannot be changed.
+</Note>
 
 ---
 
@@ -484,11 +549,12 @@ Supports both protocols. Create app from catalog or custom connector using Bland
   
   <Accordion title="Invalid issuer">
     **Cause**: Incorrect issuer URL format
-    
+
     **Solution**:
-    - Remove trailing slashes
-    - For Azure: Use `/v2.0` endpoint
-    - For Okta: Use base domain without `/oauth2/default`
+    - Include or remove trailing slashes as required by your IdP
+    - For Azure: Use `/v2.0` endpoint for v2.0 tokens
+    - For Okta: Use your Okta domain (with or without `/oauth2/default` based on your setup)
+    - Verify the issuer URL matches exactly what your IdP expects
   </Accordion>
 </AccordionGroup>
 
@@ -515,11 +581,12 @@ Supports both protocols. Create app from catalog or custom connector using Bland
   
   <Accordion title="Audience validation failed">
     **Cause**: SP Entity ID mismatch
-    
+
     **Solution**:
-    - Update Entity ID with exact provider ID
-    - Format: `https://api.bland.ai/sp/[provider-id]`
-    - Check for typos or extra spaces
+    - Ensure Entity ID matches exactly: `https://api.bland.ai/sp/[provider-id]`
+    - Use the same provider ID in both Bland and your IdP
+    - If you auto-generated the ID, copy it from Bland to your IdP
+    - Check for typos, extra spaces, or case sensitivity
   </Accordion>
   
   <Accordion title="account_not_found">
