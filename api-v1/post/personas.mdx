@@ -1,0 +1,210 @@
+---
+title: "Create Persona"
+api: "POST https://api.bland.ai/v1/personas"
+description: "Create a new persona."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the persona.
+</ParamField>
+
+<ParamField body="role" type="string">
+  Role assigned to the persona.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of the persona's purpose and use case.
+</ParamField>
+
+<ParamField body="tags" type="array">
+  Array of tags to associate with the persona.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL of the persona's profile image.
+</ParamField>
+
+<ParamField body="call_config" type="object">
+  Call configuration settings for the persona.
+  
+  <Expandable title="call_config">
+    <ParamField body="voice" type="string">
+      Voice identifier to use for calls.
+    </ParamField>
+    <ParamField body="record" type="boolean">
+      Whether to record calls.
+    </ParamField>
+    <ParamField body="language" type="string">
+      Language code for the persona.
+    </ParamField>
+    <ParamField body="background" type="string">
+      Background audio setting.
+    </ParamField>
+    <ParamField body="max_duration" type="number">
+      Maximum call duration in minutes.
+    </ParamField>
+    <ParamField body="wait_for_greeting" type="boolean">
+      Whether to wait for greeting before starting.
+    </ParamField>
+    <ParamField body="interruption_threshold" type="number">
+      Interruption sensitivity threshold.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="orchestration_prompt" type="string">
+  Orchestration prompt for the persona (optional).
+</ParamField>
+
+<ParamField body="personality_prompt" type="string">
+  Personality and behavior prompt for the persona.
+</ParamField>
+
+<ParamField body="default_tools" type="array">
+  Array of default tools enabled for the persona.
+</ParamField>
+
+<ParamField body="pathway_conditions" type="array">
+  Array of pathway routing conditions for the persona.
+  
+  <Expandable title="pathway condition">
+    <ParamField body="name" type="string" required>
+      Name of the pathway condition.
+    </ParamField>
+    <ParamField body="prompt" type="string" required>
+      Prompt that triggers this pathway condition.
+    </ParamField>
+    <ParamField body="pathway_id" type="string" required>
+      ID of the pathway to route to.
+    </ParamField>
+    <ParamField body="pathway_version" type="string" required>
+      Version of the pathway to use.
+    </ParamField>
+    <ParamField body="start_node_id" type="string" required>
+      Starting node ID within the pathway.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="kb_ids" type="array">
+  Array of knowledge base IDs to connect to the persona.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created persona object.
+  
+  <Expandable title="persona object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the persona.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the persona.
+    </ResponseField>
+    <ResponseField name="role" type="string">
+      Role assigned to the persona.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Description of the persona's purpose.
+    </ResponseField>
+    <ResponseField name="tags" type="array">
+      Array of tags associated with the persona.
+    </ResponseField>
+    <ResponseField name="image_url" type="string">
+      URL of the persona's profile image (null if none).
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the persona was created.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the persona was last modified.
+    </ResponseField>
+    <ResponseField name="deleted_at" type="string">
+      ISO 8601 timestamp of when the persona was deleted (null if active).
+    </ResponseField>
+    <ResponseField name="user_id" type="string">
+      ID of the user who owns this persona.
+    </ResponseField>
+    <ResponseField name="current_production_version_id" type="string">
+      ID of the current production version.
+    </ResponseField>
+    <ResponseField name="current_draft_version_id" type="string">
+      ID of the current draft version.
+    </ResponseField>
+    <ResponseField name="current_production_version" type="object">
+      Complete production version object.
+    </ResponseField>
+    <ResponseField name="current_draft_version" type="object">
+      Complete draft version object.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="string">
+  Any errors that occurred (null if none).
+</ResponseField>
+
+<ResponseExample>
+```json Response (Success)
+{
+  "data": {
+    "id": "12345678-1234-1234-1234-123456789012",
+    "name": "Blandie",
+    "role": null,
+    "description": null,
+    "tags": [],
+    "image_url": null,
+    "created_at": "2025-09-23T15:13:36.348Z",
+    "updated_at": "2025-09-23T15:13:36.412Z",
+    "deleted_at": null,
+    "user_id": "12345678-1234-1234-1234-123456789012",
+    "current_production_version_id": "12345678-1234-1234-1234-123456789012",
+    "current_draft_version_id": "12345678-1234-1234-1234-123456789012",
+    "current_production_version": {
+      "id": "12345678-1234-1234-1234-123456789012",
+      "persona_id": "12345678-1234-1234-1234-123456789012",
+      "version_type": "production",
+      "version_number": 1,
+      "orchestration_prompt": null,
+      "personality_prompt": "You are a helpful assistant",
+      "pathway_conditions": null,
+      "kb_ids": [],
+      "call_config": null,
+      "default_tools": [],
+      "promoted_from_version_id": null,
+      "promoted_at": "2025-09-23T15:13:36.368Z",
+      "promoted_by": null,
+      "created_at": "2025-09-23T15:13:36.369Z",
+      "updated_at": "2025-09-23T15:13:36.369Z"
+    },
+    "current_draft_version": {
+      "id": "12345678-1234-1234-1234-123456789012",
+      "persona_id": "12345678-1234-1234-1234-123456789012",
+      "version_type": "draft",
+      "version_number": 2,
+      "orchestration_prompt": null,
+      "personality_prompt": "You are a helpful assistant",
+      "pathway_conditions": null,
+      "kb_ids": [],
+      "call_config": null,
+      "default_tools": [],
+      "promoted_from_version_id": "12345678-1234-1234-1234-123456789012",
+      "promoted_at": null,
+      "promoted_by": null,
+      "created_at": "2025-09-23T15:13:36.390Z",
+      "updated_at": "2025-09-23T15:13:36.390Z"
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
