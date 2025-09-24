@@ -1,0 +1,99 @@
+---
+title: "List Active Calls"
+api: "GET https://api.bland.ai/v1/calls/active"
+description: "Retrieve all currently active calls for your organization. Active calls include both queued and in-progress calls that have not yet completed."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="x-bland-org-id" type="string" required>
+  The unique organization ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  An array of active call objects. Each object represents one ongoing or queued call.
+</ResponseField>
+
+<ResponseField name="data[].call_id" type="string">
+  Unique identifier for the call.
+</ResponseField>
+
+<ResponseField name="data[].user_id" type="string">
+  The organization/user ID that initiated the call.
+</ResponseField>
+
+<ResponseField name="data[].from" type="string">
+  The originating phone number.
+</ResponseField>
+
+<ResponseField name="data[].to" type="string">
+  The destination phone number.
+</ResponseField>
+
+<ResponseField name="data[].objective" type="string">
+  The agent prompt or objective that was used to initiate the call.
+</ResponseField>
+
+<ResponseField name="data[].pathway_id" type="string">
+  The pathway ID associated with the call, if any.
+</ResponseField>
+
+<ResponseField name="data[].start_time" type="string">
+  The call start time (ISO 8601 string). May be empty if the call has not started.
+</ResponseField>
+
+<ResponseField name="data[].international" type="string">
+  `"true"` if the call is international, `"false"` otherwise.
+</ResponseField>
+
+<ResponseField name="data[].status" type="string">
+  Current call status (e.g., `QUEUED`, `IN_PROGRESS`).
+</ResponseField>
+
+<ResponseField name="data[].timestamp" type="string">
+  Unix epoch (milliseconds) when the call record was created.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json 
+{
+  "data": [
+    {
+      "call_id": "8dd6f762-6c67-4546-aaad-3e59f5e4a09c",
+      "user_id": "bdffa9e8-436c-416d-b95f-a77b19ae4411",
+      "from": "+18475586665",
+      "to": "+13105100966",
+      "objective": "You are a 2...",
+      "pathway_id": "",
+      "start_time": "",
+      "international": "false",
+      "status": "QUEUED",
+      "timestamp": "1758656817432"
+    },
+    {
+      "call_id": "dadbc09a-9b0b-4eb5-b67f-0c7f1206c623",
+      "user_id": "bdffa9e8-436c-416d-b95f-a77b19ae4411",
+      "from": "+18154728283",
+      "to": "+16106876633",
+      "objective": "You are a 2...",
+      "pathway_id": "",
+      "start_time": "",
+      "international": "false",
+      "status": "IN_PROGRESS",
+      "timestamp": "1758656900740"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>

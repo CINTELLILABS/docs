@@ -1,0 +1,93 @@
+---
+title: "Delete Persona"
+api: "DELETE https://api.bland.ai/v1/personas/{persona_id}"
+description: "Delete a persona."
+---
+
+<Warning>
+  Deleting a persona will remove all versions and configuration data permanently. Any phone numbers currently using this persona will need to be reconfigured with a different persona or direct configuration.
+</Warning>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="persona_id" type="string" required>
+  The unique identifier of the persona to delete.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="force" type="boolean" default="false">
+  Force deletion even if persona is currently in use by phone numbers. When false, deletion will fail if persona is actively being used.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The deletion result object.
+  
+  <Expandable title="deletion result">
+    <ResponseField name="success" type="boolean">
+      Whether the deletion was successful.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Confirmation message about the deletion.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="string">
+  Any errors that occurred (null if none).
+</ResponseField>
+
+<ResponseExample>
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Persona deleted successfully"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Persona in Use)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PERSONA_IN_USE",
+      "message": "Cannot delete persona that is currently in use by phone numbers",
+      "details": {
+        "persona_id": "12345678-1234-1234-1234-123456789012",
+        "phone_numbers_using": [
+          "+15551234567",
+          "+15551234568"
+        ],
+        "suggestion": "Remove persona from all phone numbers first, or use force=true parameter"
+      }
+    }
+  ]
+}
+```
+
+```json Error Response (Not Found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PERSONA_NOT_FOUND",
+      "message": "Persona not found",
+      "details": {
+        "persona_id": "12345678-1234-1234-1234-123456789012"
+      }
+    }
+  ]
+}
+```
+</ResponseExample>
