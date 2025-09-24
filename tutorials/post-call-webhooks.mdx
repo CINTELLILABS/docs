@@ -370,12 +370,31 @@ When you enable citation extraction, you can choose to delay the post-call webho
 
 ## Error Message Reference
 
-All possible values for the `error_message` field in post-call webhooks:
+All possible values for the `error_message` field in post-call webhooks. Note that webhook delivery uses HTTP status codes separately from call outcome errors.
+
+### Webhook HTTP Status Codes
+
+**Successful Webhook Delivery:**
+- `200` - Webhook delivered successfully (regardless of call outcome)
+- `2xx` - Any 2xx status indicates successful webhook delivery
+
+**Webhook Delivery Failures:**
+- `4xx` - Client errors (invalid webhook URL, authentication issues)
+- `429` - Rate limiting (webhook endpoint receiving too many requests)
+- `5xx` - Server errors (webhook endpoint unavailable or internal errors)
+
+*Webhook delivery failures will trigger automatic retries based on the response code.*
+
+### Call Error Messages
+
+The following error messages appear in the `error_message` field within successfully delivered webhook payloads:
 
 ### Successful Calls
 - `null` - Call completed successfully
 
 ### Call Connection Failures
+**HTTP Status: 200** *(All call failures result in successful webhook delivery with error details in the payload)*
+
 - `"Call failed."` - Base failure message
 - `"Call failed. The number you dialed is not found."` - Invalid/disconnected number (SIP 404)
 - `"Call failed. The number you dialed is temporarily unavailable."` - Network/carrier issues (SIP 480)
@@ -383,6 +402,15 @@ All possible values for the `error_message` field in post-call webhooks:
 - `"Call failed. Service Provider Blocked Call due to Spam or Number Reputation. Try a different number."` - Carrier blocked (SIP 608)
 
 ### System Errors
+**HTTP Status: 200** *(System errors result in successful webhook delivery with error details in the payload)*
+
 - `"A database error occurred. Please contact support."` - Internal database error
 - `"Unable to start call. Check the call details error_message for more details."` - Call dispatch failure
 - `"unknown"` - Fallback error message
+
+### Important Notes
+
+- **Webhook Delivery vs Call Outcome**: HTTP status codes indicate webhook delivery success (200 = delivered), while call errors are embedded in the payload
+- **Retry Logic**: Failed webhook deliveries (4xx/5xx) trigger automatic retries with exponential backoff
+- **SIP Mapping**: Call connection failures map from SIP response codes to user-friendly error messages
+- **Error Handling**: Your webhook endpoint should return 2xx status codes to confirm receipt, regardless of how you process the call data
