@@ -28,22 +28,24 @@ description: "Get the corrected transcript from your call's recording."
 </ResponseField>
 
 <ResponseField type="array" name="corrected">
-This will contain an array of objects. Each object will be constructed as the following. 
+This will contain an array of objects with enhanced speaker information and confidence scores. Each object will be constructed as the following.
 ```json
 {
 "start": 0.069, // start time of the transcript
 "end": 2.551, // end time of the transcript
 "text": " Hi, I'm calling about a pizza order.", // the corrected text
-"speaker": 0 // the identified speaker diarization. Can be 0,1,2,3 etc
+"speaker": 2, // the identified speaker diarization. Can be 1,2,3 etc
+"speaker_label": "assistant", // human-readable speaker label ("user", "assistant")
+"confidence": 0.762 // transcription confidence score (0-1)
 }
 ```
 </ResponseField>
 <ResponseField type="array" name="aligned">
-Corrected transcripts provides us with a raw output that is generally unusable because we can't neccessarily align the 'assistant' and 'user' roles. To fix this, we provide our version of an 'aligned' transcript. This means essentailly a transcript where the roles are matched to the pieces of text. 
+**⚠️ DEPRECATED**: The `aligned` field is deprecated and will be removed in a future version. Please use the enhanced `corrected` field instead, which now includes `speaker_label` and `confidence` information.
 
-We do this by vectorizing the text, taking the cosine similarity, and adding a predictive layer based off of the `wait_for_greeting` param (essentially how sure are we that assistant or user spoke first).
+Legacy description: This field provides a version of an 'aligned' transcript where the roles are matched to the pieces of text by vectorizing the text, taking the cosine similarity, and adding a predictive layer based off of the `wait_for_greeting` param.
 
-This will contain an array of objects. Each object will be constructed as the following. 
+This will contain an array of objects. Each object will be constructed as the following.
 ```json
 {
 "id": 3056004,
@@ -63,97 +65,129 @@ This will contain an array of objects. Each object will be constructed as the fo
             "start": 0.069,
             "end": 2.551,
             "text": " Hi, I'm calling about a pizza order.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.762
         },
         {
             "start": 2.551,
             "end": 4.932,
             "text": "Could I get your name, please?",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.843
         },
         {
             "start": 4.932,
             "end": 8.074,
             "text": "Yeah, my name is John.",
-            "speaker": 1
+            "speaker": 1,
+            "speaker_label": "user",
+            "confidence": 0.654
         },
         {
             "start": 8.074,
             "end": 8.875,
             "text": "Great.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.892
         },
         {
             "start": 8.875,
             "end": 9.876,
             "text": "Thanks, John.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.765
         },
         {
             "start": 9.876,
             "end": 13.038,
             "text": "Could you tell me about the pizza order you placed?",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.934
         },
         {
             "start": 13.038,
             "end": 16.36,
             "text": "Yeah, I want a pepperoni.",
-            "speaker": 2
+            "speaker": 1,
+            "speaker_label": "user",
+            "confidence": 0.567
         },
         {
             "start": 16.36,
             "end": 17.1,
             "text": "Oh, okay.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.456
         },
         {
             "start": 17.1,
             "end": 18.521,
             "text": "One pepperoni pizza.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.789
         },
         {
             "start": 18.521,
             "end": 19.682,
             "text": "Anything else with that order?",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.823
         },
         {
             "start": 19.682,
             "end": 23.665,
             "text": "No, actually, can we cancel it?",
-            "speaker": 1
+            "speaker": 1,
+            "speaker_label": "user",
+            "confidence": 0.612
         },
         {
             "start": 23.665,
             "end": 26.306,
             "text": "I gotta go.",
-            "speaker": 1
+            "speaker": 1,
+            "speaker_label": "user",
+            "confidence": 0.543
         },
         {
             "start": 26.306,
             "end": 27.427,
             "text": "No problem.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.734
         },
         {
             "start": 27.427,
             "end": 28.668,
             "text": "I'll cancel the order for you.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.856
         },
         {
             "start": 29.144,
             "end": 30.587,
             "text": " Thanks for letting me know.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.678
         },
         {
             "start": 30.587,
             "end": 31.189,
             "text": "Have a good one.",
-            "speaker": 0
+            "speaker": 2,
+            "speaker_label": "assistant",
+            "confidence": 0.812
         }
     ],
     "status": "success",
