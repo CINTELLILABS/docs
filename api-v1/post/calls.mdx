@@ -884,3 +884,1025 @@ Example payloads:
 ```
 
 </ResponseExample>
+
+## Error Codes Reference
+
+<Accordion title="View All Error Codes" icon="warning">
+This section documents all possible error codes and HTTP status codes you can receive when making a POST request to `/v1/calls`.
+
+### Authentication & Authorization Errors
+
+<ResponseField name="401 - AUTH_FAILURE" type="object">
+  Authentication failed due to missing or invalid API key.
+  
+  ```json
+  {
+    "data": null,
+    "errors": [
+      {
+        "error": "AUTH_FAILURE", 
+        "message": "Unauthorized"
+      }
+    ]
+  }
+  ```
+  
+  **Common causes:**
+  - Missing Authorization header
+  - Invalid API key
+  - Expired API key
+</ResponseField>
+
+
+<ResponseField name="403 - Account Flagged" type="object">
+  Account has been flagged or banned for security purposes.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "The Bland Team has flagged your account for security purposes. As a precautionary measure against recent heightened malicious use cases, we have flagged your account for review and temporarily blocked from dispatching calls. If you need to be unblocked urgently, please email us at hello@bland.ai with your account phone number."
+  }
+  ```
+</ResponseField>
+
+### Rate Limiting Errors (HTTP 429)
+
+<ResponseField name="429 - Call Frequency Limit" type="object">
+  Calls sent too frequently to the same number.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Calls can only be sent every 10 seconds to the same number. Please try again in a few seconds."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="429 - General Rate Limit" type="object">
+  Rate limit exceeded for your account.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Rate limit exceeded"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="429 - Blacklisted Number" type="object">
+  Attempting to call a blacklisted number.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "This number is blacklisted."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="429 - New Customer Rate Limit" type="object">
+  Rate limits for newly created accounts.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Rate limit exceeded for newly created accounts. Please try again soon."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="429 - International Rate Limit" type="object">
+  International calling rate limit exceeded.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "International rate limit exceeded for your account type."
+  }
+  ```
+</ResponseField>
+
+### Parameter Validation Errors (HTTP 400)
+
+<ResponseField name="400 - Missing Required Parameter" type="object">
+  Required parameters are missing from the request.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid parameters. Error: [\"Missing required parameter: phone_number.\"]",
+    "errors": ["Missing required parameter: phone_number."]
+  }
+  ```
+  
+  **Required parameters:**
+  - `phone_number` (always required)
+  - `task` (required if `pathway_id` is not provided)
+</ResponseField>
+
+<ResponseField name="400 - Invalid Field Types" type="object">
+  Field values are the wrong data type according to TypeBox validation.
+  
+  ```json
+  {
+    "status": "error", 
+    "message": "Record must be a boolean"
+  }
+  ```
+  
+  **Common type validation errors:**
+  - `"Task must be a string"`
+  - `"Record must be a boolean"`
+  - `"Max duration must be a number"`
+  - `"Temperature must be a number"`
+  - `"Tools must be an array"`
+  - `"Dynamic data must be an array"`
+  - `"Metadata must be a record of string keys and any values"`
+</ResponseField>
+
+<ResponseField name="400 - Invalid Voicemail Action" type="object">
+  Voicemail action must be one of the allowed values.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid voicemail action. Must be one of: hangup, leave_message, leave_message_and_sms, ignore"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Number Range Validation" type="object">
+  Numeric values are outside their allowed ranges.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Max duration must be at least 1"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid DTMF Sequence" type="object">
+  Precall DTMF sequence contains invalid characters.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Precall DTMF sequence must be a valid DTMF sequence"
+  }
+  ```
+  
+  **Valid DTMF characters:** 0-9, *, #, w (wait)
+</ResponseField>
+
+<ResponseField name="400 - Invalid Date Format" type="object">
+  Start time must be a valid ISO date-time string.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Start time must be a valid date-time format"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Webhook URL" type="object">
+  Webhook URL format is invalid.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Webhook must be a valid URI"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid From Number Format" type="object">
+  From number doesn't match phone number pattern.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid from number format"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Transfer Phone Format" type="object">
+  Transfer phone number format validation error.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid transfer phone number format"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Transfer List Format" type="object">
+  Transfer list contains phone numbers with invalid format.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid phone number format in transfer list"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Additional Properties Not Allowed" type="object">
+  Request contains fields that are not allowed in the schema.
+  
+  ```json
+  {
+    "status": "error", 
+    "message": "Additional properties are not allowed"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Phone Number" type="object">
+  Phone number format is invalid, missing country code, or invalid length.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid phone number. Please include a country code if outside the US."
+  }
+  ```
+  
+  **Other variations:**
+  ```json
+  {
+    "status": "error", 
+    "message": "Invalid phone number. `+1234567890123456789` has these validation errors: [specific errors]"
+  }
+  ```
+  
+  ```json
+  {
+    "error": "Invalid phone number format"
+  }
+  ```
+  
+  **Common causes:**
+  - Phone number too long (>15 digits) or too short (\<7 digits)
+  - Invalid characters in phone number
+  - Missing country code for international numbers
+  - Phone number fails Twilio validation
+</ResponseField>
+
+<ResponseField name="400 - Invalid Transfer Number" type="object">
+  Transfer phone number is invalid.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid transfer_phone_number."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Language Code" type="object">
+  Language code is not supported.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid language code"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Pronunciation Guide" type="object">
+  Pronunciation guide format is incorrect.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid pronunciation guide type."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Platform Not Supported" type="object">
+  Feature not supported on the specified platform.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Precall DTMF sequence is not supported for this platform."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid From Number" type="object">
+  The 'from' number is invalid or not owned by your account.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid 'from' - must be a phone number string with 10 or 12 digits."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - DNC List Violation" type="object">
+  Attempting to call a number on the Do Not Call list.
+  
+  ```json
+  {
+    "status": "DNC Error",
+    "message": "Number found in DNC list. You cannot dial sensitive numbers. More attempts will result in being blocked."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Transfer List Validation" type="object">
+  Transfer list configuration errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Transfer list must be an object."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid transfer phone number."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error", 
+    "message": "Transfer phone number cannot be the same as the phone number."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Retry Parameter Validation" type="object">
+  Retry configuration must be an object.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Retry must be an object."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Version Number Validation" type="object">
+  Version number must be a valid number.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "version_number must be a number."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Pathway Version Validation" type="object">
+  Pathway version must be a number or specific string value.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "pathway_version needs to either be a number, or a string of 'production' or 'staging'."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "version_number must be a number or string."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - From Phone Number Validation" type="object">
+  The 'from' number format is invalid.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid from phone number."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Boolean Parameter Validation" type="object">
+  Boolean parameters must be true/false or string equivalents.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "wait_for_greeting must be a boolean."
+  }
+  ```
+  
+  **Valid for parameters**: `wait_for_greeting`, `record`, `answered_by_enabled`, `block_interruptions`, `sensitive_voicemail_detection`, `ignore_button_press`
+  
+</ResponseField>
+
+
+<ResponseField name="400 - First Sentence Validation" type="object">
+  First sentence must be a string.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "First sentence must be a string. type: [actual_type]"
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Voicemail Message Validation" type="object">
+  Voicemail message must be a string.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Voicemail message must be a string. type: [actual_type]"
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Voicemail SMS Validation" type="object">
+  Voicemail SMS configuration errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "voicemail_sms must be an object. type: [actual_type]"
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "voicemail_sms.message must be a string. type: [actual_type]"
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "voicemail_sms.from must be a string. type: [actual_type]"
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Interruption Threshold Validation" type="object">
+  Interruption threshold must be a number.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "interruption_threshold must be a number."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Webhook URL Validation" type="object">
+  Webhook URL must be a valid HTTPS URL.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "webhook must be a string that starts with https://."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Request Data Validation" type="object">
+  Request data must be an object.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "request_data must be an object."
+  }
+  ```
+  
+</ResponseField>
+
+
+<ResponseField name="400 - Metadata Validation" type="object">
+  Metadata must be an object.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "metadata must be an object."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Analysis Schema Validation" type="object">
+  Analysis schema must be an object.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "analysis_schema must be an object."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Voice Parameter Validation" type="object">
+  Voice parameter must be a string.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Voice must be a string."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Voicemail Action Validation" type="object">
+  Voicemail action must be one of the allowed values.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid voicemail_action. Options are: [list_of_options]."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Keywords Validation" type="object">
+  Keywords configuration errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Keywords must be an array of strings."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Keywords must be strings."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Keywords each must be less than 100 characters: [keyword]"
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Keywords must be in the format 'string' or 'string:number'."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Keyword boosts with a colon must have a valid integer for the boost rate."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "At most 20 keywords can be added."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Timezone Validation" type="object">
+  Timezone validation errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Timezone must be a string."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid timezone: [error_message]"
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Summary Prompt Validation" type="object">
+  Summary prompt validation errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Summary prompt must be a string."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Summary prompt must be less than 2000 characters."
+  }
+  ```
+  
+</ResponseField>
+
+
+<ResponseField name="400 - Start Time Validation" type="object">
+  Start time scheduling validation errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "start_time must be a string."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid start_time."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Calls must be scheduled at least 5 minutes in advance, or more"
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Background Track Validation" type="object">
+  Background track validation errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "background_track must be a string."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid background_track option. Options are: [list_of_options]."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Max Duration Validation" type="object">
+  Max duration validation errors.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "max_duration must be a number."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "max_duration must be a positive number."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "max_duration must be at most 12 hours."
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Invalid Dynamic Data" type="object">
+  Dynamic data or tools configuration is invalid.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Unable to parse dynamic data/tools."
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid tools: [error_message]"
+  }
+  ```
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid dynamic data: [error_message]"
+  }
+  ```
+  
+</ResponseField>
+
+<ResponseField name="400 - Invalid Pathway Data" type="object">
+  Pathway configuration is invalid or missing required components.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid pathway data - no blocks or links found for pathway {pathway_id}"
+  }
+  ```
+  
+  **Other variations:**
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid pathway data"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Invalid Start Node ID" type="object">
+  The specified start node ID does not exist in the pathway.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid start node ID: {start_node_id}"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Content Flagged" type="object">
+  Content failed moderation and was flagged as inappropriate.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Flagged Node: [flagged content]"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Sensitive Number Protection" type="object">
+  Attempting to call emergency or sensitive numbers.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Cannot dial sensitive numbers. More attempts will result in being blocked."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Unable to Save Request" type="object">
+  Server unable to save the request body or call data.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Unable to save request body."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="400 - Unable to Queue Call" type="object">
+  Call could not be queued for processing.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Unable to queue call."
+  }
+  ```
+</ResponseField>
+
+
+<ResponseField name="400 - Warm Transfer Parent Call Completed" type="object">
+  Parent call for warm transfer has already completed or doesn't exist.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Parent call has completed or does not exist. Warm Transfer Request Cancelled"
+  }
+  ```
+</ResponseField>
+
+
+<ResponseField name="500 - Internal Server Errors" type="object">
+  General server errors and catch-all error handlers.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Internal server error during flagging process"
+  }
+  ```
+  
+  **Typical scenarios**:
+  - Uncaught exceptions in call processing
+  - Third-party service failures
+  - Memory allocation or resource exhaustion errors
+  - Network connectivity issues
+  
+</ResponseField>
+
+<ResponseField name="400 - Call Parameters Validation" type="object">
+  Basic call parameters validation from the main validation function.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Call parameters must be an object."
+  }
+  ```
+  
+</ResponseField>
+
+### Business Logic Errors
+
+<ResponseField name="402 - No Billing Record" type="object">
+  No billing record found for your account.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "No billing record found."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="402 - Insufficient Balance" type="object">
+  Account balance is insufficient for the call.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Insufficient balance."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="404 - Pathway Not Found" type="object">
+  The specified pathway ID does not exist or is not accessible.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Pathway with ID \"{pathway_id}\" not found"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="404 - Pathway Version Not Found" type="object">
+  The specified pathway version does not exist.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Pathway version with ID \"{version_number}\" not found"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="418 - Invalid Objective" type="object">
+  The objective parameter failed validation (returns validation details).
+  
+  ```json
+  {
+    "error": "OBJECTIVE_VALIDATION_ERROR",
+    "details": "Custom validation response"
+  }
+  ```
+</ResponseField>
+
+### Service Errors (HTTP 500)
+
+<ResponseField name="500 - Twilio Connection Error" type="object">
+  Failed to establish connection with Twilio services.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Error in creating Twilio connection."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="500 - Invalid Encrypted Key" type="object">
+  The encrypted key provided is invalid or corrupted.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Invalid `encrypted_key`. Please use the correct key for your account."
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="500 - Internal Server Error" type="object">
+  General internal server error during call processing.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Error triggering call. Please check your twilio account for errors"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="500 - Content Moderation Error" type="object">
+  Error occurred during the content flagging process.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Internal server error during flagging process"
+  }
+  ```
+</ResponseField>
+
+
+<ResponseField name="500 - BYOT Number Error" type="object">
+  Error retrieving Bring Your Own Twilio (BYOT) phone number.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Error in getting BYOT Number"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="500 - Dialer Data Error" type="object">
+  Error retrieving dialer data from encrypted key.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Error in getting dialer data from encrypted key"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="500 - User Data Fetch Error" type="object">
+  Error fetching user data for account verification.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Error in fetching user data"
+  }
+  ```
+  
+  **Other variations:**
+  ```json
+  {
+    "status": "error",
+    "message": "Error in fetching parent user data"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="500 - Retry Call Error" type="object">
+  Missing retry attempt information for retry calls.
+  
+  ```json
+  {
+    "status": "error",
+    "message": "Retry attempt not provided for retry call: {call_id}"
+  }
+  ```
+</ResponseField>
+
+</Accordion>
