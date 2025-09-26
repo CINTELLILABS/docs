@@ -1,6 +1,6 @@
 ---
 title: "Warm Transfer"
-description: "Live human agent transfers facilitated by Bland agents"
+description: "Live human agent transfers facilitated by Bland"
 ---
 
 ## Introduction
@@ -9,16 +9,16 @@ Warm Transfer changes how your AI hands off to a human. Instead of an immediate 
 
 <CardGroup cols={2}>
   <Card title="Intelligent Handoffs" icon="phone">
-    AI briefs human agents before connecting customers, ensuring agents understand the context and customer needs
+    AI briefs the human agent before connecting customers, ensuring the agent understands the context and customer needs
   </Card>
   <Card title="Seamless Merging" icon="link">
     Professional call transitions with announcements and hold music for smooth customer experience
   </Card>
-  <Card title="Multi-Agent Fallback" icon="users">
-    Try multiple agents until someone's available, with smart tracking of each attempt
-  </Card>
   <Card title="Advanced Controls" icon="sliders">
     IVR navigation, live translation, timeout management, and voicemail handling
+  </Card>
+  <Card title="Smart Fallbacks" icon="shield">
+    Automatic voicemail handling and pathway routing when agents are unavailable or busy
   </Card>
 </CardGroup>
 
@@ -38,13 +38,13 @@ Understanding the warm transfer flow helps you configure it effectively:
 6. **Professional Handoff**: AI announces the introduction and steps back from the conversation
 7. **Pure Human Conversation**: Customer and agent continue without AI involvement
 
-If agents don't answer or are unavailable, the system can try multiple agents in sequence or fall back to voicemail handling.
+If the agent doesn't answer or is unavailable, the system will fall back to voicemail handling.
 
 ## Configuration Interface
 
 ### Enable Warm Transfer
 
-When you enable warm transfer on a Transfer Call node, you're switching from a basic "cold transfer" (where the customer gets transferred directly) to an intelligent handoff system. The AI will manage the entire transition process, ensuring human agents are prepared and customers experience a smooth transition.
+When you enable warm transfer on a Transfer Call node, you're switching from a basic "cold transfer" (where the customer gets transferred directly) to an intelligent handoff system. The AI will manage the entire transition process, ensuring the human agent is prepared and customers experience a smooth transition.
 
 **Location**: Transfer Call node → Toggle "Enable Warm Transfer"  
 **Default**: Disabled (uses standard transfer)  
@@ -59,7 +59,7 @@ When you enable warm transfer on a Transfer Call node, you're switching from a b
 
 **What it does**: Provides real-time language translation during the merged call between customer and human agent. [Learn more about Live Translation in our changelog](https://docs.bland.ai/changelog/09_02_2025).
 
-**Why it matters**: Perfect for international support where your agents speak English but customers speak other languages. Both parties can communicate naturally in their preferred language.
+**Why it matters**: Perfect for international support where your agent speaks English but customers speak other languages. Both parties can communicate naturally in their preferred language.
 
 **How it works**: During the merged call, both the customer and agent hear the original speech plus a translated overlay. The agent hears everything in English, while the customer hears the agent's responses translated into their language.
 
@@ -74,7 +74,7 @@ When you enable warm transfer on a Transfer Call node, you're switching from a b
 
 **What it does**: Controls which phone number appears when your AI calls the human agent.
 
-**Why it matters**: Human agents often screen calls or have different behavior based on caller ID. Using a familiar number helps ensure your agents will answer the proxy call.
+**Why it matters**: Human agents often screen calls or have different behavior based on caller ID. Using a familiar number helps ensure your agent will answer the proxy call.
 
 **How it works**: This is the first step of warm transfer - your AI needs to call the human agent to brief them before bringing in the customer, and this setting determines what caller ID they see.
 
@@ -136,7 +136,7 @@ For context, below is the formal call summary:
 
 **What it does**: Gives the human agent control over when the calls get merged together.
 
-**Why it matters**: Sometimes agents need a moment to pull up customer records, ask clarifying questions about the situation, or simply mentally prepare before taking over the conversation.
+**Why it matters**: Sometimes the agent needs a moment to pull up customer records, ask clarifying questions about the situation, or simply mentally prepare before taking over the conversation.
 
 **How it works**: Default flow is automatic merging (AI briefs agent → calls automatically merge → everyone talks together). When enabled, the agent controls timing (AI briefs agent → agent can ask questions or prepare → agent tells AI when ready → calls merge).
 
@@ -213,15 +213,14 @@ Perfect! I now have one of our specialists joining the call. They've been briefe
 
 ### 9. Hold Timeout
 
-**What it does**: Sets a maximum time limit for how long the system will try to reach human agents.
+**What it does**: Sets a maximum time limit for how long the system will try to reach a human agent.
 
-**Why it matters**: Sometimes agents don't answer, or they're stuck in long queues. Rather than keep customers waiting indefinitely, you can set a reasonable timeout to maintain good customer experience.
+**Why it matters**: Sometimes the agent doesn't answer, or they're stuck in long queues. Rather than keep customers waiting indefinitely, you can set a reasonable timeout to maintain good customer experience.
 
 **How it works**: After the timeout expires, the system gives up on the transfer and moves to your configured [voicemail handling](#10-voicemail-message-configuration). When IVR optimization is enabled, the timeout applies even if the call was "answered" but stuck in a queue system.
 
 **Configuration**:
 - **Input**: Time in seconds
-- **Default**: 1800 seconds (30 minutes)
 - **Range**: 30 seconds to 3600 seconds (1 hour)
 - **Fallback**: Triggers voicemail handling when exceeded
 
@@ -229,9 +228,9 @@ Perfect! I now have one of our specialists joining the call. They've been briefe
 
 ### 10. Voicemail Message Configuration
 
-**What it does**: Defines what happens when all attempts to reach human agents fail.
+**What it does**: Defines what happens when attempts to reach the human agent fail.
 
-**Why it matters**: Sometimes agents are all busy, don't answer, or are unavailable. This configuration ensures customers still get a professional resolution instead of being left hanging.
+**Why it matters**: Sometimes the agent is busy, doesn't answer, or is unavailable. This configuration ensures customers still get a professional resolution instead of being left hanging.
 
 **How it works**: Two options available - End with message (play a polite explanation and end the call) or Continue in pathway (route the customer to another part of your conversation flow). When using pathway mode, you can visually see the connection in your pathway.
 
@@ -239,29 +238,7 @@ Perfect! I now have one of our specialists joining the call. They've been briefe
 - **Options**: Message vs. pathway routing
 - **Custom message**: For message mode
 - **Pathway routing**: Target destination for pathway mode
-- **Default Message**: "I apologize, but our agents are currently unavailable. Please try calling back later or visit our website for additional support options."
-
----
-
-## Multi-Agent Fallback System
-
-**What it does**: Tries multiple human agents in sequence until someone answers.
-
-**Why it matters**: Increases the likelihood of successful transfers by providing backup options when primary agents are unavailable, busy, or don't answer.
-
-**How it works**: Enter multiple phone numbers separated by commas in the transfer number input field. The system calls the first number, and if no one answers or they're busy, it automatically tries the next number, and so on. Each attempt is tracked independently for debugging.
-
-**Configuration**:
-- **Format**: Multiple phone numbers separated by commas (+1234567890,+1987654321,+1555123456)
-- **Behavior**: Tries each number in order until successful connection or all numbers exhausted, with the final attempt activating [voicemail message configuration](#10-voicemail-message-configuration)
-- **Logging**: Individual attempt results logged for debugging
-
-**Example Setup**:
-```
-+1555123456,+1555789012,+1555345678
-```
-
-This will try the first agent, then the second if the first doesn't answer, then the third if the second is unavailable.
+- **Default Message**: "I apologize, but our agent is currently unavailable. Please try calling back later or visit our website for additional support options."
 
 ---
 
@@ -283,7 +260,6 @@ Every warm transfer configuration includes a built-in testing panel where you ca
 - Don't answer to test timeout behavior  
 - Test DTMF sequences with your actual phone system
 - Verify hold music plays correctly
-- Test multi-agent fallback with multiple numbers
 
 ---
 
@@ -291,27 +267,17 @@ Every warm transfer configuration includes a built-in testing panel where you ca
 
 ### Agent Briefing Prompts
 
-**Keep it concise**: Agents are busy - get to the point quickly with the most important information first.
+**Use variables effectively**: Include context like `{{customer_name}}` and `{{issue_description}}` from extracted conversation data to help the agent prepare.
 
-**Use variables effectively**: Include context like `{{customer_name}}` and `{{issue_description}}` from extracted conversation data to help agents prepare.
-
-**Set expectations**: Let agents know what the customer is expecting and what outcome they're hoping for.
+**Set expectations**: Let the agent know what the customer is expecting and what outcome they're hoping for.
 
 ### Timeout Configuration
 
 **Balance patience with efficiency**: 30-60 seconds for busy environments, 3-5 minutes for specialized support.
 
-**Consider agent schedules**: Set longer timeouts during known busy periods, shorter during staffed hours.
+**Consider agent schedules**: Set longer timeouts during known busy periods, shorter during hours when the agent is more likely to be available.
 
 **Plan your fallback**: Always have a helpful voicemail message or pathway continuation ready.
-
-### Multi-Agent Setup
-
-**Order by availability**: Put your most available agents first, specialists or managers last.
-
-**Use different numbers**: Include direct lines, mobile numbers, or numbers for different departments to maximize your chances of reaching an available agent.
-
-**Test regularly**: Agent numbers change, verify your fallback chain monthly.
 
 ---
 
@@ -319,9 +285,9 @@ Every warm transfer configuration includes a built-in testing panel where you ca
 
 ### Common Issues
 
-**Agents don't answer the proxy call**
-- Verify the proxy agent number is familiar to your agents
-- Check that agents aren't screening unknown numbers
+**Agent doesn't answer the proxy call**
+- Verify the proxy agent number is familiar to your agent
+- Check that the agent isn't screening unknown numbers
 - Test during known availability hours
 - Consider using a direct line instead of main number
 
@@ -331,7 +297,7 @@ Every warm transfer configuration includes a built-in testing panel where you ca
 - Test with built-in hold music first to isolate the issue
 - Ensure the URL uses HTTPS, not HTTP
 
-**Calls merge but agents can't hear customers**
+**Calls merge but the agent can't hear customers**
 - This usually indicates a live translation configuration issue
 - Verify live translation is enabled/disabled as intended
 - Check that your account has translation permissions
@@ -343,15 +309,9 @@ Every warm transfer configuration includes a built-in testing panel where you ca
 **Proxy agent call is failing**
 - Verify the proxy agent from number is from the same Twilio account as your parent call
 
-### Debug Tools
+### Warm Transfer Logs
 
-**Live Call Monitor**: Watch warm transfers happen in real-time to identify issues.
-
-**Test Mode**: Use the built-in testing to safely debug configurations.
-
-**Agent Feedback**: Ask your agents about the quality of briefings and merge announcements.
-
-**Call Logs**: Every warm transfer attempt is logged with detailed information about each step. You can view them in the "Logs" tab of your Transfer Call node. The original call will be the first log entry, with a dropdown to view the proxy agent call.
+Every warm transfer is logged in your call logs dashboard. The parent call appears like a standard call, and you'll see a dropdown to view the proxy agent call. The proxy agent call includes full details, including used variables, transcript, and recording (when enabled).
 
 <img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/warm-transfer/call_logs.jpeg" />
 
