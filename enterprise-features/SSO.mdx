@@ -690,20 +690,175 @@ Supports both protocols:
 
 ---
 
-## Role Mapping
+## Role Mapping & Group Inheritance
 
-Users with IdP groups/roles containing these keywords receive admin role in Bland:
-- `admin`
-- `administrator`
-- `owner`
-- `manager`
-- `super`
+Bland automatically maps IdP groups and roles to organization permissions, enabling seamless role inheritance from your existing identity provider.
 
-All other users receive the operator role by default.
+### How It Works
+
+When users sign in via SSO, Bland reads their group memberships from the IdP and automatically assigns the appropriate role in your organization.
+
+### Supported Group Mappings
+
+Groups are mapped based on their names. The following patterns are recognized:
+
+**Admin Role:**
+- `Bland AI - Static - Admin`
+- `bland-admin`
+- Groups containing: `admin`, `administrator`, `owner`, `manager`, `super`
+- Example: `IT-Admin`, `Super-Users`, `Organization-Administrators`
+
+**Operator Role:**
+- `Bland AI - Static - Operator`
+- `bland-operator`
+- Groups containing: `operator`, `support`
+- Example: `Support-Team`, `Call-Operators`
+
+**Viewer Role (Read-Only):**
+- `Bland AI - Static - Viewer`
+- `bland-viewer`
+- Groups containing: `viewer`, `read-only`, `readonly`
+- Example: `Read-Only-Users`, `Audit-Viewers`
+
+**Default:** Users without matching groups receive the `operator` role.
+
+### IdP-Specific Configuration
+
+<AccordionGroup>
+  <Accordion title="Okta Configuration">
+    1. **Create Groups** in Okta Directory → Groups:
+       - `Bland AI - Static - Admin`
+       - `Bland AI - Static - Operator`
+       - `Bland AI - Static - Viewer`
+
+    2. **Assign Groups to Application:**
+       - Go to your Bland SSO app → Assignments
+       - Assign the groups (not just users)
+
+    3. **Configure Groups Claim:**
+       - Go to Security → API → Authorization Servers → Your Server
+       - Claims tab → Add Claim
+       - Name: `groups`
+       - Include in: ID Token
+       - Value type: Groups
+       - Filter: Matches regex `.*`
+
+    4. **Add Groups Scope** (if needed):
+       - Scopes tab → Add Scope
+       - Name: `groups`
+       - Display: Access to user groups
+  </Accordion>
+
+  <Accordion title="Azure AD Configuration">
+    1. **Create Security Groups:**
+       - Azure AD → Groups → New Group
+       - Type: Security
+       - Names: `Bland AI - Static - Admin`, etc.
+
+    2. **Configure Groups Claim:**
+       - App Registration → Token configuration
+       - Add groups claim → Security groups
+       - Select: Group ID
+
+    3. **Map Group Names (Optional):**
+       - Enterprise App → Single sign-on → Attributes & Claims
+       - Add group claim with transformation to send group names instead of IDs
+  </Accordion>
+
+  <Accordion title="Google Workspace Configuration">
+    For SAML with Google Workspace:
+
+    1. **Create Groups** in Google Admin:
+       - Groups → Create Group
+       - Names: `bland-admin@company.com`, etc.
+
+    2. **Configure Group Attribute:**
+       - In SAML app configuration
+       - Add attribute: `groups`
+       - Google Directory attribute: `Groups`
+       - Filter: Can specify specific groups or all
+  </Accordion>
+
+  <Accordion title="ADFS Configuration">
+    1. **Configure Group Claims:**
+       - Edit Claim Rules → Add Rule
+       - Send LDAP Attributes as Claims
+       - Attribute: Token-Groups - Unqualified Names
+       - Outgoing Claim Type: `groups`
+
+    2. **Or use Role Claims:**
+       - Send LDAP Attributes as Claims
+       - Attribute: Token-Groups - Unqualified Names
+       - Outgoing Claim Type: `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`
+  </Accordion>
+</AccordionGroup>
+
+### Dynamic Role Updates
+
+- **Automatic Sync:** Roles are checked and updated on each login
+- **Immediate Effect:** Role changes in your IdP take effect on next user login
+- **No Manual Updates:** Admins don't need to manually manage user roles in Bland
+
+### Custom Role Mapping
+
+For enterprise customers with specific requirements:
+
+- **Custom Group Names:** Map your existing group structure
+- **Complex Rules:** Combine multiple groups or attributes
+- **Department-Based:** Map based on department or other attributes
 
 <Info>
-Contact support for custom role mapping requirements.
+Contact hello@bland.ai for custom role mapping configuration.
 </Info>
+
+### Testing Role Mapping
+
+1. **Verify Groups in Token:**
+   - Use browser DevTools during SSO login
+   - Check Network tab for the callback request
+   - For OIDC: Decode the ID token at [jwt.io](https://jwt.io)
+   - For SAML: Use SAML Chrome Panel or SAML-tracer
+   - Confirm `groups` claim contains expected values
+
+2. **Check Role Assignment:**
+   - After login, verify user role in Organization Settings → Members
+   - Admin users see full settings access and can manage members
+   - Operators have standard access to make and manage calls
+   - Viewers have read-only access to view calls and analytics
+
+3. **Test Different Scenarios:**
+   - User with single group membership
+   - User with multiple groups (highest privilege wins)
+   - User with no groups (defaults to operator)
+   - Group name changes in IdP
+
+### Troubleshooting Group Inheritance
+
+<AccordionGroup>
+  <Accordion title="Groups not appearing in token">
+    **Solution:**
+    - Verify groups claim is configured in IdP
+    - Check user is member of groups
+    - Ensure groups are assigned to application (Okta)
+    - Confirm groups scope is requested (OIDC)
+  </Accordion>
+
+  <Accordion title="Wrong role assigned">
+    **Solution:**
+    - Check exact group names in token
+    - Verify group name matches mapping pattern
+    - Look for typos or case sensitivity issues
+    - Confirm no conflicting group memberships
+  </Accordion>
+
+  <Accordion title="Role not updating">
+    **Solution:**
+    - User must log out and log in again
+    - Clear browser cookies/cache
+    - Verify group membership changed in IdP
+    - Check IdP audit logs for group changes
+  </Accordion>
+</AccordionGroup>
 
 ---
 
