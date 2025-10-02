@@ -1,5 +1,5 @@
 ---
-title: "Bland Chat Widget"
+title: "Web Chat Widget"
 ---
 
 <video 
@@ -10,48 +10,112 @@ title: "Bland Chat Widget"
   <track kind="captions" />
 </video>
 
-Want to see the chat widget in action? Watch this quick demo that shows you how the Bland AI Chat Widget on your website. In just a few minutes, you'll learn how to add powerful AI chat capabilities to enhance your user experience. You can set up the agent with a pathway ID, which can be found in the [Bland Dashboard](https://app.bland.ai/dashboard/convo-pathways).
+In just a few minutes, you'll learn how to add powerful AI chat capabilities to enhance your user experience. You can set up the agent with a pathway ID or use a agent prompt. To get started with creating a widget, head over to our [Bland Dashboard](https://app.bland.ai/dashboard/web-widget).
 
 ## Installation
 
-To add the Bland Chat Widget to your website, add the following code to your HTML:
+You can create a web widget via the [API](/api-v1/post/widget), or through the [dashboard](https://app.bland.ai/dashboard/web-widget). Once you've created your widget, you should have an ID which you can pass into the following code snippet:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/CINTELLILABS/bland-client-js-sdk@main/dist/lib/chat-widget.js"></script>
 <script>
-  window.BLAND_CHAT_CONFIG = {
-    pathwayId: "your-pathway-id",
-    // Optional configurations:
-    position: "bottom-right",     // Options: bottom-right (default), bottom-left, top-right, top-left
-    offset: { x: 20, y: 20 },     // Custom offset from the edge
-    primaryColor: "#151515",      // Custom color for the widget
-    buttonBackgroundColor: "#151515", // Custom color for the chat button
-    headerBackgroundColor: "#151515", // Custom color for the header
-    chatTitle: "Chat Support",    // Custom title for the chat window
-    iconUrl: "https://example.com/icon.svg", // Custom icon for the chat button
-    headerLogoUrl: "https://example.com/logo.svg", // Custom logo for the header
-    width: 350,                   // Width of the chat container in pixels
-    height: 500,                  // Height of the chat container in pixels
-    buttonSize: 60               // Size of the chat button in pixels
+  window.blandSettings = {
+    widget_id: "b5f3fb6b-2285-4c73-95be-6609eca09986", // Replace with your widget ID
   };
 </script>
+<script src="https://widget.bland.ai/loader.js" defer></script>
 ```
 
-## Configuration Options
+Once you've added this code snippet to the `<head>` of your website, you should see the chat widget load. You can customize the widgets appearance via the `config` property, or by using our visual editor on the platform.
+
+Here is a quick video tutorial of how to create and configure a new web widget on the platform:
+
+<video 
+  controls
+  style={{ width: "100%", borderRadius: "0.5rem" }}
+  src="/tutorials/tutorials-assets/widget_overview.mp4"
+>
+  <track kind="captions" />
+</video>
+
+**Passing Additional Data (Optional)**
+
+You can pass custom data to your widget at initialization using the `request_data` setting. This is useful for personalizing conversations with user information:
+
+```html
+<script>
+  window.blandSettings = {
+    widget_id: "b5f3fb6b-2285-4c73-95be-6609eca09986",
+    request_data: {
+      user_id: "12345",
+      first_name: "John",
+      last_name: "Doe",
+    },
+  };
+</script>
+<script src="https://widget.bland.ai/loader.js" defer></script>
+```
+
+Now this information will be available to your agent as variables.
+
+## Advanced: Custom Components
+
+When using pathways in your widget, you can create custom components that display at specific points in the conversation. These components are embedded as iframes within the widget window.
+
+<video 
+  controls
+  style={{ width: "100%", borderRadius: "0.5rem" }}
+  src="/tutorials/tutorials-assets/widget_components.mp4"
+>
+  <track kind="captions" />
+</video>
+
+### Passing data to custom components
+You can send agent variables to your custom components to personalize the user experience. These variables are passed as query parameters to your iframe URL.
+
+**Setting up variables:**
+
+Define which variables to pass in one of two ways:
+
+- Through the platform UI in the custom component settings
+- Via the `variables` field in the [widget custom components API](/api-v1/post/widget)
+
+**Accessing variables in your component:**
+
+The variables are automatically appended as query parameters to your component's URL. 
+
+You can access these variables using standard JavaScript:
+
+```javascript
+// Example: Retrieving and displaying the user's first name
+const params = new URLSearchParams(window.location.search);
+const firstName = params.get("firstName");
+
+// Use the variable to personalize your component
+document.getElementById("greeting").textContent = `Hello, ${firstName}!`;
+```
+
+### Creating Interactive Custom Components
+
+Your custom component can send messages back to the widget using window events.
+
+Example: Creating a button that sends a message
+
+```javascript
+// This code snippet is on the webpage of the custom component
+<button onclick="parent.window.postMessage('widget-message:Hello World!', '*')">
+  Send Message
+</button>
+```
+
+> **Note**: All messages must be prefixed with `widget-message:`. The text after this prefix becomes the user message content.
+> 
+> For example, an event `widget-message:Hello World!` will create a user message with the content "Hello World!". `widget-message:Option A selected` will create a user message with the content "Option A selected".
+
+## Widget Bland Settings Options
 
 The chat widget can be customized using the following configuration options:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `pathwayId` | string | Required | The ID of the pathway to use for chat |
-| `position` | string | "bottom-right" | Widget position on screen |
-| `offset` | object | `{ x: 20, y: 20 }` | Custom offset from screen edge |
-| `primaryColor` | string | "#151515" | Main widget color |
-| `buttonBackgroundColor` | string | "#151515" | Chat button background color |
-| `headerBackgroundColor` | string | "#151515" | Chat header background color |
-| `chatTitle` | string | "Chat Support" | Title shown in chat window |
-| `iconUrl` | string | - | Custom chat button icon URL |
-| `headerLogoUrl` | string | - | Custom header logo URL |
-| `width` | number | 350 | Chat container width |
-| `height` | number | 500 | Chat container height |
-| `buttonSize` | number | 60 | Chat button diameter |
+| `widget_id` | string | Required | The ID of the widget you want to use on your website |
+| `request_data` | string | - | A record of variables you want to pass to the agent |
