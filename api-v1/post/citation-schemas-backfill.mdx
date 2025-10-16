@@ -1,22 +1,29 @@
 ---
 title: "Backfill Citation Schema"
 api: "POST https://api.bland.ai/v1/citation_schemas/backfill"
-description: "Retroactively apply a citation schema to extract data from an existing call transcript."
+description: "Retroactively apply one or more citation schemas to extract data from existing call transcripts."
 ---
 
 ## Overview
 
-The backfill endpoint allows you to apply a citation schema to a call that has already been completed. This is useful when you create a new schema and want to extract data from historical calls, or when you need to re-analyze a call with an updated schema.
+The backfill endpoint allows you to apply citation schemas to calls that have already been completed. This is useful when you:
+- Create a new schema and want to extract data from historical calls
+- Need to re-analyze calls with updated schemas
+- Want to extract data from multiple calls at scale
+
+Backfill operations are **asynchronous** - you'll receive a `workflow_id` immediately and can poll the status endpoint to check progress and retrieve results.
 
 <Info>
   This is an **Enterprise-only feature**. Contact your Bland representative or reach out to sales to enable this functionality.
 </Info>
 
 <Warning>
-  Backfilling will overwrite any existing citation data for the specified call and schema combination. This operation cannot be undone.
+  Backfilling will update citation variables for the specified call(s) and schema(s). Variables are merged with existing data - only the variables defined in the schema being backfilled will be updated.
 </Warning>
 
 ---
+
+## Request
 
 ### Headers
 
@@ -26,70 +33,370 @@ The backfill endpoint allows you to apply a citation schema to a call that has a
 
 ### Body Parameters
 
-<ParamField body="schema_id" type="string" required>
-  The unique identifier of the citation schema to apply to the call.
+#### Schema Parameters (Choose One)
+
+<ParamField body="schema_id" type="string">
+  A single citation schema ID from your organization to apply to the call(s).
 </ParamField>
 
-<ParamField body="call_id" type="string" required>
-  The unique identifier of the completed call to analyze with the citation schema.
+<ParamField body="schema_ids" type="string[]">
+  An array of citation schema IDs to apply to the call(s). All schemas will be processed for each call.
+
+  **Note**: Cannot be combined with `schema` (inline schema).
 </ParamField>
 
-### Response
+<ParamField body="schema" type="object">
+  An inline citation schema definition. Useful for one-time analysis without creating a schema in your account.
 
-<ResponseField name="data" type="object">
-  The backfill operation result data.
+  Can be combined with `call_id` or `call_ids` for multi-call analysis.
+
+  **Note**: Cannot be combined with `schema_ids`.
+</ParamField>
+
+#### Call Parameters (Choose One)
+
+<ParamField body="call_id" type="string">
+  A single call ID to analyze with the specified schema(s).
+</ParamField>
+
+<ParamField body="call_ids" type="string[]">
+  An array of call IDs to analyze with the specified schema(s). All schemas will be applied to each call.
+</ParamField>
+
+---
+
+## Response (202 Accepted)
+
+The endpoint returns immediately with a workflow ID. Use the [status endpoint](#checking-status) to monitor progress.
+
+<ResponseField name="status" type="string">
+  Always `"processing"` - indicates the workflow has been started.
+</ResponseField>
+
+<ResponseField name="workflow_id" type="string">
+  Unique identifier for this backfill operation. Use this to check status and retrieve results.
+</ResponseField>
+
+<ResponseField name="call_count" type="integer">
+  Number of calls being processed.
+</ResponseField>
+
+<ResponseField name="schema_count" type="integer">
+  Number of schemas being applied to each call.
+</ResponseField>
+
+<ResponseField name="total_combinations" type="integer">
+  Total number of call+schema extractions that will be performed (`call_count × schema_count`).
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Instructions on how to check the status of your workflow.
+</ResponseField>
+
+---
+
+## Checking Status
+
+Use the workflow ID to poll the status endpoint:
+
+```bash
+GET https://api.bland.ai/v1/citation_schemas/backfill/status/{workflow_id}
+```
+
+### Status Response
+
+<ResponseField name="workflow_id" type="string">
+  The workflow ID you're querying.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  The status of the backfill operation ("success" or "error").
+  Current workflow status:
+  - `RUNNING`: Still processing
+  - `COMPLETED`: Finished successfully (may have partial failures)
+  - `FAILED`: Workflow encountered an error
+  - `TERMINATED`: Manually stopped
+  - `TIMED_OUT`: Exceeded maximum execution time
 </ResponseField>
 
-<ResponseField name="call_id" type="string">
-  The call ID that was processed.
+<ResponseField name="result" type="object">
+  Only present when `status` is `COMPLETED`. Contains the full backfill results.
 </ResponseField>
 
-<ResponseField name="schema_id" type="string">
-  The schema ID that was applied.
+### Result Object (When Completed)
+
+<ResponseField name="result.status" type="string">
+  Overall result status:
+  - `success`: All extractions succeeded
+  - `partial`: Some extractions succeeded, some failed
+  - `failed`: All extractions failed
 </ResponseField>
 
-<ResponseField name="variables_extracted" type="integer">
-  The number of variables that were successfully extracted from the call.
+<ResponseField name="result.calls" type="array">
+  Array of results, one entry per call processed.
 </ResponseField>
 
-<ResponseField name="errors" type="null">
-  Will be null for successful requests.
+<ResponseField name="result.calls[].call_id" type="string">
+  The call that was analyzed.
 </ResponseField>
 
-### Error Responses
+<ResponseField name="result.calls[].status" type="string">
+  Status for this call: `success`, `partial`, or `failed`.
+</ResponseField>
+
+<ResponseField name="result.calls[].schemas_processed" type="array">
+  Details about each schema extraction for this call.
+</ResponseField>
+
+<ResponseField name="result.calls[].variables_extracted_count" type="integer">
+  Total number of unique variables extracted across all schemas for this call.
+</ResponseField>
+
+<ResponseField name="result.calls[].previous_variables" type="object">
+  The call's citation variables **before** this backfill operation.
+</ResponseField>
+
+<ResponseField name="result.calls[].newly_extracted_variables" type="object">
+  Variables that were extracted or updated by **this backfill** operation.
+</ResponseField>
+
+<ResponseField name="result.calls[].final_variables" type="object">
+  The call's citation variables **after** this backfill operation (complete state).
+</ResponseField>
+
+<ResponseField name="result.summary" type="object">
+  Aggregate statistics across all calls and schemas:
+  - `total_calls`: Number of calls processed
+  - `successful_calls`: Calls where all schemas succeeded
+  - `partial_calls`: Calls where some schemas failed
+  - `failed_calls`: Calls where all schemas failed
+  - `total_schemas_processed`: Total schema extractions attempted
+  - `successful_schema_extractions`: Schema extractions that succeeded
+  - `failed_schema_extractions`: Schema extractions that failed
+</ResponseField>
+
+---
+
+## Usage Flow
+
+1. **Send backfill request** and receive `workflow_id`
+2. **Poll the status endpoint** periodically (every 5-10 seconds)
+3. **When status is `COMPLETED`**, retrieve results from `result` field
+4. **Review the results** to see what was extracted for each call
+
+---
+
+## Examples
+
+### Single Call, Single Schema
+
+```bash Request
+curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "call-123",
+    "schema_id": "schema-abc"
+  }'
+```
+
+```json Response (202 Accepted)
+{
+  "status": "processing",
+  "workflow_id": "backfill:call-123:1760635265843",
+  "call_count": 1,
+  "schema_count": 1,
+  "total_combinations": 1,
+  "message": "Citation backfill workflow started for 1 call(s) with 1 schema(s)..."
+}
+```
+
+### Multiple Calls, Multiple Schemas
+
+```bash Request
+curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_ids": ["call-123", "call-456", "call-789"],
+    "schema_ids": ["schema-abc", "schema-def"]
+  }'
+```
+
+```json Response (202 Accepted)
+{
+  "status": "processing",
+  "workflow_id": "backfill:batch:671b7623-f9ac-46db-95f1-9b504fe59a06:1760635265843",
+  "call_count": 3,
+  "schema_count": 2,
+  "total_combinations": 6,
+  "message": "Citation backfill workflow started for 3 call(s) with 2 schema(s)..."
+}
+```
+
+### Single Call with Inline Schema
+
+```bash Request
+curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_id": "call-123",
+    "schema": {
+      "name": "Customer Sentiment Analysis",
+      "variables": [
+        {
+          "name": "customer_satisfied",
+          "type": "boolean",
+          "description": "Whether the customer expressed satisfaction"
+        },
+        {
+          "name": "sentiment_score",
+          "type": "number",
+          "description": "Overall sentiment from -1 (negative) to 1 (positive)"
+        }
+      ]
+    }
+  }'
+```
+
+### Checking Status
+
+```bash Request
+curl https://api.bland.ai/v1/citation_schemas/backfill/status/backfill:call-123:1760635265843 \
+  -H "authorization: YOUR_API_KEY"
+```
+
+```json Response (Status: RUNNING)
+{
+  "workflow_id": "backfill:call-123:1760635265843",
+  "status": "RUNNING",
+  "run_id": "0199ee0a-2343-7d98-8fbb-8d5c2d46ed4c",
+  "start_time": "2025-10-16T17:21:05.859Z"
+}
+```
+
+```json Response (Status: COMPLETED)
+{
+  "workflow_id": "backfill:call-123:1760635265843",
+  "status": "COMPLETED",
+  "run_id": "0199ee0a-2343-7d98-8fbb-8d5c2d46ed4c",
+  "start_time": "2025-10-16T17:21:05.859Z",
+  "close_time": "2025-10-16T17:21:39.019Z",
+  "result": {
+    "status": "success",
+    "calls": [
+      {
+        "call_id": "call-123",
+        "status": "success",
+        "schemas_processed": [
+          {
+            "schema_id": "schema-abc",
+            "status": "success",
+            "variables_extracted": 5
+          }
+        ],
+        "variables_extracted_count": 5,
+        "previous_variables": {
+          "customer_name": "John Doe"
+        },
+        "newly_extracted_variables": {
+          "order_id": "ORD-789456",
+          "issue_type": "shipping",
+          "products": [
+            {
+              "name": "Wireless Headphones",
+              "issue": "damaged packaging",
+              "quantity": 1
+            }
+          ],
+          "customer_satisfied": true,
+          "resolution": "refund_issued"
+        },
+        "final_variables": {
+          "customer_name": "John Doe",
+          "order_id": "ORD-789456",
+          "issue_type": "shipping",
+          "products": [
+            {
+              "name": "Wireless Headphones",
+              "issue": "damaged packaging",
+              "quantity": 1
+            }
+          ],
+          "customer_satisfied": true,
+          "resolution": "refund_issued"
+        }
+      }
+    ],
+    "summary": {
+      "total_calls": 1,
+      "successful_calls": 1,
+      "partial_calls": 0,
+      "failed_calls": 0,
+      "total_schemas_processed": 1,
+      "successful_schema_extractions": 1,
+      "failed_schema_extractions": 0
+    }
+  }
+}
+```
+
+---
+
+## Error Responses
 
 <ResponseField name="400 Bad Request">
   Returned when:
-  - Required parameters (schema_id or call_id) are missing
-  - The call has already been processed with this schema
-  - The call does not have a transcript available
+  - No schema parameter provided (`schema_id`, `schema_ids`, or `schema` required)
+  - No call parameter provided (`call_id` or `call_ids` required)
+  - Invalid parameter combinations (e.g., `schema_ids` with inline `schema`)
+  - Empty arrays provided
 </ResponseField>
 
 <ResponseField name="403 Forbidden">
-  Returned when the account does not have enterprise features enabled.
+  Returned when:
+  - Account does not have enterprise features enabled
+  - Attempting to access another organization's calls or schemas
 </ResponseField>
 
 <ResponseField name="404 Not Found">
   Returned when:
-  - The specified call ID is not found
-  - The specified schema ID is not found
-  - Either resource doesn't belong to your organization
+  - Specified call ID(s) not found
+  - Specified schema ID(s) not found
+  - Resources don't belong to your organization
 </ResponseField>
 
-<ResponseExample>
-```json Response
-{
-  "data": {
-    "status": "success",
-    "call_id": "8f2c4a1b-7d9e-4f6a-b3c8-2e5d7a9f1c4b",
-    "schema_id": "4e7b2f8a-6c1d-4a9e-8f3b-7c2e9a4f6d1b",
-    "variables_extracted": 3
-  },
-  "errors": null
-}
-```
-</ResponseExample>
+<ResponseField name="500 Internal Server Error">
+  Returned when an unexpected error occurs starting the workflow.
+</ResponseField>
+
+---
+
+## Best Practices
+
+### Polling Strategy
+
+- Poll every **5-10 seconds** for single-call operations
+- Poll every **10-30 seconds** for batch operations
+- Implement exponential backoff if polling for extended periods
+- Stop polling once status is `COMPLETED`, `FAILED`, `TERMINATED`, or `TIMED_OUT`
+
+### Batch Processing
+
+- Process up to **100 calls** at once for optimal performance
+- For larger batches, split into multiple backfill requests
+- Use multiple schemas in a single request rather than separate requests per schema
+
+### Error Handling
+
+- Check the `result.calls[].status` field for per-call results
+- Review `schemas_processed` array to see which schemas succeeded/failed
+- Use `error_summary` field for quick diagnosis of partial failures
+- Failed extractions don't prevent successful ones from being stored
+
+### Variable Management
+
+- **Newly extracted variables** overwrite previous values with the same name
+- Variables from different schemas are merged together
+- Only variables defined in the backfilled schema are updated
+- Other existing variables remain unchanged
