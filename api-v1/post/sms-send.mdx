@@ -52,6 +52,27 @@ Allows you to create a new conversation, archiving the existing conversation and
 This overrides the webhook for the conversation, instead of using the webhook attached to the phone number.
 </ParamField>
 
+<ParamField body="channel" type="string" required={false}>
+  The channel to send the message on. Defaults to "sms".
+  Allowed values: "sms", "whatsapp".
+</ParamField>
+
+<ParamField body="content_sid" type="string" required={false}>
+  The Twilio SID of the content to send, usually in HXXXX format.
+</ParamField>
+
+<ParamField body="content_variables" type="object" required={false}>
+  The variables to send with the content.
+  Example:
+  ```json
+  {
+    "1": "John",
+    "2": "Smith", 
+    "3": "Premium Plan"
+  }
+  ```
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="object">
@@ -66,8 +87,8 @@ This overrides the webhook for the conversation, instead of using the webhook at
   ID of the conversation that was created or resumed.
 </ResponseField>
 
-<ResponseField name="data.workflow_id" type="string">
-  ID of the Temporal workflow triggered to process the message.
+<ResponseField name="data.message_id" type="string">
+  ID of the message that was sent, if a single message was sent, to track message delivery and status.
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
