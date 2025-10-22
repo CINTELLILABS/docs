@@ -11,10 +11,43 @@ Bland supports **inbound and outbound SIP**, allowing customers to direct calls 
 
 This guide provides:
 
+* Instructions for attaching, verifying, updating, and detaching SIP routes via Bland's API
 * SIP connection details
 * Requirements and security settings
-* Instructions for attaching, verifying, updating, and detaching SIP routes via Bland's API
 * Schema definitions and usage patterns
+
+---
+## Quick Start
+
+Intergrating SIP with Bland requires both sides (you or your provider, and Bland) to perform a set of steps in the correct order to minimize the time taken to get your calls flowing.
+
+**[1] Enabling SIP**
+
+You'll need to to contact support to have `SIP` enabled for your Organization. Without this, you won't be able to continue.
+
+**[2] Idenifying your Numbers**
+
+Bland needs to know ahead of time, the numbers that will be used in either an `Outbound` (also known as as `Origination`) direction, or an `inbound` (also known as `Termination`) direction.
+
+You should work with your SIP Provider to identify these, for your business use case and purpose.
+
+**[3] Declare these Numbers with Bland**
+
+You do not need to port, or transfer numbers to Bland. You just need to simply let us know about them ahead of time.
+
+This can be acompolished in two ways:
+- Configure them visually, on the dashboard.
+- Configure them using our API.
+
+**[4] (Inbound Only) Configure the Number**
+
+Numbers declared to Bland as numbers that will be inbounded to Bland over SIP, behave like a regular inbound number. Configure them exactly as you would a normal inbound number (for example: setting your pathway, persona, or voice!)
+
+**[5] (Outbound Only) Calling Outbound**
+
+To make an outbound call with a SIP number, you simply use them like a regular `from` number. We'll automatically use your SIP information to connect your chosen SIP endpoint, and we'll make the call.
+
+This also applies to warm transfers.
 
 ---
 
@@ -231,27 +264,6 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
       }
     ],
     "service": "sip"
-  }'
-```
-
-### Verify SIP Number (Outbound)
-
-`PUT /sip/verify`
-
-To prove that you own the number, you'll need to perform a one-time verification.
-
-Be ready! Once you make this request, you'll receive a phone call to the specified phone number, from `+14157234000` - which will require you to input the code returned from the below request into your keypad.
-
-<ParamField query="phone_number" type="string">
-  The phone number to verify SIP calling from. It must be attached to your organization first before attempting to verify.
-</ParamField>
-
-```json Example Request
-curl -X PUT https://api.bland.ai/v1/sip/verify \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "+14150000000",
   }'
 ```
 
