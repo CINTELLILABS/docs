@@ -17,6 +17,7 @@ This guide provides:
 * Schema definitions and usage patterns
 
 ---
+
 ## Quick Start
 
 Intergrating SIP with Bland requires both sides (you or your provider, and Bland) to perform a set of steps in the correct order to minimize the time taken to get your calls flowing.
@@ -36,8 +37,8 @@ You should work with your SIP Provider to identify these, for your business use 
 You do not need to port, or transfer numbers to Bland. You just need to simply let us know about them ahead of time.
 
 This can be accomplished in two ways:
-- [Configure them visually, on the dashboard.](https://app.bland.ai/dashboard/sip)
-- [Configure them using our API.](https://docs.bland.ai/enterprise-features/SIP-integration#attach-sip-endpoint)
+- [Configure them visually, on the dashboard](https://app.bland.ai/dashboard/sip) (see [Getting Started](#getting-started) section below for detailed instructions)
+- [Configure them using our API](https://docs.bland.ai/enterprise-features/SIP-integration#attach-sip-endpoint)
 
 **[4] (Inbound Only) Configure the Number**
 
@@ -48,6 +49,104 @@ Numbers declared to Bland as numbers that will be inbounded to Bland over SIP, b
 To make an outbound call with a SIP number, you simply use them like a regular `from` number. We'll automatically use your SIP information to connect to your chosen SIP endpoint, and we'll make the call.
 
 This also applies to warm transfers.
+
+---
+
+## Getting Started
+
+For users who prefer a visual interface over API calls, Bland provides a comprehensive dashboard for managing SIP configurations on a per-number basis. This section walks you through configuring SIP for individual phone numbers using the dashboard.
+
+### Accessing SIP Configuration
+
+To configure SIP for a phone number:
+
+1. Go to your "Phone Numbers" page in the dashboard
+2. Click "Add Existing Number" 
+3. This will take you to the SIP configuration interface at [https://app.bland.ai/dashboard/sip](https://app.bland.ai/dashboard/sip)
+
+Once you've configured a number for SIP, it will appear in your Phone Numbers page with a "Manage SIP" button that allows you to modify the SIP configuration settings.
+
+### SIP Configuration Interface
+
+The SIP configuration page is organized per phone number with two main tabs:
+
+- **Phone Number**: Enter or view the number you're configuring (E.164 format like +14150000000)
+- **Inbound Tab**: Configure how calls coming TO your number via SIP are handled
+- **Outbound Tab**: Configure how calls FROM your number go through your SIP provider (requires [SIP connection details](#sip-connection-details))
+
+### Configuring Inbound SIP
+
+The Inbound tab allows your SIP provider to route calls to Bland for handling.
+
+<img 
+  src="../enterprise-features/enterprise-features-assets/sip-dashboard/add_inbound.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Inbound SIP configuration tab showing enable toggle and headers section"
+/>
+
+**Step 1: Enable Inbound**
+- Toggle the "Enable Inbound" switch to activate inbound SIP for this number
+
+**Step 2: Configure Headers (Optional)**
+If your SIP provider sends custom headers you want to use in your pathways:
+
+- **Header Type**: Choose between "Custom Header" or "UUI Header"
+- **Header Value**: Select either:
+  - **Bland Variable**: Choose from predefined variables (`call_id`, `caller_id`, `destination_number`, `call_duration`, `call_status`)
+  - **Static Value**: Enter a fixed text value
+- **Add/Remove**: Use the "+" button to add headers, trash icon to remove them
+
+**Step 3: Save**
+Click "Save Configuration" to enable inbound SIP for this number.
+
+### Configuring Outbound SIP
+
+The Outbound tab configures calls made FROM your number through your SIP provider.
+
+<img 
+  src="../enterprise-features/enterprise-features-assets/sip-dashboard/main_dashboard.jpeg" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Outbound SIP configuration tab showing SIP endpoint settings and options"
+/>
+
+**Step 1: Enable Outbound**
+- Toggle the "Enable Outbound" switch to activate outbound SIP for this number
+
+**Step 2: Configure SIP Connection**
+When outbound is enabled, configure your SIP provider details:
+
+- **SIP Endpoint**: Your provider's endpoint (e.g., "sip.example.com") - see [SIP connection details](#sip-connection-details) for requirements
+- **Port**: Port number (default: 5060)
+- **SIP Username**: Authentication username (if required by provider)
+- **SIP Password**: Authentication password (if required by provider)  
+- **Transport Protocol**: Choose UDP, TCP, or TLS (see [requirements](#requirements-and-security-settings) for supported options)
+- **Secure Media (SRTP)**: Check this box for encrypted media streams
+
+**Step 3: Configure Headers (Optional)**
+Same header configuration as inbound - map Bland variables to SIP headers or use static values.
+
+**Step 4: Save**
+Click "Save Configuration" to enable outbound SIP for this number.
+
+### Managing SIP Numbers
+
+Once configured, you can manage SIP numbers from your main Phone Numbers page:
+
+<img 
+  src="../enterprise-features/enterprise-features-assets/sip-dashboard/manage_sip_button.png" 
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Phone Numbers page showing Manage SIP button for SIP-configured numbers"
+/>
+
+- Numbers with SIP configuration will show a "Manage SIP" button
+- Click this button to return to the SIP configuration interface for that number
+- You can enable/disable inbound or outbound directions, or modify connection details
+
+### Key Configuration Notes
+
+- **Inbound** only requires enabling the toggle and optional header mapping. Numbers behave like regular inbound numbers (configure pathway, persona, voice, etc in the main dashboard)
+- **Outbound** requires SIP provider endpoint and connection details. Numbers behave like regular outbound numbers which you can use as the "from" value for outbound calls  
+- **Headers** are supported in both directions with custom headers and UUI (User-to-User Information). Map dynamic Bland variables like `caller_id` or use static values to bridge data between Bland pathways and your SIP infrastructure. For detailed header configuration examples, see the [API reference](#api-reference) section
 
 ---
 
