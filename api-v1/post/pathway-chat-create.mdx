@@ -12,28 +12,50 @@ description: "Create an instance of a pathway chat, which can be used to send an
 
 ### Body
 
-<ParamField body="pathway_id" type="string">
+<ParamField body="pathway_id" type="string" required>
 Pathway ID of the pathway to create a chat instance for.
 </ParamField>
 
 <ParamField body="start_node_id" type="string">
-The start node ID of the pathway.
+The start node ID of the pathway. If not provided, the pathway will start from the node marked as the start node in the pathway configuration.
 </ParamField>
 
+<ParamField body="request_data" type="object">
+Custom key-value data to initialize the pathway chat with. This object will be stored as the pathway's initial variables and can be referenced within pathway nodes. The `request_data` must be a valid JSON object (not an array or null).
+
+This works the same as [request_data in v1/calls](/api-v1/post/calls#param-request-data) where variables can be accessed using `{{variable_name}}` syntax within your pathway nodes.
+
+```json
+{
+  "user_name": "John Doe",
+  "account_id": "12345",
+  "preference": "email"
+}
+```
+</ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="data" type="object">
+  Contains the response data for the created pathway chat instance.
+
+  <Expandable title="data properties">
+    <ResponseField name="chat_id" type="uuid">
+      The ID of the chat instance created. This will be used to send and receive messages to the pathway via the `/v1/pathway/chat/:id` endpoint.
+    </ResponseField>
+
+    <ResponseField name="message" type="string">
+      A confirmation message. Will say "Chat instance created successfully" on success.
+    </ResponseField>
+
+    <ResponseField name="variables" type="object | null">
+      The initial variables that were set for this pathway chat instance. This will contain the `request_data` object if it was provided in the request, otherwise it will be `null`.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="chat_id" type="uuid">
-    The ID of the chat instance created. This will be used to send and receive messages to the pathway via the /pathway/chat endpoint.
-</ResponseField>
-
-<ResponseField name="message" type="string">
-    If the status is `success`, the message will say "Chat instance created successfully."
-    Otherwise, if the status is `error`, the message will say "Error creating chat instance."
+<ResponseField name="errors" type="null | array">
+  Will be `null` on success. Contains error details if the request failed.
 </ResponseField>
 
 
@@ -41,9 +63,16 @@ The start node ID of the pathway.
 
 ```json Response
 {
-  "status": "success",
-  "chat_id": "1234567890",
-  "message": "Chat instance created successfully"
+  "data": {
+    "chat_id": "9f8e7d6c-5b4a-3c2d-1e0f-a1b2c3d4e5f6",
+    "message": "Chat instance created successfully",
+    "variables": {
+      "user_name": "John Doe",
+      "account_id": "12345",
+      "preference": "email"
+    }
+  },
+  "errors": null
 }
 ```
 
