@@ -120,6 +120,24 @@ You can filter by time ranges (e.g. Today, Last Week, Last 2 Months) and inspect
 
 Citations can be included in your outbound or inbound calls using the `citation_schema_ids` parameter in the [Send Call](/api-v1/post/calls#param-citation-schema-ids) or [Update Inbound Number](/api-v1/post/inbound-number-update#param-citation-schema-ids) API endpoints.
 
-Additionally, if you would like to receive citations via webhook after a call has finished, you can do so by adding the `citations` event to your live webhook events list in the [Send Call](/api-v1/post/calls#param-webhook-events) or [Update Inbound Number](/api-v1/post/inbound-number-update#param-webhook-events) API endpoints.
+### Webhook Integration Options
+
+You have two options for receiving citation data via webhooks:
+
+#### Option 1: Separate Citation Webhooks (Default)
+Citations are sent in a separate webhook event immediately after processing. To enable this:
+- Add `citations` to your webhook events in the [Send Call](/api-v1/post/calls#param-webhook-events) or [Update Inbound Number](/api-v1/post/inbound-number-update#param-webhook-events) API endpoints
+
+#### Option 2: Delayed Post-Call Webhook with Citations
+Delay the main post-call webhook until citations are processed, then receive all data (including citations) in a single combined webhook. To enable this:
+
+1. **API Configuration**: Include `citations` in your webhook events
+2. **Dashboard Setting**: Navigate to **Analytics → Citations** and toggle on "Delay post call webhook"
+
+<img 
+  src="../tutorials/tutorials-assets/delay_post_call_webhook.png"
+  style={{ width: "60%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem", marginLeft: "5%" }}
+  alt="Delay post call webhook toggle in Citations Settings"
+/>
 
 > **Note:** Citations will only be processed on calls with a status of "completed". Calls that are unanswered, busy, or fail for other reasons will not generate citation data.
