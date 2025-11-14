@@ -317,6 +317,39 @@ Every warm transfer is logged in your call logs dashboard. The parent call appea
 
 ---
 
+## Warm Transfer State Definitions
+
+Understanding warm transfer states is crucial for building integrations with [post-call webhooks](/tutorials/post-call-webhooks). These states help you determine what happened during the transfer process and build appropriate business logic for different outcomes.
+
+### Overall Transfer States
+
+The overall `warm_transfer_call.state` represents the final outcome of the entire warm transfer process. This is the primary state you should use for business logic and customer disposition tracking.
+
+| State | Description | When It Occurs |
+|-------|-------------|----------------|
+| `STARTED` | Transfer process has begun | Initial state when warm transfer is triggered |
+| `MERGED` | Successfully connected with live agent | Agent answered and calls were merged together |
+| `CANCELLED` | Transfer was cancelled | Customer hung up during the transfer process |
+| `NO_ANSWER` | No agent answered the transfer | All transfer attempts failed, no agent pickup |
+| `TIMED_OUT` | Transfer exceeded timeout limit | Timeout reached before successful connection |
+
+### Individual Proxy Call States
+
+Each attempt to reach an agent has its own state in the `proxy_agent_calls` array. These provide detailed insight into individual agent connection attempts.
+
+| State | Description | Typical Cause |
+|-------|-------------|---------------|
+| `WAITING` | Awaiting to be called | Agent in queue, not yet attempted |
+| `ATTEMPTING` | Call has started | System is dialing the agent |
+| `QUEUED` | Sitting in merge queue | Call connected, preparing to merge |
+| `STARTED` | Waiting for call to be answered | Agent's phone is ringing |
+| `MERGED` | Call has been merged | Successfully connected to agent |
+| `FAILED` | Call attempt failed | Network/system error occurred |
+| `HUNG_UP` | Agent call was hung up | Agent wasn't available or declined |
+| `CANCELLED` | Call was cancelled | Parent call ended, cancelling attempt |
+
+---
+
 ## Getting Started
 
 1. **Enable warm transfer** on your Transfer Call node
