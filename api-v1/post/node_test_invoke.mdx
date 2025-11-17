@@ -1,0 +1,80 @@
+---
+title: "Invoke Node Test Run"
+api: "POST https://api.bland.ai/v1/node_test/invoke"
+description: "Start a node test run for a given node and pathway with a new prompt and sample conversations."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="new_prompt" type="string" required>
+  The new prompt to test for this node. This will be used to simulate the agent's responses against the provided and auto-selected conversations.
+</ParamField>
+
+<ParamField body="conversations" type="array" required>
+  Array of conversation references to include in the test. The system may automatically add up to 4 additional recent completed calls for the same node and pathway.
+</ParamField>
+
+<ParamField body="conversations[].id" type="string" required>
+  Unique identifier of a call to include in the test run.
+</ParamField>
+
+<ParamField body="conversations[].type" type="string" required>
+  Type of the conversation. We only support <code>"call"</code> for now.
+</ParamField>
+
+<ParamField body="node_id" type="string" required>
+  Identifier of the node to test within the specified pathway.
+</ParamField>
+
+<ParamField body="pathway_id" type="string" required>
+  Identifier of the pathway that the node and conversations belong to.
+</ParamField>
+
+<ParamField body="n_permutations" type="number">
+  Optional number of permutations to generate for each conversation. If omitted, this defaults to <code>5</code>. The total generations per conversation will be <code>n_permutations + 1</code> (one for the original user messages plus one per permutation).
+</ParamField>
+
+### Response
+
+<ResponseField name="data.run_id" type="string">
+  Identifier of the created node test run. Use this ID with <code>GET /v1/node_test/run/:id</code> to retrieve the full results.
+</ResponseField>
+
+
+<RequestExample>
+```json Request
+{
+  "new_prompt": "You are the best financial advisor...",
+  "conversations": [
+    {
+      "type": "call",
+      "id": "330d8a20-27bc-4d00-b67a-8474c9a6d4e1"
+    },
+    {
+      "type": "call",
+      "id": "906f16de-2719-4b7e-864b-a4b002586e7c"
+    }
+  ],
+  "node_id": "a7bbd409-504b-4ba3-a9d1-12f6bc270f58",
+  "pathway_id": "05f4b269-e79a-4825-b4cd-7778f782bfad",
+  "n_permutations": 5
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "run_id": "727a85f1-1959-4ec1-95a4-248a2eecf1ae"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

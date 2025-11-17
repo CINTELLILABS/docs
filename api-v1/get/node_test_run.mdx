@@ -1,0 +1,196 @@
+---
+title: "Get Node Test Run"
+api: "GET https://api.bland.ai/v1/node_test/run/:id"
+description: "Retrieve a node test run."
+---
+
+### Path
+
+<ParamField path="id" type="string" required>
+  The ID of the node test run to retrieve.
+</ParamField>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the node test run.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  Organization ID that owns this node test run.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp when the node test run was created.
+</ResponseField>
+
+<ResponseField name="data.finished_at" type="string">
+  ISO timestamp when the node test run finished.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Current status of the node test run. Possible values are <code>"COMPLETED"</code>, <code>"PENDING"</code>, <code>"CANCELLED"</code>, and <code>"ERROR"</code>.
+</ResponseField>
+
+<ResponseField name="data.pathway_id" type="string">
+  Identifier of the pathway this node belongs to.
+</ResponseField>
+
+<ResponseField name="data.node_id" type="string">
+  Identifier of the node that was tested within the pathway.
+</ResponseField>
+
+<ResponseField name="data.input" type="object">
+  Input configuration used for this node test run.
+</ResponseField>
+
+<ResponseField name="data.input.prompt" type="string">
+  The instruction or system prompt used when testing the node.
+</ResponseField>
+
+<ResponseField name="data.input.conversations" type="array">
+  Array of conversation references used as context for the node test.
+</ResponseField>
+
+<ResponseField name="data.input.conversations[].id" type="string">
+  Unique identifier of a conversation used in the test.
+</ResponseField>
+
+<ResponseField name="data.input.conversations[].type" type="string">
+  The type of conversation (for example, <code>"call"</code>).
+</ResponseField>
+
+
+<ResponseField name="data.result" type="array">
+  Array of result objects, one per evaluated conversation.
+</ResponseField>
+
+<ResponseField name="data.result[].conversation_id" type="string">
+  ID of the conversation this result corresponds to.
+</ResponseField>
+<ResponseField name="data.result[].total_generations" type="number">
+  Total number of generations produced for this conversation during the test run. For example, if I invoke the test with 5 permutations, then this value will be 6, since we need to generate 5 simulations for the permutations and one generation for the original user messages.
+</ResponseField>
+
+<ResponseField name="data.result[].data" type="array">
+  Array of generation batches for this conversation.
+</ResponseField>
+
+<ResponseField name="data.result[].data[].is_original" type="boolean">
+  If true, then this result is the original user and agent interaction on the node.
+</ResponseField>
+
+<ResponseField name="data.result[].data[].is_permutation" type="boolean">
+  If true, then this result is a generation using a permutation/variant of the original user inputs.
+</ResponseField>
+
+<ResponseField name="data.result[].data[].output" type="array">
+  Ordered list of message turns (user/assistant) in this generated interaction.
+</ResponseField>
+
+<ResponseField name="data.result[].data[].output[].role" type="string">
+  Role of the message author (<code>"user"</code> or <code>"assistant"</code>).
+</ResponseField>
+
+<ResponseField name="data.result[].data[].output[].node_id" type="string">
+  Node identifier associated with this message turn.
+</ResponseField>
+
+<ResponseField name="data.result[].data[].output[].content" type="string">
+  Text content of the message.
+</ResponseField>
+
+<ResponseField name="data.result[].generating_new_prompt" type="boolean">
+  An indicator to show if the system is in the process of simulating the agent response with the new prompt and original user inputs.
+</ResponseField>
+
+<ResponseField name="data.result[].generating_permutations" type="boolean">
+  An indicator to show if the system is in the process of simulating the agent response with the new prompt and user permutations.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "727a85f1-1959-4ec1-95a4-248a2eecf1ae",
+    "org_id": "99a0d526-6910-4f31-92b8-72834d0827fb",
+    "created_at": "2025-11-17T14:47:40.174Z",
+    "finished_at": "2025-11-17T14:48:11.399Z",
+    "status": "COMPLETED",
+    "pathway_id": "05f4b269-e79a-4825-b4cd-7778f782bfad",
+    "node_id": "a7bbd409-504b-4ba3-a9d1-12f6bc270f58",
+    "input": {
+      "prompt": "Tell the user how cool they are and also what they think of the month of December",
+      "conversations": [
+        {
+          "id": "b7d1eab7-f9a2-4e4d-b3ac-4e744cf93d2b",
+          "type": "call"
+        },
+        {
+          "id": "f9b44639-4de1-48d9-97ed-08b7fcb6eb1c",
+          "type": "call"
+        },
+        {
+          "id": "8c361b43-efa2-49e2-84a2-60ede375161b",
+          "type": "call"
+        },
+        {
+          "id": "a915cdce-fd3e-4f9f-b0bd-b5f6ee03ef1f",
+          "type": "call"
+        }
+      ]
+    },
+    "result": [
+      {
+        "conversation_id": "b7d1eab7-f9a2-4e4d-b3ac-4e744cf93d2b",
+        "data": [
+          {
+            "output": [
+              {
+                "role": "user",
+                "node_id": "4f74e9a9-6d06-4756-8379-4d06220a4bda",
+                "content": "I work at a company that makes boats. I'm a boat builder."
+              },
+              {
+                "role": "assistant",
+                "node_id": "a7bbd409-504b-4ba3-a9d1-12f6bc270f58",
+                "content": "Gotcha. Okay, so, uh, what would you say are your biggest strengths?"
+              }
+            ],
+            "is_original": true,
+            "is_permutation": false
+          },
+          {
+            "output": [
+              {
+                "role": "user",
+                "nodeId": "4f74e9a9-6d06-4756-8379-4d06220a4bda",
+                "content": "I work at a company that makes boats. I'm a boat builder."
+              },
+              {
+                "role": "assistant",
+                "nodeId": "a7bbd409-504b-4ba3-a9d1-12f6bc270f58",
+                "content": "Wow, that sounds like a really cool job. That's pretty unique. You must have some interesting stories. Anyways, what would you say are your biggest strengths?"
+              }
+            ],
+            "is_original": false,
+            "is_permutation": false
+          }
+        ],
+        "total_generations": 1,
+        "generating_new_prompt": false,
+        "generating_permutations": false,
+      }
+      // ...
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
