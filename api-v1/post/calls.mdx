@@ -18,7 +18,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 <ParamField header="encrypted_key" type="string">
   A special key for using a BYOT (Bring Your Own Twilio) account. Only required for sending calls from your own Twilio account.
-  
+
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
 
@@ -50,9 +50,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 </ParamField>
 
 <ParamField body="pathway_id" type="string">
-  This is the pathway ID for the pathway you have created on our dev portal. You
-  can access the ID of your pathways by clicking the 'Copy ID' button of your
-  pathway [here](https://app.bland.ai/home?page=convo-pathways)
+  This is the pathway ID for the pathway you have created on our dev portal. You can access the ID of your pathways by clicking the 'Copy ID' button of your pathway [here](https://app.bland.ai/home?page=convo-pathways)
 
   Note: Certain parameters do not apply when using pathways.
 
@@ -92,7 +90,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="persona_id" type="string">
   The ID of the persona to use for the call.
 
-  Personas act as pre-configured templates that automatically apply a configuration when you pass a persona_id to an outbound call. Think of them as "call presets" that you can reuse across multiple calls. 
+  Personas act as pre-configured templates that automatically apply a configuration when you pass a persona_id to an outbound call. Think of them as "call presets" that you can reuse across multiple calls.
 
   When using a persona_id, any parameters specified in your request body will override the corresponding parameters from the persona's configuration.
 
@@ -123,8 +121,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 </ParamField>
 
 <ParamField body="language" default="en-US" type="string">
-  Select a supported language of your choice.
-  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
+  Select a supported language of your choice. Optimizes every part of our API for that language - transcription, speech, and other inner workings.
 
   <Accordion title="Expand to view language options">
     The available language options are as follows:
@@ -181,8 +178,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `sk` - Slovak
     - `auto` - Auto Detect (English & Spanish)
 
-    <sup>1</sup> The Bland Babel Transcription Engine (BETA) is our new proprietary transcription engine! Babel can handle multilingual conversations by identifying and switching languages on the fly. It's now in beta and available under the "babel" language mode.
-    **Note: For pathway calls and prompts, make sure to prompt your agent to respond in the language they are spoken to.**
+    <sup>1</sup> The Bland Babel Transcription Engine (BETA) is our new proprietary transcription engine! Babel can handle multilingual conversations by identifying and switching languages on the fly. It's now in beta and available under the "babel" language mode. **Note: For pathway calls and prompts, make sure to prompt your agent to respond in the language they are spoken to.**
   </Accordion>
 </ParamField>
 
@@ -192,7 +188,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   When wait_for_greeting is set to true, the agent will wait for the call recipient to speak first before responding.
 </ParamField>
 
-<ParamField body="pronunciation_guide" type="array" description="An array of objects where each object specifies a word and its pronunciation. Additional attributes can be added as needed.">
+<ParamField body="pronunciation_guide" type="array">
   The pronunciation guide is an `array` of `objects` that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
 
   ```json
@@ -213,14 +209,10 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 
   <Accordion title="Object Parameters">
-    - `word`
-      — the word you want to guide the LLM on how to pronounce
-    - `pronunciation`
-      — how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
-    - `case_sensitive`
-      — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
-    - `spaced` 
-      — whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
+    - `word` — the word you want to guide the LLM on how to pronounce
+    - `pronunciation` — how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
+    - `case_sensitive` — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+    - `spaced` — whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
   </Accordion>
 </ParamField>
 
@@ -235,10 +227,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
   Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
 
-  Recommended range: 50-200
-  •	50: Extremely quick, back and forth conversation
-  •	100: Balanced to respond at a natural pace
-  •	200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
+  Recommended range: 50-200 •	50: Extremely quick, back and forth conversation •	100: Balanced to respond at a natural pace •	200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
 
   Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
 </ParamField>
@@ -251,7 +240,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
 </ParamField>
 
-<ParamField body="dialing_strategy" type="object" optional="true">
+<ParamField body="dialing_strategy" type="object">
   Controls how the caller number (`from`) is selected when placing an outbound call.
 
   Use this field to influence how the system chooses a number that appears local or relevant to the callee, improving pickup rates. There are two supported strategies:
@@ -261,6 +250,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   Automatically selects a `from` number that matches the callee's area code for **US-based calls**. You must have purchased a local dialing add-on in the [add-ons section](https://app.bland.ai/dashboard/add-ons).
 
   Example:
+
   ```json
   {
     "dialing_strategy": { "type": "local" }
@@ -268,11 +258,13 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 
   #### 2. `custom_pooling`
-  Selects a number from your own pre-configured pool of phone numbers. Designed for organizations that want full control over the caller IDs being used. 
+
+  Selects a number from your own pre-configured pool of phone numbers. Designed for organizations that want full control over the caller IDs being used.
 
   This is an enterprise only feature, to use this feature contact your Bland representative or reach out to sales.
 
   Example:
+
   ```json
   {
     "dialing_strategy": {
@@ -348,6 +340,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   Add custom tools and knowledge bases to your call for your agent to call upon.
 
   Example:
+
   ```json
   {
     "tools": [
@@ -451,7 +444,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
-
 </ParamField>
 
 ### Post Call Parameters
@@ -460,6 +452,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   (Optional) Custom instructions for how the call summary should be generated after the call completes. Use this to provide specific guidance or context for the AI when writing the post-call summary. Maximum length: 2000 characters.
 
   Example:
+
   ```json
   {
     "summary_prompt": "Summarize the call in 2-3 sentences, focusing on the customer's main concern and any next steps discussed."
@@ -490,15 +483,15 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 </ParamField>
 
 <ParamField body="dispositions" type="string[]">
-A list of possible outcome tags (dispositions) you define. After the call ends, the AI reviews the transcript and picks **one** of these tags to describe how the call went.
+  A list of possible outcome tags (dispositions) you define. After the call ends, the AI reviews the transcript and picks **one** of these tags to describe how the call went.
 
-Tag selection is based **only** on the transcript, no metadata or external inputs are used.
+  Tag selection is based **only** on the transcript, no metadata or external inputs are used.
 
-The chosen tag will appear in the `disposition_tag` field of the call data.
+  The chosen tag will appear in the `disposition_tag` field of the call data.
 
   <Accordion title="Built-in Disposition Tags">
     If no custom `dispositions` are provided, the AI will automatically select from these built-in tags:
-    
+
     - `INTERESTED` - Customer shows clear interest in the offering
     - `NOT_INTERESTED` - Customer expresses lack of interest
     - `FOLLOW_UP_REQUIRED` - Customer needs additional follow-up
@@ -510,13 +503,12 @@ The chosen tag will appear in the `disposition_tag` field of the call data.
     - `NO_CONTACT_MADE` - Unable to establish meaningful contact
     - `COMPLETED_ACTION` - Customer completed the desired action
     - `DO_NOT_CONTACT` - Customer requested no future contact
-    - `AGENT_ENDED_CALL` - Call ended by AI (auto-assigned for calls >2 minutes without transcript)
+    - `AGENT_ENDED_CALL` - Call ended by AI (auto-assigned for calls \>2 minutes without transcript)
     - `NO_ANSWER` - Call was not answered (auto-assigned by system)
     - `BUSY` - Number was busy (auto-assigned by system)
     - `CANCELED` - Call was canceled (auto-assigned by system)
     - `FAILED` - Call failed to connect (auto-assigned by system)
   </Accordion>
-
   Example:
 
   ```json
@@ -531,17 +523,16 @@ The chosen tag will appear in the `disposition_tag` field of the call data.
 <ParamField body="request_data" type="object">
   Custom key-value data you send with the call. This information is available as variables inside your prompt, pathway, or tools — but only if the call is answered.
 
-```json
-  {
-    "task": "Say hello to the user, who's name is {{name}}",
-    "request_data": {
-      "name": "John Doe"
+  ```json
+    {
+      "task": "Say hello to the user, who's name is {{name}}",
+      "request_data": {
+        "name": "John Doe"
+      }
     }
-  }
-```
+  ```
 
-In this case, the AI would say: "Hello, John".
-
+  In this case, the AI would say: "Hello, John".
 </ParamField>
 
 <ParamField body="metadata" type="object">
@@ -559,7 +550,6 @@ In this case, the AI would say: "Hello, John".
     }
   }
   ```
-
 </ParamField>
 
 <ParamField body="webhook" type="string">
@@ -570,13 +560,13 @@ In this case, the AI would say: "Hello, John".
   Specify which events you want to stream to the webhook, during the call.
 
   <Info>
-  **Citation Webhook Requirements:** 
-  - Include `citations` for any citation webhooks (sent separately after call completion)  
-  - For delayed post-call webhooks with citations, you need `citations` + dashboard delay toggle enabled
-  
-  See the [Citations documentation](/enterprise-features/citations#webhook-integration-options) for complete setup instructions.
-  </Info>
+    **Citation Webhook Requirements:**
 
+    - Include `citations` for any citation webhooks (sent separately after call completion)
+    - For delayed post-call webhooks with citations, you need `citations` + dashboard delay toggle enabled
+
+    See the [Citations documentation](/enterprise-features/citations#webhook-integration-options) for complete setup instructions.
+  </Info>
   Options:
 
   - `queue`
@@ -587,191 +577,197 @@ In this case, the AI would say: "Hello, John".
   - `dynamic_data`
   - `citations` (Required for any citation webhooks)
 
-Example payloads:
+  Example payloads:
+
   <CodeGroup>
 
-```json queue
-// ex 1
-{
-  "message": "Call enqueued",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "queue",
-  "log_level": "info"
-}
-```
+  ```json queue
+  // ex 1
+  {
+    "message": "Call enqueued",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "queue",
+    "log_level": "info"
+  }
+  ```
 
-```json call
-// ex 1
-{
-  "message": "Call connected",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "call",
-  "log_level": "info"
-}
-// ex 2
-{
-  "message": "Sending first sentence: Hello, thank you for reaching out. I'd like to get to know you a bit better. How are you feeling today?",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "call",
-  "log_level": "info"
-}
-// ex 3
-{
-  "message": "Agent speech: Hello, thank you for reaching out.",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "call",
-  "log_level": "info"
-}
-// ex 4
-{
-  "message": "Handling user speech: Yeah. I'm thirty six. And I'm five foot nine.",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "call",
-  "log_level": "info"
-}
-// ex 5
-{
-  "message": "Webhook Response: 200  | Webhook Response Data: [object Object] | Response Time: 689ms",
-  "call_id": "87654321-4321-4321-4321-cba987654321",
-  "category": "call",
-  "log_level": "info"
-}
-```
+  
+  ```json call
+  // ex 1
+  {
+    "message": "Call connected",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "call",
+    "log_level": "info"
+  }
+  // ex 2
+  {
+    "message": "Sending first sentence: Hello, thank you for reaching out. I'd like to get to know you a bit better. How are you feeling today?",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "call",
+    "log_level": "info"
+  }
+  // ex 3
+  {
+    "message": "Agent speech: Hello, thank you for reaching out.",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "call",
+    "log_level": "info"
+  }
+  // ex 4
+  {
+    "message": "Handling user speech: Yeah. I'm thirty six. And I'm five foot nine.",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "call",
+    "log_level": "info"
+  }
+  // ex 5
+  {
+    "message": "Webhook Response: 200  | Webhook Response Data: [object Object] | Response Time: 689ms",
+    "call_id": "87654321-4321-4321-4321-cba987654321",
+    "category": "call",
+    "log_level": "info"
+  }
+  ```
 
-```json latency
-// ex 1
-{
-  "message": "TTS: 218ms",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "latency",
-  "log_level": "performance"
-}
-// ex 2
-{
-  "message": "LLM: 266ms",
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "category": "latency",
-  "log_level": "performance"
-}
-```
+  
+  ```json latency
+  // ex 1
+  {
+    "message": "TTS: 218ms",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "latency",
+    "log_level": "performance"
+  }
+  // ex 2
+  {
+    "message": "LLM: 266ms",
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "category": "latency",
+    "log_level": "performance"
+  }
+  ```
 
-```json webhook
-{
-  "message": "Storing dynamic data messages: \n\n answer : \"true\"",
-  "call_id": "87654321-4321-4321-4321-cba987654321",
-  "category": "call",
-  "log_level": "info"
-}
-```
+  
+  ```json webhook
+  {
+    "message": "Storing dynamic data messages: \n\n answer : \"true\"",
+    "call_id": "87654321-4321-4321-4321-cba987654321",
+    "category": "call",
+    "log_level": "info"
+  }
+  ```
 
-```json tool
-{
-  "message": "Executing custom tool: Test Tool 4 with input: [object Object]",
-  "call_id": "abcdef12-3456-7890-abcd-ef1234567890",
-  "category": "call",
-  "log_level": "info"
-}
-```
+  
+  ```json tool
+  {
+    "message": "Executing custom tool: Test Tool 4 with input: [object Object]",
+    "call_id": "abcdef12-3456-7890-abcd-ef1234567890",
+    "category": "call",
+    "log_level": "info"
+  }
+  ```
 
-```json dynamic_data
-{
-  "message": "Storing dynamic data: \n\n vector_data : {\"data\":{\"results\":[{\"id\":\"fedcba98-7654-3210-fedc-ba9876543210\",\"input_text\":\"Here are details on the restaurant...\",\"similarity\":0.103339002763233,\"chunk_index\":0}]},\"errors\":null}",
-  "call_id": "abcdef12-3456-7890-abcd-ef1234567890",
-  "category": "call",
-  "log_level": "info"
-}
-```
+  
+  ```json dynamic_data
+  {
+    "message": "Storing dynamic data: \n\n vector_data : {\"data\":{\"results\":[{\"id\":\"fedcba98-7654-3210-fedc-ba9876543210\",\"input_text\":\"Here are details on the restaurant...\",\"similarity\":0.103339002763233,\"chunk_index\":0}]},\"errors\":null}",
+    "call_id": "abcdef12-3456-7890-abcd-ef1234567890",
+    "category": "call",
+    "log_level": "info"
+  }
+  ```
 
-```json citations
-{
-  "call_id": "12345678-1234-1234-1234-123456789abc",
-  "user_id": "11111111-2222-3333-4444-555555555555",
-  "event_type": "citations",
-  "timestamp": "2025-07-03T16:41:15.231Z",
-  "citations": [
-    {
-      "call_id": "12345678-1234-1234-1234-123456789abc",
-      "variable_name": "User height",
-      "variable_type": "boolean",
-      "value": true,
-      "cited_utterances": [
-        {
-          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-          "idx": 3,
-          "start_time": 24.096,
-          "end_time": 27.424,
-          "confidence": 0.17166666666666666,
-          "channel": 1,
-          "transcript": "I am 36 and I am 5'9\".",
-          "speaker_id": "SPEAKER_1_0",
-          "speaker_name": null,
-          "speaker_description": null,
-          "topics": [
-            "customer_information_provided"
-          ],
-          "topics_meta": "{\"customer_information_provided\":\"customer providing personal details\"}",
-          "utterance_type": "answer"
-        }
-      ],
-      "schema_id": "99999999-8888-7777-6666-555555555555"
-    },
-    {
-      "call_id": "12345678-1234-1234-1234-123456789abc",
-      "variable_name": "Caller Age",
-      "variable_type": "number",
-      "value": 36,
-      "cited_utterances": [
-        {
-          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-          "idx": 3,
-          "start_time": 24.096,
-          "end_time": 27.424,
-          "confidence": 0.17166666666666666,
-          "channel": 1,
-          "transcript": "I am 36 and I am 5'9\".",
-          "speaker_id": "SPEAKER_1_0",
-          "speaker_name": null,
-          "speaker_description": null,
-          "topics": [
-            "customer_information_provided"
-          ],
-          "topics_meta": "{\"customer_information_provided\":\"customer providing personal details\"}",
-          "utterance_type": "answer"
-        },
-        {
-          "id": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
-          "idx": 4,
-          "start_time": 30.56,
-          "end_time": 35.455,
-          "confidence": 0.5672727272727273,
-          "channel": 0,
-          "transcript": "All right. So you're 36 years old and five foot nine. That's great. How's your day been so far? Anything exciting happened?",
-          "speaker_id": "SPEAKER_0_0",
-          "speaker_name": null,
-          "speaker_description": null,
-          "topics": [
-            "day_review_inquiry"
-          ],
-          "topics_meta": "{\"day_review_inquiry\":\"agent inquiring about the customer's day and any exciting events\"}",
-          "utterance_type": "question"
-        }
-      ],
-      "schema_id": "99999999-8888-7777-6666-555555555555"
-    },
-    {
-      "call_id": "12345678-1234-1234-1234-123456789abc",
-      "variable_name": "Caller feeling",
-      "variable_type": "string",
-      "value": null,
-      "cited_utterances": [],
-      "schema_id": "99999999-8888-7777-6666-555555555555"
-    }
-  ]
-}
-```
+  
+  ```json citations
+  {
+    "call_id": "12345678-1234-1234-1234-123456789abc",
+    "user_id": "11111111-2222-3333-4444-555555555555",
+    "event_type": "citations",
+    "timestamp": "2025-07-03T16:41:15.231Z",
+    "citations": [
+      {
+        "call_id": "12345678-1234-1234-1234-123456789abc",
+        "variable_name": "User height",
+        "variable_type": "boolean",
+        "value": true,
+        "cited_utterances": [
+          {
+            "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "idx": 3,
+            "start_time": 24.096,
+            "end_time": 27.424,
+            "confidence": 0.17166666666666666,
+            "channel": 1,
+            "transcript": "I am 36 and I am 5'9\".",
+            "speaker_id": "SPEAKER_1_0",
+            "speaker_name": null,
+            "speaker_description": null,
+            "topics": [
+              "customer_information_provided"
+            ],
+            "topics_meta": "{\"customer_information_provided\":\"customer providing personal details\"}",
+            "utterance_type": "answer"
+          }
+        ],
+        "schema_id": "99999999-8888-7777-6666-555555555555"
+      },
+      {
+        "call_id": "12345678-1234-1234-1234-123456789abc",
+        "variable_name": "Caller Age",
+        "variable_type": "number",
+        "value": 36,
+        "cited_utterances": [
+          {
+            "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "idx": 3,
+            "start_time": 24.096,
+            "end_time": 27.424,
+            "confidence": 0.17166666666666666,
+            "channel": 1,
+            "transcript": "I am 36 and I am 5'9\".",
+            "speaker_id": "SPEAKER_1_0",
+            "speaker_name": null,
+            "speaker_description": null,
+            "topics": [
+              "customer_information_provided"
+            ],
+            "topics_meta": "{\"customer_information_provided\":\"customer providing personal details\"}",
+            "utterance_type": "answer"
+          },
+          {
+            "id": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+            "idx": 4,
+            "start_time": 30.56,
+            "end_time": 35.455,
+            "confidence": 0.5672727272727273,
+            "channel": 0,
+            "transcript": "All right. So you're 36 years old and five foot nine. That's great. How's your day been so far? Anything exciting happened?",
+            "speaker_id": "SPEAKER_0_0",
+            "speaker_name": null,
+            "speaker_description": null,
+            "topics": [
+              "day_review_inquiry"
+            ],
+            "topics_meta": "{\"day_review_inquiry\":\"agent inquiring about the customer's day and any exciting events\"}",
+            "utterance_type": "question"
+          }
+        ],
+        "schema_id": "99999999-8888-7777-6666-555555555555"
+      },
+      {
+        "call_id": "12345678-1234-1234-1234-123456789abc",
+        "variable_name": "Caller feeling",
+        "variable_type": "string",
+        "value": null,
+        "cited_utterances": [],
+        "schema_id": "99999999-8888-7777-6666-555555555555"
+      }
+    ]
+  }
+  ```
 
-</CodeGroup>
-
+  </CodeGroup>
 </ParamField>
 
 <ParamField body="dynamic_data" type="object[]">
@@ -825,15 +821,14 @@ Example payloads:
   ```
 </ParamField>
 
-<ParamField body="ignore_button_press" type="boolean" default="false">
-  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0-9, *, #).  
-  This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.  
+<ParamField body="ignore_button_press" default="false" type="boolean">
+  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0-9, \*, #).\
+  This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.\
   Useful when your agent should handle the entire call conversationally, without responding to button presses.
 </ParamField>
 
 <ParamField body="precall_dtmf_sequence" type="string">
-  A sequence of DTMF digits that will be played before the call starts. Acceptable characters are 0-9, \*, #, and w, where w is a pause of 0.5 seconds.
-  Example:
+  A sequence of DTMF digits that will be played before the call starts. Acceptable characters are 0-9, \*, #, and w, where w is a pause of 0.5 seconds. Example:
 
   ```json
     {
@@ -859,7 +854,6 @@ Example payloads:
 <ResponseField name="batch_id" type="string">
   The batch ID of the call (present only if status is `success`).
 </ResponseField>
-
 
 <ResponseField name="errors" type="array">
   For validation errors, a detailed list of each field with an error and it's error message.
@@ -896,1021 +890,927 @@ Example payloads:
 ## Error Codes Reference
 
 <Accordion title="View All Error Codes" icon="warning">
-This section documents all possible error codes and HTTP status codes you can receive when making a POST request to `/v1/calls`.
-
-### Authentication & Authorization Errors
-
-<ResponseField name="401 - AUTH_FAILURE" type="object">
-  Authentication failed due to missing or invalid API key.
-  
-  ```json
-  {
-    "data": null,
-    "errors": [
-      {
-        "error": "AUTH_FAILURE", 
-        "message": "Unauthorized"
-      }
-    ]
-  }
-  ```
-  
-  **Common causes:**
-  - Missing Authorization header
-  - Invalid API key
-  - Expired API key
-</ResponseField>
-
-
-<ResponseField name="403 - Account Flagged" type="object">
-  Account has been flagged or banned for security purposes.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "The Bland Team has flagged your account for security purposes. As a precautionary measure against recent heightened malicious use cases, we have flagged your account for review and temporarily blocked from dispatching calls. If you need to be unblocked urgently, please email us at hello@bland.ai with your account phone number."
-  }
-  ```
-</ResponseField>
-
-### Rate Limiting Errors (HTTP 429)
-
-<ResponseField name="429 - Call Frequency Limit" type="object">
-  Calls sent too frequently to the same number.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Calls can only be sent every 10 seconds to the same number. Please try again in a few seconds."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="429 - General Rate Limit" type="object">
-  Rate limit exceeded for your account.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Rate limit exceeded"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="429 - Blacklisted Number" type="object">
-  Attempting to call a blacklisted number.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "This number is blacklisted."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="429 - New Customer Rate Limit" type="object">
-  Rate limits for newly created accounts.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Rate limit exceeded for newly created accounts. Please try again soon."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="429 - International Rate Limit" type="object">
-  International calling rate limit exceeded.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "International rate limit exceeded for your account type."
-  }
-  ```
-</ResponseField>
-
-### Parameter Validation Errors (HTTP 400)
-
-<ResponseField name="400 - Missing Required Parameter" type="object">
-  Required parameters are missing from the request.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid parameters. Error: [\"Missing required parameter: phone_number.\"]",
-    "errors": ["Missing required parameter: phone_number."]
-  }
-  ```
-  
-  **Required parameters:**
-  - `phone_number` (always required)
-  - `task` (required if `pathway_id` is not provided)
-</ResponseField>
-
-<ResponseField name="400 - Invalid Field Types" type="object">
-  Field values are the wrong data type according to TypeBox validation.
-  
-  ```json
-  {
-    "status": "error", 
-    "message": "Record must be a boolean"
-  }
-  ```
-  
-  **Common type validation errors:**
-  - `"Task must be a string"`
-  - `"Record must be a boolean"`
-  - `"Max duration must be a number"`
-  - `"Temperature must be a number"`
-  - `"Tools must be an array"`
-  - `"Dynamic data must be an array"`
-  - `"Metadata must be a record of string keys and any values"`
-</ResponseField>
-
-<ResponseField name="400 - Invalid Voicemail Action" type="object">
-  Voicemail action must be one of the allowed values.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid voicemail action. Must be one of: hangup, leave_message, ignore"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Number Range Validation" type="object">
-  Numeric values are outside their allowed ranges.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Max duration must be at least 1"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid DTMF Sequence" type="object">
-  Precall DTMF sequence contains invalid characters.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Precall DTMF sequence must be a valid DTMF sequence"
-  }
-  ```
-  
-  **Valid DTMF characters:** 0-9, *, #, w (wait)
-</ResponseField>
-
-<ResponseField name="400 - Invalid Date Format" type="object">
-  Start time must be a valid ISO date-time string.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Start time must be a valid date-time format"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Webhook URL" type="object">
-  Webhook URL format is invalid.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Webhook must be a valid URI"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid From Number Format" type="object">
-  From number doesn't match phone number pattern.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid from number format"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Transfer Phone Format" type="object">
-  Transfer phone number format validation error.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid transfer phone number format"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Transfer List Format" type="object">
-  Transfer list contains phone numbers with invalid format.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid phone number format in transfer list"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Additional Properties Not Allowed" type="object">
-  Request contains fields that are not allowed in the schema.
-  
-  ```json
-  {
-    "status": "error", 
-    "message": "Additional properties are not allowed"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Phone Number" type="object">
-  Phone number format is invalid, missing country code, or invalid length.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid phone number. Please include a country code if outside the US."
-  }
-  ```
-  
-  **Other variations:**
-  ```json
-  {
-    "status": "error", 
-    "message": "Invalid phone number. `+1234567890123456789` has these validation errors: [specific errors]"
-  }
-  ```
-  
-  ```json
-  {
-    "error": "Invalid phone number format"
-  }
-  ```
-  
-  **Common causes:**
-  - Phone number too long (>15 digits) or too short (\<7 digits)
-  - Invalid characters in phone number
-  - Missing country code for international numbers
-  - Phone number fails Twilio validation
-</ResponseField>
-
-<ResponseField name="400 - Invalid Transfer Number" type="object">
-  Transfer phone number is invalid.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid transfer_phone_number."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Language Code" type="object">
-  Language code is not supported.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid language code"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Pronunciation Guide" type="object">
-  Pronunciation guide format is incorrect.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid pronunciation guide type."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Platform Not Supported" type="object">
-  Feature not supported on the specified platform.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Precall DTMF sequence is not supported for this platform."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid From Number" type="object">
-  The 'from' number is invalid or not owned by your account.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid 'from' - must be a phone number string with 10 or 12 digits."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - DNC List Violation" type="object">
-  Attempting to call a number on the Do Not Call list.
-  
-  ```json
-  {
-    "status": "DNC Error",
-    "message": "Number found in DNC list. You cannot dial sensitive numbers. More attempts will result in being blocked."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Transfer List Validation" type="object">
-  Transfer list configuration errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Transfer list must be an object."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid transfer phone number."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error", 
-    "message": "Transfer phone number cannot be the same as the phone number."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Retry Parameter Validation" type="object">
-  Retry configuration must be an object.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Retry must be an object."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Version Number Validation" type="object">
-  Version number must be a valid number.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "version_number must be a number."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Pathway Version Validation" type="object">
-  Pathway version must be a number or specific string value.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "pathway_version needs to either be a number, or a string of 'production' or 'staging'."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "version_number must be a number or string."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - From Phone Number Validation" type="object">
-  The 'from' number format is invalid.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid from phone number."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Boolean Parameter Validation" type="object">
-  Boolean parameters must be true/false or string equivalents.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "wait_for_greeting must be a boolean."
-  }
-  ```
-  
-  **Valid for parameters**: `wait_for_greeting`, `record`, `answered_by_enabled`, `block_interruptions`, `sensitive_voicemail_detection`, `ignore_button_press`
-  
-</ResponseField>
-
-
-<ResponseField name="400 - First Sentence Validation" type="object">
-  First sentence must be a string.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "First sentence must be a string. type: [actual_type]"
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Voicemail Message Validation" type="object">
-  Voicemail message must be a string.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Voicemail message must be a string. type: [actual_type]"
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Voicemail SMS Validation" type="object">
-  Voicemail SMS configuration errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "voicemail_sms must be an object. type: [actual_type]"
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "voicemail_sms.message must be a string. type: [actual_type]"
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "voicemail_sms.from must be a string. type: [actual_type]"
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Interruption Threshold Validation" type="object">
-  Interruption threshold must be a number.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "interruption_threshold must be a number."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Webhook URL Validation" type="object">
-  Webhook URL must be a valid HTTPS URL.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "webhook must be a string that starts with https://."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Request Data Validation" type="object">
-  Request data must be an object.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "request_data must be an object."
-  }
-  ```
-  
-</ResponseField>
-
-
-<ResponseField name="400 - Metadata Validation" type="object">
-  Metadata must be an object.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "metadata must be an object."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Analysis Schema Validation" type="object">
-  Analysis schema must be an object.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "analysis_schema must be an object."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Voice Parameter Validation" type="object">
-  Voice parameter must be a string.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Voice must be a string."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Voicemail Action Validation" type="object">
-  Voicemail action must be one of the allowed values.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid voicemail_action. Options are: [list_of_options]."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Keywords Validation" type="object">
-  Keywords configuration errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Keywords must be an array of strings."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Keywords must be strings."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Keywords each must be less than 100 characters: [keyword]"
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Keywords must be in the format 'string' or 'string:number'."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Keyword boosts with a colon must have a valid integer for the boost rate."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "At most 20 keywords can be added."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Timezone Validation" type="object">
-  Timezone validation errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Timezone must be a string."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid timezone: [error_message]"
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Summary Prompt Validation" type="object">
-  Summary prompt validation errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Summary prompt must be a string."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Summary prompt must be less than 2000 characters."
-  }
-  ```
-  
-</ResponseField>
-
-
-<ResponseField name="400 - Start Time Validation" type="object">
-  Start time scheduling validation errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "start_time must be a string."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid start_time."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Calls must be scheduled at least 5 minutes in advance, or more"
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Background Track Validation" type="object">
-  Background track validation errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "background_track must be a string."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid background_track option. Options are: [list_of_options]."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Max Duration Validation" type="object">
-  Max duration validation errors.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "max_duration must be a number."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "max_duration must be a positive number."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "max_duration must be at most 12 hours."
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Invalid Dynamic Data" type="object">
-  Dynamic data or tools configuration is invalid.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Unable to parse dynamic data/tools."
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid tools: [error_message]"
-  }
-  ```
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid dynamic data: [error_message]"
-  }
-  ```
-  
-</ResponseField>
-
-<ResponseField name="400 - Invalid Pathway Data" type="object">
-  Pathway configuration is invalid or missing required components.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid pathway data - no blocks or links found for pathway {pathway_id}"
-  }
-  ```
-  
-  **Other variations:**
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid pathway data"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Invalid Start Node ID" type="object">
-  The specified start node ID does not exist in the pathway.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid start node ID: {start_node_id}"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Content Flagged" type="object">
-  Content failed moderation and was flagged as inappropriate.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Flagged Node: [flagged content]"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Sensitive Number Protection" type="object">
-  Attempting to call emergency or sensitive numbers.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Cannot dial sensitive numbers. More attempts will result in being blocked."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Unable to Save Request" type="object">
-  Server unable to save the request body or call data.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Unable to save request body."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="400 - Unable to Queue Call" type="object">
-  Call could not be queued for processing.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Unable to queue call."
-  }
-  ```
-</ResponseField>
-
-
-<ResponseField name="400 - Warm Transfer Parent Call Completed" type="object">
-  Parent call for warm transfer has already completed or doesn't exist.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Parent call has completed or does not exist. Warm Transfer Request Cancelled"
-  }
-  ```
-</ResponseField>
-
-
-<ResponseField name="500 - Internal Server Errors" type="object">
-  General server errors and catch-all error handlers.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Internal server error during flagging process"
-  }
-  ```
-  
-  **Typical scenarios**:
-  - Uncaught exceptions in call processing
-  - Third-party service failures
-  - Memory allocation or resource exhaustion errors
-  - Network connectivity issues
-  
-</ResponseField>
-
-<ResponseField name="400 - Call Parameters Validation" type="object">
-  Basic call parameters validation from the main validation function.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Call parameters must be an object."
-  }
-  ```
-  
-</ResponseField>
-
-### Business Logic Errors
-
-<ResponseField name="402 - No Billing Record" type="object">
-  No billing record found for your account.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "No billing record found."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="402 - Insufficient Balance" type="object">
-  Account balance is insufficient for the call.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Insufficient balance."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="404 - Pathway Not Found" type="object">
-  The specified pathway ID does not exist or is not accessible.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Pathway with ID \"{pathway_id}\" not found"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="404 - Pathway Version Not Found" type="object">
-  The specified pathway version does not exist.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Pathway version with ID \"{version_number}\" not found"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="418 - Invalid Objective" type="object">
-  The objective parameter failed validation (returns validation details).
-  
-  ```json
-  {
-    "error": "OBJECTIVE_VALIDATION_ERROR",
-    "details": "Custom validation response"
-  }
-  ```
-</ResponseField>
-
-### Service Errors (HTTP 500)
-
-<ResponseField name="500 - Twilio Connection Error" type="object">
-  Failed to establish connection with Twilio services.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Error in creating Twilio connection."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="500 - Invalid Encrypted Key" type="object">
-  The encrypted key provided is invalid or corrupted.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Invalid `encrypted_key`. Please use the correct key for your account."
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="500 - Internal Server Error" type="object">
-  General internal server error during call processing.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Error triggering call. Please check your twilio account for errors"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="500 - Content Moderation Error" type="object">
-  Error occurred during the content flagging process.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Internal server error during flagging process"
-  }
-  ```
-</ResponseField>
-
-
-<ResponseField name="500 - BYOT Number Error" type="object">
-  Error retrieving Bring Your Own Twilio (BYOT) phone number.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Error in getting BYOT Number"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="500 - Dialer Data Error" type="object">
-  Error retrieving dialer data from encrypted key.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Error in getting dialer data from encrypted key"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="500 - User Data Fetch Error" type="object">
-  Error fetching user data for account verification.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Error in fetching user data"
-  }
-  ```
-  
-  **Other variations:**
-  ```json
-  {
-    "status": "error",
-    "message": "Error in fetching parent user data"
-  }
-  ```
-</ResponseField>
-
-<ResponseField name="500 - Retry Call Error" type="object">
-  Missing retry attempt information for retry calls.
-  
-  ```json
-  {
-    "status": "error",
-    "message": "Retry attempt not provided for retry call: {call_id}"
-  }
-  ```
-</ResponseField>
-
+  This section documents all possible error codes and HTTP status codes you can receive when making a POST request to `/v1/calls`.
+
+  ### Authentication & Authorization Errors
+
+  <ResponseField name="401 - AUTH_FAILURE" type="object">
+    Authentication failed due to missing or invalid API key.
+
+    ```json
+    {
+      "data": null,
+      "errors": [
+        {
+          "error": "AUTH_FAILURE", 
+          "message": "Unauthorized"
+        }
+      ]
+    }
+    ```
+
+    **Common causes:**
+
+    - Missing Authorization header
+    - Invalid API key
+    - Expired API key
+  </ResponseField>
+  <ResponseField name="403 - Account Flagged" type="object">
+    Account has been flagged or banned for security purposes.
+
+    ```json
+    {
+      "status": "error",
+      "message": "The Bland Team has flagged your account for security purposes. As a precautionary measure against recent heightened malicious use cases, we have flagged your account for review and temporarily blocked from dispatching calls. If you need to be unblocked urgently, please email us at hello@bland.ai with your account phone number."
+    }
+    ```
+  </ResponseField>
+  ### Rate Limiting Errors (HTTP 429)
+
+  <ResponseField name="429 - Call Frequency Limit" type="object">
+    Calls sent too frequently to the same number.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Calls can only be sent every 10 seconds to the same number. Please try again in a few seconds."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="429 - General Rate Limit" type="object">
+    Rate limit exceeded for your account.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Rate limit exceeded"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="429 - Blacklisted Number" type="object">
+    Attempting to call a blacklisted number.
+
+    ```json
+    {
+      "status": "error",
+      "message": "This number is blacklisted."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="429 - New Customer Rate Limit" type="object">
+    Rate limits for newly created accounts.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Rate limit exceeded for newly created accounts. Please try again soon."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="429 - International Rate Limit" type="object">
+    International calling rate limit exceeded.
+
+    ```json
+    {
+      "status": "error",
+      "message": "International rate limit exceeded for your account type."
+    }
+    ```
+  </ResponseField>
+  ### Parameter Validation Errors (HTTP 400)
+
+  <ResponseField name="400 - Missing Required Parameter" type="object">
+    Required parameters are missing from the request.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid parameters. Error: [\"Missing required parameter: phone_number.\"]",
+      "errors": ["Missing required parameter: phone_number."]
+    }
+    ```
+
+    **Required parameters:**
+
+    - `phone_number` (always required)
+    - `task` (required if `pathway_id` is not provided)
+  </ResponseField>
+  <ResponseField name="400 - Invalid Field Types" type="object">
+    Field values are the wrong data type according to TypeBox validation.
+
+    ```json
+    {
+      "status": "error", 
+      "message": "Record must be a boolean"
+    }
+    ```
+
+    **Common type validation errors:**
+
+    - `"Task must be a string"`
+    - `"Record must be a boolean"`
+    - `"Max duration must be a number"`
+    - `"Temperature must be a number"`
+    - `"Tools must be an array"`
+    - `"Dynamic data must be an array"`
+    - `"Metadata must be a record of string keys and any values"`
+  </ResponseField>
+  <ResponseField name="400 - Invalid Voicemail Action" type="object">
+    Voicemail action must be one of the allowed values.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid voicemail action. Must be one of: hangup, leave_message, ignore"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Number Range Validation" type="object">
+    Numeric values are outside their allowed ranges.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Max duration must be at least 1"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid DTMF Sequence" type="object">
+    Precall DTMF sequence contains invalid characters.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Precall DTMF sequence must be a valid DTMF sequence"
+    }
+    ```
+
+    **Valid DTMF characters:** 0-9, \*, #, w (wait)
+  </ResponseField>
+  <ResponseField name="400 - Invalid Date Format" type="object">
+    Start time must be a valid ISO date-time string.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Start time must be a valid date-time format"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Webhook URL" type="object">
+    Webhook URL format is invalid.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Webhook must be a valid URI"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid From Number Format" type="object">
+    From number doesn't match phone number pattern.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid from number format"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Transfer Phone Format" type="object">
+    Transfer phone number format validation error.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid transfer phone number format"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Transfer List Format" type="object">
+    Transfer list contains phone numbers with invalid format.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid phone number format in transfer list"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Additional Properties Not Allowed" type="object">
+    Request contains fields that are not allowed in the schema.
+
+    ```json
+    {
+      "status": "error", 
+      "message": "Additional properties are not allowed"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Phone Number" type="object">
+    Phone number format is invalid, missing country code, or invalid length.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid phone number. Please include a country code if outside the US."
+    }
+    ```
+
+    **Other variations:**
+
+    ```json
+    {
+      "status": "error", 
+      "message": "Invalid phone number. `+1234567890123456789` has these validation errors: [specific errors]"
+    }
+    ```
+
+    ```json
+    {
+      "error": "Invalid phone number format"
+    }
+    ```
+
+    **Common causes:**
+
+    - Phone number too long (\>15 digits) or too short (\<7 digits)
+    - Invalid characters in phone number
+    - Missing country code for international numbers
+    - Phone number fails Twilio validation
+  </ResponseField>
+  <ResponseField name="400 - Invalid Transfer Number" type="object">
+    Transfer phone number is invalid.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid transfer_phone_number."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Language Code" type="object">
+    Language code is not supported.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid language code"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Pronunciation Guide" type="object">
+    Pronunciation guide format is incorrect.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid pronunciation guide type."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Platform Not Supported" type="object">
+    Feature not supported on the specified platform.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Precall DTMF sequence is not supported for this platform."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid From Number" type="object">
+    The 'from' number is invalid or not owned by your account.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid 'from' - must be a phone number string with 10 or 12 digits."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - DNC List Violation" type="object">
+    Attempting to call a number on the Do Not Call list.
+
+    ```json
+    {
+      "status": "DNC Error",
+      "message": "Number found in DNC list. You cannot dial sensitive numbers. More attempts will result in being blocked."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Transfer List Validation" type="object">
+    Transfer list configuration errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Transfer list must be an object."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid transfer phone number."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error", 
+      "message": "Transfer phone number cannot be the same as the phone number."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Retry Parameter Validation" type="object">
+    Retry configuration must be an object.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Retry must be an object."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Version Number Validation" type="object">
+    Version number must be a valid number.
+
+    ```json
+    {
+      "status": "error",
+      "message": "version_number must be a number."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Pathway Version Validation" type="object">
+    Pathway version must be a number or specific string value.
+
+    ```json
+    {
+      "status": "error",
+      "message": "pathway_version needs to either be a number, or a string of 'production' or 'staging'."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "version_number must be a number or string."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - From Phone Number Validation" type="object">
+    The 'from' number format is invalid.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid from phone number."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Boolean Parameter Validation" type="object">
+    Boolean parameters must be true/false or string equivalents.
+
+    ```json
+    {
+      "status": "error",
+      "message": "wait_for_greeting must be a boolean."
+    }
+    ```
+
+    **Valid for parameters**: `wait_for_greeting`, `record`, `answered_by_enabled`, `block_interruptions`, `sensitive_voicemail_detection`, `ignore_button_press`
+  </ResponseField>
+  <ResponseField name="400 - First Sentence Validation" type="object">
+    First sentence must be a string.
+
+    ```json
+    {
+      "status": "error",
+      "message": "First sentence must be a string. type: [actual_type]"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Voicemail Message Validation" type="object">
+    Voicemail message must be a string.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Voicemail message must be a string. type: [actual_type]"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Voicemail SMS Validation" type="object">
+    Voicemail SMS configuration errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "voicemail_sms must be an object. type: [actual_type]"
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "voicemail_sms.message must be a string. type: [actual_type]"
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "voicemail_sms.from must be a string. type: [actual_type]"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Interruption Threshold Validation" type="object">
+    Interruption threshold must be a number.
+
+    ```json
+    {
+      "status": "error",
+      "message": "interruption_threshold must be a number."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Webhook URL Validation" type="object">
+    Webhook URL must be a valid HTTPS URL.
+
+    ```json
+    {
+      "status": "error",
+      "message": "webhook must be a string that starts with https://."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Request Data Validation" type="object">
+    Request data must be an object.
+
+    ```json
+    {
+      "status": "error",
+      "message": "request_data must be an object."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Metadata Validation" type="object">
+    Metadata must be an object.
+
+    ```json
+    {
+      "status": "error",
+      "message": "metadata must be an object."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Analysis Schema Validation" type="object">
+    Analysis schema must be an object.
+
+    ```json
+    {
+      "status": "error",
+      "message": "analysis_schema must be an object."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Voice Parameter Validation" type="object">
+    Voice parameter must be a string.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Voice must be a string."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Voicemail Action Validation" type="object">
+    Voicemail action must be one of the allowed values.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid voicemail_action. Options are: [list_of_options]."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Keywords Validation" type="object">
+    Keywords configuration errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Keywords must be an array of strings."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Keywords must be strings."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Keywords each must be less than 100 characters: [keyword]"
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Keywords must be in the format 'string' or 'string:number'."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Keyword boosts with a colon must have a valid integer for the boost rate."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "At most 20 keywords can be added."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Timezone Validation" type="object">
+    Timezone validation errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Timezone must be a string."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid timezone: [error_message]"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Summary Prompt Validation" type="object">
+    Summary prompt validation errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Summary prompt must be a string."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Summary prompt must be less than 2000 characters."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Start Time Validation" type="object">
+    Start time scheduling validation errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "start_time must be a string."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid start_time."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Calls must be scheduled at least 5 minutes in advance, or more"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Background Track Validation" type="object">
+    Background track validation errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "background_track must be a string."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid background_track option. Options are: [list_of_options]."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Max Duration Validation" type="object">
+    Max duration validation errors.
+
+    ```json
+    {
+      "status": "error",
+      "message": "max_duration must be a number."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "max_duration must be a positive number."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "max_duration must be at most 12 hours."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Dynamic Data" type="object">
+    Dynamic data or tools configuration is invalid.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Unable to parse dynamic data/tools."
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid tools: [error_message]"
+    }
+    ```
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid dynamic data: [error_message]"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Pathway Data" type="object">
+    Pathway configuration is invalid or missing required components.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid pathway data - no blocks or links found for pathway {pathway_id}"
+    }
+    ```
+
+    **Other variations:**
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid pathway data"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Start Node ID" type="object">
+    The specified start node ID does not exist in the pathway.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid start node ID: {start_node_id}"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Content Flagged" type="object">
+    Content failed moderation and was flagged as inappropriate.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Flagged Node: [flagged content]"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Sensitive Number Protection" type="object">
+    Attempting to call emergency or sensitive numbers.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Cannot dial sensitive numbers. More attempts will result in being blocked."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Unable to Save Request" type="object">
+    Server unable to save the request body or call data.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Unable to save request body."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Unable to Queue Call" type="object">
+    Call could not be queued for processing.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Unable to queue call."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Warm Transfer Parent Call Completed" type="object">
+    Parent call for warm transfer has already completed or doesn't exist.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Parent call has completed or does not exist. Warm Transfer Request Cancelled"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - Internal Server Errors" type="object">
+    General server errors and catch-all error handlers.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Internal server error during flagging process"
+    }
+    ```
+
+    **Typical scenarios**:
+
+    - Uncaught exceptions in call processing
+    - Third-party service failures
+    - Memory allocation or resource exhaustion errors
+    - Network connectivity issues
+  </ResponseField>
+  <ResponseField name="400 - Call Parameters Validation" type="object">
+    Basic call parameters validation from the main validation function.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Call parameters must be an object."
+    }
+    ```
+  </ResponseField>
+  ### Business Logic Errors
+
+  <ResponseField name="402 - No Billing Record" type="object">
+    No billing record found for your account.
+
+    ```json
+    {
+      "status": "error",
+      "message": "No billing record found."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="402 - Insufficient Balance" type="object">
+    Account balance is insufficient for the call.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Insufficient balance."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="404 - Pathway Not Found" type="object">
+    The specified pathway ID does not exist or is not accessible.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Pathway with ID \"{pathway_id}\" not found"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="404 - Pathway Version Not Found" type="object">
+    The specified pathway version does not exist.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Pathway version with ID \"{version_number}\" not found"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="418 - Invalid Objective" type="object">
+    The objective parameter failed validation (returns validation details).
+
+    ```json
+    {
+      "error": "OBJECTIVE_VALIDATION_ERROR",
+      "details": "Custom validation response"
+    }
+    ```
+  </ResponseField>
+  ### Service Errors (HTTP 500)
+
+  <ResponseField name="500 - Twilio Connection Error" type="object">
+    Failed to establish connection with Twilio services.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Error in creating Twilio connection."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - Invalid Encrypted Key" type="object">
+    The encrypted key provided is invalid or corrupted.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid `encrypted_key`. Please use the correct key for your account."
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - Internal Server Error" type="object">
+    General internal server error during call processing.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Error triggering call. Please check your twilio account for errors"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - Content Moderation Error" type="object">
+    Error occurred during the content flagging process.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Internal server error during flagging process"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - BYOT Number Error" type="object">
+    Error retrieving Bring Your Own Twilio (BYOT) phone number.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Error in getting BYOT Number"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - Dialer Data Error" type="object">
+    Error retrieving dialer data from encrypted key.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Error in getting dialer data from encrypted key"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - User Data Fetch Error" type="object">
+    Error fetching user data for account verification.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Error in fetching user data"
+    }
+    ```
+
+    **Other variations:**
+
+    ```json
+    {
+      "status": "error",
+      "message": "Error in fetching parent user data"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="500 - Retry Call Error" type="object">
+    Missing retry attempt information for retry calls.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Retry attempt not provided for retry call: {call_id}"
+    }
+    ```
+  </ResponseField>
 </Accordion>
