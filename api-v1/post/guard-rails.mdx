@@ -1,0 +1,200 @@
+---
+title: "Create Guard Rail"
+api: "POST https://api.bland.ai/v1/guard_rails"
+description: "Create a new guard rail for compliance monitoring."
+---
+
+Guard rails monitor AI responses during calls to catch compliance violations and trigger automated actions. Learn more in the [Guard Rails documentation](/tutorials/guard-rails).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+#### TCPA Guard Rails
+
+<ParamField body="type" type="string" required>
+  The type of TCPA guard rail:
+  - `tcpa:ai_disclosure` - AI must disclose it's an AI
+  - `tcpa:recording_disclosure` - Must disclose the call is being recorded
+  - `tcpa:self_introduction` - Must identify who is calling
+  - `tcpa:opt_out` - Monitors for user opt-out requests
+
+  The `tcpa:opt_out` type is different from the others: it's not time-based and instead monitors the entire conversation to detect if the agent continues to engage after the user opts out. The `config.end_seconds` field is not needed for this type.
+</ParamField>
+
+<ParamField body="config" type="object">
+  Configuration object. Required for time-based TCPA guard rails (`tcpa:ai_disclosure`, `tcpa:recording_disclosure`, `tcpa:self_introduction`).
+
+  - `end_seconds` (number) - Time window in seconds. If the required disclosure is not made within this time, the configured actions will trigger.
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  Array of sources to attach this guard rail to.
+
+  - `source_type` (string, required) - Type of source: `PERSONA`, `PATHWAY`, or `INBOUND`
+  - `source_id` (string, required) - ID of the source to attach to
+  - `actions` (array, required) - Actions to take when the guard rail triggers
+</ParamField>
+
+#### Custom Guard Rails (Enterprise)
+
+Custom guard rails use your own detection prompt. Limited to 5 per organization.
+
+<ParamField body="type" type="string" required>
+  Must be `custom` for custom guard rails.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Display name for the guard rail. This doesn't affect the behaviour and is only for your reference.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Description of what this guard rail detects. This doesn't affect the behaviour and is only for your reference.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Detection prompt that describes what to flag.
+</ParamField>
+
+#### Action Types
+
+Each attachment requires an `actions` array. Available action types:
+
+| Action Type | Description | Config |
+|-------------|-------------|--------|
+| `end_call` | Immediately terminate the call | None |
+| `transfer` | Transfer to a human agent | `{ "phone_number": "+15551234567" }` |
+| `move_to_node` | Jump to a specific pathway node | `{ "node_id": "node-uuid" }` |
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created guard rail object containing `id`, `org_id`, `type`, `name`, `description`, `prompt`, `config`, `attachments`, `created_at`, and `updated_at`.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Any errors that occurred (null if none).
+</ResponseField>
+
+<RequestExample>
+```json TCPA Time-based
+{
+  "type": "tcpa:ai_disclosure",
+  "config": {
+    "end_seconds": 30
+  },
+  "attachments": [
+    {
+      "source_type": "PERSONA",
+      "source_id": "98765432-1234-1234-1234-123456789012",
+      "actions": [
+        { "type": "end_call" }
+      ]
+    }
+  ]
+}
+```
+
+```json TCPA Opt-Out
+{
+  "type": "tcpa:opt_out",
+  "attachments": [
+    {
+      "source_type": "PATHWAY",
+      "source_id": "11111111-2222-3333-4444-555555555555",
+      "actions": [
+        { "type": "end_call" }
+      ]
+    }
+  ]
+}
+```
+
+```json Custom (Enterprise)
+{
+  "type": "custom",
+  "name": "No Medical Advice",
+  "description": "Prevents the agent from providing medical advice",
+  "prompt": "Flag if the agent provides any medical advice, diagnosis, or treatment recommendations",
+  "attachments": [
+    {
+      "source_type": "PERSONA",
+      "source_id": "98765432-1234-1234-1234-123456789012",
+      "actions": [
+        { "type": "transfer", "config": { "phone_number": "+15551234567" } }
+      ]
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success Response
+{
+  "data": {
+    "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+    "org_id": "12345678-1234-1234-1234-123456789012",
+    "type": "tcpa:ai_disclosure",
+    "name": null,
+    "description": null,
+    "prompt": null,
+    "config": {
+      "end_seconds": 30
+    },
+    "attachments": [
+      {
+        "source_type": "PERSONA",
+        "source_id": "98765432-1234-1234-1234-123456789012",
+        "actions": [
+          { "type": "end_call" }
+        ]
+      }
+    ],
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-01-15T10:30:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Duplicate Type)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PARAMETER",
+      "message": "Cannot create multiple guard rails of the same type"
+    }
+  ]
+}
+```
+
+```json Error Response (Enterprise Required)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ENTERPRISE_REQUIRED",
+      "message": "Creating custom guard rails are only available for enterprise users"
+    }
+  ]
+}
+```
+
+```json Error Response (Max Custom Guard Rails)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PARAMETER",
+      "message": "Cannot create more than 5 custom guard rails"
+    }
+  ]
+}
+```
+</ResponseExample>

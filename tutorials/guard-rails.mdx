@@ -1,0 +1,83 @@
+---
+title: "Guard Rails"
+description: "Automated monitoring that runs continuously on every AI response to catch critical failures before they reach your customers."
+---
+
+Guard rails continuously analyze every AI and user response during production calls. They catch severe failure modes like discrimination, self-harm encouragement, or compliance violations before they cause damage.
+
+## Why Guard Rails Matter
+
+When running thousands of AI calls, edge cases aren't a question of *if* but *when*. Manual review doesn't scale - if you're running 50,000 calls a week, you can't have humans listening to every conversation in real time.
+
+**Legal exposure adds up fast:**
+- A single discriminatory statement during a hiring call can trigger an EEOC complaint
+- TCPA violations carry statutory damages of \$500-\$1,500 per call
+- Class action lawyers actively monitor for these violations
+
+**Brand damage is hard to recover from:**
+- A call where your AI mishandles someone in distress can go viral
+- These failures often happen in edge cases your testing didn't cover
+
+**Centralized compliance saves time:**
+- Update a compliance rule once and it applies everywhere instantly
+- No need to modify 30 pathways individually when regulations change
+
+Guard rails also help with stakeholder management. Your legal team gets confidence that even in scenarios nobody anticipated during testing, there's still a safety net catching dangerous outputs.
+
+### Two Types of Guard Rails
+
+<AccordionGroup>
+  <Accordion title="Require Guard Rails (Time-based)">
+    The guard rail **must** be triggered within a specified time window, otherwise the configured action runs.
+
+    Used for TCPA disclosures that must happen early in the call:
+    - **AI disclosure** - Must disclose the caller is speaking with an AI
+    - **Self introduction** - Must identify who is calling
+    - **Recording disclosure** - Must disclose the call is being recorded
+
+    Default time window is 30 seconds (configurable via API).
+  </Accordion>
+
+  <Accordion title="Forbid Guard Rails (Continuous)">
+    The conversation content must **not** trigger the guard rail. These continuously monitor the conversation.
+
+    Used for:
+    - TCPA opt-out handling
+    - Custom guard rails
+    - Content policy violations
+  </Accordion>
+</AccordionGroup>
+
+## Apply guard rails
+
+You can apply guard rails to:
+1. **Personas** - under "General" -> "Policy & Compliance"
+2. **Pathways** - under "Policy & Compliance" in the pathway splash page
+3. **Inbound numbers** - under "Advanced" -> "Guard Rails"
+4. **Any outbound call via API** - including the `guard_rails` field in the POST `/v1/calls` [API](/api-v1/post/calls#param-guard-rails)
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/guard-rails/apply-guard-rails.jpeg" />
+
+## Actions When Guard Rails Fire
+
+When a violation is detected, set actions will execute automatically:
+
+- **End call** - Immediately terminate the conversation
+- **Transfer to human** - Route to a live agent
+- **Move to node** - Jump to a specific node in your pathway (e.g., apology node, handoff node)
+
+## Enterprise Custom Guard Rails
+
+Enterprise customers can create up to 5 custom guard rails for industry-specific concerns/company policies. These are configured in the [Enterprise Dashboard Compliance Settings](https://app.bland.ai/dashboard/compliance).
+
+<img style={{ borderRadius: "0.5rem", border: "1px solid #ccc" }} src="/tutorials/tutorials-assets/guard-rails/custom-guard-rails.png" />
+
+When creating a custom guardrail, ensure the prompt is clear, specific, and well-defined. Ambiguous prompts can cause false positives, flagging calls that shouldn't be triggered.
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/guard-rails/guard-rail-form.jpeg" />
+
+Once you've written your prompt, you can backtest it across multiple calls to verify it triggers, or doesn't trigger correctly. Each run shows the reasoning behind the result, making it easy to spot issues and refine the prompt.
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/guard-rails/guard-rail-run-test.jpeg" />
+
+Once satisfied, you can save the guard rail and apply it to any persona, pathway or inbound number.
