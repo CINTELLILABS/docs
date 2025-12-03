@@ -12,8 +12,40 @@ description: "Start a node test run for a given node and pathway with a new prom
 
 ### Body Parameters
 
-<ParamField body="new_prompt" type="string" required>
-  The new prompt to test for this node. This will be used to simulate the agent's responses against the provided and auto-selected conversations.
+<ParamField body="new_prompt" type="string">
+  The new prompt to test for this node. This will be used to simulate the agent's responses against the pinned and auto-selected conversations. Either `new_prompt` or `static_text` can be provided, but not both.
+</ParamField>
+
+<ParamField body="static_text" type="string">
+  Static text that the agent will always reply with. Either `static_text` or `new_prompt` can be provided, but not both. This is useful to test variable extractions on static text nodes.
+</ParamField>
+
+<ParamField body="judge_prompt" type="string">
+  The judge prompt to evaluate the test results. If not provided, the default judge prompt will be used. The default judge prompt will evaluate the agent responses against the node prompt.
+</ParamField>
+
+<ParamField body="loop_prompt" type="string">
+  The prompt for the node loop condition.
+</ParamField>
+
+<ParamField body="extract_variables" type="array">
+  Array of variables to extract from the conversation.
+</ParamField>
+
+<ParamField body="extract_variables[].name" type="string" required>
+  The name of the variable to extract.
+</ParamField>
+
+<ParamField body="extract_variables[].type" type="string" required>
+  The type of the variable. Must be one of: `"string"`, `"integer"`, or `"boolean"`.
+</ParamField>
+
+<ParamField body="extract_variables[].description" type="string" required>
+  A description of what the variable represents.
+</ParamField>
+
+<ParamField body="extract_variables[].spelling_precision" type="boolean" required>
+  Whether spelling precision should be enforced for this variable.
 </ParamField>
 
 <ParamField body="conversations" type="array" required>
@@ -36,6 +68,10 @@ description: "Start a node test run for a given node and pathway with a new prom
   Identifier of the pathway that the node and conversations belong to.
 </ParamField>
 
+<ParamField body="pathway_version" type="string">
+  The version of the pathway to test against.
+</ParamField>
+
 <ParamField body="n_permutations" type="number">
   Optional number of permutations to generate for each conversation. If omitted, this defaults to <code>5</code>. The total generations per conversation will be <code>n_permutations + 1</code> (one for the original user messages plus one per permutation).
 </ParamField>
@@ -51,6 +87,16 @@ description: "Start a node test run for a given node and pathway with a new prom
 ```json Request
 {
   "new_prompt": "You are the best financial advisor...",
+  "judge_prompt": "Evaluate if the response is helpful and accurate.",
+  "loop_prompt": "Continue if the user has more questions.",
+  "extract_variables": [
+    {
+      "name": "user_name",
+      "type": "string",
+      "description": "The name of the user",
+      "spelling_precision": true
+    }
+  ],
   "conversations": [
     {
       "type": "call",
@@ -63,6 +109,7 @@ description: "Start a node test run for a given node and pathway with a new prom
   ],
   "node_id": "a7bbd409-504b-4ba3-a9d1-12f6bc270f58",
   "pathway_id": "05f4b269-e79a-4825-b4cd-7778f782bfad",
+  "pathway_version": "v1.0.0",
   "n_permutations": 5
 }
 ```
