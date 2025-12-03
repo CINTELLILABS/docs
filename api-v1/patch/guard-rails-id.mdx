@@ -1,0 +1,151 @@
+---
+title: "Update Guard Rail"
+api: "PATCH https://api.bland.ai/v1/guard_rails/{guard_rail_id}"
+description: "Update an existing guard rail configuration."
+---
+
+<Note>
+  The `type` field cannot be changed after creation. To change the type, delete the guard rail and create a new one.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="guard_rail_id" type="string" required>
+  The unique identifier of the guard rail to update.
+</ParamField>
+
+### Body Parameters
+
+All fields are optional. Only include fields you want to update.
+
+<ParamField body="name" type="string">
+  Updated name for the guard rail (custom guard rails only).
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description (custom guard rails only).
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Updated detection prompt (custom guard rails only).
+</ParamField>
+
+<ParamField body="config" type="object">
+  Updated configuration object. For TCPA time-based guard rails, set `end_seconds` to change the time window.
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  Updated array of sources to attach this guard rail to. This replaces all existing attachments.
+
+  Each attachment requires:
+  - `source_type` (string) - Type of source: `PERSONA`, `PATHWAY`, or `INBOUND`
+  - `source_id` (string) - ID of the source to attach to
+  - `actions` (array) - Actions to take when the guard rail triggers
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated guard rail object containing `id`, `org_id`, `type`, `name`, `description`, `prompt`, `config`, `attachments`, `created_at`, and `updated_at`.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Any errors that occurred (null if none).
+</ResponseField>
+
+<RequestExample>
+```json Update config
+{
+  "config": {
+    "end_seconds": 45
+  }
+}
+```
+
+```json Update prompt
+{
+  "prompt": "Flag if the agent provides any medical advice, diagnosis, treatment recommendations, or medication suggestions"
+}
+```
+
+```json Update attachments
+{
+  "attachments": [
+    {
+      "source_type": "PERSONA",
+      "source_id": "98765432-1234-1234-1234-123456789012",
+      "actions": [
+        { "type": "end_call" }
+      ]
+    },
+    {
+      "source_type": "PATHWAY",
+      "source_id": "11111111-2222-3333-4444-555555555555",
+      "actions": [
+        { "type": "transfer", "config": { "phone_number": "+15551234567" } }
+      ]
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+    "org_id": "12345678-1234-1234-1234-123456789012",
+    "type": "tcpa:ai_disclosure",
+    "name": null,
+    "description": null,
+    "prompt": null,
+    "config": {
+      "end_seconds": 45
+    },
+    "attachments": [
+      {
+        "source_type": "PERSONA",
+        "source_id": "98765432-1234-1234-1234-123456789012",
+        "actions": [
+          { "type": "end_call" }
+        ]
+      }
+    ],
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-01-16T14:20:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Cannot Update Type)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PARAMETER",
+      "message": "Cannot update type of guard rail"
+    }
+  ]
+}
+```
+
+```json Error Response (Not Found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Guard rail not found"
+    }
+  ]
+}
+```
+</ResponseExample>

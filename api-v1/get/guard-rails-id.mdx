@@ -1,0 +1,107 @@
+---
+title: "Get Guard Rail"
+api: "GET https://api.bland.ai/v1/guard_rails/{guard_rail_id}"
+description: "Retrieve a specific guard rail by ID."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="guard_rail_id" type="string" required>
+  The unique identifier of the guard rail to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The guard rail object.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the guard rail.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  Organization ID that owns this guard rail.
+</ResponseField>
+
+<ResponseField name="data.type" type="string">
+  Type of guard rail. One of: `tcpa:ai_disclosure`, `tcpa:recording_disclosure`, `tcpa:self_introduction`, `tcpa:opt_out`, or `custom`.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Name of the guard rail (for custom guard rails).
+</ResponseField>
+
+<ResponseField name="data.description" type="string">
+  Description of the guard rail (for custom guard rails).
+</ResponseField>
+
+<ResponseField name="data.prompt" type="string">
+  Detection prompt (only for custom guard rails).
+</ResponseField>
+
+<ResponseField name="data.config" type="object">
+  Configuration object. For TCPA time-based guard rails, contains `end_seconds`.
+</ResponseField>
+
+<ResponseField name="data.attachments" type="array">
+  Array of sources this guard rail is attached to. Each attachment contains `source_type` (`PERSONA`, `PATHWAY`, or `INBOUND`), `source_id`, and `actions`.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp of when the guard rail was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO 8601 timestamp of when the guard rail was last modified.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Any errors that occurred (null if none).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+    "org_id": "12345678-1234-1234-1234-123456789012",
+    "type": "custom",
+    "name": "No Medical Advice",
+    "description": "Prevents the agent from providing medical advice",
+    "prompt": "Flag if the agent provides any medical advice, diagnosis, or treatment recommendations",
+    "config": {},
+    "attachments": [
+      {
+        "source_type": "PERSONA",
+        "source_id": "98765432-1234-1234-1234-123456789012",
+        "actions": [
+          { "type": "transfer", "config": { "phone_number": "+15551234567" } }
+        ]
+      }
+    ],
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-01-15T10:30:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Not Found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Guard rail not found"
+    }
+  ]
+}
+```
+</ResponseExample>
