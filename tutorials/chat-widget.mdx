@@ -123,3 +123,97 @@ The chat widget can be customized using the following configuration options:
 | `visitor_id` | string | - | Use a custom visitor ID to identify the user vs the default cookie based visitor ID, which expires after 1 week |
 | `enable_widget_state_events` | boolean | false | Emits `bland_widget_state_change` window events on open/close/resize, enabling parent page coordination in embedded setups |
 | `draggable` | boolean | false | If true, the widget button will be draggable |
+
+---
+
+## Escalate to Live Agents
+
+<Note>This feature only works on [pathways](/tutorials/pathways).</Note>
+
+Connect your Bland widget to any live agent platform (Zendesk, Intercom, Freshdesk, or your own custom solution) via webhooks. When the AI determines a human is needed, it seamlessly hands off the conversation with full context.
+
+### Setup
+
+<Steps>
+  <Step title="Configure the Pathway Transfer Node">
+    In your pathway, add a **Pathway Transfer Node** and select **Live Agent Transfer** as the transfer type. Enter the webhook URL where Bland should send conversation data.
+  </Step>
+  <Step title="Enable Webhook Signing">
+    Webhook signing is **required** for this integration. Bland signs all webhook payloads with HMAC, sent via the `X-Bland-Signature` header. Use your signing secret to verify requests originate from Bland and haven't been tampered with.
+
+    See [Webhook Signing](/tutorials/webhook-signing#verifying-webhooks) for implementation details.
+  </Step>
+  <Step title="Handle Incoming Webhooks">
+    Your endpoint will receive two types of payloads from Bland: the initial conversation handoff, and subsequent user messages.
+  </Step>
+  <Step title="Send Messages Back to the User">
+    Use the [Send Live Agent Message](/api-v1/post/widget-thread-webhook) endpoint to send responses from your live agent to the user. When the conversation is complete, send an `END_CONVERSATION` payload to close the session.
+  </Step>
+</Steps>
+
+### Webhook Payloads
+
+#### `INITIAL_CONVERSATION`
+
+Sent when the transfer is triggered. Contains the full conversation history and all agent variables.
+
+```json
+{
+  "type": "INITIAL_CONVERSATION",
+  "thread_id": "0e96f65a-244b-45c9-9342-487f548195dd",
+  "sender_id": "ec14ee83-fa2b-493a-b009-0e29414a1e97",
+  "language": "es",
+  "variables": {
+    "now_utc": "Wednesday, December 10, 2025 7:43 PM",
+    "now": "Wednesday, December 10, 2025 11:43 AM",
+    "today": "Wed, Dec 10, 2025",
+    "first_name": "James",
+    "age": 27
+  },
+  "conversation_history": [
+    {
+      "role": "user",
+      "content": "Hello!",
+      "original_content": "¡Hola!"
+    },
+    {
+      "role": "agent",
+      "content": "Hello! What type of specialist would you like to make an appointment with?",
+      "original_content": "¡Hola! ¿Con qué tipo de especialista te gustaría concertar una cita?"
+    }
+  ],
+  "created_at": "2025-12-10T19:43:29.704Z"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `thread_id` | Unique identifier for this conversation. Use this to correlate subsequent messages. |
+| `sender_id` | The visitor's unique identifier. |
+| `language` | The detected language code (e.g., `es` for Spanish). |
+| `variables` | All agent variables at the time of transfer, including any `request_data` you passed during initialization. |
+| `conversation_history` | Array of all messages exchanged before the handoff. |
+| `conversation_history[].content` | The message content (translated to English if applicable). |
+| `conversation_history[].original_content` | The original message in the user's language. Only included when translation occurred. |
+
+#### `MESSAGE`
+
+Sent for each message the user sends after the initial handoff.
+
+```json
+{
+  "type": "MESSAGE",
+  "thread_id": "0e96f65a-244b-45c9-9342-487f548195dd",
+  "sender_id": "ec14ee83-fa2b-493a-b009-0e29414a1e97",
+  "content": "Hello?",
+  "original_content": "¿Hola?",
+  "created_at": "2025-12-10T19:44:04.002Z"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `thread_id` | Same identifier from the initial conversation, allowing you to match messages to the correct thread. |
+| `content` | The message content (translated to English if applicable). |
+| `original_content` | The original message in the user's language. Only included when translation occurred. |
+
