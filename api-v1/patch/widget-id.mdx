@@ -35,11 +35,15 @@ description: "Updates an existing widget. All fields in the request body are opt
 </ParamField>
 
 <ParamField body="config" type="any">
-  New widget configuration object (flexible JSON).
+  New widget configuration object (flexible JSON). Supports `timeoutSeconds` to configure conversation timeout (default: 86400 seconds / 24 hours).
 </ParamField>
 
 <ParamField body="agent_id" type="string">
   New agent UUID to associate with the widget.
+</ParamField>
+
+<ParamField body="webhook_url" type="string">
+  New URL to receive post-conversation webhook payloads when conversations end. See [Post-Conversation Webhooks](/tutorials/chat-widget#post-conversation-webhooks) for payload details.
 </ParamField>
 
 ### Response
@@ -50,13 +54,14 @@ description: "Updates an existing widget. All fields in the request body are opt
 
 <ResponseField name="data" type="object">
   The updated widget object containing:
-  
+
   - `id` (string): Widget UUID
   - `pathway_id` (string): Associated pathway UUID
   - `agent_id` (string | null): Associated agent UUID or null
   - `allowed_domains` (string[]): Array of allowed domains
   - `messages_per_minute` (number): Rate limit for messages
   - `config` (object): Widget configuration object
+  - `webhook_url` (string | null): Post-conversation webhook URL or null
   - `created_at` (string): ISO timestamp
   - `updated_at` (string): Updated ISO timestamp
 </ResponseField>
@@ -78,8 +83,10 @@ description: "Updates an existing widget. All fields in the request body are opt
     "config": {
       "theme": "dark",
       "position": "bottom-left",
-      "greeting": "Hi there! What can I do for you?"
+      "greeting": "Hi there! What can I do for you?",
+      "timeoutSeconds": 7200
     },
+    "webhook_url": "https://example.com/conversation-webhook",
     "created_at": "2024-01-15T10:30:00Z",
     "updated_at": "2024-01-15T14:22:30Z"
   },

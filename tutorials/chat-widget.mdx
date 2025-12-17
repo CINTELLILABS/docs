@@ -217,3 +217,72 @@ Sent for each message the user sends after the initial handoff.
 | `content` | The message content (translated to English if applicable). |
 | `original_content` | The original message in the user's language. Only included when translation occurred. |
 
+---
+
+## Post-Conversation Webhooks
+
+Receive a webhook notification when a widget conversation ends. This is useful for logging conversations, triggering follow-up workflows, or syncing conversation data to your CRM.
+
+Post-conversation webhooks are signed using HMAC. The signature is included in the `X-Webhook-Signature` header. See [Webhook Signing](/tutorials/webhook-signing#verifying-webhooks) for verification details.
+
+### Configuration
+
+Configure post-conversation webhooks in two ways:
+
+- **Dashboard**: Set the webhook URL in your widget settings on the platform
+- **API**: Pass `webhook_url` when [creating](/api-v1/post/widget) or [updating](/api-v1/patch/widget-id) your widget
+
+By default, a conversation times out after **24 hours** of user inactivity. You can customize this via the dashboard or using `config.timeoutSeconds`:
+
+```json
+{
+  "config": {
+    "timeoutSeconds": 3600 // 1 hour
+  }
+}
+```
+
+### Webhook Payload
+
+When a conversation ends, Bland sends a POST request to your configured webhook URL with the following payload:
+
+```json
+{
+  "widget_id": "b5f3fb6b-2285-4c73-95be-6609eca09986",
+  "thread_id": "ba2cf109-4fb1-4fa5-8146-e085c9009d02",
+  "visitor_id": "6eedb0cc-110f-45ed-9c05-5a66c03328f1",
+  "pathway_id": "e98ef308-1380-4bea-bdfa-da54a542b12c",
+  "thread_created_at": "2025-12-17T14:51:22.411Z",
+  "thread_ended_at": "2025-12-17T14:51:24.655Z",
+  "conversation_history": [
+    {
+      "id": "9b105ed8-aee3-48f1-b067-85ad5a8436c9",
+      "sender_type": "ASSISTANT",
+      "sender_id": null,
+      "content": "Hey, thanks for calling! To get started, could you tell me your name and what kind of doctor you’d like to schedule an appointment with?",
+      "original_content": null
+    },
+    {
+      "id": "cd83215d-a7a5-4bb9-bd93-ab353f2dcb48",
+      "sender_type": "USER",
+      "sender_id": "6eedb0cc-110f-45ed-9c05-5a66c03328f1",
+      "content": "hi what's up?",
+      "original_content": null
+    }
+  ],
+  "end_reason": "Conversation timed out after 3600 seconds of inactivity"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `widget_id` | The widget's unique identifier. |
+| `thread_id` | Unique identifier for this conversation thread. |
+| `visitor_id` | The visitor's unique identifier. |
+| `pathway_id` | The pathway associated with this widget (if applicable). |
+| `thread_created_at` | ISO timestamp when the conversation started. |
+| `thread_ended_at` | ISO timestamp when the conversation ended. |
+| `live_agent_handoff_at` | ISO timestamp when the conversation was handed off to a live agent, or `null` if no handoff occurred. |
+| `conversation_history` | Array of all messages in the conversation. If messages have been translated after a live agent handoff, the `original_content` field will be populated. |
+| `end_reason` | The reason the conversation ended, which usually is either a timeout, or the pathway hit a terminal node. |
+

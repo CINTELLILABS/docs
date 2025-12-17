@@ -29,11 +29,15 @@ description: "Creates a new widget."
 </ParamField>
 
 <ParamField body="config" type="any" required>
-  Widget configuration object (flexible JSON).
+  Widget configuration object (flexible JSON). Supports `timeoutSeconds` to configure conversation timeout (default: 86400 seconds / 24 hours).
 </ParamField>
 
 <ParamField body="agent_id" type="string">
   Optional UUID of agent to associate with widget.
+</ParamField>
+
+<ParamField body="webhook_url" type="string">
+  Optional URL to receive post-conversation webhook payloads when conversations end. See [Post-Conversation Webhooks](/tutorials/chat-widget#post-conversation-webhooks) for payload details.
 </ParamField>
 
 ### Response
@@ -44,13 +48,14 @@ description: "Creates a new widget."
 
 <ResponseField name="data" type="object">
   The created widget object containing:
-  
+
   - `id` (string): Generated widget UUID
   - `pathway_id` (string): Associated pathway UUID
   - `agent_id` (string | null): Associated agent UUID or null
   - `allowed_domains` (string[]): Array of allowed domains
   - `messages_per_minute` (number): Rate limit for messages
   - `config` (object): Widget configuration object
+  - `webhook_url` (string | null): Post-conversation webhook URL or null
   - `created_at` (string): ISO timestamp
   - `updated_at` (string): ISO timestamp
 </ResponseField>
@@ -71,8 +76,10 @@ description: "Creates a new widget."
     "messages_per_minute": 10,
     "config": {
       "theme": "light",
-      "position": "bottom-right"
+      "position": "bottom-right",
+      "timeoutSeconds": 3600
     },
+    "webhook_url": "https://example.com/webhook",
     "created_at": "2024-01-15T10:30:00Z",
     "updated_at": "2024-01-15T10:30:00Z"
   },
