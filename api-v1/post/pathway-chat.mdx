@@ -25,32 +25,54 @@ The message to send to the pathway (optional)
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="data" type="object">
+  Contains the response data for the pathway chat message.
+
+  <Expandable title="data properties">
+    <ResponseField name="chat_id" type="uuid">
+      The ID of the chat instance.
+    </ResponseField>
+
+    <ResponseField name="assistant_responses" type="array">
+      An array of strings containing the assistant's responses to the message sent.
+    </ResponseField>
+
+    <ResponseField name="current_node_id" type="string">
+      The ID of the current node in the pathway after processing the message.
+    </ResponseField>
+
+    <ResponseField name="current_node_name" type="string">
+      The name of the current node in the pathway.
+    </ResponseField>
+
+    <ResponseField name="chat_history" type="array">
+      An array of objects containing the role and content of each message in the external chat history.
+    </ResponseField>
+
+    <ResponseField name="pathway_id" type="string">
+      The ID of the pathway the chat is associated with.
+    </ResponseField>
+
+    <ResponseField name="pathway_version" type="string | null">
+      The version of the pathway being used, or null if not specified.
+    </ResponseField>
+
+    <ResponseField name="use_candidate_model" type="boolean">
+      Whether the candidate model is being used for this pathway chat.
+    </ResponseField>
+
+    <ResponseField name="variables" type="object">
+      The current state of variables in the pathway execution.
+    </ResponseField>
+
+    <ResponseField name="completed" type="boolean">
+      Whether the pathway has completed execution.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="chat_id" type="uuid">
-    The ID of the chat instance created. This will be used to send and receive messages to the pathway via the /pathway/chat endpoint.
-</ResponseField>
-
-<ResponseField name="Assistant Response" type="string">
-    The response from the Assistant to the message sent.
-</ResponseField>
-
-<ResponseField name="Current Node ID" type="string">
-    The ID of the current node in the pathway.
-</ResponseField>
-
-<ResponseField name="Current Node Name" type="string">
-    The name of the current node in the pathway.
-</ResponseField>
-
-<ResponseField name="Chat History" type="array">
-    An array of objects containing the role and content of each message in the chat.
-</ResponseField>
-
-<ResponseField name="Pathway ID" type="string">
-    The ID of the pathway the chat is associated with.
+<ResponseField name="errors" type="null | array">
+  Will be `null` on success. Contains error details if the request failed.
 </ResponseField>
 
 
@@ -58,15 +80,24 @@ The message to send to the pathway (optional)
 
 ```json Response
 {
-  "status": "success",
-  "chat_id": "1234567890",
-  "Assistant Response": "Hey there, how are you doing?",
-  "Current Node ID": "node_123",
-  "Current Node Name": "Welcome Node",
-  "Chat History": [
-    {"role": "user", "content": "Hello"}, {"role": "assistant", "content":  "Hi there!"}
-  ],
-  "Pathway ID": "pathway_123"
+  "data": {
+    "chat_id": "12345678-1234-1234-1234-123456789012",
+    "assistant_responses": ["Hey there, this is the Bland Bistro reservation line. Do you want to make a reservation?"],
+    "current_node_id": "1",
+    "current_node_name": "Start",
+    "chat_history": [
+      {"role": "user", "content": "hello"},
+      {"role": "assistant", "content": "Hey there, this is the Bland Bistro reservation line. Do you want to make a reservation?"}
+    ],
+    "pathway_id": "87654321-4321-4321-4321-210987654321",
+    "pathway_version": null,
+    "use_candidate_model": false,
+    "variables": {
+      "callID": "12345678-1234-1234-1234-123456789012"
+    },
+    "completed": false
+  },
+  "errors": null
 }
 ```
 
