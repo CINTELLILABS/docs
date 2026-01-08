@@ -1,0 +1,137 @@
+---
+title: "V2 Tools: Integration Tools"
+description: "Connect to Cal.com, Salesforce, Slack, and other services."
+---
+
+## Connect Cal.com
+
+This tutorial walks through creating a Cal.com booking tool. The same patterns apply to all built-in integrations.
+
+### Step 1: Connect Cal.com
+
+1. Go to **Integrations** tab
+2. Click **Cal.com**
+3. Click **Add Connection**
+4. Name it (e.g., "Sales Team Calendar")
+5. Click **Connect**
+6. Enter your Cal.com API key in the popup
+7. Click **Save**
+
+![Cal.com Connection](/tutorials/tutorials-assets/v2-tools/calCom_connection.gif)
+
+### Step 2: Create a Booking Tool
+
+In the Actions panel, click **Create Booking** to open the Tool Builder.
+
+![Actions Panel](/tutorials/tutorials-assets/v2-tools/integration_tools_tutorial/calcom_Action_pannel.png)
+
+### Step 3: Configure the Tool
+
+**Action Parameters:**
+
+![Action Parameters Configuration](/tutorials/tutorials-assets/v2-tools/integration_tools_tutorial/calcom_Action_params_config.jpeg)
+
+**Response Variables:**
+
+![Response Variables Configuration](/tutorials/tutorials-assets/v2-tools/integration_tools_tutorial/calcom_response_vars.jpeg)
+
+Click **Create Tool**.
+
+---
+
+## Configuring Tool Parameters
+
+All integrations use the same three input modes:
+
+### Manual Mode
+
+The value is fixed and always the same.
+
+**When to use:**
+- Cal.com event type for demos
+- Default priority or status values
+- Account IDs that are always the same
+
+**Example:** Always use the "Sales Demo" event type in Cal.com.
+
+### Agent Mode (Click the Sparkle Button)
+
+The AI extracts the value from the conversation.
+
+**When to use:**
+- Caller's name, email, or other personal info
+- Details about what they're interested in
+- Scheduling preferences from the conversation
+
+**Example:** Extract when the caller said they're available.
+
+**Writing Good Instructions:**
+- Be specific: "The caller's work email address" not just "email"
+- Mention format if it matters: "Date and time in the format they mentioned"
+- Handle missing data: "The company name if mentioned, otherwise leave blank"
+
+### Linked Mode (Click the Link Button)
+
+The value comes from a system variable or pathway variable.
+
+**System Variables (when available):**
+| Variable | Description |
+|----------|-------------|
+| `from` | The caller's phone number |
+| `to` | The number that was called |
+| `call_id` | Unique identifier for this call |
+
+Not all variables are available in every context. Check which variables are available in your specific use case.
+
+**When to use:**
+- Automatically include caller's phone number in a CRM
+- Reference the call ID for tracking
+- Use variables collected earlier in the pathway
+
+---
+
+## Response Variables
+
+After a tool executes, you can capture data from the response.
+
+### Default Fields (All Integrations)
+
+Every tool response includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ok` | boolean | `true` if successful |
+| `message` | string | Status message from the integration |
+| `data` | object | Integration-specific response data |
+
+### Cal.com Response Fields
+
+**Cal.com Schedule Meeting** (access via `data.*`):
+- `data.meeting_url` - The booking URL
+- `data.booking_id` - Unique identifier for the booking
+- `data.booking_uid` - UID for the booking
+- `data.status` - Booking status
+- `data.start_time` - Scheduled start time
+- `data.end_time` - Scheduled end time
+- `data.attendee_email` - The attendee's email
+- `data.attendee_name` - The attendee's name
+- `data.attendee_timezone` - The attendee's timezone
+
+---
+
+## Using Response Data in Pathways
+
+### Response Pathways
+
+Route your pathway based on what the tool returned:
+
+| Variable | Condition | Value | Go To |
+|----------|-----------|-------|-------|
+| `ok` | equals | `true` | Success Flow |
+| `ok` | equals | `false` | Error Handler |
+
+**Available Conditions:**
+- `==`, `!=` - Equals, not equals
+- `>`, `<`, `>=`, `<=` - Numeric comparisons
+- `contains`, `!contains` - String matching
+- `is null`, `is not null` - Check for presence

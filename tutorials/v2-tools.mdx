@@ -1,0 +1,254 @@
+---
+title: "V2 Tools"
+description: "Give your AI agent the ability to take actions during live calls."
+---
+
+## What Are Tools?
+
+When your AI phone agent talks to a caller, it can do more than have a conversation. It can take real actions during the call:
+
+- Schedule a meeting on Cal.com when a caller wants to book time
+- Create a contact in Salesforce when someone provides their info
+- Send a Slack message to notify your team about an interested lead
+- Call your own API to check order status or update a database
+
+These actions are called **tools**. A tool is something your agent can do when the conversation calls for it.
+
+---
+
+## V1 Tools vs V2 Tools
+
+If you've used Bland before, you may have used **Custom Tools** (V1). Here's how V2 Tools compare:
+
+| Feature | V1 (Custom Tools) | V2 Tools |
+|---------|-------------------|----------|
+| Configuration | Raw JSON, manual HTTP setup | Visual Tool Builder |
+| Integrations | Build everything yourself | Pre-built integrations + custom API |
+| Authentication | Manual header configuration | Managed OAuth and API keys |
+| Field Input | Static values only | Agent Mode, Linked Mode, Manual Mode |
+| Response Handling | Manual parsing | Visual response variable extraction |
+| Pathway Variables | Not supported | Link variables to tool inputs |
+| Tool Logs | None | Execution logs per tool |
+
+---
+
+## How Tools Work
+
+Every tool has four sections:
+
+**1. Integration Configuration** - Which connection and action to use (Salesforce → Create Contact, API → POST, etc.)
+
+**2. Prompting** - When the AI should use this tool and what it says during execution
+
+**3. Action Parameters** - The data the tool needs (fields, values, how to get them)
+
+**4. Response Variables** - What to capture from the result and how to use it
+
+You create a connection once, then build multiple tools using that connection. For example:
+
+**One Salesforce connection** could power:
+- A "Create Contact" tool
+- A "Create Lead" tool
+- A "Create Opportunity" tool
+
+**One API connection** to your backend could power:
+- A "Check Order Status" tool
+- A "Update Customer Record" tool
+- A "Submit Support Ticket" tool
+
+---
+
+## The Tools Hub
+
+All tool management happens in the [Tools Hub](https://app.bland.ai/dashboard/tools). Four tabs:
+
+**Tools** - Your created tools. Each tool shows its connection and status.
+
+**Connections** - Your authenticated links to services.
+
+**Integrations** - Browse available integrations and create new connections.
+
+**Analytics** - Execution logs, error rates, and performance metrics.
+
+![Tools Hub](/tutorials/tutorials-assets/v2-tools/tools-hub.jpeg)
+
+---
+
+## Creating a Tool
+
+**Set Up a Connection** - Connect to the service your tool will use. For third party integrations, sign in with OAuth. For custom APIs, configure your endpoint and authentication. You only do this once per service.
+
+**Choose an Action** - Each connection offers specific actions. Cal.com has Schedule Meeting and Get Available Times. Salesforce has Create Contact, Create Lead, Create Opportunity. Your API connection has GET and POST to any endpoint.
+
+**Configure the Tool** - The Tool Builder has four sections. Integration Configuration selects your connection and action. Prompting tells the AI when to use the tool and what to say. Action Parameters define what data the tool needs. Response Variables capture data from the result.
+
+**Add to Pathway** - Use the tool in your conversational pathway. Route based on results - success goes one way, errors another.
+
+**Tutorials:**
+- [Third Party Integrations](/tutorials/v2-tools-built-in) - Salesforce, Cal.com, Slack, and others
+- [Custom API Integration](/tutorials/v2-tools-custom-api) - Your own endpoints and custom APIs
+
+---
+
+## Tools with Personas
+
+When you add a tool to a Persona, the agent decides when to use it and fills in the parameters automatically.
+
+### How It Works
+
+1. Add your tool to the Persona's tool list
+2. The agent reads the tool's prompt to know when to use it
+3. When triggered, the agent fills Agent Mode fields from the conversation
+4. Linked Mode fields use system variables automatically
+5. Manual Mode fields use the static values you set
+
+![Persona Tool List](/tutorials/tutorials-assets/v2-tools/personas-tool-list.png)
+
+### Tool Prompts
+
+The tool's **prompt** tells the agent when to use it. Be specific:
+
+**Good prompt:**
+```
+Use this tool when the caller wants to schedule a demo call
+and has confirmed they're available next week.
+Don't use for general questions about the product.
+```
+
+**Bad prompt:**
+```
+Schedule meetings
+```
+
+### Parameter Modes in Personas
+
+Every tool field needs a value. Where does that value come from? That's what parameter modes solve.
+
+**Agent Mode** - The field is for the AI agent to fill in based on the call conversation.
+
+During the call, the agent listens to what the caller says and extracts the value when the tool is used. This is for information the caller provides that you couldn't know ahead of time.
+
+*Use Agent Mode when:*
+- The caller provides their name, email, or phone number
+- The caller mentions their preferences or requirements
+- The caller describes a problem or request
+- Any information that comes from what the caller says
+
+*Don't use Agent Mode when:*
+- You already know the value (use Manual Mode instead)
+- The system already has the value (use Linked Mode instead)
+
+Example: The caller says "my email is john@example.com" - the agent captures "john@example.com" from the conversation and uses it in the tool.
+
+![Agent Mode in Personas](/tutorials/tutorials-assets/v2-tools/agent_mode_slack_example.png)
+
+**Manual Mode** - You know the value ahead of time. It never changes.
+
+Use this for fixed values that are the same for every call.
+
+Example: Always book on the "Sales Demos" calendar. Always set the lead source to "phone_call".
+
+![Manual Mode in Personas](/tutorials/tutorials-assets/v2-tools/static_input_mode.png)
+
+**Linked Mode** - The system already knows this value. No need to ask or configure.
+
+Use this for system variables that are automatically available.
+
+Example: `{{from}}` is the caller's phone number - we already have it. `{{call_id}}` is the unique identifier for this call.
+
+![Linked Mode in Personas](/tutorials/tutorials-assets/v2-tools/linked_mode_SMS_example_link_phonenumber.png)
+
+**Important:** In Pathways, Agent Mode works differently. You add tools using the **Custom Tool node**, and the agent doesn't fill these fields automatically. Instead, you use Variable Extraction in earlier nodes and link to those variables in the Custom Tool node's Fields section. See the Tools with Pathways section below.
+
+---
+
+## Tools with Pathways
+
+In Pathways, you control when tools run and how parameters are filled. The agent doesn't fill fields automatically - you link them to pathway variables.
+
+### How It Works
+
+1. Extract variables in earlier nodes using Variable Extraction (caller name, email, etc.)
+2. Add a Custom Tool node to your pathway
+3. In the Fields section, select which pathway variables to use for each tool input
+4. The tool runs when the pathway reaches that node
+
+![Custom Tool Modal](/tutorials/tutorials-assets/v2-tools/custom_tool_modal.png)
+
+### Parameter Mapping in Pathways
+
+In Pathways, the tool doesn't run on its own - you control exactly when it fires and what data it uses.
+
+**Manual Mode** - Same as Personas. Fixed value you set in advance.
+
+![Parameter Mapping in Pathways](/tutorials/tutorials-assets/v2-tools/pathway_parameter_mapping.png)
+
+**Agent Mode fields** - Here's the key difference: the agent doesn't fill these automatically during the call. Instead, you extract variables earlier in your pathway and link them in the Custom Tool node's Fields section.
+Example: You extracted `customer_email` in a previous node. Now you select it for the email field.
+
+**Linked Mode** - System variables like the caller's phone number and call ID are available automatically.
+
+### Example
+
+1. Earlier node extracts `customer_email` and `customer_name` using Variable Extraction
+2. Custom Tool node Fields section:
+   - email → select `customer_email`
+   - name → select `customer_name`
+3. Tool executes with those values
+
+![Pathway Example with Tool](/tutorials/tutorials-assets/v2-tools/custom_tool_pathway_example_with_slack.jpeg)
+
+### Response Routing
+
+Route your pathway based on tool results:
+
+| If | Condition | Then Go To |
+|----|-----------|------------|
+| `ok` | equals `true` | Confirmation Node |
+| `ok` | equals `false` | Error Handler |
+
+Available conditions: `==`, `!=`, `>`, `<`, `contains`, `is null`, `is not null`
+
+---
+
+## Response Variables
+
+When a tool runs, it returns data you can use in your conversation or pass to other tools.
+
+**Why response variables exist:** After booking a meeting, you might want to tell the caller the confirmation number. After creating a contact, you might want to confirm their record was saved. Response variables let you capture this data and use it.
+
+### Response Modes
+
+**Capture Response** - The tool waits for a response and captures the data. Use this when you need to check if the request succeeded, get data back (like a confirmation number), or route your pathway based on the result.
+
+**Fire and Forget** - The tool sends the request but doesn't wait for a response. Use this when you don't need confirmation, speed is critical, or the action is fire-and-forget (like logging or notifications).
+
+![Response Modes](/tutorials/tutorials-assets/v2-tools/response_modes.jpeg)
+
+![Response Variables](/tutorials/tutorials-assets/v2-tools/pathway_tool_response_variables.png)
+
+### What you get back (Capture Response)
+
+- Whether the tool succeeded or failed
+- A status message
+- The actual data from the service (contact ID, booking URL, etc.)
+
+**How to use them:**
+- In the Tool Builder, you define which fields to capture
+- Use `{{variable_name}}` syntax to reference captured data
+- Route your pathway based on success or failure
+
+---
+
+## Monitoring & Transparency
+
+V2 Tools give you full visibility into what's happening with your tools.
+
+**Analytics Panel** - In the Tools Hub, the Analytics tab shows execution logs, error rates, and performance metrics across all your tools.
+
+![Analytics Panel](/tutorials/tutorials-assets/v2-tools/tool_analytics_pannel.png)
+
+**Tool Logs in Call View** - When reviewing a specific call, see exactly what happened with each tool - what was sent, what came back, and the result.
+
+![Tool Logs in Call View](/tutorials/tutorials-assets/v2-tools/tool_logs_in_call_view.png)
+
