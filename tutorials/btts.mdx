@@ -1,0 +1,141 @@
+---
+title: "BTTS v2 Voice Cloning"
+description: "How to create, configure, and optimize voice clones using BTTS v2."
+---
+
+## Introduction
+
+BTTS v2 allows you to create custom voice clones from short audio samples. This guide covers how to create high-quality voice clones and format your text inputs for the best results.
+
+To access the voice studio, go to:
+
+[https://app.bland.ai/dashboard/voices?tab=studio](https://app.bland.ai/dashboard/voices?tab=studio)
+
+---
+
+## Creating a Voice Clone
+
+To create a new voice clone:
+
+1. Navigate to the **Voices Studio** tab
+2. Click **New Voice**
+3. Upload a 10–15 second audio sample
+
+### Sample Requirements
+
+For best results, your audio sample should have:
+
+* Clear enunciation
+* No background noise
+* A single speaker
+* At least 100ms of silence at the beginning and end (avoid cutting off mid-word)
+* Emotional variety (for more expressive output)
+
+> **Tip**: You can use [Audacity](https://www.audacityteam.org/) to edit and trim your clips. To download audio from YouTube videos, we recommend [yt-dlp](https://github.com/yt-dlp/yt-dlp).
+
+---
+
+## Configuration Settings
+
+BTTS v2 provides two configuration options to fine-tune your voice clone.
+
+### Speed vs. Smoothness
+
+This setting controls how many frames the system waits for before decoding the first audio frame.
+
+* **Lower values**: Faster initial audio output, but reduced quality in the first few hundred milliseconds
+* **Higher values**: Smoother output, but potentially slower response time
+
+### Clone Consistency Boost
+
+This feature adds additional prompting to align output more closely with your original voice sample.
+
+> **Important Note**: Disable Clone Consistency Boost if your agent needs to code-switch or speak multiple languages not present in your sample. If you're experiencing broken or distorted outputs, try toggling this setting off.
+
+---
+
+## Text Formatting
+
+### Spacing Requirements
+
+BTTS v2 processes text by splitting on spaces. Each word is generated individually, so proper spacing is essential for accurate output.
+
+**Correct formatting:**
+
+```text
+Hello <vocal burst> world.
+```
+
+**Incorrect formatting:**
+
+```text
+Hello<vocal burst>world.
+```
+
+Hyphenated or concatenated words may cause reduced accuracy:
+
+```text
+# Avoid
+concatenated-word
+from-the-same-array
+
+# Preferred
+concatenated word
+from the same array
+```
+
+> **Note**: For Asian languages (Chinese, Japanese), the tokenizer handles character segmentation automatically—no manual spacing required.
+
+---
+
+## Text Normalization
+
+The model automatically normalizes common text patterns before processing. You do not need to pre-format these inputs:
+
+* **Emails**: `john@gmail.com` → `john @ gmail dot com`
+* **URLs**: `www.google.com` → `www dot google dot com`
+* **Smart quotes**: Converted to straight quotes
+* **Repeated punctuation**: `Hello!!!` → `Hello!`
+* **Missing spaces**: `End.Start` → `End. Start`
+
+---
+
+## Working with Numbers
+
+For best results when generating numbers:
+
+* Keep number sequences to 6 characters or fewer
+* Format numbers as words when possible
+* Always end sentences containing numbers with a period
+* For long number strings, use pause tags to break up the generation
+
+```text
+# Recommended
+One two three four five.
+
+# For long sequences, add pauses
+One two three <|0.5|> four five six.
+```
+
+> **Important Note**: If your sentence does not end with proper punctuation, the model may drop the last number.
+
+---
+
+## Using Punctuation
+
+Punctuation directly affects speech delivery in BTTS v2:
+
+* **Ellipses (…)**: Adds pauses and weight
+* **CAPITALIZATION**: Increases emphasis
+* **Standard punctuation (. , !)**: Provides natural speech rhythm
+* **Dashes (—)**: Can add stutters or breaks
+
+---
+
+## Best Practices
+
+* Choose a voice sample with emotional variety for more expressive output
+* Use natural speech patterns and proper punctuation
+* Avoid unusual formatting (excessive dashes or ellipses) for timing control
+* Always include proper spacing between words and tags
+* End sentences with appropriate punctuation, especially when numbers are involved
