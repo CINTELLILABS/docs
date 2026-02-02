@@ -1,0 +1,170 @@
+---
+title: "List Audit Logs"
+api: "GET https://api.bland.ai/v1/audit/logs"
+description: "Retrieve a paginated, filterable list of audit events for your organization. Designed for SIEM integration and compliance workflows."
+---
+
+<Warning>
+  Audit logs are an enterprise feature and not yet available for all accounts. To enable audit logging for your organization, contact your Bland representative or [reach out to sales](https://forms.default.com/361589).
+</Warning>
+
+## Overview
+
+Returns a time-ordered log of auditable actions taken within your organization — logins, logouts, pathway changes, knowledge base edits, and more.
+
+Results are scoped to your organization and require an **admin** or **owner** role.
+
+### Supported event types
+
+| Event type | Description |
+|---|---|
+| `auth.sso_login` | User logged in via SSO |
+| `auth.logout` | User logged out |
+| `pathway.created` | Conversational pathway created |
+| `pathway.updated` | Pathway version updated |
+| `pathway.deleted` | Pathway deleted |
+| `pathway.published` | Pathway version published to an environment |
+| `kb.content_updated` | Knowledge base text/markdown content edited |
+| `kb.file_replaced` | Knowledge base source file replaced |
+| `kb.urls_replaced` | Knowledge base URLs replaced (web scrape) |
+| `kb.version_restored` | Knowledge base version restored |
+
+New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*`, `kb.*`) in your SIEM to group by category.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="event_type" type="string">
+  Filter by exact event type (e.g. `pathway.created`, `auth.sso_login`).
+</ParamField>
+
+<ParamField query="actor_id" type="string">
+  Filter by the user ID that performed the action.
+</ParamField>
+
+<ParamField query="created_after" type="string">
+  ISO 8601 timestamp. Only return events created after this time.
+
+  Example: `2025-01-01T00:00:00Z`
+</ParamField>
+
+<ParamField query="created_before" type="string">
+  ISO 8601 timestamp. Only return events created before this time.
+
+  Example: `2025-02-01T00:00:00Z`
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="page_size" type="number" default="50">
+  Results per page. Min `1`, max `100`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="events" type="array">
+    Array of audit event objects, ordered by `created_at` descending (newest first).
+
+    <ResponseField name="id" type="string">
+      Unique identifier for the audit event.
+    </ResponseField>
+
+    <ResponseField name="org_id" type="string">
+      The organization this event belongs to.
+    </ResponseField>
+
+    <ResponseField name="actor_id" type="string">
+      The user ID that performed the action.
+    </ResponseField>
+
+    <ResponseField name="event_type" type="string">
+      The type of event (see supported event types above).
+    </ResponseField>
+
+    <ResponseField name="resource_type" type="string | null">
+      The type of resource affected (e.g. `convo_pathway`, `kb`). `null` for events like login/logout that don't target a specific resource.
+    </ResponseField>
+
+    <ResponseField name="resource_id" type="string | null">
+      The ID of the affected resource. `null` when no specific resource is involved.
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object | null">
+      Additional context about the event. Contents vary by event type — may include fields like `version_id`, `name`, `environment`, `filename`, `email`, etc.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the event occurred.
+    </ResponseField>
+  </ResponseField>
+
+  <ResponseField name="total" type="number">
+    Total number of events matching the query.
+  </ResponseField>
+
+  <ResponseField name="total_pages" type="number">
+    Total number of pages.
+  </ResponseField>
+
+  <ResponseField name="current_page" type="number">
+    The current page number.
+  </ResponseField>
+
+  <ResponseField name="page_size" type="number">
+    The number of results per page.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "events": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "org_id": "00000000-0000-0000-0000-000000000100",
+        "actor_id": "00000000-0000-0000-0000-000000000200",
+        "event_type": "pathway.published",
+        "resource_type": "convo_pathway",
+        "resource_id": "00000000-0000-0000-0000-000000000300",
+        "metadata": {
+          "version_number": 3,
+          "environment": "production"
+        },
+        "created_at": "2025-01-15T14:32:00.000Z"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "org_id": "00000000-0000-0000-0000-000000000100",
+        "actor_id": "00000000-0000-0000-0000-000000000200",
+        "event_type": "auth.sso_login",
+        "resource_type": null,
+        "resource_id": null,
+        "metadata": {
+          "provider_id": "okta",
+          "email": "user@example.com"
+        },
+        "created_at": "2025-01-15T14:30:00.000Z"
+      }
+    ],
+    "total": 2,
+    "total_pages": 1,
+    "current_page": 1,
+    "page_size": 50
+  },
+  "errors": null
+}
+```
+</ResponseExample>
