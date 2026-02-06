@@ -1,0 +1,139 @@
+---
+title: "Resolve Contact"
+api: "POST https://api.bland.ai/v1/contacts/resolve"
+description: "Find an existing contact or create a new one. Requires the cross_channel_memory feature."
+---
+
+<Note>
+This endpoint requires the `cross_channel_memory` feature to be enabled for your account. Contact support to request access.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string">
+  Phone number for the contact. At least one identifier is required.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Email address for the contact. At least one identifier is required.
+</ParamField>
+
+<ParamField body="external_id" type="string">
+  External ID for the contact. At least one identifier is required.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Name of the contact.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  Persona ID for memory scoping. Either `persona_id` or `agent_number` should be provided for memory creation.
+</ParamField>
+
+<ParamField body="agent_number" type="string">
+  Agent phone number for memory scoping. Either `persona_id` or `agent_number` should be provided for memory creation.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom metadata to associate with the contact.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Response containing the contact and creation status.
+</ResponseField>
+
+<ResponseField name="data.contact" type="object">
+  The resolved contact object.
+</ResponseField>
+
+<ResponseField name="data.contact.id" type="string">
+  Unique identifier for the contact.
+</ResponseField>
+
+<ResponseField name="data.contact.org_id" type="string">
+  Organization ID the contact belongs to.
+</ResponseField>
+
+<ResponseField name="data.contact.name" type="string">
+  Contact's name (if set).
+</ResponseField>
+
+<ResponseField name="data.contact.metadata" type="object">
+  Custom metadata associated with the contact.
+</ResponseField>
+
+<ResponseField name="data.contact.created_at" type="string">
+  ISO timestamp when the contact was created.
+</ResponseField>
+
+<ResponseField name="data.contact.updated_at" type="string">
+  ISO timestamp when the contact was last updated.
+</ResponseField>
+
+<ResponseField name="data.created" type="boolean">
+  Whether a new contact was created (true) or an existing one was found (false).
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json New Contact Created
+{
+  "data": {
+    "contact": {
+      "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "org_id": "11111111-2222-3333-4444-555555555555",
+      "name": "John Doe",
+      "metadata": {
+        "source": "api"
+      },
+      "created_at": "2025-07-22T10:30:00.000Z",
+      "updated_at": "2025-07-22T10:30:00.000Z"
+    },
+    "created": true
+  },
+  "errors": null
+}
+```
+
+```json Existing Contact Found
+{
+  "data": {
+    "contact": {
+      "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "org_id": "11111111-2222-3333-4444-555555555555",
+      "name": "John Doe",
+      "metadata": {
+        "source": "web_signup"
+      },
+      "created_at": "2025-07-20T10:30:00.000Z",
+      "updated_at": "2025-07-22T15:45:00.000Z"
+    },
+    "created": false
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "At least one identifier (phone_number, email, or external_id) is required"
+    }
+  ]
+}
+```
+</ResponseExample>

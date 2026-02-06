@@ -1,0 +1,112 @@
+---
+title: "Enable or Disable Memory"
+api: "POST https://api.bland.ai/v1/memory/enable"
+description: "Enable or disable memory for a specific pathway version or persona version. When enabling, entity schemas are refreshed so memory context is built correctly. Use this to turn memory on or off per version (e.g. for testing). For pathways, memory applies when the pathway is attached to a number; pathways can have separate memory per number or share memory with personas."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+Provide **either** pathway **or** persona identifiers (not both).
+
+<ParamField body="pathway_id" type="string">
+  Pathway ID. Required when enabling/disabling memory for a pathway. Must be used with `version_number` and `memory_enabled`.
+</ParamField>
+
+<ParamField body="version_number" type="number">
+  Pathway version number. Required when `pathway_id` is provided.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  Persona ID. Required when enabling/disabling memory for a persona. Must be used with `version_id` and `memory_enabled`.
+</ParamField>
+
+<ParamField body="version_id" type="string">
+  Persona version ID (UUID). Required when `persona_id` is provided.
+</ParamField>
+
+<ParamField body="memory_enabled" type="boolean" required>
+  Whether memory should be enabled (`true`) or disabled (`false`) for the given pathway or persona version.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Success response data.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message confirming memory was enabled or disabled.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response (pathway)
+{
+  "data": {
+    "message": "Memory enabled successfully for pathway."
+  },
+  "errors": null
+}
+```
+
+```json Response (persona)
+{
+  "data": {
+    "message": "Memory enabled successfully for persona."
+  },
+  "errors": null
+}
+```
+
+```json Missing or invalid body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "memory_enabled (boolean) is required."
+    }
+  ]
+}
+```
+
+```json Neither or both pathway/persona
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Exactly one of pathway_id or persona_id is required."
+    }
+  ]
+}
+```
+
+```json Not found / Forbidden
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Pathway not found."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Notes
+
+- Requires the **cross_channel_memory** feature to be enabled for your account.
+- For **pathways**: when a pathway is attached to a number, memory is enabled for that number. A pathway can have separate memory per number or share memory with personas.
+- For **personas**: enable or disable memory for a specific persona version so you can test behavior per version.
+- When **enabling** memory, entity schemas are refreshed in the background so context and prompts are built correctly.

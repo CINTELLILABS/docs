@@ -1,0 +1,123 @@
+---
+title: "Get Contact Memory"
+api: "GET https://api.bland.ai/v1/memory/contact/{memory_id}"
+description: "Retrieve a contact memory record by its ID. Returns the full memory object including summary, facts, recent messages, and more."
+---
+
+<Note>
+Requires the `cross_channel_memory` feature. Contact support to request access.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the contact memory record.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The contact memory object.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the contact memory.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  Organization ID this memory belongs to.
+</ResponseField>
+
+<ResponseField name="data.contact_id" type="string">
+  Contact ID this memory is associated with.
+</ResponseField>
+
+<ResponseField name="data.persona_id" type="string">
+  Persona ID this memory is scoped to (null if agent-based).
+</ResponseField>
+
+<ResponseField name="data.agent_number" type="string">
+  Agent phone number this memory is scoped to (null if persona-based).
+</ResponseField>
+
+<ResponseField name="data.summary" type="string">
+  Rolling summary of interactions with this contact.
+</ResponseField>
+
+<ResponseField name="data.facts" type="object">
+  Structured facts about the contact (key-value pairs).
+</ResponseField>
+
+<ResponseField name="data.recent_messages" type="array">
+  Array of recent messages from the sliding window.
+</ResponseField>
+
+<ResponseField name="data.open_items" type="array">
+  Array of open items or pending tasks.
+</ResponseField>
+
+<ResponseField name="data.memory_history" type="array">
+  Historical record of memory updates.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp when the memory was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO timestamp when the memory was last updated.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "mem-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "org_id": "11111111-2222-3333-4444-555555555555",
+    "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "persona_id": "persona-12345678",
+    "agent_number": null,
+    "summary": "Customer inquired about order status. Order #12345 is in transit.",
+    "facts": {
+      "name": "John Doe",
+      "preferred_contact": "phone"
+    },
+    "recent_messages": [
+      {
+        "role": "user",
+        "content": "Hi, I'm calling about my order",
+        "channel": "call",
+        "timestamp": "2025-07-22T10:30:00.000Z"
+      }
+    ],
+    "open_items": [],
+    "memory_history": [],
+    "created_at": "2025-07-20T10:30:00.000Z",
+    "updated_at": "2025-07-22T15:45:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Contact memory not found"
+    }
+  ]
+}
+```
+</ResponseExample>
