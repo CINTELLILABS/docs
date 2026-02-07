@@ -1,7 +1,7 @@
 ---
 title: "Enable or Disable Memory"
 api: "POST https://api.bland.ai/v1/memory/enable"
-description: "Enable or disable memory for a specific pathway version or persona version. When enabling, entity schemas are refreshed so memory context is built correctly. Use this to turn memory on or off per version (e.g. for testing). For pathways, memory applies when the pathway is attached to a number; pathways can have separate memory per number or share memory with personas."
+description: "Enable or disable memory for a pathway or persona version."
 ---
 
 ### Headers
@@ -15,7 +15,7 @@ description: "Enable or disable memory for a specific pathway version or persona
 Provide **either** pathway **or** persona identifiers (not both).
 
 <ParamField body="pathway_id" type="string">
-  Pathway ID. Required when enabling/disabling memory for a pathway. Must be used with `version_number` and `memory_enabled`.
+  Pathway ID. Use with `version_number` and `memory_enabled`.
 </ParamField>
 
 <ParamField body="version_number" type="number">
@@ -23,7 +23,7 @@ Provide **either** pathway **or** persona identifiers (not both).
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  Persona ID. Required when enabling/disabling memory for a persona. Must be used with `version_id` and `memory_enabled`.
+  Persona ID. Use with `version_id` and `memory_enabled`.
 </ParamField>
 
 <ParamField body="version_id" type="string">
@@ -31,7 +31,7 @@ Provide **either** pathway **or** persona identifiers (not both).
 </ParamField>
 
 <ParamField body="memory_enabled" type="boolean" required>
-  Whether memory should be enabled (`true`) or disabled (`false`) for the given pathway or persona version.
+  Set to `true` to enable memory, `false` to disable.
 </ParamField>
 
 ### Response
@@ -41,7 +41,7 @@ Provide **either** pathway **or** persona identifiers (not both).
 </ResponseField>
 
 <ResponseField name="data.message" type="string">
-  Success message confirming memory was enabled or disabled.
+  Success message.
 </ResponseField>
 
 <ResponseField name="errors" type="null">
@@ -106,6 +106,6 @@ Provide **either** pathway **or** persona identifiers (not both).
 
 ### Notes
 
-- For **pathways**: when a pathway is attached to a number, memory is enabled for that number. A pathway can have separate memory per number or share memory with personas.
-- For **personas**: enable or disable memory for a specific persona version so you can test behavior per version.
-- When **enabling** memory, entity schemas are refreshed in the background so context and prompts are built correctly.
+- **Pathways**: Memory applies when the pathway is attached to a number; can be per number or shared with personas.
+- **Personas**: Enable or disable per version for testing.
+- **Enabling** memory triggers a background refresh of entity schemas.
