@@ -1,0 +1,79 @@
+---
+title: "Get Contact Memory Messages"
+api: "GET https://api.bland.ai/v1/memory/contact/{memory_id}/messages"
+description: "Get recent messages from a contact memory. Returns the sliding window of cross-channel messages."
+---
+
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="memory_id" type="string" required>
+  The unique identifier of the contact memory record.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of recent messages.
+</ResponseField>
+
+<ResponseField name="data[].role" type="string">
+  Message role: "user" or "assistant".
+</ResponseField>
+
+<ResponseField name="data[].content" type="string">
+  Message content.
+</ResponseField>
+
+<ResponseField name="data[].channel" type="string">
+  Channel the message came from: "call" or "sms".
+</ResponseField>
+
+<ResponseField name="data[].timestamp" type="string">
+  ISO timestamp when the message was recorded.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "role": "user",
+      "content": "Hi, I'm calling about my order",
+      "channel": "call",
+      "timestamp": "2025-07-22T10:30:00.000Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I'd be happy to help you with your order. Can you provide your order number?",
+      "channel": "call",
+      "timestamp": "2025-07-22T10:30:05.000Z"
+    },
+    {
+      "role": "user",
+      "content": "It's order #12345",
+      "channel": "sms",
+      "timestamp": "2025-07-22T11:00:00.000Z"
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Empty Messages
+{
+  "data": [],
+  "errors": null
+}
+```
+</ResponseExample>

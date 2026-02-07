@@ -1,0 +1,65 @@
+---
+title: "Reset Memory"
+api: "POST https://api.bland.ai/v1/memory/reset"
+description: "Reset memory for a contact/persona pair. Deletes all memory data for the specified contact and agent identity."
+---
+<Warning>
+This action is **irreversible**. All memory data (recent messages, summary, facts, entities) for this contact/persona pair will be permanently deleted.
+</Warning>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="contact_id" type="string" required>
+  The unique identifier of the contact whose memory should be reset.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  The persona ID for memory scoping. Either `persona_id` or `agent_number` is required.
+</ParamField>
+
+<ParamField body="agent_number" type="string">
+  The agent phone number for memory scoping. Either `persona_id` or `agent_number` is required.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Success confirmation.
+</ResponseField>
+
+<ResponseField name="data.success" type="boolean">
+  Whether the reset was successful.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "success": true
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "persona_id or agent_number is required"
+    }
+  ]
+}
+```
+</ResponseExample>

@@ -1,0 +1,134 @@
+---
+title: "Get Memory Context"
+api: "GET https://api.bland.ai/v1/memory/context"
+description: "Get memory context for a contact/persona pair. Returns recent messages, summary, facts, and entities."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="contact_id" type="string" required>
+  The unique identifier of the contact.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  The persona ID for memory scoping. Either `persona_id` or `agent_number` is required.
+</ParamField>
+
+<ParamField query="agent_number" type="string">
+  The agent phone number for memory scoping. Either `persona_id` or `agent_number` is required.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The memory context object.
+</ResponseField>
+
+<ResponseField name="data.contact_id" type="string">
+  The contact ID this memory belongs to.
+</ResponseField>
+
+<ResponseField name="data.recentMessages" type="array">
+  Array of recent messages from the sliding window (cross-channel).
+</ResponseField>
+
+<ResponseField name="data.recentMessages[].role" type="string">
+  Message role: "user" or "assistant".
+</ResponseField>
+
+<ResponseField name="data.recentMessages[].content" type="string">
+  Message content.
+</ResponseField>
+
+<ResponseField name="data.recentMessages[].channel" type="string">
+  Channel the message came from: "call" or "sms".
+</ResponseField>
+
+<ResponseField name="data.recentMessages[].timestamp" type="string">
+  ISO timestamp when the message was recorded.
+</ResponseField>
+
+<ResponseField name="data.summary" type="string">
+  Rolling summary of interactions with this contact.
+</ResponseField>
+
+<ResponseField name="data.contactFacts" type="object">
+  Structured facts about the contact (key-value pairs).
+</ResponseField>
+
+<ResponseField name="data.entities" type="array">
+  Array of extracted entities associated with this contact.
+</ResponseField>
+
+<ResponseField name="data.openItems" type="array">
+  Array of open items or pending tasks for this contact.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "recentMessages": [
+      {
+        "role": "user",
+        "content": "Hi, I'm calling about my order",
+        "channel": "call",
+        "timestamp": "2025-07-22T10:30:00.000Z"
+      },
+      {
+        "role": "assistant",
+        "content": "I'd be happy to help you with your order. Can you provide your order number?",
+        "channel": "call",
+        "timestamp": "2025-07-22T10:30:05.000Z"
+      }
+    ],
+    "summary": "Customer inquired about order status. Order #12345 is in transit, expected delivery July 25.",
+    "contactFacts": {
+      "name": "John Doe",
+      "preferred_contact": "phone",
+      "timezone": "EST"
+    },
+    "entities": [],
+    "openItems": []
+  },
+  "errors": null
+}
+```
+
+```json No Memory Yet
+{
+  "data": {
+    "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "recentMessages": [],
+    "summary": null,
+    "contactFacts": {},
+    "entities": [],
+    "openItems": []
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "persona_id or agent_number is required"
+    }
+  ]
+}
+```
+</ResponseExample>

@@ -1,0 +1,99 @@
+---
+title: "Get Memory Changes"
+api: "GET https://api.bland.ai/v1/memory/changes"
+description: "Get memory changes for a specific call or SMS conversation. Shows what memory was before and after the interaction."
+---
+
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="call_id" type="string">
+  The call ID to get memory changes for. Either `call_id` or `conversation_id` is required.
+</ParamField>
+
+<ParamField query="conversation_id" type="string">
+  The SMS conversation ID to get memory changes for. Either `call_id` or `conversation_id` is required.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Memory changes data.
+</ResponseField>
+
+<ResponseField name="data.initial_memory" type="object">
+  The memory context at the start of the interaction.
+</ResponseField>
+
+<ResponseField name="data.changes" type="object">
+  Changes made to memory during the interaction.
+</ResponseField>
+
+<ResponseField name="data.memory_history" type="array">
+  Historical record of memory updates.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "initial_memory": {
+      "summary": "Customer previously inquired about pricing.",
+      "facts": {
+        "name": "John Doe"
+      }
+    },
+    "changes": {
+      "summary": "Customer placed an order for the premium plan. Order #12345 confirmed.",
+      "facts": {
+        "name": "John Doe",
+        "plan": "premium",
+        "order_id": "12345"
+      }
+    },
+    "memory_history": [
+      {
+        "timestamp": "2025-07-22T10:30:00.000Z",
+        "type": "summary_update",
+        "value": "Customer placed an order for the premium plan."
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Call or conversation not found, or no memory data available"
+    }
+  ]
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "call_id or conversation_id is required"
+    }
+  ]
+}
+```
+</ResponseExample>

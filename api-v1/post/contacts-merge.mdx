@@ -1,0 +1,122 @@
+---
+title: "Merge Contacts"
+api: "POST https://api.bland.ai/v1/contacts/merge"
+description: "Merge two contacts into one. All data from the duplicate contact is moved to the primary contact, and the duplicate is deleted."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="primary_contact_id" type="string" required>
+  The ID of the contact that will remain after the merge. Data from the duplicate will be merged into this contact.
+</ParamField>
+
+<ParamField body="duplicate_contact_id" type="string" required>
+  The ID of the contact to merge and delete. All associated data (calls, conversations, memory) will be transferred to the primary contact.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The merged contact object.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the merged contact (same as primary_contact_id).
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  Organization ID the contact belongs to.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Contact's name (prefers primary, falls back to duplicate if primary is empty).
+</ResponseField>
+
+<ResponseField name="data.metadata" type="object">
+  Merged metadata from both contacts (primary takes precedence for conflicting keys).
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp when the contact was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO timestamp when the contact was last updated.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+### Merge Behavior
+
+When merging contacts:
+
+- **Identifiers**: All phone numbers, emails, and external IDs from the duplicate are added to the primary contact
+- **Metadata**: Metadata objects are merged, with primary contact values taking precedence for conflicting keys
+- **Name**: The primary contact's name is kept, unless it's empty (then the duplicate's name is used)
+- **Calls**: All calls associated with the duplicate are reassigned to the primary contact
+- **SMS Conversations**: All SMS conversations are reassigned to the primary contact
+- **Contact Memory**: Memory data is merged (facts, recent messages, summaries) for each persona/agent. If both contacts have memory for the same persona, the data is intelligently combined
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "org_id": "11111111-2222-3333-4444-555555555555",
+    "name": "John Doe",
+    "metadata": {
+      "source": "web_signup",
+      "phone_verified": true,
+      "email_verified": true
+    },
+    "created_at": "2025-07-20T10:30:00.000Z",
+    "updated_at": "2025-07-22T16:30:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Error - Same Contact
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Cannot merge a contact with itself"
+    }
+  ]
+}
+```
+
+```json Error - Different Orgs
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Cannot merge contacts from different orgs"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Contact not found"
+    }
+  ]
+}
+```
+</ResponseExample>

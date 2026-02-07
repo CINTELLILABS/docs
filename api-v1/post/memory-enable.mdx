@@ -1,0 +1,111 @@
+---
+title: "Enable or Disable Memory"
+api: "POST https://api.bland.ai/v1/memory/enable"
+description: "Enable or disable memory for a pathway or persona version."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+Provide **either** pathway **or** persona identifiers (not both).
+
+<ParamField body="pathway_id" type="string">
+  Pathway ID. Use with `version_number` and `memory_enabled`.
+</ParamField>
+
+<ParamField body="version_number" type="number">
+  Pathway version number. Required when `pathway_id` is provided.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  Persona ID. Use with `version_id` and `memory_enabled`.
+</ParamField>
+
+<ParamField body="version_id" type="string">
+  Persona version ID (UUID). Required when `persona_id` is provided.
+</ParamField>
+
+<ParamField body="memory_enabled" type="boolean" required>
+  Set to `true` to enable memory, `false` to disable.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Success response data.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response (pathway)
+{
+  "data": {
+    "message": "Memory enabled successfully for pathway."
+  },
+  "errors": null
+}
+```
+
+```json Response (persona)
+{
+  "data": {
+    "message": "Memory enabled successfully for persona."
+  },
+  "errors": null
+}
+```
+
+```json Missing or invalid body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "memory_enabled (boolean) is required."
+    }
+  ]
+}
+```
+
+```json Neither or both pathway/persona
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Exactly one of pathway_id or persona_id is required."
+    }
+  ]
+}
+```
+
+```json Not found / Forbidden
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Pathway not found."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Notes
+
+- **Pathways**: Memory applies when the pathway is attached to a number; can be per number or shared with personas.
+- **Personas**: Enable or disable per version for testing.
+- **Enabling** memory triggers a background refresh of entity schemas.

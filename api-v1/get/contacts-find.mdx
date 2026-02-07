@@ -1,0 +1,120 @@
+---
+title: "Find Contact"
+api: "POST https://api.bland.ai/v1/contacts/find"
+description: "Find a contact by phone number, email, or external ID. Returns the contact with all identifiers, contact_memories (per persona/agent), and memory entities."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string">
+  Phone number to search for. At least one identifier is required.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Email address to search for. At least one identifier is required.
+</ParamField>
+
+<ParamField body="external_id" type="string">
+  External ID to search for. At least one identifier is required.
+</ParamField>
+
+### Response
+
+Returns the contact with related data, or `null` if not found.
+
+<ResponseField name="data" type="object">
+  The contact object with identifiers, memories, and entities. Null if no contact found.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the contact.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  Organization ID the contact belongs to.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Contact's name (if set).
+</ResponseField>
+
+<ResponseField name="data.metadata" type="object">
+  Custom metadata associated with the contact.
+</ResponseField>
+
+<ResponseField name="data.identifiers" type="array">
+  Contact identifiers (phone_number, email, external_id) for this contact.
+</ResponseField>
+
+<ResponseField name="data.memories" type="array">
+  Contact memory objects, one per persona or agent. Each includes summary, facts, recent_messages, open_items, and entities (memory_entity records).
+</ResponseField>
+
+<ResponseField name="data.memories[].entities" type="array">
+  Entity-scoped facts (e.g. bookings, orders) for that memory.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response (found)
+{
+  "data": {
+    "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "org_id": "11111111-2222-3333-4444-555555555555",
+    "name": "John Doe",
+    "metadata": {},
+    "created_at": "2025-07-20T10:30:00.000Z",
+    "updated_at": "2025-07-22T15:45:00.000Z",
+    "identifiers": [
+      {
+        "id": "...",
+        "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "identifier_type": "phone_number",
+        "identifier_value": "+15551234567",
+        "is_primary": true
+      }
+    ],
+    "memories": [
+      {
+        "id": "...",
+        "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "persona_id": null,
+        "agent_number": "+15559876543",
+        "summary": "Customer prefers morning calls.",
+        "facts": {},
+        "entities": []
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "At least one identifier (phone_number, email, or external_id) is required"
+    }
+  ]
+}
+```
+</ResponseExample>
