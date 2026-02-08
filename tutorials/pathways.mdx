@@ -214,73 +214,118 @@ The 'Add Global Prompt to All Nodes' feature is to assist in providing context/i
 
 <img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/add_global_prompt.png" />
 
-# Live Call Logs
+# Testing the Pathway Agent
 
-The live call logs are a way to provide you with a live feed of the conversation between the agent and the user. This is useful for debugging purposes, and to see how the agent is responding to the user in real-time and the decisions the agent is making. On top of the transcript, we expose the updated node the agent took, the pathway that the agent took, as well as whether the condition was met or not.
+Test your pathway agent by clicking **Test** in the pathway toolbar. There are three testing modes: web-based chat (text or voice), sending a real call to a phone number, and per-node unit testing.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/live_call_logs.png" />
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/testing-hero.png" />
 
-# Testing the Pathway Agent via Chat
+## Test Configuration
 
-You can test the responses from your pathway agent by clicking on the 'Chat with Pathway' button at the top right of the screen. This will open a chat window where you can test the agent by sending messages to the agent, and see how the agent responds. The live call logs will also be displayed on the right side of the screen, so you can see the decisions the agent is making in real-time.
+Each testing mode shares a common set of configuration options:
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/pathway_chat.png" />
+- **Load configuration** — Restore a previously saved test setup.
+- **Start node** — Choose which node the conversation begins at. Defaults to the start node. Useful for testing nodes deeper in the pathway without replaying the full conversation.
+- **Version** — Select which pathway version to test against (e.g., the current draft or a published version).
+- **Request data** — Add key-value pairs representing context the agent should know (e.g., a caller's name or account ID). The agent sees both keys and values, and they're accessible via `{{variable_name}}` syntax in your prompts.
+- **Use Candidate Model** — Test your pathway against a candidate model before promoting it.
+- **Save configuration** — Save your current setup as a named configuration for reuse.
 
+## Text Chat
 
+The most common way to test. Type messages in the input field and the agent responds as it would on a live call. Each message displays a timestamp. As the conversation progresses, you can track which node the agent moves to next — when the route and loop condition steps resolve, the log shows the destination node for the following message.
 
-# Variables Reference/ Extraction 
+## Voice Chat
 
-## Variables
+Switch to the **Voice** tab to test your agent with speech. Voice-specific configuration includes:
 
-You can reference variables in pathways using double curly braces like `{{first_name}}`. You can pass variables into your call by passing in the key-value pairs in the `request_data` field when sending a call.
+- **Voice** — Select the voice the agent will use.
+- **Language** — Choose the conversation language (e.g., English via Babel).
+- **Block interruptions** — When enabled, prevents you from interrupting the agent while it's speaking.
+- **Pronunciation Guide** — Add word-level pronunciation overrides for terms the agent may mispronounce (e.g., brand names, medical terms).
 
-Some examples of variables that you can access at each node:
+## Send Call
 
-- `{{lastUserMessage}}` - The last response from the user
-- `{{prevNodePrompt}}` - The prompt from the previous node
-- `{{now_utc}}` - The current time in UTC
-- `{{from}}` - The phone number the call is from
-- `{{to}}` - The phone number the call is to
-- `{{call_id}}` - The unique identifier for the call
+Click **Send call** to trigger a real phone call using your pathway configuration. The call behaves identically to a production call, and logs appear in the testing panel in real time.
 
+## Branching
 
-## Extracting Variables from Call/User Response
+In any chat mode, you can branch a conversation from any user message to explore how the agent handles a different input at that point.
 
-At each node, you can also extract variables from the user's response using the `Extract Variables from Call Info` field. You would put in the name of the variable you want to extract, the type of the variable (integer, string, boolean), and the description for what information you want the variable to store. You can also provide specific formats you expect and examples in the description. The more descriptive it is, the better the agent will be at extracting the variable more accurately. 
+To create a branch, click the edit icon on a user message, change the text, and submit it. The agent generates new responses based on the updated message, and the conversation continues from that point forward. The original branch is preserved — you can swap between branches using the arrow controls that appear on the branched message (e.g., `1/2`).
 
-Do note that when enable variable extraction, and wanting to reference the variable in the subsequent nodes, it would introduce slight latency as the agent would have to extract the variable from the user's response before generating the dialogue for the next node.
+This is useful for quickly testing how the agent responds to variations of a user message without restarting the conversation from the beginning.
 
-Within the webhook node, the variable extraction happens before the webhook is executed, so that you can reference the variables extracted from the user's response in the webhook's request data. The variables extracted from the webhook in `response_data` can also be referenced in the dialogue generated after the webhook is executed, in the same manner.
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/testing-branch.png" />
 
-For Example, the image below shows how the Webhook Node is set up to extract the date, time, and number of guests for the reservation, and how the extracted variables are referenced in the webhook's request data.
+## Expanded Call Logs
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/extract_variables.png" />
+Click **Expand all logs** to see detailed per-turn decision data for any test conversation. Each turn shows the following sections when relevant:
 
-# Fine Tuning the Pathway agent
+**Variable extraction** — Displays the extraction type and results. When variables are successfully extracted, their names and values appear (e.g., `party_size: 8`, `appointment_time: 9:30 AM`). The full list of available variables from previous nodes is also shown, along with the node each variable originated from.
 
-While Conversational Pathways gives you a lot greater control compared to the regular call agent, hallucinations can still occur, or the agent might make wrong decisions in the pathway. However, we have provided you with the tools to handle these issues if they arise. Each node can be fine-tuned on the decision it makes, as well as the expected dialogue it generates, allowing you to handle even the most extreme edge cases that might arise easily. 
+**Loop condition** — Shows whether the loop condition was evaluated and its result. Includes the full loop condition prompt and a likelihood score (e.g., `Likely 7/10`). This is the only prompt shown directly in the expanded logs — node prompts and the global prompt are accessible from the node editor panel and the global prompt window respectively. When the condition is not yet met, the agent remains on the current node.
 
-### Steps to Fine-Tuning the agent
+**Route** — Displays which outgoing pathway the agent chose and the other available options it could have taken.
 
-Upon triggering and testing a call with your pathway using the 'Chat with Pathway' button, or sending a call, you will be able to see the live call logs.
+**Interruption** — When a user interrupts the agent, the log shows the interruption event, including which node the agent returned to.
 
-If you see a decision that the agent made that you do not agree with, or if the agent is hallucinating, you can fine-tune the decision the agent makes by clicking on the `Edit` button on the `PATHWAY DECISION INFO` block.
+**Webhook** — For nodes that trigger webhooks, the log shows the URL, HTTP response status, response time, and the full response payload.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/pathwaylog_finetune.png" />
+## Unit Testing
 
-Upon doing so, you will be able to see the decisions the agent made for the condition, the pathway it took, and the dialogue it generated. You can then fine-tune the agent by changing the dialogue, the condition, or the pathway the agent took.
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/testing-unit-tests.png" />
 
-Upon saving your changes, you will be able to see the fine-tuning data in the node where the decision was made. This training data is used to train the agent to make better decisions in the future, and to ensure that the agent does not make the same mistake again.
+Unit testing lets you create reusable test cases for individual nodes using historical call data. This is useful for validating that prompt changes don't break existing behavior.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/finetuned.png" />
+To set up a unit test:
 
-Do note that the decisions for the condition and pathway chosen is made by the node the agent is currently at, and the dialogue is generated by the node which the agent decides to take the pathway to.
+1. **Select a node** — Choose the node you want to test from the dropdown.
+2. **Select a Call ID** — Pick a historical call to use as conversation context.
+3. **Select a user message** — Choose a specific user message from that call to replay against the node.
+4. **Replacement message** *(optional)* — Override the original user message with custom text to test how the agent handles different inputs.
+5. **LLM grading goal** *(optional)* — Describe what the agent's response should accomplish. This is used as the evaluation criteria for the test.
 
-For Example, 
-If the agent is at Node 1, and the agent decides that the condition is achieved, and decides to take the pathway to Node 2, the dialogue generated will be from Node 2, and the decisions for the condition and pathway chosen will be from Node 1. As such, the training data for the condition and pathway chosen will be stored in Node 1, and amendments to the dialogue generated will be stored in Node 2.
+**Simulated variations** — Toggle this on to generate multiple variants (default: 5) of the user message with different communication styles. This stress-tests your prompt against a range of phrasings to ensure robustness.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/finetune.png" />
+Click **Run test** to execute. Results are evaluated using a **prompt-based** test — an LLM evaluates whether the agent's response satisfies the grading goal (or the node prompt if no custom goal is provided) and returns a Pass/Fail result along with a rationale.
 
+When simulated variations are enabled, each variant shows its own response, extracted variables, and individual test results. You can expand any variant to see the full agent response and the grading rationale. A summary badge (e.g., `1/1 failed`) appears at the top of the test for quick pass/fail visibility.
+
+---
+
+# Variables
+
+Reference variables in your pathway prompts using double curly braces: `{{variable_name}}`.
+
+## Passing Variables into a Call
+
+Pass variables into a call by including key-value pairs in the `request_data` field when sending a call. These become accessible in any node prompt using `{{variable_name}}` syntax.
+
+## Built-in Variables
+
+The following variables are available at every node without any configuration:
+
+- `{{lastUserMessage}}` — The last response from the user.
+- `{{prevNodePrompt}}` — The prompt from the previous node.
+- `{{now_utc}}` — The current time in UTC.
+- `{{from}}` — The phone number the call is from.
+- `{{to}}` — The phone number the call is to.
+- `{{call_id}}` — The unique identifier for the call.
+
+## Extracting Variables from the Conversation
+
+At each node, you can extract variables from the conversation so far using the **Extract Variables from Call Info** section. For each variable, specify:
+
+- **Name** — The variable name you'll reference later (e.g., `party_size`).
+- **Type** — `string`, `integer`, or `boolean`.
+- **Description** — What information the variable should capture. The more specific this is — including expected formats and examples — the more accurately the agent will extract the value.
+
+Extracted variables become available in subsequent nodes using the same `{{variable_name}}` syntax.
+
+**Latency note:** Enabling variable extraction introduces slight latency, since the agent must extract variables from the conversation before generating dialogue for the next node.
+
+**Webhook nodes:** Variable extraction runs *before* the webhook executes, so you can reference extracted variables in the webhook's request data. Variables returned in the webhook's `response_data` are also available in the dialogue generated after the webhook completes.
 
 # Quick Start with Tutorial / Templates
 
