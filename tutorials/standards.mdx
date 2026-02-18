@@ -1,0 +1,76 @@
+---
+title: "Standards"
+description: "Bland's node-level regression test framework."
+---
+
+# Introduction to Standards
+
+Standards let you build better agents, faster, by defining scenarios, backtesting prompts against them, and grading how those prompts perform.
+
+This guide breaks down what Standards are, how they work, and Bland's best practices for using them.
+
+# Overview of Standards
+
+## Recap of how Pathways work
+
+Pathways is a framework for building agents on Bland, represented by a graph structure with nodes and edges. Most nodes represent a phase of conversation with multiple back and forth dialogues.
+
+Each node can contain three types of prompts: a dialogue prompt for what the agent says, a loop condition prompt for knowing when the agent can or can't leave the node, and variable extraction prompts for extracting data from the call. Under-the-hood each node first checks the loop condition, then executes variable extractions, and finally generates a response using the dialogue prompt. Each prompt runs independently. 
+
+Standards match this dynamic — each standard applies to either the dialogue prompt, loop condition, or variable extractions, and defines the expected behavior in a specific situation, in order to catch behavior regressions if the prompt changes.
+
+## How Standards Work
+
+At the highest level, a standard lets you:
+Define a specific scenario
+Test your prompt (conversation dialogue, variable extraction, or loop condition) against that scenario 
+Evaluate whether your prompt behaved correctly
+
+Each standard runs the prompt against the scenario ten times, evaluates each run on the success criteria, then tallies the runs and checks whether the overall success threshold was met or not.
+
+## Creating and testing the scenario
+
+Start by selecting a conversation from your logs (either a production call or a test chat) where your agent behaves correctly. This transcript is called the “source conversation.” 
+
+Next, Bland automatically generates either a simulation prompt or permutations of the source conversation - which ultimately become the test scenarios the prompts execute against.
+
+### Dialogue standards
+
+In dialogue standards, a simulation prompt generates realistic responses to the node's dialogue prompt. In every simulation run, the two prompts respond back and forth, until the dialogue agent either achieves the loop condition to exit the node or reaches the simulation's “max turns”. 
+
+### Variable extraction and loop condition standards
+
+Variable extraction and loop condition standards take the original transcript and then create nine permutations of it. The permutations have the exact same length, and also the same informational content, but the exact wording in each dialogue turn is different. 
+
+The goal of permutations is to create slight variances that test if the loop condition and variable extractions are resilient to slight deviations in the conversation path. Effective loop conditions and variable extractions will successfully execute when they encounter the same “situation,” even if the exact wording is different. 
+
+Once the standard generates the nine permutations, users can review them and choose to regenerate them unlimited times. Once saved, the standard maintains the same set of permutations across every subsequent run.
+
+### Evaluating the prompts
+
+For dialogue standards the “success definition” prompt evaluates each simulation run and determines whether the dialogue agent behaved correctly or not. 
+
+For Loop condition standards, the user defines whether the condition should be achieved or not for the scenario, and then the loop condition executes on all ten scenarios, and checks the success criteria for each run.
+
+For variable extraction standards, the user defines success criteria as a success prompt, regex, or exact value, and then variable extraction executes on all ten scenarios, and checks the success criteria for each run.
+
+Each standard executes and evaluates ten scenarios, tallies the total number of successful runs, and compares that tally to the pass threshold to determine if the overall standard succeeded or failed.
+
+# Best practices for building with standards
+Before creating a new standard, execute the existing ones and ensure they still pass. This ensures that baseline node behavior hasn't drifted.
+When defining simulation prompts for conversation standards, emphasize the simulation agent's “persona, goals, and identity” over the exact things it should stay. This type of context engineering leads to better simulated responses which then better tests the dialogue prompt. 
+Default to Rigorous and Flexible thresholds — if your standard can't consistently pass 9/10 times, try to improve your node prompting instead of lowering the standard's pass threshold.
+
+
+# Frequently asked questions
+1. __How are permutations generated?__ 
+
+Bland's specially written prompt creates permutations with the same exact semantic meaning and information from your source conversation, while varying the precise wording. Note that standards generate the nine permutations of the source conversation only at the time when the standard is defined. Subsequent standard tests run on the initial set permutations instead of generating new ones.
+
+2. __How is the simulation prompt generated?__ 
+
+The standard looks at the pathways' global prompt (for context clues) as well as the node's prompt and source conversation transcript, and then defines a persona that will behave just like the person in the source conversation.
+
+3. __Why do dialogue standards use simulations while variable extraction and loop conditions use permutations?__ 
+
+Simulations are the best method for testing dialogue prompts. By generating realistic responses to the output of the dialogue prompt, we can simulate a realistic back-and-forth to test how the prompt behaves in the defined scenario. Unfortunately, the same can't be said for testing loop conditions and variable extractions. Changes to the dialogue prompt could change the simulation and cause the test case itself to change, even if the loop condition or variable extraction hadn't regressed. Permutations are the better scenario test for loop conditions and variable extractions because the underlying content of them does not change, so if the standard fails in the future, the only reason it would fail is a change in the loop condition or variable extraction itself rather than the underlying test scenario shifting.
