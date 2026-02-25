@@ -65,6 +65,10 @@ description: "Create a new batch of calls using direct input."
   ```
 </ParamField>
 
+<ParamField body="status_webhook" type="string">
+  Optional URL to receive batch status updates. We send a single POST per lifecycle phase and one final POST when the batch completes or fails. Payload is JSON with `batch_id`, `status`, and `timestamp`; final events include `calls_total` / `calls_successful` / `calls_failed` or `code` and `reason` on failure. Your endpoint should respond with 200 within a few seconds; we wait up to 10 seconds per call. See [Status webhook](#status-webhook) below for payload details.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="object">
@@ -91,3 +95,37 @@ description: "Create a new batch of calls using direct input."
 ```
 
 </ResponseExample>
+
+### Status webhook
+
+If you provide **`status_webhook`**, we POST to that URL at each lifecycle phase and once when the batch finishes. All requests use `Content-Type: application/json`.
+
+**Status values:** `validating` | `dispatching` | `in_progress` | `in_progress_chunked` | `waiting_for_scheduled_calls` | `completed` | `failed` | `completed_partial`
+
+**Common fields on every request:** `batch_id` (string), `status` (string), `timestamp` (ISO 8601). Progress events may include `message` (string). Final events include call counts or error details as below.
+
+**Progress examples:**
+
+```json Validating
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "validating", "timestamp": "2026-02-20T15:00:05.123Z" }
+```
+
+```json In progress (with message)
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "in_progress", "message": "Requested: 100. Validated: 100. Dispatched: 100. CPS: 12.50.", "timestamp": "2026-02-20T15:00:18.789Z" }
+```
+
+**Final events:**
+
+```json Completed
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "completed", "calls_total": 100, "calls_successful": 98, "calls_failed": 2, "timestamp": "2026-02-20T15:30:00.000Z" }
+```
+
+```json Failed
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "failed", "code": "source_invalid", "reason": "Entry #7 did not have a phone number.", "timestamp": "2026-02-20T15:00:10.000Z" }
+```
+
+```json Completed partial (e.g. timeout)
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "completed_partial", "code": "batch_early_exit", "reason": "Condition not met within 86400 seconds", "calls_total": 50, "calls_successful": 45, "calls_failed": 5, "timestamp": "2026-02-21T15:00:00.000Z" }
+```
+
+We send one attempt per event with a 10-second timeout. If the request fails or times out, we log and continue; the workflow is not retried or failed. Respond with 2xx quickly and perform any heavy work asynchronously.

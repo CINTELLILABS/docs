@@ -77,6 +77,20 @@ Once we mark the column as request data, we can reference it in our prompt or pa
 
 ## Monitoring Batch Progress
 
+You can monitor batch progress in two ways: **polling** the batch and logs endpoints, or **receiving status webhooks** when using the API.
+
+### Status webhook (API)
+
+When creating a batch via the API, you can pass an optional **`status_webhook`** URL. We will send HTTP POST requests to that URL at each major lifecycle step and when the batch finishes, so you get push updates without polling.
+
+**When we call it:** We POST once per phase: `validating` → `dispatching` → `in_progress` (or `in_progress_chunked` for large batches) → optionally `waiting_for_scheduled_calls` → then one final event: `completed`, `failed`, or `completed_partial`. Each request is JSON with `batch_id`, `status`, and `timestamp`; final events include call counts or error `code` and `reason` when applicable.
+
+**Best practice:** Your endpoint should respond with **200 within a few seconds**. Do any heavy processing asynchronously so the batch workflow is not delayed (we wait up to 10 seconds per webhook call).
+
+See the [Create Batch API reference](/api-v1/post/batches#status-webhook) for the full payload shape and example bodies.
+
+### Dashboard and polling
+
 After launching a batch, return to the [Batch Calls](https://app.bland.ai/dashboard/batches) dashboard
 
 You'll see each batch listed with:
