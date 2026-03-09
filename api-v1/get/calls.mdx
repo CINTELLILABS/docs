@@ -52,17 +52,32 @@ description: "Returns a set of metadata for each call dispatched by your account
 
 <ParamField query="start_date" type="string">
   Get calls including and after a specific date.
-  Format: YYYY-MM-DD
+
+  Accepts either a date (`YYYY-MM-DD`) or a full ISO 8601 datetime with timezone offset (e.g. `2026-02-19T00:00:00-05:00`).
+
+  When using a date-only value, dates are interpreted as UTC unless the `timezone` parameter is provided.
 </ParamField>
 
 <ParamField query="end_date" type="string">
   Get calls including and before a specific date.
-  Format: YYYY-MM-DD
+
+  Accepts either a date (`YYYY-MM-DD`) or a full ISO 8601 datetime with timezone offset (e.g. `2026-02-19T23:59:59-05:00`).
+
+  When using a date-only value, dates are interpreted as UTC unless the `timezone` parameter is provided.
 </ParamField>
 
 <ParamField query="created_at" type="string">
-  Get calls for a specific date. Can't be used with end_date or start_date.
-  Format: YYYY-MM-DD
+  Get calls for a specific date. Can't be used with `end_date` or `start_date`.
+
+  Format: `YYYY-MM-DD`. Dates are interpreted as UTC unless the `timezone` parameter is provided.
+</ParamField>
+
+<ParamField query="timezone" type="string">
+  IANA timezone name (e.g. `America/Toronto`, `America/Los_Angeles`, `UTC`).
+
+  When provided, date-only values in `start_date`, `end_date`, and `created_at` are interpreted in this timezone instead of UTC. This ensures calls are attributed to the correct local calendar day.
+
+  Has no effect on `start_date`/`end_date` values that include a timezone offset (e.g. ISO 8601 datetimes), since those already encode timezone information.
 </ParamField>
 
 <ParamField query="update_start_date" type="string">
