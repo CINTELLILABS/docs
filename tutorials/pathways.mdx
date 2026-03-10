@@ -493,128 +493,139 @@ The dialogue generated will be based on the instructions you set in the nodes.
 
 You can manually create a pathway from a node by clicking the grey circle at the bottom of the node and dragging your mouse to connect to the top grey circle of another node.
 
-# Testing the Pathway Agent
+# Pathway Test
 
-Test your pathway agent by clicking **Test** in the pathway toolbar. There are three testing modes: web-based chat (text or voice), sending a real call to a phone number, and per-node unit testing.
+## Chat
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/testing-hero.png" />
+The most common way to test. Type messages in the input field and the agent responds as it would on a live call. Each message displays a timestamp. As the conversation progresses, you can track which node the agent moves to next.
 
-## Test Configuration
+Steps:
 
-Each testing mode shares a common set of configuration options:
+1. Click the **Test** button on upper right corner
+2. Click **Start text Chat**
 
-- **Load configuration** — Restore a previously saved test setup.
-- **Start node** — Choose which node the conversation begins at. Defaults to the start node. Useful for testing nodes deeper in the pathway without replaying the full conversation.
-- **Version** — Select which pathway version to test against (e.g., the current draft or a published version).
-- **Request data** — Add key-value pairs representing context the agent should know (e.g., a caller's name or account ID). The agent sees both keys and values, and they're accessible via `{{variable_name}}` syntax in your prompts.
-- **Use Candidate Model** — Test your pathway against a candidate model before promoting it.
-- **Save configuration** — Save your current setup as a named configuration for reuse.
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/pathway_test_chat.png"
+/>
 
-## Text Chat
+You can even branch the conversation mid-test to explore different scenarios without starting over.
 
-The most common way to test. Type messages in the input field and the agent responds as it would on a live call. Each message displays a timestamp. As the conversation progresses, you can track which node the agent moves to next — when the route and loop condition steps resolve, the log shows the destination node for the following message.
+Read more about Conversation Branching: [February 09, 2026 Changelog](https://docs.bland.ai/changelog/02_09_2026#conversation-branching)
 
-## Voice Chat
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/test_chat.png"
+/>
 
-Switch to the **Voice** tab to test your agent with speech. Voice-specific configuration includes:
+Example:
 
-- **Voice** — Select the voice the agent will use.
-- **Language** — Choose the conversation language (e.g., English via Babel).
-- **Block interruptions** — When enabled, prevents you from interrupting the agent while it's speaking.
-- **Pronunciation Guide** — Add word-level pronunciation overrides for terms the agent may mispronounce (e.g., brand names, medical terms).
+1. User wants to talk or says yes → Continue Chat Node is chosen (Default)
+2. User does not want to talk → Quick Goodbye Node is chosen (End Call)
 
-## Send Call
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/test_chat_2.png"
+/>
 
-Click **Send call** to trigger a real phone call using your pathway configuration. The call behaves identically to a production call, and logs appear in the testing panel in real time.
+## Pathway Test using Call
 
-## Branching
+Triggers a real phone call using your pathway configuration. The call behaves identically to a production call, and logs appear in the testing panel in real time.
 
-In any chat mode, you can branch a conversation from any user message to explore how the agent handles a different input at that point.
+Steps:
 
-To create a branch, click the edit icon on a user message, change the text, and submit it. The agent generates new responses based on the updated message, and the conversation continues from that point forward. The original branch is preserved — you can swap between branches using the arrow controls that appear on the branched message (e.g., `1/2`).
+1. Click the **Test** button on upper right corner
+2. Navigate to **CALL** tab
+3. Add From Phone Number (optional)
+4. Add which Phone Number to call (required)
 
-This is useful for quickly testing how the agent responds to variations of a user message without restarting the conversation from the beginning.
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/pathway_test_using_call.png"
+/>
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/testing-branch.png" />
+Example:
 
-## Expanded Call Logs
+User wants book a reservation → Collect Reservation Details Node is chosen →\
+User mentions there are more than 4 people → 20% discount for 5 pax node is chosen.
 
-Click **Expand all logs** to see detailed per-turn decision data for any test conversation. Each turn shows the following sections when relevant:
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/pathway_test_call_example.png"
+/>
 
-**Variable extraction** — Displays the extraction type and results. When variables are successfully extracted, their names and values appear (e.g., `party_size: 8`, `appointment_time: 9:30 AM`). The full list of available variables from previous nodes is also shown, along with the node each variable originated from.
+## Pathway Logs
 
-**Loop condition** — Shows whether the loop condition was evaluated and its result. Includes the full loop condition prompt and a likelihood score (e.g., `Likely 7/10`). This is the only prompt shown directly in the expanded logs — node prompts and the global prompt are accessible from the node editor panel and the global prompt window respectively. When the condition is not yet met, the agent remains on the current node.
+Show the step-by-step progression of a call through your pathway nodes.
 
-**Route** — Displays which outgoing pathway the agent chose and the other available options it could have taken.
+The agent starts at the first node, and then moves to the next node based on the pathway that the agent decides to take. The agent will then execute the instructions in the node as dialogue, and then move on to the next node based on the pathway that the agent decides to take. This process will continue until the agent decides to end the call.
 
-**Interruption** — When a user interrupts the agent, the log shows the interruption event, including which node the agent returned to.
+## Pathway Test using Web Chat
 
-**Webhook** — For nodes that trigger webhooks, the log shows the URL, HTTP response status, response time, and the full response payload.
+An embeddable chat interface that lets you add AI-powered conversations directly to your website. It can be powered by either a pathway (using `pathway_id`) or a simple agent prompt (using `agent_prompt`).
 
-## Unit Testing
+[Web Widget Tutorial](https://docs.bland.ai/tutorials/chat-widget)
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/testing-unit-tests.png" />
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/pathway_test_using_webchat.png"
+/>
 
-Unit testing lets you create reusable test cases for individual nodes using historical call data. This is useful for validating that prompt changes don't break existing behavior.
+# Global Prompt
 
-To set up a unit test:
+Applies to all nodes in this pathway. Use them for consistent behavior, context, or guidelines. Include details such as the Agent's name, main goal, how they interact, etc. and keep this prompt short to reduce the likelihood of hallucinations.
 
-1. **Select a node** — Choose the node you want to test from the dropdown.
-2. **Select a Call ID** — Pick a historical call to use as conversation context.
-3. **Select a user message** — Choose a specific user message from that call to replay against the node.
-4. **Replacement message** *(optional)* — Override the original user message with custom text to test how the agent handles different inputs.
-5. **LLM grading goal** *(optional)* — Describe what the agent's response should accomplish. This is used as the evaluation criteria for the test.
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/global_prompt.png"
+/>
 
-**Simulated variations** — Toggle this on to generate multiple variants (default: 5) of the user message with different communication styles. This stress-tests your prompt against a range of phrasings to ensure robustness.
+Example:
 
-Click **Run test** to execute. Results are evaluated using a **prompt-based** test — an LLM evaluates whether the agent's response satisfies the grading goal (or the node prompt if no custom goal is provided) and returns a Pass/Fail result along with a rationale.
+"You are a professional and friendly AI receptionist for a dental office named Sarah. Your goal is to help patients schedule, reschedule, or inquire about dental appointments efficiently while maintaining a warm and reassuring tone.
 
-When simulated variations are enabled, each variant shows its own response, extracted variables, and individual test results. You can expand any variant to see the full agent response and the grading rationale. A summary badge (e.g., `1/1 failed`) appears at the top of the test for quick pass/fail visibility.
+Speak clearly, calmly, and confidently. Keep responses concise and easy to understand.
 
----
+Always:
 
-# Variables
+- Be polite, empathetic, and professional.
+- Confirm key details such as patient name, date of birth (if required), appointment type, preferred date, and preferred time.
+- Repeat important information back to the patient before finalizing an appointment.
+- Ask follow-up questions if required information is missing.
+- Guide the conversation step-by-step instead of asking multiple complex questions at once.
+- If the patient expresses anxiety about treatment, respond reassuringly and calmly.
+- If you do not know something, politely say you will check or that a staff member can assist."
 
-Reference variables in your pathway prompts using double curly braces: `{{variable_name}}`.
+# Toolbar Icons
 
-## Passing Variables into a Call
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/toolbar_icons.png"
+/>
 
-Pass variables into a call by including key-value pairs in the `request_data` field when sending a call. These become accessible in any node prompt using `{{variable_name}}` syntax.
+# Pathway Settings (Top-right Dropdown)
 
-## Built-in Variables
+## Enable/Disable Memory
 
-The following variables are available at every node without any configuration:
+Toggles memory on a pathway so the agent remembers previous conversations across all calls per user. Found in the top-right dropdown menu next to "Send Call" in the Pathway UI.
 
-- `{{lastUserMessage}}` — The last response from the user.
-- `{{prevNodePrompt}}` — The prompt from the previous node.
-- `{{now_utc}}` — The current time in UTC.
-- `{{from}}` — The phone number the call is from.
-- `{{to}}` — The phone number the call is to.
-- `{{call_id}}` — The unique identifier for the call.
+Source: [**/tutorials/memories**](https://docs.bland.ai/tutorials/memories)
 
-## Extracting Variables from the Conversation
+## Enable Advanced Mode
 
-At each node, you can extract variables from the conversation so far using the **Extract Variables from Call Info** section. For each variable, specify:
+Toggles detailed execution logs showing secondary actions like loop conditions, variable extractions, and routing during pathway testing.
 
-- **Name** — The variable name you'll reference later (e.g., `party_size`).
-- **Type** — `string`, `integer`, or `boolean`.
-- **Description** — What information the variable should capture. The more specific this is — including expected formats and examples — the more accurately the agent will extract the value.
+Source: [February 9, 2026 changelog](https://docs.bland.ai/changelog/02_09_2026)
 
-Extracted variables become available in subsequent nodes using the same `{{variable_name}}` syntax.
+## Export Pathway
 
-**Latency note:** Enabling variable extraction introduces slight latency, since the agent must extract variables from the conversation before generating dialogue for the next node.
+Downloads your pathway as a JSON file containing all nodes, edges, and configurations. This allows you to back up, version-control, or transfer pathways between organizations. You can re-import exported JSON files when creating a new pathway.
 
-**Webhook nodes:** Variable extraction runs *before* the webhook executes, so you can reference extracted variables in the webhook's request data. Variables returned in the webhook's `response_data` are also available in the dialogue generated after the webhook completes.
+Source: [February 16, 2026 changelog](https://docs.bland.ai/changelog/02_16_2026)
 
-# Quick Start with Tutorial / Templates
+## Share Pathway
 
-To immediately start playing around with Conversational Pathways, you can use one of our templates. Visit the Conversational Pathways page on our Dev Portal, and duplicate the 'Restaurant Reservation' Template, and run through the agent to see how it works!
-We have also created a video walkthrough of that template to help you get started!
+Generates a shareable link or submits your pathway to the Pathway Showcase, allowing other users or team members to view or use your pathway as a template.
 
-[Video Walkthrough/Tutorial](https://www.loom.com/share/be9d6f1072ae4267abc0717e36e66078?sid=82a7843f-9e7c-457a-8f7b-4d8ca026e1ff)
-
-Create a pathway now! Click [here](https://app.bland.ai/dashboard?page=convo-pathways) to get started!
-
-
-If you have any additional questions, reach out on our [Discord](https://discord.gg/QvxDz8zcKe) and one of our engineers will help.
+Source: [September 8, 2025 changelog](https://docs.bland.ai/changelog/09_08_2025)
 
