@@ -254,11 +254,244 @@ Contact us for Beta access! Transfers an SMS conversation to another pathway or 
 
 Runs custom JavaScript code for advanced logic, calculations, or API calls (Enterprise feature).
 
-# Global Prompt for all Nodes
+# Node Library
 
-The 'Add Global Prompt to All Nodes' feature is to assist in providing context/instructions to the agent for all nodes, without having to manually input the same prompt for each node. One Example of a Global Prompt could be to provide the agent with instructions on how to handle the call, the tone of voice to use, or answering any questions the user might have.
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/node_library.png"
+/>
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/add_global_prompt.png" />
+Allows you to reuse commonly used nodes in multiple pathways, or use optimized nodes shared by the community for certain use cases.
+
+Open your pathway and click **Add New Node** and select the tab **Node Library** to see the Public Library or add your own Node (Only for your own Organization).
+
+# Pathway Blocks
+
+Let you save groups of nodes and edges as reusable blocks and insert them into any pathway with one click. This feature was introduced in the [February 16, 2026](https://docs.bland.ai/changelog/02_16_2026) changelog.
+
+How it works:
+
+1. **Save:** Select 2+ nodes in your pathway and save them as a named block with a description and category
+2. **Browse:** View your saved blocks alongside Bland-curated blocks in the node library
+3. **Insert:** Add any block directly onto the canvas with "Add to Pathway"
+
+More about here: [Pathway Blocks](https://docs.bland.ai/changelog/02_16_2026#pathway-blocks)
+
+# Variables
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/variables.png"
+/>
+
+Variable Icon
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/variable_icon.png"
+/>
+
+Reference variables in prompts using double curly braces: `{{variable_name}}`.
+
+## Built-in Variables
+
+Built-in Variables are automatically available, no setup needed. These variables are extracted _during_ the call from the conversation itself. In pathway nodes (like webhook or scheduling nodes), you define variable names, types, and descriptions, and the AI extracts values from what was discussed.
+
+Here are some examples of Built-in Variables:
+
+- `{{phone_number}}` — Other party's number
+- `{{timezone}}` — Timezone of the other party
+- `{{country}}` — Country code
+- `{{state}}` — State abbreviation
+- `{{city}}` — Full city name
+- `{{zip}}` — Zip code
+- `{{call_id}}` — Unique call ID
+- `{{now}}` — Current time in call's timezone
+- `{{now_utc}}` — Current time in UTC
+- `{{from}}` — Outbound number in E.164 format
+- `{{to}}` — Inbound number in E.164 format
+- `{{short_from}} / {{short_to}}` — Numbers without country code
+- `{{lastUserMessage}}` — Last user response
+- `{{prevNodePrompt}}` — Previous node's prompt
+
+## Call into Variables (request_data)
+
+Call into variables are variables you pass into a call at the time of sending it via the `request_data` field in the API request. These are not built-in. They would be custom variables you pass via request_data or extract during conversation.
+
+They're accessible in prompts and pathways using `{{variable_name}}` syntax.
+
+Some examples are:
+
+- `{{party_size}}`
+- `{{reservation_date}}`
+- `{{reservation_time}}`
+
+# Other Node Terminology
+
+Within most Bland nodes, there are 3 main LLM functions that control the flow of the conversation:
+
+- [Dialogue Generation](#dialogue-prompt)
+- [Loop Conditions](#loop-condition)
+- [Variable Extractions](#variable-extraction-prompts)
+
+## Dialogue Prompt
+
+The Dialogue Prompt sets the main goal for what your agent will say at that point in the conversation. Think of it as the script or instruction that guides your agent's response during a specific step of the call.
+
+## Loop Condition
+
+- Controls when the agent can exit the current node.
+- The agent remains on the node until the condition is satisfied.
+- Includes a likelihood score (e.g., 7/10) evaluated each turn.
+
+**Example:**\
+"Wait until the user provides a valid time and the agent confirms it."
+
+## Variable Extraction Prompts
+
+Pulls structured information from the conversation into named variables.
+
+These variables can be used in:
+
+- Webhook request bodies
+- Prompts
+- Subsequent nodes
+
+Syntax for use: `{{variable_name}}`
+
+## Global Node
+
+- A node configured with: `isGlobal: true`
+- And a `globalLabel` (e.g., "user asks a question").
+- Can be triggered from any point in the pathway.
+- Used for handling interruptions such as:
+  - FAQs
+  - Off-topic questions
+  - Requests to speak to a human
+
+## Unit Tests
+
+Validate dialogue prompts, variable extraction, and loop logic on individual nodes using historical call data. You can generate user input permutations to stress-test prompts, and pin calls to auto-run with every test. This is part of the Standards framework for regression testing.
+
+## Note Tag / Tag Name / Tag Color
+
+Tags are metadata labels assigned to nodes or calls.
+
+- Tag Name → The label text
+- Tag Color → Visual identifier
+
+Used for:
+
+- Organizing calls
+- Filtering call logs
+- Categorizing pathways
+
+Example filter:
+
+- "Includes tag"
+- "Does not include tag"
+
+## Temperature
+
+Controls the randomness/creativity of the model's responses at this node.
+
+- Lower = More deterministic
+- Higher = More creative
+
+## Dynamic Interruption Threshold
+
+Controls the sensitivity to user interruptions at this specific node. Adjusts how easily the user can interrupt the agent mid-speech.
+
+## Skip User's Response
+
+When toggled on, the agent proceeds to the next node without waiting for the user to respond.
+
+## Block Interruptions
+
+Prevents the user from interrupting the agent while it's speaking on this node. The agent will finish its full response before listening.
+
+## Disable Repeating on Silence
+
+When enabled, the agent will not repeat itself if the user is silent. Normally the agent may re-prompt after silence.
+
+## Condition overrides global pathway
+
+When enabled, this node's edge/routing conditions take priority over any global node conditions. Prevents global nodes from intercepting when this node's specific conditions should apply.
+
+## Disable Recording
+
+Stops call recording at this node for PCI compliance. Recording automatically resumes when the conversation exits the node.
+
+## Disable Logging
+
+Stops transcript logging at this node for sensitive data handling. Like recording, it resumes automatically after leaving the node.
+
+# Standards
+
+Standards let you build better agents, faster, by defining scenarios, backtesting prompts against them, and grading how those prompts perform.
+
+See more about standards here: https://docs.bland.ai/tutorials/standards#overview-of-standards
+
+## Pathway (Edges)
+
+Pathways are the connectors between nodes and determine which next node the agent can move to, usually determined by how the user responds to your assistant.
+
+## Routing
+
+Refers to how the AI agent navigates between nodes in a Conversational Pathway.
+
+### LLM Based Routing
+
+The LLM evaluates the user's response against the available edge labels and picks the best match.
+
+For example, from a "Start" node, you might have edges labeled:
+
+- "User wants to reserve"
+- "Live Agent Requested"
+
+The agent chooses based on the context of the user response.
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/llm_based_routing.png"
+/>
+
+The agent makes decisions based on labels you put in the pathways when connecting one node to another. (You can also include pathway descriptions for best results.)
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/pathway_description.png"
+/>
+
+### Logic Based Routing
+
+Handles branching logic and conditional navigation within pathways, determined by a variable which could be a request_data or call-into variable.
+
+From our example pathway: We can use our call-into variable **party_size** to determine if the agent will tell the user that they have a 20% discount since they are more than 4 pax.
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/logic_based_routing.png"
+/>
+
+Simply click the Pathway and click Advanced Settings to enable Logic Based Routing!
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/advanced_settings.png"
+/>
+
+> Important: This method of variable comparison is being deprecated. We now recommend using Route Nodes for more powerful and flexible conditions.
+
+Benefits of Route Nodes:
+
+- Enables global node support (unlike current variable comparison)
+- Allows fallback paths
+- Provides a central place to manage all routes and conditions
+
+The dialogue generated will be based on the instructions you set in the nodes.
+
+You can manually create a pathway from a node by clicking the grey circle at the bottom of the node and dragging your mouse to connect to the top grey circle of another node.
 
 # Testing the Pathway Agent
 
