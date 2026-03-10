@@ -54,96 +54,24 @@ Pathways support different types of steps to control how a call progresses. The 
 
 </CardGroup>
 
-# Terminologies
+# Key terminologies
 
-To understand how pathways work, let's first understand the terminologies.
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/basic_nodes.png"
+/>
 
-## Nodes
+**Nodes** are the building blocks of a pathway. Each node represents a step in the conversation where the AI performs an action—like asking a question, calling a webhook, or transferring the call.
 
-These blocks you see here are called Nodes.
+**Edges** (also called pathways) are the connections between nodes. They determine which node the agent moves to next based on the user's response or other conditions.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/node.png" />
+**Routing** refers to how the AI navigates between nodes. The AI evaluates the user's response against available edge labels and picks the best match.
 
-## Pathways
+**Loop conditions** control when the agent can exit a node. The agent stays on the node until the condition is satisfied.
 
-Each of these dotted lines is called a Pathway. Their start end end points are the `Purple Circles` on the top and bottom of the nodes.
+**Variable extraction** pulls structured information from the conversation into named variables that can be used in webhooks, prompts, and subsequent nodes.
 
-In order to create a pathway from a node, you would click on the purple circle at the bottom of the node and drag your mouse to connect to the top purple circle another node.
-
-Upon doing so, you will now have a new dotted line connecting the two nodes, with a 'New Pathway' button in the middle of the line.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/new_pathway.png" />
-
-In order to instruct the agent when to take this pathway, you would click on the Edit icon on the 'New Pathway' button, and input the conditions for when the agent should take this pathway. In the above example, the agent would take this pathway if the user is not available to talk, so I labelled the pathway as 'not a good time to talk'.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/final_pathway.png" />
-
-And there you have it! You have now created a pathway from one node to another, and instructed the agent when to take this pathway. You can connect as many nodes as you want in this manner, and create as many pathways as you want. In order to create a new Node, press the 'Add new Node' button at the top-left of the screen.
-
-
-# How the Pathways Agent Works
-
-The agent starts at the first node, and then moves to the next node based on the pathway that the agent decides to take. The agent will then execute the instructions in the node as dialogue, and then move on to the next node based on the pathway that the agent decides to take. This process will continue until the agent decides to end the call.
-
-The agent will make decisions based on the labels you put in the pathways, when connecting one node to another, and the dialogue generated will be based on the instructions you set in the nodes.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/pathway_label.png" />
-
-For Example, 
-
-In this example, at the node named 'Ask for reservation info', the node asks for the user's reservation information. Based on the user's response, the agent will then move on to the next node based on the labels you put in the pathways. For the current node, it will check if the user has provided reservation information where the number of guests is either less than 8 or more than 8. If the user has provided reservation information where the number of guests is less than 8, the agent will move on to the node named 'Reservation booking'. If the user has provided reservation information where the number of guests is more than 8, the agent will move on to the node named 'Transfer Call'. The agent will then execute the instructions in the node as dialogue, and then move on to the next node based on the pathway that the agent decides to take. And the process repeats!
-
-## Conditions
-
-Conditions are a way to provide the agent with a condition that must be met in order for the agent to move on to the next node. If the condition is not met, the agent will stay on the same node and ensure the condition is met until the condition is fulfilled.
-
-Using the same example above, I set the condition for the 'Ask for reservation info' node as follows - "You must get the date, time, and number of guests for this reservation". This means that the agent will stay on the 'Ask for reservation info' node until the user provides the date, time, and number of guests for the reservation. If the user says something else or deviates from the conversation, the agent will stay on the 'Ask for reservation info' node and prompt the user to provide the date, time, and number of guests for the reservation.
-
-This helps you to ensure that the user provides the necessary information before moving on to the next node, and helps you to control the flow of the conversation.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/condition_eg.png" />
-
-
-## Global Nodes
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/global_node.png" />
-
-Global Nodes take precedence over the condition decisions made by the agent. You can treat a global node as a node, that every other node in the pathway has a pathway to, with the label as the 'Global Pathway Label'. 
-
-Using the Reservation Booking Example, if the user were to ask a question like 'What are the opening hours of the restaurant' when the agent is at the 'Ask for reservation info' node, the condition decision would not be met as the user did not provide the date, time, and number of guests for the reservation. However, the pathway label would be 'user has a question about the restaurant's hours or location', which links to a Global Node. As Global Nodes take precedence over the condition decision, the agent would then move to the 'Global Node' named 'Restaurant Questions' and provide the user with the opening hours of the restaurant. After providing the user with the opening hours of the restaurant, the agent would then automatically return to the 'Ask for reservation info' node, and continue with the flow of the conversation.
-
-This helps you to handle edge cases where the user might ask a question that is not related to the current conversation, and allows you to provide the user with the information they need, before returning to the conversation.
-
-Tip: The variables `{{lastUserMessage}}` and `{{prevNodePrompt}}` can be used in the Global Node to provide the agent with context on what the user said, and steering the conversation back to its own original goal. 
-
-<Accordion title="Example Global Node Prompt:">
-You are to answer any questions the user has, to the best of your knowledge. If you do not know the answer, simply say 'I don't have that information at that moment'. Do not make up any information/facts about the appointment. 
-
-After you answer the question, you are to direct the conversation back to your initial goal, which was as follows:
-
-Previous Goal:
-`{{prevNodePrompt}}`
-
-If you deem the goal as achieved, you can simply ask the user 'So, shall we proceed?' . If the goal has not been achieved, you are to steer the conversation back to achieve your goal. 
-If you deem the goal as achieved, simply confirm the result with the user. If the goal has not been achieved, you are to steer the conversation back to achieve your goal. 
-
-```
-Examples
---
-assistant: what date works for you?
-user: what day is it today?
-assistant: The day today is April 15th. So, what date works for you?
---
-
--- 
-assistant: what date works for you?
-user: probably tomorrow, what time does the clinic open?
-assistant: The clinic opens at 9am. So, do you want to schedule for tomorrow?
--- 
-```
-</Accordion>
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/global_eg.png" />
+**Global nodes** can be triggered from any point in the pathway. They're used for handling interruptions like FAQs or requests to speak to a human.
 
 
 # Node Types
