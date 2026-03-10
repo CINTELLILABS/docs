@@ -74,97 +74,185 @@ Pathways support different types of steps to control how a call progresses. The 
 **Global nodes** can be triggered from any point in the pathway. They're used for handling interruptions like FAQs or requests to speak to a human.
 
 
-# Node Types
+# Node types
 
+## Default Node
 
-There are currently 6 different types of Nodes
-- Default 
-- Webhook
-- Knowledge Base
-- End Call 
-- Transfer Call
-- Wait for Response
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/default_node_icon.png"
+/>
 
-You can select the type of node you want by clicking on the dropdown of `Node Type`.
+A **Default Node** generates a response to the user.
 
+### Dialogue prompt
 
-## Base/Default Node (Important!)
+The [dialogue prompt](#dialogue-prompt) contains instructions for what the agent should say at this step of the conversation.
 
-The default node provides the ability to generate a response to the user. This functionality is exposed to all other nodes as well.
-
-You can either:
-- Use the `Prompt` field to give instructions on what the agent should do at this point in the conversation. This is the recommended way to generate responses as it makes the conversation more human and natural. 
-- Enable the 'Static Text' toggle to provide a fixed response, and the agent will always say the same thing at this point in the conversation.
-
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/default_node.png" />
-
-### Optional Decision Guide
-
-The optional decision guide is only to be used if your phone agent currently is not going down the correct pathway. We do not expect this to happen often, but still want to provide you the tools to handle these issues if they arise. 
-
-It is a way to provide the phone agent with example scenarios of what the user might say, and what pathway the agent should take in response.
-
-You would put in examples of what the user might say in the `User Input` field, and then in the `Pathway` field, you would provide the pathway the agent should take in response.
-
-### Condition 
-
-The condition is a way to provide the agent with a condition that must be met in order for the agent to move on to the next node. If the condition is not met, the agent will stay on the same node and ensure the condition is met until the condition is fulfilled. 
-
-### Global Nodes
-
-Each node can be configured to be a Global Node. Global Nodes are nodes that are accessible by every other node in the Conversational Pathway. This means that it has an implicit pathway to every other node, and the label would be the 'Global Label'. 
-
-After entering a Global Node, the agent will execute the instructions inside the Global Node, and then automatically return to the node it was at before entering the Global Node, so it can continue with the flow of the conversation.
-
-In a Global Node, you can also forward the agent to another node, by toggling the 'Enable Forwarding', which will allow you to select the node you want to move the agent to. This is useful if you want to move the agent to a existing node for a certain scenario, which could happen at any point in the conversation. 
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/global_node.png" />
+> **Note:** Enable **Static Text** to set a fixed response the agent always says.
 
 ## Transfer Call Node
 
-The transfer call node is used to transfer the call to another number when the node is reached, and the dialogue at this node is complete. 
+The Transfer Node routes a live call from the AI to a human agent or an external phone number.
 
-As such, you may have the agent say any final words before the call is transferred. 
+### Examples of when to use the Transfer Node
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/transfer_node.png" />
+- The user requests to speak with a human
+- The issue requires manual handling
+- A high-value lead needs a sales representative
+- The AI is unable to resolve the request
 
+There are two types of transfer calls:
 
-## End Call Node
+**Cold Transfer (Standard Transfer)** — The user is immediately transferred to another phone number without additional context being shared beforehand.
 
-The end call node will end the call when the node is reached, and the dialogue at this node is complete.
+**Warm Transfer (Enterprise Feature)** — The AI initiates a separate call to brief the human agent on the customer's situation before connecting the user to the agent.
 
-As such, you may have the agent say any final words before the call is ended.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/end_node.png" />
-
-## Knowledge Base Node
-
-The knowledge base node is used to connect your agent to a knowledge base, to answer any questions the user has.
-
-Paste in any text in the 'Knowledge Base' field, and the agent will search through the knowledge base to answer the user. 
-
-Coming soon - PDF Upload/Vector Database Integrations...
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/kb_node.png" />
-
-## Wait for Response Node
-
-The Wait for Response Node works the same way as the Default Node, except it is also equipped with the ability to wait if the user requires time to respond or needs to hold for a moment.
-
+Learn more about the [Warm Transfer Enterprise Feature](https://docs.bland.ai/tutorials/warm-transfer)
 
 ## Webhook Node
 
-The webhook node is used to execute webhooks at any point during the conversation, and send speech during/after the webhook.
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/web_hook_node.png"
+/>
 
-`Webhook Information` is all you need in order to execute a webhook, and works the same way as Dynamic Data. Refer to the [Dynamic Data](https://docs.bland.ai/tutorials/dynamic-data) section for more information...
+Webhook nodes allow you to make calls to external services during your call. Many customers use these nodes to fetch customer data from Salesforce, deal information from Hubspot, or time availability from Google Calendar.
 
-Similar to how the dialogue is handled in all other nodes, you can control the dialogue sent before, and after the webhook is executed.
+**Note:** If you want data to be sent after the call ends, set up a [Post Call Webhook](https://docs.bland.ai/tutorials/post-call-webhooks) that Bland AI automatically sends to your server after a phone call completes.
 
-Variables received from the webhook can be used in the dialogue as well, as shown in the example below.
+## Transfer Pathway Node
 
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/transfer_pathway_node.png"
+/>
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhook_node.png" />
+Hands the conversation off to a different pathway (supports dynamic routing via variables).
+
+## Press Button Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/press_button_node.png"
+/>
+
+Simulates pressing a phone keypad button (DTMF tone), with optional "Go to Node" action.
+
+## IVR Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/ivr_navigation_node.png"
+/>
+
+Navigates automated phone menus (IVR systems) by pressing buttons and listening for prompts.
+
+## Knowledge Base Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/knowledge_base_node.png"
+/>
+
+The Knowledge Base Node allows your agent to answer questions by referencing information from uploaded documents, text, or web pages. When a user asks a question, the agent searches the knowledge base and provides an answer based on the most relevant content.
+
+**How it works:**
+- Upload PDFs, text files, CSVs, or paste in text directly
+- Add web URLs to scrape and index content
+- The agent automatically retrieves relevant information during the conversation
+- Supports multiple knowledge bases per pathway
+
+**Best practices:**
+- Keep knowledge base content focused and well-organized
+- Use clear, concise language in your source documents
+- Test the node with common questions to verify accuracy
+- Update content regularly to keep information current
+
+Learn more about [Knowledge Bases](https://docs.bland.ai/tutorials/knowledge-base)
+
+## End Call Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/end_call.png"
+/>
+
+Ends the call after saying a final message (e.g., goodbye).
+
+## Wait for Response Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/wait_for_response_node.png"
+/>
+
+Pauses and waits for the user to respond before continuing.
+
+## Route Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/route_node.png"
+/>
+
+Directs the conversation to different nodes based on defined conditions, without generating a spoken response.
+
+## SMS Node (Enterprise)
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/sms_node.png"
+/>
+
+Sends an outbound SMS message during the call (Enterprise feature).
+
+Check out [SMS](https://docs.bland.ai/tutorials/sms) to know more about it!
+
+## Twilio Flow Redirect Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/twilio_flow_redirect_node.png"
+/>
+
+Redirects the call to a Twilio Studio Flow for additional processing.
+
+## Scheduling Node
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/scheduling_node.png"
+/>
+
+Fetches available time slots from your system via webhook, helps the caller pick a time, and confirms the appointment.
+
+## Amazon Connect Node (Enterprise)
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/amazon_connect_node.png"
+/>
+
+Transfers the call into an Amazon Connect contact flow.
+
+## Transfer SMS Chat Node (Beta / Enterprise)
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/transfer_sms_chat_node.png"
+/>
+
+Contact us for Beta access! Transfers an SMS conversation to another pathway or handler. (Enterprise feature)
+
+## Custom Code Node (Enterprise)
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/tutorials/tutorials-assets/custom_code_node.png"
+/>
+
+Runs custom JavaScript code for advanced logic, calculations, or API calls (Enterprise feature).
 
 # Global Prompt for all Nodes
 
