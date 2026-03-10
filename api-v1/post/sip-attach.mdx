@@ -1,0 +1,165 @@
+---
+title: "Attach SIP Configuration"
+api: "POST https://api.bland.ai/v1/sip/attach"
+description: "Attach SIP configuration to one or more phone numbers for inbound and/or outbound routing."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_number" type="string">
+  A single phone number to configure. Must be in E.164 format (e.g., `+14150000000`). Use either `phone_number` or `phone_numbers`, not both.
+</ParamField>
+
+<ParamField body="phone_numbers" type="string[]">
+  An array of phone numbers to configure (up to 100). Must be in E.164 format. Use either `phone_number` or `phone_numbers`, not both.
+</ParamField>
+
+<ParamField body="directions" type="array" required>
+  An array of direction objects. Each specifies either `inbound` or `outbound` routing configuration.
+</ParamField>
+
+<ParamField body="service" type="string" required>
+  Must be set to `"sip"`.
+</ParamField>
+
+#### Inbound Direction Object
+
+<ParamField body="directions[].type" type="string" required>
+  Set to `"inbound"`.
+</ParamField>
+
+<ParamField body="directions[].auth_mode" type="string">
+  Authentication mode: `"ip"` (default) or `"register"`. When set to `"register"`, you must also provide `register_auth`.
+</ParamField>
+
+<ParamField body="directions[].register_auth" type="object">
+  Required when `auth_mode` is `"register"`. Contains `username` (string) and `password` (string, min 8 characters).
+</ParamField>
+
+<ParamField body="directions[].sip_endpoint" type="string">
+  Your SIP server address for inbound call forwarding (optional). Format: `sip:host` or `host`.
+</ParamField>
+
+<ParamField body="directions[].headers" type="object">
+  Custom SIP header mappings. See header configuration examples below.
+</ParamField>
+
+<ParamField body="directions[].options" type="object">
+  Connection options: `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), `secure_media` (boolean), `sip_username` (string), `sip_password` (string).
+</ParamField>
+
+#### Outbound Direction Object
+
+<ParamField body="directions[].type" type="string" required>
+  Set to `"outbound"`.
+</ParamField>
+
+<ParamField body="directions[].sip_endpoint" type="string" required>
+  Your SIP provider's endpoint. Must be a valid SIP URI (e.g., `sip:your.provider.com`).
+</ParamField>
+
+<ParamField body="directions[].headers" type="object">
+  Custom SIP header mappings.
+</ParamField>
+
+<ParamField body="directions[].options" type="object">
+  Connection options: `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), `secure_media` (boolean), `sip_username` (string), `sip_password` (string).
+</ParamField>
+
+### Response
+
+<ResponseField name="configured" type="array">
+  Array of successfully configured phone numbers.
+</ResponseField>
+
+<ResponseField name="failed" type="array">
+  Array of phone numbers that failed to configure, with error reasons.
+</ResponseField>
+
+<ResponseField name="register_password_for_pbx" type="string">
+  Only returned when using registration-based auth. This is the derived password you must configure in your PBX.
+</ResponseField>
+
+### Header Configuration Examples
+
+Headers allow you to map SIP headers to Bland pathway variables and vice versa.
+
+```json Example Request (Outbound with Headers)
+curl -X POST https://api.bland.ai/v1/sip/attach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "directions": [
+      {
+        "type": "inbound",
+        "headers": {
+          "direction": "inbound",
+          "headers": [
+            { "type": "custom", "key": "X-Cool-Guy", "value": "First_Name" },
+            { "type": "custom", "key": "Account_Type", "value": "VIP", "passthrough": true },
+            { "type": "uui", "target": "CustomerId", "purpose": "bland", "encoding": "hex", "content": "id" }
+          ]
+        }
+      },
+      {
+        "type": "outbound",
+        "sip_endpoint": "sip:your.provider.com",
+        "options": {
+          "port": 5061,
+          "transport": "tls",
+          "secure_media": true,
+          "sip_username": "bland",
+          "sip_password": "password"
+        },
+        "headers": {
+          "direction": "outbound",
+          "headers": [
+            { "type": "custom", "key": "Favorite_Color", "value": "X-Favorite-Color" },
+            { "type": "custom", "key": "x-custom-id", "value": "12345", "passthrough": true },
+            { "type": "uui", "target": "CustomerKV", "purpose": "bland", "content": "customerid_1234", "encoding": "hex" }
+          ]
+        }
+      }
+    ],
+    "service": "sip"
+  }'
+```
+
+```json Example Request (Batch Attach)
+curl -X POST https://api.bland.ai/v1/sip/attach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+14150000001", "+14150000002", "+14150000003"],
+    "directions": [
+      {
+        "type": "outbound",
+        "sip_endpoint": "sip:trunk.provider.com",
+        "options": {
+          "transport": "tls",
+          "secure_media": true
+        }
+      }
+    ],
+    "service": "sip"
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "configured": ["+14150000001", "+14150000002", "+14150000003"],
+    "failed": []
+  },
+  "errors": null
+}
+```
+</ResponseExample>

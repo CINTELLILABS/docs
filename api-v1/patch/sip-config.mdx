@@ -1,0 +1,79 @@
+---
+title: "Update Advanced Config"
+api: "PATCH https://api.bland.ai/v1/sip/config"
+description: "Update advanced SIP configuration including failover, codecs, and alerts."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_number" type="string" required>
+  The phone number to update configuration for. Must be in E.164 format.
+</ParamField>
+
+<ParamField body="direction" type="string" required>
+  The direction to update: `"inbound"` or `"outbound"`.
+</ParamField>
+
+<ParamField body="failover_config" type="object">
+  Failover configuration:
+  - `enabled` (boolean) — Enable/disable failover
+  - `endpoints` (array) — Failover SIP servers, each with `host`, `port`, `transport`, and `priority`
+  - `triggers` (array) — Conditions that trigger failover: `"unreachable"`, `"auth_failure"`, `"timeout"`
+  - `failback` (string) — `"auto"` or `"manual"`
+</ParamField>
+
+<ParamField body="codec_config" type="object">
+  Codec configuration:
+  - `codecs` (array) — Ordered list of codec names: `"PCMU"`, `"PCMA"`, `"G.729"`, `"Opus"`, `"G.722"`
+  - `transcode` (boolean) — Enable transcoding between codecs
+</ParamField>
+
+<ParamField body="alert_config" type="object">
+  Alert configuration:
+  - `enabled` (boolean) — Enable/disable alerts
+  - `thresholds` — `unreachable_minutes` (number), `failure_rate_percent` (number), `failure_rate_window_minutes` (number), `response_time_ms` (number)
+  - `channels` — `email` (boolean), `sms` (boolean), `webhook` (string, URL)
+</ParamField>
+
+```json Example Request
+curl -X PATCH https://api.bland.ai/v1/sip/config \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "direction": "outbound",
+    "failover_config": {
+      "enabled": true,
+      "endpoints": [
+        { "host": "backup1.sip.provider.com", "port": 5061, "transport": "tls", "priority": 1 },
+        { "host": "backup2.sip.provider.com", "port": 5061, "transport": "tls", "priority": 2 }
+      ],
+      "triggers": ["unreachable", "timeout"],
+      "failback": "auto"
+    },
+    "codec_config": {
+      "codecs": ["PCMU", "PCMA", "Opus"],
+      "transcode": true
+    },
+    "alert_config": {
+      "enabled": true,
+      "thresholds": {
+        "unreachable_minutes": 5,
+        "failure_rate_percent": 20,
+        "failure_rate_window_minutes": 30,
+        "response_time_ms": 500
+      },
+      "channels": {
+        "email": true,
+        "sms": false,
+        "webhook": "https://hooks.example.com/sip-alerts"
+      }
+    }
+  }'
+```

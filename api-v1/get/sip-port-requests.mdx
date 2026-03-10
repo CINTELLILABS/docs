@@ -1,0 +1,53 @@
+---
+title: "List Port Requests"
+api: "GET https://api.bland.ai/v1/sip/port"
+description: "List all number porting requests for your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="port_requests" type="array">
+  Array of port request objects. Each includes:
+  - `id` (string) — Port request ID
+  - `status` (string) — Current status: `"waiting_for_signature"`, `"submitted"`, `"in_progress"`, `"completed"`, `"canceled"`, `"failed"`
+  - `phone_numbers` (array) — Numbers included in the port, each with individual status
+  - `authorized_rep_email` (string) — Email of the authorized representative
+  - `notification_emails` (array) — Notification email addresses
+  - `created_at` (string) — ISO 8601 timestamp
+  - `updated_at` (string) — ISO 8601 timestamp
+</ResponseField>
+
+```json Example Request
+curl -X GET https://api.bland.ai/v1/sip/port \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "port_requests": [
+      {
+        "id": "port_xyz789",
+        "status": "in_progress",
+        "phone_numbers": [
+          { "number": "+14150000000", "status": "in_progress" },
+          { "number": "+14150000001", "status": "in_progress" }
+        ],
+        "authorized_rep_email": "jane@acme.com",
+        "notification_emails": ["it@acme.com"],
+        "created_at": "2026-03-09T12:00:00Z",
+        "updated_at": "2026-03-12T08:00:00Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>

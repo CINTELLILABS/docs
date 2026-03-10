@@ -1,0 +1,49 @@
+---
+title: "Get Trunk Health"
+api: "GET https://api.bland.ai/v1/sip/status"
+description: "Get the health status of a SIP trunk by probing the endpoint with SIP OPTIONS."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="phone_number" type="string" required>
+  The phone number to check health for. Must be in E.164 format.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Health status: `"healthy"`, `"unreachable"`, or `"unchecked"`. Inbound-only trunks show `"unchecked"` since there is no outbound endpoint to probe.
+</ResponseField>
+
+<ResponseField name="response_time_ms" type="number">
+  Response time of the SIP OPTIONS probe in milliseconds. `null` if unreachable or unchecked.
+</ResponseField>
+
+<ResponseField name="checked_at" type="string">
+  ISO 8601 timestamp of when the health check was performed.
+</ResponseField>
+
+```json Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/status?phone_number=%2B14150000000' \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "status": "healthy",
+    "response_time_ms": 42,
+    "checked_at": "2026-03-09T12:00:00Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

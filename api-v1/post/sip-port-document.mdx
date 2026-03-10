@@ -1,0 +1,42 @@
+---
+title: "Upload Port Document"
+api: "POST https://api.bland.ai/v1/sip/port/document"
+description: "Upload a Letter of Authorization (LOA) or proof of ownership document for number porting."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body (Multipart Form Data)
+
+<ParamField body="file" type="file" required>
+  The document file to upload. Accepted formats: PDF, JPEG, PNG, GIF, WebP. Maximum file size: 10MB.
+
+  This should be a utility bill or carrier invoice dated within the last 30 days that shows the account name, owner/authorized user name, and service address.
+</ParamField>
+
+### Response
+
+<ResponseField name="document_sid" type="string">
+  A unique document identifier to reference when initiating the port request.
+</ResponseField>
+
+```bash Example Request
+curl -X POST https://api.bland.ai/v1/sip/port/document \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@/path/to/utility-bill.pdf"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "document_sid": "doc_abc123"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

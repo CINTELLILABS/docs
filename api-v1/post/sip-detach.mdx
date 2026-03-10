@@ -1,0 +1,38 @@
+---
+title: "Detach SIP Configuration"
+api: "POST https://api.bland.ai/v1/sip/detach"
+description: "Remove SIP configuration from a phone number for specified directions."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_number" type="string" required>
+  The phone number to detach SIP routing from. Must be in E.164 format.
+</ParamField>
+
+<ParamField body="directions" type="array" required>
+  Direction(s) to remove. Each object must have a `type` field set to `"inbound"` or `"outbound"`.
+</ParamField>
+
+<ParamField body="service" type="string" required>
+  Must be set to `"sip"`.
+</ParamField>
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/detach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "directions": [
+      { "type": "outbound" }
+    ],
+    "service": "sip"
+  }'
+```

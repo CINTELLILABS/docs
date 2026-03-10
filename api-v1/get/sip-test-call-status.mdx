@@ -1,0 +1,59 @@
+---
+title: "Get Test Call Status"
+api: "GET https://api.bland.ai/v1/sip/test-call/status"
+description: "Poll the status and trace of a SIP test call."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="call_id" type="string" required>
+  The call ID returned from `POST /v1/sip/test-call`.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Call status: `"queued"`, `"initiated"`, `"ringing"`, `"in-progress"`, `"completed"`, `"failed"`, `"busy"`, `"no-answer"`.
+</ResponseField>
+
+<ResponseField name="result" type="string">
+  Final result enum: `"connected"`, `"failed"`, `"busy"`, `"no_answer"`, `"pending"`.
+</ResponseField>
+
+<ResponseField name="duration_seconds" type="number">
+  Call duration in seconds.
+</ResponseField>
+
+<ResponseField name="timeline" type="array">
+  Array of timeline events with `event` (string), `at` (timestamp), and `detail` (string) fields.
+</ResponseField>
+
+```json Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/test-call/status?call_id=tc_abc123' \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "status": "completed",
+    "result": "connected",
+    "duration_seconds": 8,
+    "timeline": [
+      { "event": "initiated", "at": "2026-03-09T12:00:00Z", "detail": "Call initiated" },
+      { "event": "ringing", "at": "2026-03-09T12:00:01Z", "detail": "Endpoint ringing" },
+      { "event": "answered", "at": "2026-03-09T12:00:03Z", "detail": "Call answered" },
+      { "event": "completed", "at": "2026-03-09T12:00:08Z", "detail": "Call ended" }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>

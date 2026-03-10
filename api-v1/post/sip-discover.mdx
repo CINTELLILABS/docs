@@ -1,0 +1,99 @@
+---
+title: "Discover SIP Endpoint"
+api: "POST https://api.bland.ai/v1/sip/discover"
+description: "Auto-discover optimal SIP connection settings by probing your endpoint with DNS resolution and SIP OPTIONS."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="host" type="string" required>
+  The hostname or IP address of your SIP endpoint.
+</ParamField>
+
+<ParamField body="port" type="number">
+  Specific port to probe. If omitted, ports 5060, 5061, and 5080 are tested.
+</ParamField>
+
+<ParamField body="transport" type="string">
+  Specific transport to test: `"udp"`, `"tcp"`, or `"tls"`. If omitted, both UDP and TCP are tested.
+</ParamField>
+
+### Response
+
+<ResponseField name="discovery_id" type="string">
+  Unique identifier for this discovery session.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Discovery status: `"running"`, `"completed"`, or `"failed"`.
+</ResponseField>
+
+<ResponseField name="host" type="string">
+  The host that was probed.
+</ResponseField>
+
+<ResponseField name="resolved_addresses" type="array">
+  IP addresses resolved from DNS A/AAAA lookups.
+</ResponseField>
+
+<ResponseField name="srv_records" type="array">
+  SRV records found for `_sip._udp`, `_sip._tcp`, `_sips._tcp`.
+</ResponseField>
+
+<ResponseField name="attempts" type="array">
+  Details of each probe attempt including port, transport, response time, response code, and user agent.
+</ResponseField>
+
+<ResponseField name="recommended" type="object">
+  Recommended connection settings: `port`, `transport`, `user_agent`, `detected_system` (e.g., "Asterisk", "FreeSWITCH", "Kamailio"), `codecs`, and `methods`.
+</ResponseField>
+
+Only one discovery can run per organization at a time. Discovery results are cached for 10 minutes.
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/discover \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "host": "sip.example.com"
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "discovery_id": "disc_abc123",
+    "status": "completed",
+    "host": "sip.example.com",
+    "resolved_addresses": ["203.0.113.10"],
+    "srv_records": [],
+    "attempts": [
+      {
+        "port": 5060,
+        "transport": "udp",
+        "response_time_ms": 45,
+        "response_code": 200,
+        "user_agent": "Asterisk PBX 18.0.0"
+      }
+    ],
+    "recommended": {
+      "port": 5060,
+      "transport": "udp",
+      "detected_system": "Asterisk",
+      "codecs": ["PCMU", "PCMA", "G.722"],
+      "methods": ["INVITE", "ACK", "BYE", "CANCEL", "OPTIONS"]
+    },
+    "started_at": "2026-03-09T12:00:00Z",
+    "completed_at": "2026-03-09T12:00:05Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
