@@ -1,0 +1,56 @@
+---
+title: "Check Number Portability"
+api: "GET https://api.bland.ai/v1/sip/port/check"
+description: "Check whether phone numbers are eligible for porting to Bland."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="phone_numbers" type="string[]" required>
+  Array of phone numbers to check. Must be in E.164 format.
+</ParamField>
+
+### Response
+
+<ResponseField name="results" type="array">
+  Array of portability check results. Each includes:
+  - `phone_number` (string) — The phone number checked
+  - `portable` (boolean) — Whether the number can be ported
+  - `number_type` (string) — Type of number: `"mobile"`, `"landline"`, `"toll-free"`, etc.
+  - `pin_required` (boolean) — Whether a PIN from the losing carrier is required
+</ResponseField>
+
+```json Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/port/check?phone_numbers[]=%2B14150000000&phone_numbers[]=%2B14150000001' \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "results": [
+      {
+        "phone_number": "+14150000000",
+        "portable": true,
+        "number_type": "landline",
+        "pin_required": false
+      },
+      {
+        "phone_number": "+14150000001",
+        "portable": true,
+        "number_type": "mobile",
+        "pin_required": true
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>

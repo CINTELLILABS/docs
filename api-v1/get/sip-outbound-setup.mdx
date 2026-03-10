@@ -1,0 +1,53 @@
+---
+title: "Get Outbound Setup"
+api: "GET https://api.bland.ai/v1/sip/outbound-setup"
+description: "Get Bland's SIP server details and PBX configuration instructions for outbound call routing."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="phone_number" type="string">
+  Optional. If provided, includes per-number credentials (redacted) in the response.
+</ParamField>
+
+### Response
+
+<ResponseField name="sip_server" type="string">
+  Bland's SIP server hostname for your region (e.g., `us1.sip.bland.ai`).
+</ResponseField>
+
+<ResponseField name="port" type="number">
+  SIP signaling port (e.g., `5061`).
+</ResponseField>
+
+<ResponseField name="instructions" type="string">
+  Human-readable setup instructions for configuring your PBX.
+</ResponseField>
+
+<ResponseField name="credentials" type="object">
+  Per-number registration credentials (only if `phone_number` is provided and registration auth is configured). Sensitive values are redacted.
+</ResponseField>
+
+```json Example Request
+curl -X GET https://api.bland.ai/v1/sip/outbound-setup \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "sip_server": "us1.sip.bland.ai",
+    "port": 5061,
+    "instructions": "Configure your PBX to send SIP INVITE requests to us1.sip.bland.ai:5061 over TLS. Whitelist the IP addresses from /v1/sip/firewall-ips."
+  },
+  "errors": null
+}
+```
+</ResponseExample>

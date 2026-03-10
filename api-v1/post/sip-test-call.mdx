@@ -1,0 +1,50 @@
+---
+title: "Send SIP Test Call"
+api: "POST https://api.bland.ai/v1/sip/test-call"
+description: "Place a live test call to your SIP endpoint to verify connectivity. Rate limited to 10 calls per 15 minutes."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_number" type="string" required>
+  The phone number with an outbound SIP configuration to test. Must be in E.164 format.
+</ParamField>
+
+### Response
+
+<ResponseField name="call_id" type="string">
+  A unique call identifier. Use this to poll the test call status.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+Test calls are rate-limited to **10 per 15 minutes** per organization.
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/test-call \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000"
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "call_id": "tc_abc123",
+    "message": "Test call initiated"
+  },
+  "errors": null
+}
+```
+</ResponseExample>

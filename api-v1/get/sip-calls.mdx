@@ -1,0 +1,70 @@
+---
+title: "Get SIP Call Logs"
+api: "GET https://api.bland.ai/v1/sip/calls"
+description: "Retrieve SIP call logs for a phone number with cursor-based pagination."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="phone_number" type="string" required>
+  The phone number to fetch call logs for. Must be in E.164 format.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of calls to return. Default: 50.
+</ParamField>
+
+<ParamField query="before" type="string">
+  Cursor for pagination. Pass the `call_id` of the last call from the previous page to fetch the next page.
+</ParamField>
+
+### Response
+
+<ResponseField name="calls" type="array">
+  Array of call records. Each includes:
+  - `call_id` (string) — Unique SIP Call-ID
+  - `direction` (string) — `"inbound"` or `"outbound"`
+  - `from` (string) — Caller number
+  - `to` (string) — Callee number
+  - `status` (string) — Final SIP status (e.g., `"200 OK"`, `"486 Busy"`)
+  - `sip_code` (number) — SIP response code
+  - `duration_seconds` (number) — Call duration
+  - `started_at` (string) — ISO 8601 timestamp
+  - `ended_at` (string) — ISO 8601 timestamp
+  - `source_ip` (string) — Source IP address
+</ResponseField>
+
+```json Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/calls?phone_number=%2B14150000000&limit=10' \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "calls": [
+      {
+        "call_id": "abc123@sip.bland.ai",
+        "direction": "outbound",
+        "from": "+14150000000",
+        "to": "+15105551234",
+        "status": "200 OK",
+        "sip_code": 200,
+        "duration_seconds": 45,
+        "started_at": "2026-03-09T11:00:00Z",
+        "ended_at": "2026-03-09T11:00:45Z",
+        "source_ip": "35.80.235.26"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>

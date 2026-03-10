@@ -1,0 +1,49 @@
+---
+title: "Update SIP Direction"
+api: "POST https://api.bland.ai/v1/sip/update"
+description: "Update an existing SIP routing direction for a phone number."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_number" type="string" required>
+  The phone number to update. Must be in E.164 format.
+</ParamField>
+
+<ParamField body="updates" type="object" required>
+  The updated direction object. Must include `type` (`"inbound"` or `"outbound"`).
+</ParamField>
+
+For outbound updates, you can modify `sip_endpoint`, `options` (port, transport, secure_media, sip_username, sip_password), and `headers`.
+
+For inbound updates, you can modify `auth_mode`, `register_auth`, `sip_endpoint`, `options`, and `headers`.
+
+### Response
+
+<ResponseField name="register_password_for_pbx" type="string">
+  Returned when switching to or updating registration-based auth. Configure this password in your PBX.
+</ResponseField>
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/update \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14150000000",
+    "updates": {
+      "type": "outbound",
+      "sip_endpoint": "sip:new.provider.com",
+      "options": {
+        "port": 5061,
+        "transport": "tls",
+        "secure_media": true
+      }
+    }
+  }'
+```

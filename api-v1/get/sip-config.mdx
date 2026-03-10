@@ -1,0 +1,70 @@
+---
+title: "Get SIP Config"
+api: "GET https://api.bland.ai/v1/sip"
+description: "Retrieve the current SIP configuration for a phone number."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="phone_number" type="string" required>
+  The phone number to fetch SIP configuration for. Must be in E.164 format.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.inbound" type="object">
+  Inbound SIP configuration, or `null` if not configured. Includes `number`, `id`, `org_id`, `direction`, `sip_endpoint`, `headers`, `options`, `created_at`, and `updated_at`. Sensitive fields (credentials) are redacted.
+</ResponseField>
+
+<ResponseField name="data.outbound" type="object">
+  Outbound SIP configuration, or `null` if not configured. Same fields as inbound.
+</ResponseField>
+
+```json Example Request
+curl -X GET 'https://api.bland.ai/v1/sip?phone_number=%2B14150000000' \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "inbound": {
+      "number": "+14150000000",
+      "id": "abc123",
+      "org_id": "org_456",
+      "direction": "inbound",
+      "sip_endpoint": null,
+      "created_at": "2026-03-09T12:00:00Z",
+      "updated_at": "2026-03-09T12:00:00Z",
+      "headers": null,
+      "options": {
+        "auth_mode": "ip"
+      }
+    },
+    "outbound": {
+      "number": "+14150000000",
+      "id": "def789",
+      "org_id": "org_456",
+      "direction": "outbound",
+      "sip_endpoint": "sip:trunk.provider.com",
+      "created_at": "2026-03-09T12:00:00Z",
+      "updated_at": "2026-03-09T12:00:00Z",
+      "headers": null,
+      "options": {
+        "port": 5061,
+        "transport": "tls",
+        "secure_media": true
+      }
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>

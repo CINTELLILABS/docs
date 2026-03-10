@@ -1,190 +1,469 @@
 ---
 
 title: "SIP Integration"
-description: "Configure and manage SIP for call routing to and from Bland."
+description: "Configure and manage SIP for call routing to and from Bland, with guided setup wizard, auto-discovery, test calls, and number porting."
 
 ---
 
 ## Overview
 
-Bland supports **inbound and outbound SIP**, allowing customers to direct calls from their SIP provider to Bland for handling - or to direct Bland to make contact with their SIP provider.
+Bland supports **inbound and outbound SIP**, allowing customers to direct calls from their SIP provider to Bland for handling — or to direct Bland to make calls through their SIP provider.
 
-This guide provides:
+This guide covers:
 
-* Instructions for attaching, verifying, updating, and detaching SIP routes via Bland's API
-* SIP connection details
-* Requirements and security settings
-* Schema definitions and usage patterns
+* Setting up SIP trunks via the **SIP Setup Wizard** or API
+* **Auto-discovery** of your SIP endpoint settings
+* **Test calls** to verify connectivity
+* **Number porting** to transfer numbers to Bland
+* SIP connection details, firewall configuration, and security requirements
+* Full API reference for all SIP endpoints
 
 ---
 
 ## Quick Start
 
-Intergrating SIP with Bland requires both sides (you or your provider, and Bland) to perform a set of steps in the correct order to minimize the time taken to get your calls flowing.
+**[1] Enable SIP**
 
-**[1] Enabling SIP**
+Contact support to have the `SIP` entitlement enabled for your organization.
 
-You'll need to to contact support to have `SIP` enabled for your Organization. Without this, you won't be able to continue.
+**[2] Open the SIP Dashboard**
 
-**[2] Identifying your Numbers**
+Navigate to the [SIP Trunks dashboard](https://app.bland.ai/dashboard/sip-trunks) in the Bland app.
 
-Bland needs to know ahead of time, the numbers that will be used in either an Outbound (also known as Origination) direction, or an Inbound (also known as Termination) direction.
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/SipDashboard.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="SIP Dashboard showing trunk overview, call logs, and SIP trace viewer"
+/>
 
-You should work with your SIP Provider to identify these, for your business use case and purpose.
+The dashboard displays all your configured SIP trunks at a glance — total trunk count, inbound vs. outbound breakdown, health status, and SIP endpoints. Click into any trunk to view live call logs with a full **SIP trace viewer** showing the INVITE/100 Trying/180 Ringing/200 OK/ACK message flow.
 
-To be explicit, this phone number should not be a bland number, but rather the phone number that you want to SIP into. Your SIP "provider" should provider/own this number, and should tell you which one to use (not Bland).
+**[3] Add a Trunk (Outbound)**
 
-**[3] Declare these Numbers with Bland**
+Click **"Add trunk"** to launch the SIP Setup Wizard. For outbound trunks, the wizard walks you through:
 
-You do not need to port, or transfer numbers to Bland. You just need to simply let us know about them ahead of time.
+1. **Direction** — Choose outbound
+2. **Destination** — Enter your SIP provider endpoint
+3. **Discovery** — Auto-detect optimal settings
+4. **Firewall** — Whitelist Bland's IP addresses
+5. **Authentication** — Configure IP-based or registration auth
+6. **Numbers** — Select which numbers to route
+7. **Test Call** — Verify the connection works
+8. **Complete** — You're live
 
-This can be accomplished in two ways:
-- [Configure them visually, on the dashboard](https://app.bland.ai/dashboard/sip) (see [Getting Started](#getting-started) section below for detailed instructions)
-- [Configure them using our API](https://docs.bland.ai/enterprise-features/SIP-integration#attach-sip-endpoint)
+**[4] Add a Trunk (Inbound)**
 
-**[4] (Inbound Only) Configure the Number**
+For inbound, the flow is simpler — choose inbound direction, select your numbers, and you're done. Configure each inbound number's pathway, persona, and voice in the SIP Dashboard just like any regular inbound number.
 
-Numbers declared to Bland as numbers that will be inbounded to Bland over SIP, behave like a regular inbound number. Configure them exactly as you would a normal inbound number (for example: setting your pathway, persona, or voice!)
+**[5] Make an Outbound Call**
 
-**[5] (Outbound Only) Calling Outbound**
+Use your SIP number as the `from` value in a standard `/v1/calls` request:
 
-To make an outbound call with a SIP number, you simply use them like a regular `from` number. We'll automatically use your SIP information to connect to your chosen SIP endpoint, and we'll make the call.
-
-This also applies to warm transfers.
+```json
+curl -X POST https://api.bland.ai/v1/calls \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "Say hi to the nice person!",
+    "from": "+12341234123",
+    "phone_number": "<the callee phone number>"
+  }'
+```
 
 ---
 
-## Getting Started
+## SIP Setup Wizard
 
-For users who prefer a visual interface over API calls, Bland provides a comprehensive dashboard for managing SIP configurations on a per-number basis. This section walks you through configuring SIP for individual phone numbers using the dashboard.
+The SIP Setup Wizard provides a guided, step-by-step experience for configuring SIP trunks. Access it by clicking **"Add trunk"** on the [SIP Dashboard](https://app.bland.ai/dashboard/sip-trunks).
 
-### Accessing SIP Configuration
+Every step below can also be done programmatically — see the expandable API sections under each step, or jump to the full [API Reference](#api-reference).
 
-To configure SIP for a phone number:
+### Step 1: Direction
 
-1. Go to your "Phone Numbers" page in the dashboard
-2. Click "Add Existing Number" 
-3. This will take you to the SIP configuration interface at [https://app.bland.ai/dashboard/sip](https://app.bland.ai/dashboard/sip)
+Choose whether this trunk handles **inbound** (calls coming to Bland) or **outbound** (Bland placing calls through your SIP provider).
 
-Once you've configured a number for SIP, it will appear in your Phone Numbers page with a "Manage SIP" button that allows you to modify the SIP configuration settings.
+<Accordion title="API">
+  The direction is specified in the `directions` array when calling [`POST /v1/sip/attach`](/api-v1/post/sip-attach):
 
-### SIP Configuration Interface
+  ```json
+  // Inbound
+  { "type": "inbound" }
 
-The SIP configuration page is organized per phone number with two main tabs:
+  // Outbound
+  { "type": "outbound", "sip_endpoint": "sip:your.provider.com" }
+  ```
+</Accordion>
 
-- **Phone Number**: Enter or view the number you're configuring (E.164 format like +14150000000)
-- **Inbound Tab**: Configure how calls coming TO your number via SIP are handled
-- **Outbound Tab**: Configure how calls FROM your number go through your SIP provider (requires [SIP connection details](#sip-connection-details))
+### Step 2: Destination (Outbound Only)
 
-### Configuring Inbound SIP
+Enter your SIP provider's endpoint address. The wizard includes a **provider catalog** with guided instructions for popular platforms:
 
-The Inbound tab allows your SIP provider to route calls to Bland for handling.
+- **Twilio** — SIP Domain URI
+- **Vonage** — SIP endpoint
+- **Asterisk / FreePBX** — Public IP or hostname
+- **3CX** — SIP trunk FQDN
+- **Cisco UCM / CUBE** — Gateway address
+- **RingCentral** — SIP endpoint
+- **Microsoft Teams** — Requires a certified SBC (direct connection not supported)
+- **Other** — Any standard SIP endpoint
 
-<img 
-  src="../enterprise-features/enterprise-features-assets/sip-dashboard/add_inbound.jpeg" 
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/SipWizardDestination.jpeg"
   style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Inbound SIP configuration tab showing enable toggle and headers section"
+  alt="SIP Wizard destination step showing provider selection and SIP server address input with parsed result"
 />
 
-**Step 1: Enable Inbound**
-- Toggle the "Enable Inbound" switch to activate inbound SIP for this number
+The wizard accepts flexible input formats — hostnames, IPs, full SIP URIs like `sip:user@host:5061;transport=tls`, or shorthand like `tls://host`. It automatically parses the host, port, and transport for you.
 
-**Step 2: Configure Headers (Optional)**
-If your SIP provider sends custom headers you want to use in your pathways:
+<Accordion title="API">
+  Validate a destination before attaching with `POST /v1/sip/parse-destination`:
 
-- **Header Type**: Choose between "Custom Header" or "UUI Header"
-- **Header Value**: Select either:
-  - **Bland Variable**: Choose from predefined variables (`call_id`, `caller_id`, `destination_number`, `call_duration`, `call_status`)
-  - **Static Value**: Enter a fixed text value
-- **Add/Remove**: Use the "+" button to add headers, trash icon to remove them
+  ```bash
+  curl -X POST https://api.bland.ai/v1/sip/parse-destination \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{ "input": "sip:your.provider.com:5061;transport=tls" }'
+  ```
 
-**Step 3: Save**
-Click "Save Configuration" to enable inbound SIP for this number.
+  Then set `sip_endpoint` and `options` (port, transport) in your [`POST /v1/sip/attach`](/api-v1/post/sip-attach) request.
+</Accordion>
 
-### Configuring Outbound SIP
+### Step 3: Auto-Discovery
 
-The Outbound tab configures calls made FROM your number through your SIP provider.
+Bland automatically probes your SIP endpoint to detect the optimal connection settings.
 
-<img 
-  src="../enterprise-features/enterprise-features-assets/sip-dashboard/main_dashboard.jpeg" 
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/SipWizardAutoDiscovery.jpeg"
   style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Outbound SIP configuration tab showing SIP endpoint settings and options"
+  alt="SIP Wizard auto-discovery step showing DNS resolution, port probing, and detected endpoint details"
 />
 
-**Step 1: Enable Outbound**
-- Toggle the "Enable Outbound" switch to activate outbound SIP for this number
+The discovery engine:
 
-**Step 2: Configure SIP Connection**
-When outbound is enabled, configure your SIP provider details:
+1. **Resolves DNS** — A/AAAA and SRV records (`_sip._udp`, `_sip._tcp`, `_sips._tcp`)
+2. **Probes SIP ports** — Tests ports 5060, 5061, and 5080 over UDP and TCP with SIP OPTIONS messages
+3. **Analyzes responses** — Detects your PBX system (Asterisk, FreeSWITCH, Kamailio, 3CX, Cisco, etc.), supported codecs, and methods
 
-- **SIP Endpoint**: Your provider's endpoint (e.g., "sip.example.com") - see [SIP connection details](#sip-connection-details) for requirements
-- **Port**: Port number (default: 5060)
-- **SIP Username**: Authentication username (if required by provider)
-- **SIP Password**: Authentication password (if required by provider)  
-- **Transport Protocol**: Choose UDP, TCP, or TLS (see [requirements](#requirements-and-security-settings) for supported options)
-- **Secure Media (SRTP)**: Check this box for encrypted media streams
+The recommended port, transport, and system are displayed once discovery completes. You can also skip discovery and configure settings manually.
 
-**Step 3: Configure Headers (Optional)**
-Same header configuration as inbound - map Bland variables to SIP headers or use static values.
+<Accordion title="API">
+  Run discovery with [`POST /v1/sip/discover`](/api-v1/post/sip-discover), then poll for results:
 
-**Step 4: Save**
-Click "Save Configuration" to enable outbound SIP for this number.
+  ```bash
+  # Start discovery
+  curl -X POST https://api.bland.ai/v1/sip/discover \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{ "host": "sip.example.com" }'
 
-### Managing SIP Numbers
+  # Poll progress
+  curl -X GET 'https://api.bland.ai/v1/sip/discover/status?discovery_id=disc_abc123' \
+    -H "Authorization: Bearer <token>"
+  ```
 
-Once configured, you can manage SIP numbers from your main Phone Numbers page:
+  The `recommended` object in the response contains the optimal `port`, `transport`, and `detected_system`. One discovery can run per organization at a time.
+</Accordion>
 
-<img 
-  src="../enterprise-features/enterprise-features-assets/sip-dashboard/manage_sip_button.png" 
+### Step 4: Firewall Configuration
+
+The wizard displays Bland's static IP addresses and ports that must be whitelisted in your firewall. See the [SIP Connection Details](#sip-connection-details) section below for the full list.
+
+<Accordion title="API">
+  Retrieve your region's IPs and ports programmatically with [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips):
+
+  ```bash
+  curl -X GET https://api.bland.ai/v1/sip/firewall-ips \
+    -H "Authorization: Bearer <token>"
+  ```
+</Accordion>
+
+### Step 5: Authentication
+
+Choose how your SIP server authenticates incoming connections from Bland.
+
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/SIPWizardAuth.jpeg"
   style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Phone Numbers page showing Manage SIP button for SIP-configured numbers"
+  alt="SIP Wizard authentication step showing IP-based and registration-based auth options"
 />
 
-- Numbers with SIP configuration will show a "Manage SIP" button
-- Click this button to return to the SIP configuration interface for that number
-- You can enable/disable inbound or outbound directions, or modify connection details
+Two authentication modes are available:
 
-### Key Configuration Notes
+- **IP-based (recommended)** — Bland's IP addresses are whitelisted on your server. No credentials needed.
+- **Registration-based** — Bland registers with your server using a username and password via SIP REGISTER. A derived password is provided that you must configure in your PBX.
 
-- **Inbound** only requires enabling the toggle and optional header mapping. Numbers behave like regular inbound numbers (configure pathway, persona, voice, etc in the main dashboard)
-- **Outbound** requires SIP provider endpoint and connection details. Numbers behave like regular outbound numbers which you can use as the "from" value for outbound calls  
-- **Headers** are supported in both directions with custom headers and UUI (User-to-User Information). Map dynamic Bland variables like `caller_id` or use static values to bridge data between Bland pathways and your SIP infrastructure. For detailed header configuration examples, see the [API reference](#api-reference) section
+You can also optionally provide **call authentication** credentials (SIP username/password) that are included in SIP INVITE requests.
+
+<Accordion title="API">
+  Set `auth_mode` in the inbound direction of your [`POST /v1/sip/attach`](/api-v1/post/sip-attach) request:
+
+  ```json
+  {
+    "type": "inbound",
+    "auth_mode": "register",
+    "register_auth": {
+      "username": "my-trunk",
+      "password": "securepassword"
+    },
+    "options": {
+      "sip_username": "call-user",
+      "sip_password": "call-pass"
+    }
+  }
+  ```
+
+  The response includes `register_password_for_pbx` — configure this derived password in your PBX.
+</Accordion>
+
+### Step 6: Number Selection
+
+Select which phone numbers to route through this trunk. You can attach up to 100 numbers at once. Numbers must be in E.164 format.
+
+<Accordion title="API">
+  Pass numbers in `phone_numbers` when calling [`POST /v1/sip/attach`](/api-v1/post/sip-attach). List existing SIP numbers with [`GET /v1/sip/numbers`](/api-v1/get/sip-numbers).
+
+  ```bash
+  curl -X POST https://api.bland.ai/v1/sip/attach \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "phone_numbers": ["+14150000001", "+14150000002"],
+      "directions": [{ "type": "outbound", "sip_endpoint": "sip:trunk.provider.com" }],
+      "service": "sip"
+    }'
+  ```
+
+  The response separates `configured` (successful) and `failed` (with error reasons) numbers.
+</Accordion>
+
+### Step 7: Test Call
+
+Verify your connection with a live test call before going live.
+
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/SIPWizardTest.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="SIP Wizard test call step showing call trace with INVITE, 100 Trying, 180 Ringing, 200 OK, and connection successful"
+/>
+
+The test call sends a real SIP INVITE to your endpoint. You'll see the call trace in real-time — from sending the call through to connection. A green "Connection successful!" message confirms your trunk is working correctly.
+
+Test calls are rate-limited to **10 per 15 minutes** per organization.
+
+<Accordion title="API">
+  Initiate a test call with [`POST /v1/sip/test-call`](/api-v1/post/sip-test-call), then poll for results:
+
+  ```bash
+  # Start test call
+  curl -X POST https://api.bland.ai/v1/sip/test-call \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{ "phone_number": "+14150000000" }'
+
+  # Poll status
+  curl -X GET 'https://api.bland.ai/v1/sip/test-call/status?call_id=tc_abc123' \
+    -H "Authorization: Bearer <token>"
+  ```
+
+  The response includes `status`, `result`, `duration_seconds`, and a `timeline` of SIP events.
+</Accordion>
+
+### Step 8: Complete
+
+Your SIP trunk is now configured and active. You can view and manage it from the SIP Dashboard.
+
+<Accordion title="API">
+  Verify your live trunk with [`GET /v1/sip`](/api-v1/get/sip-config) and check health with [`GET /v1/sip/status`](/api-v1/get/sip-status):
+
+  ```bash
+  curl -X GET 'https://api.bland.ai/v1/sip?phone_number=%2B14150000000' \
+    -H "Authorization: Bearer <token>"
+
+  curl -X GET 'https://api.bland.ai/v1/sip/status?phone_number=%2B14150000000' \
+    -H "Authorization: Bearer <token>"
+  ```
+</Accordion>
+
+---
+
+## SIP Dashboard
+
+The SIP Dashboard at [app.bland.ai/dashboard/sip-trunks](https://app.bland.ai/dashboard/sip-trunks) is your central hub for managing SIP trunks.
+
+### Trunk Overview
+
+View all configured trunks with summary cards showing total SIP trunks, inbound count, and outbound count. Each trunk row displays the phone number, direction (inbound/outbound), SIP endpoint, and health status.
+
+### Configuration Details
+
+Click **"View"** on any trunk to see its full configuration, including the SIP trace viewer for recent calls, firewall IP addresses, and connection settings.
+
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/SIPConfigurationDetails.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="SIP Configuration details page showing call trace, firewall IPs, and port configuration"
+/>
+
+The configuration detail view includes:
+
+- **SIP Trace Viewer** — A ladder diagram of SIP call events (INVITE, 100 Trying, 180 Ringing, 200 OK, ACK) with full message headers. Search, filter, and copy/download traces for debugging.
+- **Call Logs** — Paginated call history with direction, status, SIP response code, duration, and timestamps. Auto-refreshes every 30 seconds.
+- **Firewall & Ports** — Bland's egress IP addresses and SIP/RTP ports for your region, with a copy-all button.
+- **Health Monitoring** — Real-time health status via SIP OPTIONS probes (healthy/unreachable/unchecked), uptime percentage, and average response time.
+
+### Configuring Inbound Numbers
+
+You can set up inbound SIP through the wizard (choose "Inbound" at the direction step) or via the API with [`POST /v1/sip/attach`](/api-v1/post/sip-attach). Inbound SIP numbers behave like regular inbound numbers — configure their pathway, persona, voice, and other settings just as you would any Bland inbound number.
+
+### Advanced Configuration
+
+From the configuration detail page, you can also manage:
+
+- **Failover** — Configure primary, secondary, and tertiary SIP servers with automatic failover triggers (unreachable, auth failure, timeout) and failback mode (auto/manual).
+- **Codecs** — Reorder and enable/disable codecs (PCMU, PCMA, G.729, Opus, G.722) with optional transcoding.
+- **Alerts** — Set thresholds for unreachable duration, failure rate percentage, and response time, with notification channels (email, SMS, webhook).
+
+---
+
+## Number Porting
+
+Bland supports **number porting** — transferring phone numbers you own from another carrier to Bland. This allows you to use your existing business numbers directly with Bland's SIP infrastructure without maintaining a separate SIP provider.
+
+### How Number Porting Works
+
+Number porting is a regulated process coordinated between carriers. It typically takes **7–14 business days** depending on the losing carrier and number type. The process follows these stages:
+
+| Status | Description |
+|--------|-------------|
+| `waiting_for_signature` | Port request created. A Letter of Authorization (LOA) needs to be signed. |
+| `submitted` | LOA signed and submitted to the losing carrier. |
+| `in_progress` | The losing carrier is processing the port. |
+| `completed` | Numbers have been ported successfully and are active on Bland. |
+| `canceled` | The port request was canceled. |
+| `failed` | The port request failed (e.g., incorrect account information). |
+
+You can track the status of all port requests in the [SIP Dashboard](https://app.bland.ai/dashboard/sip-trunks) or via the [API](/api-v1/get/sip-port-requests).
+
+### Porting via the Dashboard
+
+Click **"Port a number"** on the SIP Dashboard to launch the porting wizard.
+
+**Step 1: Enter Numbers**
+
+Enter the phone numbers you want to port and click **"Check portability"** to verify they can be transferred.
+
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/NumberPoirtingAutoCheck.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Number porting wizard showing phone number input and portability check"
+/>
+
+The portability check verifies each number against the carrier database and returns whether the number is portable, the number type (mobile, landline, toll-free), and whether a PIN is required from the losing carrier.
+
+<Accordion title="API">
+  Check portability with [`GET /v1/sip/port/check`](/api-v1/get/sip-port-check):
+
+  ```bash
+  curl -X GET 'https://api.bland.ai/v1/sip/port/check?phone_numbers[]=%2B14150000000' \
+    -H "Authorization: Bearer <token>"
+  ```
+
+  Returns `portable` (boolean), `number_type`, and `pin_required` for each number.
+</Accordion>
+
+**Step 2: LOA Information**
+
+Provide the details needed for the Letter of Authorization:
+
+<img
+  src="../tutorials/tutorials-assets/sip-wizard/NumberPortingForm.jpeg"
+  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+  alt="Number porting LOA form showing carrier details, service address, target port date, and proof of ownership upload"
+/>
+
+- **Authorized representative** — Name and email of the person authorized to port the numbers
+- **Service address** — The address on file with the losing carrier (must match their records)
+- **Target port date** — Earliest date for the port (minimum 7 days from today)
+- **Proof of ownership** — Upload a utility bill or carrier invoice (PDF or image, max 10MB) showing the account name and service address
+
+<Accordion title="API">
+  Upload your proof of ownership document with [`POST /v1/sip/port/document`](/api-v1/post/sip-port-document):
+
+  ```bash
+  curl -X POST https://api.bland.ai/v1/sip/port/document \
+    -H "Authorization: Bearer <token>" \
+    -F "file=@/path/to/utility-bill.pdf"
+  ```
+
+  Returns a `document_sid` to reference when initiating the port.
+</Accordion>
+
+**Step 3: Confirm & Submit**
+
+Review all details and submit. You'll receive an email with the LOA for electronic signature. Once signed, the port request is submitted to the losing carrier.
+
+After the port completes, your numbers are automatically registered as inbound numbers on Bland and ready to use.
+
+<Accordion title="API">
+  Submit the port request with [`POST /v1/sip/port/initiate`](/api-v1/post/sip-port-initiate):
+
+  ```bash
+  curl -X POST https://api.bland.ai/v1/sip/port/initiate \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "phone_numbers": ["+14150000000"],
+      "losing_carrier_information": {
+        "customer_type": "business",
+        "business_name": "Acme Corp",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "account_number": "ACC-12345",
+        "authorized_representative_email": "jane@acme.com",
+        "address": {
+          "street": "123 Main St",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94105",
+          "country": "US"
+        }
+      },
+      "target_port_date": "2026-03-20T00:00:00Z",
+      "documents": ["doc_abc123"]
+    }'
+  ```
+
+  Track progress with [`GET /v1/sip/port`](/api-v1/get/sip-port-requests) or cancel with [`DELETE /v1/sip/port/:id`](/api-v1/delete/sip-port-cancel).
+</Accordion>
 
 ---
 
 ## SIP Connection Details
 
-**SIP Signaling Endpoint FQDN(s):**
+**SIP Signaling Endpoint FQDNs:**
 
 - You **must** use TCP over TLS for all SIP signaling.
 - You **must** use Secure Media / SRTP for all media streams.
-- Bland **does not** accept UDP for SIP signaling. 
-- You **must** whitelist all IP addresses listed below in your firewall to allow inbound and outbound SIP traffic.
-- If required, we provide which IP addresses are used for incoming SIP messages, and which are used for outgoing SIP messages.
+- Bland **does not** accept UDP for SIP signaling.
+- You **must** whitelist all IP addresses listed below in your firewall.
 
 ```
 US1 (Oregon):
-
 us1.sip.bland.ai:5061;transport=tls
 
---
 EU1 (Ireland):
-
 eu1.sip.bland.ai:5061;transport=tls
 
---
-ASIA1 (Sydney):
+CA1 (Canada):
+ca1.sip.bland.ai:5061;transport=tls
 
+ASIA1 (Sydney):
 asia1.sip.bland.ai:5061;transport=tls
 ```
 
-**Static IP Addresses of the SIP Signalling Server(s):**
-
-You must whitelist **all** IP addresses for your region. Failure to do so can lead to connectivity issues.
+**Static IP Addresses — US1 (Oregon):**
 
 ```
-US1 (Oregon):
-
 35.80.235.26
 54.189.4.67
 100.20.173.20
@@ -213,9 +492,9 @@ US1 (Oregon):
 54.244.51.3
 ```
 
-```
-EU1 (Ireland):
+**Static IP Addresses — EU1 (Ireland):**
 
+```
 52.17.69.204
 52.210.181.150
 54.171.127.192
@@ -228,9 +507,9 @@ EU1 (Ireland):
 35.156.191.131
 ```
 
-```
-ASIA1 (Sydney):
+**Static IP Addresses — ASIA1 (Sydney):**
 
+```
 13.237.152.149
 3.104.178.155
 54.252.254.64
@@ -239,22 +518,26 @@ ASIA1 (Sydney):
 54.252.254.67
 ```
 
-**Static IP Addresses of the Media Stream Server(s):**
+**Media Stream Ports:**
 
-IP Addresses listed above for SIP Signalling are used equivocally for Media Stream Servers. These connections will be opened between ports `16384` and `32768`.
+IP addresses listed above for SIP Signaling are used for Media Stream Servers as well. Media connections use ports `10000` to `20000` (UDP).
+
+You can also retrieve your region's IP addresses and ports programmatically via `GET /v1/sip/firewall-ips`.
+
+---
 
 ## Requirements and Security Settings
 
 **Supported Codecs:**
 
-* Currently Supported: PCMU, PCMA, Opus
+* PCMU (G.711 μ-law), PCMA (G.711 A-law), Opus
+* Additional codecs configurable via advanced settings: G.729, G.722
 
 **Security Requirements:**
 
 * SIP Signaling: TLS 1.2 or higher
 * You must ensure the [Let's Encrypt](https://letsencrypt.org/certificates/) ISRG X1 Root CA is installed. [Downloadable here.](https://letsencrypt.org/certs/isrgrootx1.pem)
 * RTP Media: SRTP using AES_CM_128_HMAC_SHA1_80
-* `From` Header FQDN: Bland will enforce validity of the FQDN provided for in your `From` header. If this should be the same as the signaling endpoint, or a non-valid FQDN, we may reject your request(s) in the future.
 
 **Other Configurations:**
 
@@ -262,9 +545,8 @@ IP Addresses listed above for SIP Signalling are used equivocally for Media Stre
 * DTMF: RFC 2833 (Out-of-band via RTP payload)
 * Transport: TCP over TLS
 * Methods: INVITE, ACK, BYE, CANCEL, OPTIONS, REFER
-
-* Number Format: +E.164 or E.164 (both supported for origination and termination)
-* SIP Registration: Not required (Bland determines routing based on predefined configurations configurable below.)
+* Number Format: +E.164 or E.164 (both supported)
+* Authentication: IP-based (default) or SIP REGISTER digest auth
 
 ---
 
@@ -272,244 +554,60 @@ IP Addresses listed above for SIP Signalling are used equivocally for Media Stre
 
 All `/sip` endpoints are protected by an entitlement check.
 
-Your organization must have the `SIP` entitlement enabled to use SIP features. If not, all requests to the `/sip` routes will return an error.
-
-Contact support to have SIP enabled for your Enterprise organization.
+Your organization must have the `SIP` entitlement enabled. Contact support to have SIP enabled for your Enterprise organization.
 
 ---
 
 ## API Reference
 
-### Attach SIP Endpoint
+All SIP endpoints are under `/v1/sip` and require authentication via your API key. Detailed parameter documentation for each endpoint is available in the [API Reference tab](/api-v1/post/sip-attach).
 
-`POST /sip/attach`
+### Core Endpoints
 
-Attach a SIP configuration to a phone number.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | [`/v1/sip`](/api-v1/get/sip-config) | Get SIP config for a phone number |
+| `POST` | [`/v1/sip/attach`](/api-v1/post/sip-attach) | Attach SIP configuration to phone numbers |
+| `POST` | [`/v1/sip/update`](/api-v1/post/sip-update) | Update SIP direction settings |
+| `POST` | [`/v1/sip/detach`](/api-v1/post/sip-detach) | Remove SIP configuration |
+| `GET` | [`/v1/sip/numbers`](/api-v1/get/sip-numbers) | List all SIP-configured numbers |
 
-<ParamField query="phone_number" type="string">
-  The phone number to associate with the SIP configuration. Must be in E.164 format.
-</ParamField>
+### Discovery & Testing
 
-<ParamField query="directions" type="array">
-  An array of directions for the SIP routing. Valid values: `inbound`, `outbound`. If outbound, you must also provide a `sip_endpoint`.
-</ParamField>
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | [`/v1/sip/discover`](/api-v1/post/sip-discover) | Auto-discover SIP endpoint settings |
+| `GET` | [`/v1/sip/discover/status`](/api-v1/get/sip-discover-status) | Poll discovery progress |
+| `POST` | [`/v1/sip/test-call`](/api-v1/post/sip-test-call) | Send a test call to your SIP endpoint |
+| `GET` | [`/v1/sip/test-call/status`](/api-v1/get/sip-test-call-status) | Get test call status and trace |
 
-<ParamField query="service" type="string">
-  Must be set to `sip`.
-</ParamField>
+### Configuration & Monitoring
 
-```json Example Request
-curl -X POST https://api.bland.ai/v1/sip/attach \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "+14150000000",
-    "directions": [
-      { 
-        "type": "inbound", 
-        "headers": {
-          "direction": "inbound", // Must be set to the parent objects direction.
-          "headers": [
-            // Passthrough Off. We take the incoming SIP header's value for "X-Cool-Guy" and assign it to the pathway variable's value for "First_Name".
-            { "type": "custom", "key": "X-Cool-Guy", "value": "First_Name" },
-            // Passthrough On. We inject this header key value pair directly into the pathway variable state.
-            { "type": "custom", "key": "Account_Type", "value": "VIP", "passthrough": true },
-            // Inbound UUI Example. If an inbound UUI header with purpose=bland arrives,
-            // its decoded value will be stored in the pathway variable "CustomerId".
-            // For example, a wire header like:
-            //   SipHeader_user-to-user: 3432;encoding=hex;purpose=bland;content=id
-            // will decode hex(3432) -> "42", then assign { "CustomerId": "42" }.
-            { "type": "uui", "target": "CustomerId", "purpose": "bland", "encoding": "hex", "content": "id" }
-          ]
-        }
-      },
-      { 
-        "type": "outbound", 
-        "sip_endpoint": "sip:your.provider.com", // FQDN Only. Port must be defined here, or in options. Prefixed with `sip:`
-        "options": {
-          "port": 1234, // Will overwrite any port defined in your sip_endpoint.
-          "transport": "tls", // Other available: tls, tcp, udp
-          "secure_media": true, // True, False
-          "sip_username": "bland", // Optional
-          "sip_password": "password" // Optional
-        },
-        "headers": {
-          "direction": "outbound", // Must be set to the parent objects direction.
-          "headers": [
-            // Passthrough off. We bind a specific header's **value** to a pathway variable provided for (if available). So the value of "X-Favorite-Color" is assigned
-            // as the value for "Favorite_Color".
-            {
-              "type": "custom", // "custom" or "uui" supported.
-              "key": "Favorite_Color",
-              "value": "X-Favorite-Color"
-            },
-            // Passthrough on. We directly pass the key and value as-is.
-            {
-              "type": "custom",
-              "key": "x-custom-id",
-              "value": "12345",
-              "passthrough": true
-            },
-            // Outbound UUI Example. If the pathway variable "CustomerKV" has a value,
-            // it will be hex-encoded and sent in a UUI header with purpose=bland and content=customerid_1234.
-            // For example, { "CustomerKV": "id=12345" } becomes:
-            //   SipHeader_user-to-user: 69643d3132333435;encoding=hex;purpose=bland;content=customerid_1234
-            {
-              "type": "uui",
-              "target": "CustomerKV", // Variable to look up in pathway state.
-              "purpose": "bland",     // Outbound purpose field in the UUI header.
-              "content": "customerid_1234", // Used as the "content" parameter in the UUI header.
-              "encoding": "hex"       // Supported: "hex", "ascii"
-            }
-          ]
-        }
-      }
-    ],
-    "service": "sip"
-  }'
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | [`/v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips) | Get Bland's IP addresses and ports |
+| `GET` | [`/v1/sip/outbound-setup`](/api-v1/get/sip-outbound-setup) | Get outbound SIP server details for PBX config |
+| `GET` | [`/v1/sip/status`](/api-v1/get/sip-status) | Get trunk health status |
+| `GET` | [`/v1/sip/calls`](/api-v1/get/sip-calls) | Get SIP call logs |
+| `PATCH` | [`/v1/sip/config`](/api-v1/patch/sip-config) | Update advanced config (failover, codecs, alerts) |
 
----
+### Number Porting
 
-### Update SIP Direction
-
-`POST /sip/update`
-
-Update a phone number’s SIP routing direction.
-
-<ParamField query="phone_number" type="string">
-  The phone number for which to update the direction.
-</ParamField>
-
-<ParamField query="updates" type="object">
-  The updated direction object. Use `type: outbound` and provide `sip_endpoint`, or `type: inbound`.
-</ParamField>
-
-```json Example Request
-curl -X POST https://api.bland.ai/v1/sip/update \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "+14150000000",
-    "updates": {
-      "type": "outbound",
-      "sip_endpoint": "sip:your.provider.com", // Only available for outbound SIP Types.
-      "options": { // Only available for outbound SIP Types.
-          "port": 1234, // Will overwrite any port defined in your sip_endpoint.
-          "transport": "tls", // Other available: tls, tcp, udp
-          "secure_media": true, // True, False
-          "sip_username": "bland", // Optional
-          "sip_password": "password" // Optional
-      }
-    }
-  }'
-```
-
----
-
-### Detach SIP Endpoint
-
-`POST /sip/detach`
-
-Remove SIP configuration from a number.
-
-<ParamField query="phone_number" type="string">
-  The phone number to detach SIP routing from.
-</ParamField>
-
-<ParamField query="directions" type="array">
-  Direction(s) to remove. Either `inbound` or `outbound`.
-</ParamField>
-
-<ParamField query="service" type="string">
-  Must be set to `sip`.
-</ParamField>
-
-```json Example Request
-curl -X POST https://api.bland.ai/v1/sip/detach \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "phone_number": "+14150000000",
-    "directions": [
-      { "type": "inbound" }
-    ],
-    "service": "sip"
-  }'
-```
-
----
-
-### Making your first SIP Call (Outbound)
-
-To use a number that was registered for SIP, in an outbound direction - all that is required is to specify this as your from number.
-
-Note: You'll need to ensure that you've verified your number ahead of time, as instructed above.
-
-```json Example Request
-curl -X POST https://api.bland.ai/v1/calls \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "task": "Say hi to the nice person!",
-    "from": "+12341234123", // The number above registered as a SIP Outbound number.
-    "phone_number": "<the callee's phone number>"
-  }'
-```
-
-### Get SIP Config
-
-`GET /sip?phone_number={phone_number}`
-
-Returns current SIP configuration (if any) for a given `phone_number`.
-
-<ParamField query="phone_number" type="string">
-  The phone number of the number to fetch SIP configuration for.
-</ParamField>
-
-```json Example Request
-curl -X GET 'https://api.bland.ai/v1/sip?phone_number=+1231231234' \
-  -H "Authorization: Bearer <token>"
-```
-
-#### Example Response
-
-```json
-{
-  "data": {
-    "inbound": { // May be null if not present.
-      number: string;
-      id: string;
-      org_id: string;
-      direction: string;
-      sip_endpoint: string | null;
-      created_at: Date;
-      updated_at: Date;
-      headers: Object | null;
-      options: Object | null; // As above
-      inbound_id: bigint | null;
-    },
-    "outbound": { // May be null if not present.
-      number: string;
-      id: string;
-      org_id: string;
-      direction: string;
-      sip_endpoint: string | null;
-      created_at: Date;
-      updated_at: Date;
-      headers: Object | null;
-      options: Object | null; // As above
-      inbound_id: bigint | null;
-    }
-  },
-  "errors": null
-}
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | [`/v1/sip/port/check`](/api-v1/get/sip-port-check) | Check number portability |
+| `POST` | [`/v1/sip/port/document`](/api-v1/post/sip-port-document) | Upload LOA / proof of ownership |
+| `POST` | [`/v1/sip/port/initiate`](/api-v1/post/sip-port-initiate) | Submit a port request |
+| `GET` | [`/v1/sip/port`](/api-v1/get/sip-port-requests) | List all port requests |
+| `DELETE` | [`/v1/sip/port/:id`](/api-v1/delete/sip-port-cancel) | Cancel a port request |
 
 ---
 
 ## Notes
 
-- Phone numbers can be attached independently for inbound and outbound routing via the API.
+- Phone numbers can be attached independently for inbound and outbound routing.
+- Up to **10 SIP configurations** can be attached per phone number.
+- Up to **100 numbers** can be attached in a single API call.
 - All requests must conform to the expected schema; invalid payloads will be rejected with a 400 response.
-- Each API response includes a success status and, if applicable, an error message to aid debugging.
+- Number porting typically takes 7–14 business days. Track status via the dashboard or API.
+- Health checks probe your outbound endpoints every 60 seconds via SIP OPTIONS. Inbound-only trunks show as "unchecked" since there is no outbound endpoint to probe.

@@ -1,0 +1,105 @@
+---
+title: "Initiate Port Request"
+api: "POST https://api.bland.ai/v1/sip/port/initiate"
+description: "Submit a number porting request to transfer phone numbers from another carrier to Bland."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phone_numbers" type="array" required>
+  Array of phone numbers to port. Each must be in E.164 format. You should verify portability first using `GET /v1/sip/port/check`.
+</ParamField>
+
+<ParamField body="losing_carrier_information" type="object" required>
+  Information about the current carrier:
+  - `customer_type` (string) — `"business"` or `"personal"`
+  - `business_name` (string) — Business name on the account (if business)
+  - `first_name` (string) — Account holder first name
+  - `last_name` (string) — Account holder last name
+  - `account_number` (string) — Account number with the losing carrier
+  - `authorized_representative_email` (string) — Email for LOA signing
+  - `notification_emails` (array) — Additional emails for status updates
+  - `address` (object) — Service address: `street`, `street2`, `city`, `state`, `zip`, `country`
+</ParamField>
+
+<ParamField body="target_port_date" type="string">
+  Requested port date in ISO 8601 format. Must be at least 7 days from today. If omitted, the earliest possible date is used.
+</ParamField>
+
+<ParamField body="documents" type="array">
+  Array of document SIDs returned from `POST /v1/sip/port/document`.
+</ParamField>
+
+<ParamField body="pin" type="string">
+  Account PIN from the losing carrier (required for some numbers — check via portability endpoint).
+</ParamField>
+
+### Response
+
+<ResponseField name="port_request_id" type="string">
+  Unique identifier for the port request.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Initial status: `"waiting_for_signature"`.
+</ResponseField>
+
+<ResponseField name="signature_url" type="string">
+  URL for electronically signing the Letter of Authorization.
+</ResponseField>
+
+<ResponseField name="phone_numbers" type="array">
+  Array of phone numbers included in the port request.
+</ResponseField>
+
+Number porting typically takes **7–14 business days**. Track progress via `GET /v1/sip/port` or the SIP Dashboard.
+
+**Port status flow:** `waiting_for_signature` → `submitted` → `in_progress` → `completed`
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/port/initiate \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+14150000000", "+14150000001"],
+    "losing_carrier_information": {
+      "customer_type": "business",
+      "business_name": "Acme Corp",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "account_number": "ACC-12345",
+      "authorized_representative_email": "jane@acme.com",
+      "notification_emails": ["it@acme.com"],
+      "address": {
+        "street": "123 Main St",
+        "street2": "Suite 100",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94105",
+        "country": "US"
+      }
+    },
+    "target_port_date": "2026-03-20T00:00:00Z",
+    "documents": ["doc_abc123"]
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "port_request_id": "port_xyz789",
+    "status": "waiting_for_signature",
+    "signature_url": "https://sign.example.com/loa/port_xyz789",
+    "phone_numbers": ["+14150000000", "+14150000001"]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
