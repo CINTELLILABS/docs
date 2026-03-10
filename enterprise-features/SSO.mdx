@@ -30,27 +30,28 @@ Before configuring SSO, ensure you have:
 ## Quick Start
 
 <Steps>
-  <Step title="Choose Your Protocol">
-    **OIDC** - Recommended for: Okta, Azure AD, Auth0, modern IdPs
-
-    **SAML** - Required for: Google Workspace, Microsoft ADFS, or when mandated by security policy
+  <Step title="Open SSO Setup Wizard">
+    Navigate to **Settings → SSO** in Bland and click **Add Provider**. The setup wizard will guide you through the process.
   </Step>
 
-  <Step title="Plan Your Provider ID">
-    Choose a unique Provider ID (e.g., `company-okta` or `company-saml`). This will be used in all your URLs.
-    You can customize this or let Bland auto-generate it from your domain.
-  </Step>
+  <Step title="Choose Your Identity Provider">
+    Select your IdP (Google Workspace, Okta, Azure AD, or other). The wizard will recommend the best protocol:
 
-  <Step title="Create Provider in Bland">
-    Navigate to **Settings → SSO** in Bland and add your provider configuration with your chosen Provider ID
+    **OIDC** - Recommended for: Google Workspace, Okta, Azure AD, Auth0, and most modern IdPs
+
+    **SAML** - Use when: Required by security policy, Microsoft ADFS, or when your IdP only supports SAML
   </Step>
 
   <Step title="Configure Your IdP">
-    Create an application in your identity provider using the URLs generated with your Provider ID
+    The wizard shows the callback URLs you need to configure in your identity provider. Copy them and create an application in your IdP.
+  </Step>
+
+  <Step title="Enter Credentials">
+    Paste the Client ID, Client Secret (OIDC) or certificate/metadata (SAML) from your IdP into the wizard.
   </Step>
 
   <Step title="Test Connection">
-    Use the Test button in Bland to verify the configuration works
+    Use the **Test** button in Bland to verify the configuration works.
   </Step>
 </Steps>
 
@@ -355,48 +356,103 @@ Before configuring SSO, ensure you have:
 
 ## Google Workspace
 
+### Google Workspace OIDC Setup (Recommended)
+
 <Info>
-Google Workspace only supports SAML for third-party applications. OIDC is reserved for Google's own services.
+OIDC is the recommended approach for Google Workspace. It's simpler to configure and uses standard OAuth 2.0.
+</Info>
+
+<AccordionGroup>
+  <Accordion title="Step 1: Create OAuth 2.0 Credentials">
+    1. Go to [Google Cloud Console](https://console.cloud.google.com)
+    2. Select or create a project for your organization
+    3. Navigate to **APIs & Services** > **Credentials**
+    4. Click **Create Credentials** > **OAuth client ID**
+    5. If prompted, configure the **OAuth consent screen** first:
+       - Select **Internal** (restricts to your organization)
+       - Fill in app name: `Bland SSO`
+       - Add scopes: `openid`, `email`, `profile`
+       - Save
+    6. Back in Credentials, select Application type: **Web application**
+    7. Name: `Bland SSO`
+    8. Under **Authorized redirect URIs**, add:
+       ```
+       https://api.bland.ai/authorization/sso/callback/[provider-id]
+       ```
+       <Info>Replace `[provider-id]` with your chosen Provider ID (e.g., `company-google`). If you don't know it yet, you can update this after creating the provider in Bland.</Info>
+    9. Click **Create**
+    10. Copy the **Client ID** and **Client Secret**
+  </Accordion>
+
+  <Accordion title="Step 2: Configure in Bland">
+    1. Go to **Settings** > **SSO** > **Add Provider**
+    2. Select **Google Workspace** (the wizard will use OIDC automatically)
+    3. Enter:
+       - **Email Domain**: `company.com`
+       - **Client ID**: From Google Cloud Console
+       - **Client Secret**: From Google Cloud Console
+       - Issuer is pre-filled as `https://accounts.google.com`
+    4. Click **Create**
+    5. If you auto-generated the Provider ID, copy it and update the redirect URI in Google Cloud Console
+
+    <Note>OIDC endpoints are automatically discovered from Google's well-known configuration. No manual endpoint setup is needed.</Note>
+  </Accordion>
+
+  <Accordion title="Step 3: Configure Group Claims (Optional)">
+    For role mapping based on Google Groups:
+    1. In Google Cloud Console, enable the **Google Workspace Admin SDK**
+    2. Configure your OAuth app to request the `groups` scope
+    3. Create Google Groups matching Bland's role patterns:
+       - `bland-admin@company.com` for Admin role
+       - `bland-operator@company.com` for Operator role
+       - `bland-viewer@company.com` for Viewer role
+  </Accordion>
+</AccordionGroup>
+
+### Google Workspace SAML Setup
+
+<Info>
+Google Workspace also supports SAML 2.0 via the Admin Console. Use this if your organization requires SAML for compliance reasons.
 </Info>
 
 <Steps>
   <Step title="Access Admin Console">
     Sign in to [Google Admin Console](https://admin.google.com) with Super Admin account
   </Step>
-  
+
   <Step title="Add Custom SAML App">
-    1. Go to **Apps** → **Web and mobile apps**
-    2. Click **Add app** → **Add custom SAML app**
+    1. Go to **Apps** > **Web and mobile apps**
+    2. Click **Add app** > **Add custom SAML app**
     3. Enter:
        - **App name**: `Bland SSO`
        - **App description**: `Single Sign-On for Bland AI`
     4. Click **Continue**
   </Step>
-  
+
   <Step title="Download IdP Metadata">
     Download or copy:
     - **SSO URL**
     - **Entity ID**
     - **Certificate**
     - Or download the full metadata XML
-    
+
     Click **Continue**
   </Step>
-  
+
   <Step title="Configure Service Provider">
     Enter:
     - **ACS URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
       (Replace `[provider-id]` with your chosen ID, e.g., `company-google`)
     - **Entity ID**: `https://api.bland.ai/sp/[provider-id]`
     - **Start URL**: `https://app.bland.ai/login` (optional)
-    - **Signed response**: ✅ Checked
+    - **Signed response**: Checked
     - **Name ID format**: `EMAIL`
     - **Name ID**: `Basic Information > Primary email`
   </Step>
-  
+
   <Step title="Configure Attributes">
     Map these attributes:
-    
+
     | Google Directory | App Attribute |
     |-----------------|---------------|
     | Primary email | email |
@@ -404,35 +460,23 @@ Google Workspace only supports SAML for third-party applications. OIDC is reserv
     | Last name | lastName |
     | Full name | name |
   </Step>
-  
+
   <Step title="Configure in Bland">
-    1. Go to **Settings** → **SSO** → **Add Provider**
-    2. Select **SAML 2.0** as Provider Type
+    1. Go to **Settings** > **SSO** > **Add Provider**
+    2. Select **Other (SAML)** as Provider Type
     3. Enter:
-       - **Provider ID**: Your chosen ID (e.g., `company-google`) or leave blank to auto-generate
        - **Email Domain**: `company.com`
        - **Issuer URL**: Entity ID from Google
-    4. Choose configuration method:
-       - **Option 1: Metadata Import** - Paste the metadata XML from Google
-       - **Option 2: Manual Configuration** - Enter SSO URL and Certificate
-    5. Click **Add Provider**
-    6. If you let Bland auto-generate the Provider ID, update your Google Workspace app configuration with the generated ID
-    7. Enable the app for desired organizational units in Google Admin Console
-  </Step>
-  
-  <Step title="Test Configuration">
-    **From Google Admin Console:**
-    - In the Bland SSO app, click **Test SAML login**
-    - This opens the SSO flow in a new tab
-    
-    **From Bland:**
-    - Use the Test button in SSO settings
-    - Or test with an incognito browser window
+    4. Provide your SAML configuration:
+       - **Option 1: Metadata Import** — Paste the metadata XML from Google
+       - **Option 2: Manual** — Enter the SSO URL and Certificate
+    5. Click **Create**
+    6. Enable the app for desired organizational units in Google Admin Console
   </Step>
 </Steps>
 
 <Warning>
-Google Workspace changes can take up to 24 hours to propagate, though typically activate within 15 minutes.
+Google Workspace SAML changes can take up to 24 hours to propagate, though typically activate within 15 minutes.
 </Warning>
 
 ### Google Workspace Security Features
@@ -526,76 +570,62 @@ Supports both protocols:
 
 ## Troubleshooting
 
-### Common OIDC Issues
+### Common Issues
 
 <AccordionGroup>
-  <Accordion title="Invalid redirect URI">
-    **Cause**: Redirect URI mismatch
-    
-    **Solution**:
-    - Copy exact URI from Bland including provider ID
-    - Check for trailing slashes or spaces
-    - Ensure HTTPS is used
-  </Accordion>
-  
-  <Accordion title="Invalid client credentials">
-    **Cause**: Wrong or expired credentials
-    
-    **Solution**:
-    - Regenerate client secret in IdP
-    - Update immediately in Bland
-    - Verify no extra spaces when pasting
-  </Accordion>
-  
-  <Accordion title="Invalid issuer">
-    **Cause**: Incorrect issuer URL format
+  <Accordion title="Authentication fails with redirect/callback error">
+    **Cause**: URL mismatch between Bland and your IdP
 
     **Solution**:
-    - Include or remove trailing slashes as required by your IdP
-    - For Azure: Use `/v2.0` endpoint for v2.0 tokens
-    - For Okta: Use your Okta domain (with or without `/oauth2/default` based on your setup)
-    - Verify the issuer URL matches exactly what your IdP expects
+    - **OIDC**: Verify redirect URI matches exactly: `https://api.bland.ai/authorization/sso/callback/[provider-id]`
+    - **SAML**: Verify ACS URL matches: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
+    - Check for trailing slashes, extra spaces, or HTTP vs HTTPS
+    - Ensure the provider ID is identical in both Bland and your IdP
   </Accordion>
-</AccordionGroup>
 
-### Common SAML Issues
+  <Accordion title="Invalid credentials or signature errors">
+    **Cause**: Wrong, expired, or mismatched credentials
 
-<AccordionGroup>
-  <Accordion title="Invalid SAML Response">
-    **Cause**: Incorrect attribute mapping
-    
-    **Solution**:
-    - Set NameID format to `emailAddress`
-    - Use "Unspecified" for attribute name format
-    - Ensure email attribute is mapped
+    **Solution for OIDC**:
+    - Regenerate client secret in your IdP and update in Bland immediately
+    - Verify no extra spaces when pasting credentials
+    - Check the issuer URL format (Azure needs `/v2.0`, Okta may need `/oauth2/default`)
+
+    **Solution for SAML**:
+    - Re-download the certificate from your IdP
+    - Include the full certificate with `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` lines
+    - Check certificate expiration date
   </Accordion>
-  
-  <Accordion title="Signature validation failed">
-    **Cause**: Certificate mismatch
-    
-    **Solution**:
-    - Re-download certificate from IdP
-    - Include full certificate with BEGIN/END lines
-    - Check certificate expiration
-  </Accordion>
-  
-  <Accordion title="Audience validation failed">
+
+  <Accordion title="Audience/Entity ID validation failed (SAML)">
     **Cause**: SP Entity ID mismatch
 
     **Solution**:
     - Ensure Entity ID matches exactly: `https://api.bland.ai/sp/[provider-id]`
     - Use the same provider ID in both Bland and your IdP
-    - If you auto-generated the ID, copy it from Bland to your IdP
-    - Check for typos, extra spaces, or case sensitivity
+    - If you auto-generated the ID in Bland, copy it to your IdP configuration
   </Accordion>
-  
-  <Accordion title="account_not_found">
-    **Cause**: Missing user attributes
-    
+
+  <Accordion title="User not being provisioned or account_not_found">
+    **Cause**: Missing or incorrect user attributes
+
     **Solution**:
-    - Verify attribute mappings in IdP
-    - Ensure user has email in IdP profile
-    - Check attributes are being sent in response
+    - Verify attribute mappings in your IdP (email is required)
+    - Ensure the user has an email address in their IdP profile
+    - For SAML: Set NameID format to `emailAddress` and use "Unspecified" for attribute name format
+    - Check that attributes are actually being sent in the authentication response
+  </Accordion>
+
+  <Accordion title="User gets wrong role or default role">
+    **Cause**: Groups not being sent in token/assertion, or group names don't match expected patterns
+
+    **Solution**:
+    - Verify groups claim is configured in your IdP
+    - Check that the user is a member of the expected groups
+    - For OIDC: Ensure the `groups` scope is requested
+    - For Okta: Ensure groups are assigned to the application, not just users
+    - Use browser DevTools or SAML tracer to inspect the actual groups being sent
+    - Users without matching groups default to the `viewer` role
   </Accordion>
 </AccordionGroup>
 
@@ -714,13 +744,19 @@ Groups are mapped based on their names. The following patterns are recognized:
 - Groups containing: `operator`, `support`
 - Example: `Support-Team`, `Call-Operators`
 
+**Prompter Role:**
+- `Bland AI - Static - Prompter`
+- `bland-prompter`
+- Groups containing: `prompt`, `editor`
+- Example: `Content-Editors`, `Prompt-Engineers`
+
 **Viewer Role (Read-Only):**
 - `Bland AI - Static - Viewer`
 - `bland-viewer`
 - Groups containing: `viewer`, `read-only`, `readonly`
 - Example: `Read-Only-Users`, `Audit-Viewers`
 
-**Default:** Users without matching groups receive the `operator` role.
+**Default:** Users without matching groups receive the `viewer` role.
 
 ### IdP-Specific Configuration
 
@@ -865,8 +901,8 @@ Contact hello@bland.ai for custom role mapping configuration.
 ## Important Notes
 
 <Note>
-- Users signing in via SSO still need to verify their phone number during first-time setup
-- SSO users are automatically added to your organization
+- Users signing in via SSO still need to verify their phone number during first-time setup (unless "Skip phone verification" is enabled)
+- SSO users are automatically added to your organization with the `viewer` role by default (role can be upgraded via group mapping)
 - Each email domain can only be configured for one organization
 - Existing users are automatically converted to SSO on first SSO login
 </Note>
@@ -878,20 +914,20 @@ Contact hello@bland.ai for custom role mapping configuration.
 <AccordionGroup>
   <Accordion title="Which protocol should I choose: OIDC or SAML?">
     **Choose OIDC if:**
-    - You're using modern IdPs (Okta, Auth0, Azure AD)
+    - You're using Google Workspace, Okta, Auth0, or Azure AD
     - You want simpler configuration
     - You need refresh tokens
-    - You're building mobile apps
     - Starting fresh with SSO
-    - Want better mobile app support
-    
+
     **Choose SAML if:**
-    - Required by your IdP (Google Workspace)
-    - Mandated by security policy  
+    - Mandated by your security policy
     - You need encrypted assertions
-    - Integrating with legacy systems
+    - Integrating with legacy systems (ADFS, older IdPs)
     - Your organization already uses SAML for other applications
-    - You require specific SAML features like encrypted assertions
+  </Accordion>
+
+  <Accordion title="What's the easiest way to set up SSO with Google Workspace?">
+    Use **OIDC** (OpenID Connect). Create an OAuth 2.0 client in [Google Cloud Console](https://console.cloud.google.com/apis/credentials), copy the Client ID and Secret into Bland's setup wizard, and you're done. The issuer URL (`https://accounts.google.com`) is pre-filled automatically. Google Workspace SAML is also supported if required by your organization's security policy.
   </Accordion>
   
   <Accordion title="Can I have multiple SSO providers?">
