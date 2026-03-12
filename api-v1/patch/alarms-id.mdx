@@ -1,0 +1,116 @@
+---
+title: "Update Alarm"
+api: "PATCH https://api.bland.ai/v1/alarms/{id}"
+description: "Update an alarm configuration."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Alarm configuration ID.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="threshold" type="number">
+  Updated positive numeric threshold.
+
+  Notes:
+  - `threshold` is a sensitivity scalar (higher values are less sensitive; lower values are more sensitive).
+  - The Dashboard may display an approximate "% change" visualization for this value. Treat that UI percentage as a directional aid, not an exact conversion.
+
+  Dashboard sensitivity presets map to these threshold values:
+  - `Sensitive` → `0.5`
+  - `Normal` → `1.0`
+  - `Relaxed` → `2.0`
+  - `Critical` → `2.5`
+</ParamField>
+
+<ParamField body="enabled" type="boolean">
+  Controls whether this alarm is actively evaluated.
+
+  - `true`: Alarm is active. The system will evaluate this metric on scheduled runs and can generate alarm/recovery events and notifications.
+  - `false`: Alarm is paused. The config is retained, but scheduled evaluation and notifications for this alarm are disabled until re-enabled.
+</ParamField>
+
+<ParamField body="webhook_config" type="object|null">
+  Updated webhook settings. Set to `null` to clear.
+
+  `webhook_config` should be a JSON object with:
+  - `url` (string, required when object is provided)
+  - `headers` (object, optional)
+
+  Example:
+  ```json
+  {
+    "webhook_config": {
+      "url": "https://example.com/webhooks/alarms",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="email_addresses" type="string[]">
+  Updated email recipients.
+</ParamField>
+
+<ParamField body="sms_numbers" type="string[]">
+  Updated SMS recipients.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.alarm" type="object">
+  Updated alarm configuration object.
+</ResponseField>
+
+<ResponseField name="data.alarm.webhook_config" type="object|null">
+  Updated webhook settings object. Header values may be masked in API responses.
+</ResponseField>
+
+<ResponseField name="data.alarm.email_addresses" type="string[]">
+  Updated email recipients. Can be an empty array if none are configured.
+</ResponseField>
+
+<ResponseField name="data.alarm.sms_numbers" type="string[]">
+  Updated SMS recipients. Can be an empty array if none are configured.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "alarm": {
+      "id": "d4cfd8aa-7df4-4fd7-a5cf-8c5d2871a1f8",
+      "metric_type": "latency",
+      "enabled": true,
+      "threshold": 0.5,
+      "webhook_config": {
+        "url": "https://example.com/webhooks/alarms",
+        "headers": {
+          "Content-Type": "appl***"
+        }
+      },
+      "email_addresses": ["alerts@example.com"],
+      "sms_numbers": [],
+      "created_at": "2026-03-12T16:13:02.694Z",
+      "updated_at": "2026-03-12T16:45:52.721Z"
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>

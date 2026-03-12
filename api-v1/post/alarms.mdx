@@ -1,0 +1,124 @@
+---
+title: "Create Alarm"
+api: "POST https://api.bland.ai/v1/alarms"
+description: "Create an alarm configuration for your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="metric_type" type="string" required>
+  Metric to monitor. Allowed values: `latency`, `api_errors`, `call_length`.
+</ParamField>
+
+<ParamField body="threshold" type="number" required>
+  Positive numeric threshold used for alarm trigger evaluation.
+
+  Notes:
+  - `threshold` is a sensitivity scalar (higher values are less sensitive; lower values are more sensitive).
+  - The Dashboard may display an approximate "% change" visualization for this value. Treat that UI percentage as a directional aid, not an exact conversion.
+
+  Dashboard sensitivity presets map to these threshold values:
+  - `Sensitive` → `0.5`
+  - `Normal` → `1.0`
+  - `Relaxed` → `2.0`
+  - `Critical` → `2.5`
+</ParamField>
+
+<ParamField body="webhook_config" type="object">
+  Optional webhook destination for alarm notifications.
+
+  `webhook_config` should be a JSON object with:
+  - `url` (string, required)
+  - `headers` (object, optional)
+
+  Example:
+  ```json
+  {
+    "webhook_config": {
+      "url": "https://example.com/webhooks/alarms",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer test-token"
+      }
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="email_addresses" type="string[]">
+  Optional email recipients for notifications.
+</ParamField>
+
+<ParamField body="sms_numbers" type="string[]">
+  Optional SMS recipients for notifications.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.alarm" type="object">
+  Created alarm configuration object.
+</ResponseField>
+
+<ResponseField name="data.alarm.id" type="string">
+  Alarm configuration ID.
+</ResponseField>
+
+<ResponseField name="data.alarm.metric_type" type="string">
+  Metric tracked by this alarm.
+</ResponseField>
+
+<ResponseField name="data.alarm.threshold" type="number">
+  Configured trigger threshold.
+</ResponseField>
+
+<ResponseField name="data.alarm.enabled" type="boolean">
+  Whether this alarm is enabled.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "alarm": {
+      "id": "c92e5e2d-0d41-4c6f-a194-7d9f99e34ab1",
+      "metric_type": "api_errors",
+      "enabled": true,
+      "threshold": 33,
+      "webhook_config": {
+        "url": "https://example.com/webhooks/alarms",
+        "headers": {
+          "Content-Type": "appl***"
+        }
+      },
+      "email_addresses": ["alerts@example.com"],
+      "sms_numbers": ["+15555550123"],
+      "created_at": "2026-03-12T15:56:21.836Z",
+      "updated_at": "2026-03-12T15:56:21.836Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_THRESHOLD",
+      "message": "Threshold must be a positive number"
+    }
+  ]
+}
+```
+</ResponseExample>

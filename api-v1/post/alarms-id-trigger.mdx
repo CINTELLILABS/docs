@@ -1,0 +1,75 @@
+---
+title: "Trigger Alarm Evaluation"
+api: "POST https://api.bland.ai/v1/alarms/{id}/trigger"
+description: "Manually trigger alarm evaluation with current data."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Alarm configuration ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.success" type="boolean">
+  Whether the evaluation completed with enough data.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Human-readable result message.
+</ResponseField>
+
+<ResponseField name="data.currentMetrics" type="object">
+  Current metric snapshot, when available.
+</ResponseField>
+
+<ResponseField name="data.currentMetrics.value" type="number">
+  Current metric value.
+</ResponseField>
+
+<ResponseField name="data.currentMetrics.sampleCount" type="number">
+  Number of samples used in evaluation.
+</ResponseField>
+
+<ResponseField name="data.currentMetrics.deviation" type="number|null">
+  Deviation from baseline.
+</ResponseField>
+
+<ResponseField name="data.currentMetrics.threshold" type="number">
+  Configured threshold for comparison.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "success": true,
+    "message": "Test completed successfully. Current alarm state: NORMAL",
+    "currentMetrics": {
+      "value": 0.2,
+      "sampleCount": 22,
+      "deviation": null,
+      "threshold": 2.5
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Enough Data
+{
+  "data": {
+    "success": false,
+    "message": "Not enough recent data available. Please wait until there is more data to trigger an alarm."
+  },
+  "errors": null
+}
+```
+</ResponseExample>
