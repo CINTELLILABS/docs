@@ -1,0 +1,75 @@
+---
+title: "Outcomes"
+description: "Combine pathway tags, citations, and call metadata to define what truly happened on each call."
+---
+
+<Info>
+Outcomes is an **enterprise-only** feature. [Contact us](https://forms.default.com/361589) to get access.
+</Info>
+
+## What are Outcomes?
+
+Every completed call generates raw data: call length, transfer status, pathway tags, citations, and more. But to understand what actually happened on the call, you usually need to combine multiple data points together.
+
+Outcomes let you do exactly that. You define rules that connect post-call data (tags, citations, metadata) and produce a final result for each call.
+
+### The Problem
+
+After a call, you might have:
+
+- **Pathway tags** like `"Appointment Confirmation"`, `"Objection Handling"`, `"Call Completion"`
+- **Citations** with extracted variables like `firstName: "James"`, `appointmentConfirmed: true`
+- **Call metadata** like `call_length`, `transferred_to`, `answered_by`, `call_ended_by`
+
+No single data point tells the full story. A call tagged `"Appointment Confirmation"` where the customer said "no" isn't a confirmed appointment. A transferred call might look successful based on tags, but if the transfer duration was 0 seconds, the handoff probably failed.
+
+### The Solution
+
+Outcomes run transformation code against the full call context after post-call processing completes. You define outcome fields with a name, type, and description, and the platform generates the transformation code to extract what you need.
+
+You can then attach outcomes to your post call webhooks, or just query the `GET /v1/calls/:id` endpoint to retrieve the outcomes for a specific call.
+
+Each call can have **multiple outcomes** attached through the `disposition_ids` field. One outcome might determine whether an appointment was booked while another classifies customer sentiment. Both run independently against the same call data.
+
+### Creating Outcomes
+
+The easiest way to create outcomes is through the [Bland platform](https://app.bland.ai). For each outcome, you define fields with:
+
+- **Field name** - The name of the value to extract (e.g., `appointmentBooked`, `callDisposition`)
+- **Type** - The data type (e.g., `boolean`, `string`, `number`)
+- **Description** - A plain-language description of what this field should capture
+
+The platform generates the transformation code from your field definitions. No code required on your end. Describe what you want to know about each call and the platform handles the rest.
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/outcomes_definition.jpeg" />
+
+### Back Testing
+
+After defining an outcome, you can back test it against historical calls to verify the results before deploying to live traffic. This lets you iterate on your field definitions until the extracted values match what you expect.
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/outcomes_results.jpeg" />
+
+## Use Cases
+
+### Appointment Setting
+Determine whether an appointment was booked, declined, or if the call dropped before reaching a conclusion by combining pathway tags with citation-extracted confirmation signals.
+
+### Sales Qualification
+Classify calls as "Qualified Lead", "Not Interested", "Callback Requested", or "Wrong Number" based on pathway progression, extracted customer responses, and call duration.
+
+### Support Resolution
+Identify whether an issue was resolved on the call, escalated via transfer, or left unresolved using transfer metadata, pathway tags, and cited customer statements.
+
+### Compliance Verification
+Confirm that required disclosures were made and acknowledged by checking that specific pathway nodes were visited and citation-extracted acknowledgments are present.
+
+## Getting Started
+
+To set up Outcomes for your enterprise account:
+
+1. **Create an outcome** - In the [Bland platform](https://app.bland.ai), define your outcome fields with a name, type, and description
+2. **Review the generated code** - The platform generates transformation code based on your field definitions
+3. **Back test against historical calls** - Verify the outcome produces correct results on real call data
+4. **Attach to your calls** - Add the outcome's ID to the `disposition_ids` field when sending calls
+
+Reach out to your enterprise account manager or [contact our team](https://forms.default.com/361589) to get Outcomes enabled and configured for your account.
