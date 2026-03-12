@@ -1,0 +1,91 @@
+---
+title: "List Alarms"
+api: "GET https://api.bland.ai/v1/alarms"
+description: "List alarm configurations for your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="metric_type" type="string">
+  Optional metric filter. Allowed values: `latency`, `api_errors`, `call_length`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.alarms" type="array">
+  Alarm configuration objects for your organization.
+</ResponseField>
+
+<ResponseField name="data.alarms[].id" type="string">
+  Alarm configuration ID.
+</ResponseField>
+
+<ResponseField name="data.alarms[].metric_type" type="string">
+  Metric this alarm tracks. One of: `latency`, `api_errors`, `call_length`.
+</ResponseField>
+
+<ResponseField name="data.alarms[].threshold" type="number">
+  Trigger threshold for this metric.
+</ResponseField>
+
+<ResponseField name="data.alarms[].enabled" type="boolean">
+  Whether this alarm is enabled.
+</ResponseField>
+
+<ResponseField name="data.alarms[].webhook_config" type="object|null">
+  Webhook settings object, including `url` and optional masked `headers`.
+</ResponseField>
+
+<ResponseField name="data.alarms[].email_addresses" type="string[]">
+  Email recipients for notifications.
+</ResponseField>
+
+<ResponseField name="data.alarms[].sms_numbers" type="string[]">
+  SMS recipients for notifications.
+</ResponseField>
+
+<ResponseField name="data.alarms[].created_at" type="string">
+  ISO timestamp for when the alarm was created.
+</ResponseField>
+
+<ResponseField name="data.alarms[].updated_at" type="string">
+  ISO timestamp for when the alarm was last updated.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "alarms": [
+      {
+        "id": "b14f7f49-8af2-4d7b-9f51-e3b42b2f91c6",
+        "metric_type": "latency",
+        "enabled": true,
+        "threshold": 1,
+        "webhook_config": {
+          "url": "https://example.com/webhooks/alarms",
+          "headers": {
+            "Content-Type": "appl***"
+          }
+        },
+        "email_addresses": ["alerts@example.com"],
+        "sms_numbers": ["+15555550123"],
+        "created_at": "2026-03-10T00:26:37.707Z",
+        "updated_at": "2026-03-10T00:26:37.707Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>

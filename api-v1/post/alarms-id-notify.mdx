@@ -1,0 +1,91 @@
+---
+title: "Test Alarm Notifications"
+api: "POST https://api.bland.ai/v1/alarms/{id}/notify"
+description: "Send a test alarm or recovery notification."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  Alarm configuration ID.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="type" type="string" required>
+  Notification type to test. Allowed values: `alarm`, `recovery`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.success" type="boolean">
+  Whether at least one configured delivery method succeeded.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Summary of the test result.
+</ResponseField>
+
+<ResponseField name="data.results" type="object">
+  Delivery results by channel (`webhook`, `email`, `sms`).
+</ResponseField>
+
+<ResponseField name="data.results.webhook.success" type="boolean">
+  Whether webhook delivery succeeded.
+</ResponseField>
+
+<ResponseField name="data.results.webhook.statusCode" type="number">
+  HTTP status returned by the webhook endpoint, when available.
+</ResponseField>
+
+<ResponseField name="data.results.email.success" type="boolean">
+  Whether email delivery succeeded.
+</ResponseField>
+
+<ResponseField name="data.results.email.sentTo" type="string[]">
+  Recipient list used for the test email.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success response, or an array with `NOTIFICATION_TEST_FAILED`.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "success": true,
+    "message": "Alarm notification test completed: 2/2 methods successful",
+    "results": {
+      "webhook": {
+        "success": true,
+        "statusCode": 200
+      },
+      "email": {
+        "success": true,
+        "sentTo": ["alerts@example.com"]
+      }
+    }
+  },
+  "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_NOTIFICATION_TYPE",
+      "message": "type must be either 'alarm' or 'recovery'"
+    }
+  ]
+}
+```
+</ResponseExample>

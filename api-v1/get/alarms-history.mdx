@@ -1,0 +1,86 @@
+---
+title: "List Alarm Events"
+api: "GET https://api.bland.ai/v1/alarms/history"
+description: "Get recent alarm events across all alarms in your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="metric_type" type="string">
+  Optional metric filter. Allowed values: `latency`, `api_errors`, `call_length`.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Number of events to return. Must be between `1` and `200`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.events" type="array">
+  Recent alarm event entries.
+</ResponseField>
+
+<ResponseField name="data.events[].id" type="string">
+  Alarm event ID.
+</ResponseField>
+
+<ResponseField name="data.events[].metric_type" type="string">
+  Metric associated with this event.
+</ResponseField>
+
+<ResponseField name="data.events[].previous_state" type="string">
+  Previous alarm state before transition.
+</ResponseField>
+
+<ResponseField name="data.events[].new_state" type="string">
+  New alarm state after transition.
+</ResponseField>
+
+<ResponseField name="data.events[].deviation" type="number">
+  Deviation from baseline at evaluation time.
+</ResponseField>
+
+<ResponseField name="data.events[].threshold" type="number">
+  Threshold in effect for this event.
+</ResponseField>
+
+<ResponseField name="data.events[].alarm_id" type="string|null">
+  Correlation ID for alarm/recovery pairing when present.
+</ResponseField>
+
+<ResponseField name="data.events[].event_type" type="string|null">
+  Event type when a notification/state event was recorded (for example `deviation_detected` or `deviation_recovered`).
+</ResponseField>
+
+<ResponseField name="data.events[].created_at" type="string">
+  ISO timestamp when the event was recorded.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "events": [
+      {
+        "id": "41a53fc5-a9f7-4e6f-a89a-b12e0f9f4c43",
+        "metric_type": "latency",
+        "previous_state": "RECOVERY_PENDING",
+        "new_state": "NORMAL",
+        "deviation": 0,
+        "threshold": 1,
+        "alarm_id": "8b90c6df-5a47-4db5-9ab3-d7f1da30da6e",
+        "event_type": "deviation_recovered",
+        "created_at": "2026-03-12T01:15:01.393Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
