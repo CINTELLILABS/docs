@@ -1,0 +1,97 @@
+---
+title: "Web Agent SDK"
+description: "Embed a Bland voice agent into any web application with secure, token-based authentication."
+---
+
+Embed a Bland voice agent into any web application (React, Vanilla JS, or Node). The SDK handles secure authentication between your server and Bland, so your API key is never exposed to the browser.
+
+**Install via NPM:** [`@blandsdk/client`](https://www.npmjs.com/package/@blandsdk/client)
+
+```bash
+npm install @blandsdk/client
+```
+
+**Requirements:** Node.js 18+, React 18+ (for React integration)
+
+## How it works
+
+The SDK has two parts that work together:
+
+```
+Browser Client  →  Your Server (Admin SDK)  →  Bland
+Browser Client  →  Bland (once session token is obtained)
+```
+
+Your server creates a single-use session token using the Admin SDK. That token is handed to the browser, which uses the Webchat SDK to connect directly to Bland with no API key required on the client.
+
+## Creating sessions (server-side)
+
+Set up an endpoint on your server to mint session tokens for a given agent.
+
+```typescript
+import { Bland } from '@blandsdk/client';
+
+const bland = new Bland({
+  admin: {
+    apiKey: process.env.BLAND_API_KEY,
+    endpoint: "https://api.bland.ai"
+  },
+  webchat: {}
+});
+
+// Express route example
+app.post("/api/agent-authorize", async (req, res) => {
+  const { agentId } = req.body;
+  const admin = await bland.AdminClient();
+  const session = await admin.sessions.create({ agentId });
+  res.json({ token: session.token });
+});
+```
+
+<Note>
+  Never expose your API key on the client side. Always create session tokens server-side and pass them to the browser.
+</Note>
+
+## Starting a conversation (client-side, React)
+
+Use the `useWebchat` hook to manage connection state and build a real-time conversation UI.
+
+```typescript
+import { useWebchat } from "@blandsdk/client/react";
+
+function AgentWidget({ agentId }) {
+  const { state, start, stop, webchat } = useWebchat({
+    agentId,
+    getToken: async () => {
+      const res = await fetch("/api/agent-authorize", {
+        method: "POST",
+        body: JSON.stringify({ agentId }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const { token } = await res.json();
+      return token;
+    },
+  });
+
+  webchat?.on("message", (msg) => {
+    console.log("New message:", msg);
+  });
+
+  return (
+    <div>
+      <p>Status: {state}</p>
+      <button onClick={start}>Start</button>
+      <button onClick={stop}>Stop</button>
+    </div>
+  );
+}
+```
+
+**Conversation events:**
+
+| Event | Description |
+|-------|-------------|
+| `open` | Connection established |
+| `message` | New message received |
+| `update` | Conversation state updated |
+| `closed` | Connection closed |
