@@ -1,0 +1,89 @@
+---
+title: "Get TTS Generation"
+api: "GET https://api.bland.ai/v1/speak/samples/{id}"
+description: "Retrieve a single stored text-to-speech generation."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the generation to retrieve.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="format" type="string">
+  Pass `audio` to receive the raw WAV binary instead of the metadata JSON.
+</ParamField>
+
+### Response
+
+Without `?format=audio`, returns the generation metadata:
+
+<ResponseField name="id" type="string">
+  Unique identifier for the generation.
+</ResponseField>
+
+<ResponseField name="org_id" type="string">
+  The organization that created the generation.
+</ResponseField>
+
+<ResponseField name="user_id" type="string">
+  The user that created the generation.
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  The text that was synthesized.
+</ResponseField>
+
+<ResponseField name="voice_id" type="string">
+  The voice used for synthesis.
+</ResponseField>
+
+<ResponseField name="output_format" type="string">
+  The audio format of the generation (e.g. `pcm_44100`).
+</ResponseField>
+
+<ResponseField name="audio_data" type="string">
+  Base64-encoded audio data. Only present in the JSON response (not when using `?format=audio`).
+</ResponseField>
+
+<ResponseField name="latency_ms" type="number">
+  Time in milliseconds from request to first audio.
+</ResponseField>
+
+<ResponseField name="cost" type="number">
+  Cost in USD for this generation.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the generation was created.
+</ResponseField>
+
+With `?format=audio`, returns a raw WAV audio binary (same as the original `POST /v1/speak` response).
+
+<ResponseExample>
+```json Metadata response
+{
+  "data": {
+    "id": "a3f8c2d1-4b5e-6789-0abc-def012345678",
+    "org_id": "9e1d2c3b-4a5f-6780-bcde-f01234567890",
+    "user_id": "5c6d7e8f-9012-3456-789a-bcdef0123456",
+    "text": "Hello, this is a test of the text-to-speech system.",
+    "voice_id": "2b3c4d5e-6f70-8901-2345-6789abcdef01",
+    "output_format": "pcm_44100",
+    "audio_data": "base64-encoded-audio-data",
+    "latency_ms": 1261,
+    "cost": 0.011,
+    "created_at": "2026-03-16T01:44:56.673Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
