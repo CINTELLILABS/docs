@@ -1,0 +1,211 @@
+---
+title: "Call Logs"
+description: "View, filter, and analyze your call history"
+---
+
+## Introduction
+
+Call logs are the central hub for reviewing completed and active calls. Every call made through Bland — outbound, inbound, voice, web, or SMS — surfaces here with its full transcript, audio recording, extracted variables, and per-turn decision data. Use call logs to debug agent behavior, review call quality, and feed real conversations into the testbed for prompt iteration.
+
+## The Call Logs Table
+
+### Layout
+
+The call logs page displays your calls in a table, sorted most recent first by default. Click any row to open a detail view of that call.
+
+<Frame>
+  <img src="/images/call-logs-table.png" alt="Call Logs table showing completed calls with columns for ID, direction, to, from, duration, started, status, version, tags, and pathway" />
+</Frame>
+
+The **Completed** tab is the default view, showing all historical calls with filtering and column configuration. The **Active** tab shows in-progress calls in real time — calls appear and disappear as they start and complete, and you can click any active call to watch its transcript stream live. For listening to active calls, see [Live Call Monitoring](/changelog/05_12_2025).
+
+### Columns
+
+Columns are configurable — open the "Configure Columns" dropdown to toggle columns on or off and drag them to reorder.
+
+| Column | What it shows |
+|---|---|
+| Actions | Play and download buttons (only when a recording exists) |
+| ID | Call ID with a copy button |
+| Channel | Voice, Web, or SMS |
+| Direction | Inbound, Outbound, or Proxy (for warm transfer sub-rows) |
+| To | Formatted phone number, or "Web Client" for web calls |
+| From | Formatted phone number |
+| Pathway | Pathway name — click to open the pathway editor |
+| Duration | Call length |
+| Issues | Issue counts by severity (yellow for medium, orange for high) plus a shield icon for guardrail triggers |
+| Status | Completed, failed, busy, canceled, or no-answer |
+| Created | Timestamp |
+| Tags | Pathway tags with color indicators |
+| Version | Production, Staging, or custom version labels |
+| Transferred To | Warm transfer state for proxy-agent calls |
+| Batch ID | Batch ID with a copy button |
+| Review Status | Current QC review status |
+| Memory | Memory badge or changes indicator when a contact is linked |
+| Recording | Whether a recording exists |
+| Error | Indicator when the call has an error |
+
+### Warm Transfers in the Table
+
+Calls with warm transfers show a "Proxy" expand button in the Direction column. Click it to reveal the proxy-agent sub-rows underneath the parent call. The Transferred To column shows the transfer state. For the full warm transfer feature, see [Warm Transfers](/tutorials/warm-transfer).
+
+### Filtering
+
+Click **Filters** to open the filter panel.
+
+**Quick filters** — Full Conversations, Voicemails, Assigned to Me, Warm Transfers, and Unassigned.
+
+**Time range** — Last 1 hour, Last 24 hours, Today, Last 7 days, or Last 30 days.
+
+**Pathway filter** — select one or more pathways to show only their calls.
+
+**Advanced conditions** let you build structured filters. Each row is a field, an operator, and a value. Add multiple rows and toggle between AND/OR logic.
+
+{/* Screenshot: Filter panel open showing quick filters, time range, and advanced conditions */}
+
+Available filtering parameters:
+
+| Group | Fields |
+|---|---|
+| Call Details | Call ID, From, To, Proxy Agent Calls, Answered By, Direction, Duration, Created, Status, Error Message, Price |
+| Pathway | Pathway, Pathway Version, Tags, Batch ID |
+| Data | Analysis, Variables, Citations |
+| Quality | Review Status, Assignee, QC Tags, Issue Severity, Notes, Guardrail Triggers |
+| Other | Is Simulation |
+
+**Saved filters** — click the bookmark icon next to the Filters button to save, load, rename, or delete filter configurations. Saved filters are shared across your organization. When you have a saved filter loaded, you can "Update" it or "Save as new group."
+
+Filters encode in the URL, so you can share a filtered view by copying the page URL.
+
+### Search
+
+You can search by Call ID from the table. To search within a transcript, open the call detail view — transcript search is available there.
+
+### Export
+
+Click **Export Calls** in the header to export your call data as a CSV delivered via email.
+
+Configure your export with:
+
+- **Email** — where to send the CSV (defaults to your account email)
+- **Timezone** — for timestamp formatting
+- **Date range** — up to 180 days
+- **Exclude columns** — choose which fields to include or exclude (transcript, pathway_logs, citation_variables, memory, and more)
+
+Active filters from the current view apply to the export.
+
+### Notifications
+
+The bell icon in the header shows your unread notification count. Notifications are generated when a call is assigned to you for review. Clicking a notification opens that specific call with the review tab active. For more on the review system, see [Call Reviewing](/changelog/07_21_2025).
+
+---
+
+## Call Detail View
+
+Click any call in the table to open its detail view. The detail view shows the transcript and audio player alongside a collapsible context panel with metadata, variables, citations, and more.
+
+<Frame>
+  <img src="/images/call-logs-detail.png" alt="Call detail view showing transcript with expanded logs, variable extraction, loop condition, audio player, and the context panel with metadata" />
+</Frame>
+
+### Header
+
+The header shows the call's channel (Voice, Web, or SMS), pathway name (click to open the editor), and the contact number. Clicking the contact number filters call logs to show all calls with that number — useful for viewing a contact's history.
+
+Below that: direction badge, status, duration, and cost. Action buttons let you copy the call ID, copy the full transcript, or toggle translation.
+
+### Transcript
+
+The transcript shows the full conversation with speaker labels and timestamps. For pathway calls, a sticky header tracks which node you've scrolled past, so you always know where you are in the conversation flow.
+
+**Transcript search** — search for specific text within the transcript and step through matches.
+
+**Translation** — toggle the translate button in the header to translate the transcript.
+
+**Hover actions** appear on each transcript bubble:
+
+- **Flag** — report a transcript quality issue (speech-to-text or text-to-speech). Flagged entries show an amber indicator.
+- **Edit node** — open the pathway editor in a new tab, navigated directly to the node that generated this response.
+- **Testbed** — open the testbed with this call's context pre-loaded. See [Testbed](/tutorials/testbed) for the full workflow.
+
+### Expanded Logs
+
+Toggle **"Expand all logs"** in the transcript toolbar to see per-turn decision data inline between dialogue turns. This is the primary debugging view for pathway calls — it shows exactly what the agent decided at each step of the conversation.
+
+Each turn can include the following log types:
+
+**Node chosen** — which pathway node the agent transitioned to at this point in the conversation.
+
+**Prompt** — the agent's prompt text for this turn.
+
+**Loop condition** — whether the node's loop condition was evaluated and its result. Shows the full condition prompt and a likelihood score (e.g., "Likely 7/10"). When the condition is not yet met, the agent stays on the current node. This is the only prompt shown directly in expanded logs — node prompts and the global prompt are accessible from the node editor.
+
+**Routing** — which outgoing route the agent chose, plus the other available options it could have taken. This lets you see not just what the agent did, but what it decided against.
+
+**Variable extraction** — the extraction type and results. Shows variable names and their extracted values (e.g., `party_size: 8`, `appointment_time: 9:30 AM`). Also shows the full list of available variables from previous nodes and which node each variable originated from.
+
+**Webhook** — for nodes that trigger webhooks: the URL, HTTP response status, response time, and the full response payload.
+
+**Other events** — button presses, knowledge base tool calls, SMS events, custom code execution, scheduling, and transfer call events also appear in the expanded logs when relevant.
+
+Loop condition and variable extraction entries include testbed buttons, so you can jump directly into testing from any decision point. See [Testbed](/tutorials/testbed).
+
+<Frame>
+  <img src="/images/call-logs-testbed.png" alt="Testbed button on variable extraction and loop condition entries in expanded logs" />
+</Frame>
+
+### Audio Player
+
+The audio player appears at the bottom of the detail view when a recording exists.
+
+**Playback controls** include play/pause, skip forward and back, a speed selector, and a download button.
+
+**Sync scrolling** — toggle this to link the audio playback position to the transcript. As the recording plays, the transcript auto-scrolls to the corresponding dialogue.
+
+**Auto-play next** — when enabled, the player automatically advances to the next call that has a recording when the current one finishes.
+
+The waveform displays colored marker dots at key moments in the call. Hover any marker for a tooltip showing its type, timestamp, and name. Click a marker to seek the audio to that point.
+
+- **Pathway tags** — tags you place on nodes in the pathway editor. When the agent navigates to a tagged node during a call, the tag appears as a marker on the waveform and as a chip in the Pathway Tags section of the context panel. Use them to track when your agent reaches important conversation milestones.
+- **Decision markers** (green) — node transitions, showing when the agent moved between pathway nodes
+- **Extraction markers** (amber) — variable extractions and citations, showing when data was pulled from the conversation
+
+Filter badges below the waveform let you toggle visibility of each marker type: Variables, Tags, and Decisions.
+
+{/* Screenshot: Audio waveform with colored marker dots visible (decisions, tags, extractions) */}
+
+### Context Panel
+
+The context panel contains collapsible detail sections. Use the expand/collapse all toggle to open or close all sections at once.
+
+{/* Screenshot: Context panel with Metadata section expanded */}
+
+**Metadata** — organized into groups:
+
+- *Call Details* — conversation ID, from/to numbers, created timestamp, call type, status
+- *Duration & Cost* — total duration, transfer duration (for transferred calls), cost
+- *Participants* — caller location, answered by (human/voicemail), ended by (assistant/human)
+- *Configuration* — language, voice, interruption threshold, temperature, noise cancellation
+- *Pathway* — pathway ID, name (click to open the editor), version
+- *Alerts* — error messages and silence warnings when detected
+- *AI Summary* — auto-generated summary of the conversation, expandable
+
+**Variables** — all extracted variables merged from the call, showing each variable's name and value.
+
+**Citations** — each citation shows the variable name, extracted value, and expandable sources with quoted transcript text and timestamps. For setting up citation schemas, see [Citations](/enterprise-features/citations).
+
+**Notes & Review** — a threaded notes section for adding context to calls. The review section includes an assignee dropdown, status selector (Pending Review, In Progress, Completed, Not Needed), and QC tag chips. For more on the review workflow, see [Call Reviewing](/changelog/07_21_2025).
+
+**Outcomes** — disposition results showing status, execution time, error details, and result key-value pairs. Click "Open in Outcomes" to navigate to the full outcomes view. For more, see [Outcomes](/tutorials/outcomes).
+
+**Pathway Tags** — the same tags that appear as markers on the waveform, shown here as colored chips for quick reference.
+
+**Webhook & Tools** — post-call webhook delivery details: status, URL, response code, response time, and the full payload with a copy button. A resend button lets you re-trigger the webhook. Below that, tool logs show each tool invocation with its integration, status, execution time, and expandable input/output details.
+
+**Guardrails** — any guardrails triggered during the call, showing the guardrail name, type, the content that triggered it, and the reason.
+
+**Memory** — memory context linked to the call and interaction history with prior calls and SMS conversations for the same contact. For more on memory, see [Memory](/tutorials/memories).
+
+**Metrics** — per-call quality analysis covering agent quality, transcription quality, response time, silence, background noise, sentiment, engagement, repetition, interruptions, speaker changes, and word count. Issues are listed by severity. For the org-wide metrics dashboard, see [Call Metrics](/changelog/07_21_2025).
+
+**Request Data** — the original API request payload as formatted JSON. For inbound calls, this merges your call request data with the inbound number's configuration.
