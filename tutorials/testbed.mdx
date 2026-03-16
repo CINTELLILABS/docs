@@ -1,0 +1,102 @@
+---
+title: "Testbed"
+description: "Iterate on node prompts using real call data and lock in behavior with standards"
+---
+
+## Introduction
+
+The testbed lets you take any call — whether it's a historical call from call logs or a test chat from the pathway editor — isolate a specific node interaction, edit the prompt, and run it multiple times to see how the output varies. When you're satisfied with the behavior, you can publish it as a [Standard](/tutorials/standards) — a regression test that catches behavior changes when the prompt is modified later.
+
+## Test Types
+
+The testbed supports three test types, each targeting a different part of a node's behavior:
+
+- **Dialogue** — test the node's dialogue prompt. Use this when you're changing how the agent responds and want to verify the new prompt works.
+- **Loop condition** — test whether the node's loop condition fires correctly. Use this when adjusting a condition and want to make sure it still triggers (or doesn't) as expected.
+- **Variable extraction** — test whether variables extract correctly. Use this when refining extraction descriptions or adding new variables.
+
+## Opening the Testbed
+
+### From Call Logs
+
+The fastest path into the testbed is from the transcript in the call detail view in [Call Logs](/tutorials/call-logs).
+
+<Frame>
+  <img src="/images/call-logs-testbed.png" alt="Testbed button on variable extraction and loop condition entries in expanded logs" />
+</Frame>
+
+Hover over any transcript bubble to reveal action buttons, including the testbed button.
+
+On **agent messages**, the testbed opens for the node's **dialogue prompt**, pre-loaded with the agent's response, the preceding user message, and the full conversation history up to that point.
+
+On **user messages**, a dropdown offers options based on the node's configuration — **loop condition** or **variable extraction**, depending on what the node has configured.
+
+When expanded logs are toggled on, loop condition and variable extraction entries also show testbed buttons inline.
+
+The testbed always uses prompts and context from the original conversation — conversation history, current prompts, and the specific turn you selected. You're testing against actual conversation data, not a blank slate.
+
+Testbed buttons only appear on pathway calls.
+
+### From the Pathway Editor
+
+The testbed is also accessible from the pathway editor's testing panel. When you run simulations in the Test panel, the resulting call logs include testbed buttons just like any other pathway call — so you can go from testing a pathway to iterating on a specific node's prompt in one click. See [Pathways — Testing](/tutorials/pathways) for that workflow.
+
+## The Testbed
+
+<Frame>
+  <img src="/images/testbed-main.png" alt="Testbed editor showing agent prompts on the left with node prompt and variables, and standard configuration on the right with evaluation method, threshold, and simulation results" />
+</Frame>
+
+The testbed has two views: the editor where you iterate on prompts and run simulations, and the review where you compare changes before publishing.
+
+### Editor
+
+The left side is where you edit and run:
+
+**Global prompt** — the pathway's global prompt.
+
+**Node prompt** — the prompt for this node, with variable references like `{{variable_name}}` highlighted.
+
+**Loop condition or variable extraction fields** — shown based on the test type.
+
+**Conversation history** — the real call transcript that seeds the simulation.
+
+**Prompt outputs** — results after running, with a pass count and sample outputs.
+
+### Standards Configuration
+
+The right side configures the simulation and evaluation criteria — the simulation prompt, success definition, conversation length, and pass threshold. These are auto-generated from the call context. For details on how evaluation works, see [Standards](/tutorials/standards).
+
+Before you can publish, all existing standards on the node must pass with your changes. This ensures your prompt edits don't break previously validated behavior.
+
+<Frame>
+  <img src="/images/testbed-existing.png" alt="Existing standards running before publishing, showing pass/fail results for each standard with simulation transcripts" />
+</Frame>
+
+## Review and Publish
+
+Switch to the review view to see a diff of your changes alongside batch test results, so you can see the impact before publishing.
+
+<Frame>
+  <img src="/images/testbed-review.png" alt="Review changes view showing a prompt diff on the left and standards results on the right with pass status" />
+</Frame>
+
+Publishing both creates a [Standard](/tutorials/standards) and publishes your prompt changes.
+
+## End-to-End Workflow
+
+1. Open a pathway call in call logs or a test chat in the pathway editor
+2. Find the turn you want to test — an agent response, loop condition, or variable extraction
+3. Toggle on expanded call logs
+4. Hover the transcript bubble and click the testbed button
+4. Edit the prompt, condition, or extraction
+5. Run simulations to see how the change performs
+6. Adjust the threshold and success criteria
+7. Review the diff and batch results
+8. Publish to create a standard that prevents future regressions
+
+## Related
+
+- [Standards](/tutorials/standards) — the regression testing framework that the testbed feeds into
+- [Call Logs](/tutorials/call-logs) — where most testbed workflows originate
+- [Pathways — Testing](/tutorials/pathways) — accessing the testbed from the pathway editor
