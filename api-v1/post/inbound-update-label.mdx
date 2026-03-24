@@ -1,0 +1,104 @@
+---
+title: "Update Inbound Number Label"
+api: "POST https://api.bland.ai/inbound/update_label"
+description: "Update the label shown for one of your inbound phone numbers."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="phoneNumber" type="string" required>
+  The inbound phone number whose label you want to update.
+
+  Required format: E.164 (for example, `+12223334444`).
+</ParamField>
+
+<ParamField body="newLabel" type="string" required>
+  The new label to assign to this inbound number.
+
+  Constraints:
+  - Max length: `150` characters
+  - Set to an empty string (`""`) to clear the label
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Success response data.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Success message.
+</ResponseField>
+
+<ResponseField name="data.phone_number" type="string">
+  The inbound phone number that was updated.
+</ResponseField>
+
+<ResponseField name="data.label" type="string">
+  The updated label value.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "message": "Label updated successfully",
+    "phone_number": "+18669659045",
+    "label": "apitest"
+  },
+  "errors": null
+}
+```
+
+```json Invalid request body (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Invalid request body"
+    }
+  ]
+}
+```
+
+```json Label too long (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "LABEL_TOO_LONG",
+      "message": "Label is too long"
+    }
+  ]
+}
+```
+
+```json Auth failure (401)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AUTH_FAILURE",
+      "message": "Unauthorized"
+    }
+  ]
+}
+```
+
+```json Not found (404)
+{
+  "error": "Phone number not found"
+}
+```
+</ResponseExample>
