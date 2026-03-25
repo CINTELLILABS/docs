@@ -23,15 +23,15 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 </ParamField>
 
 <ParamField body="integration" type="string" required>
-  The integration key to use (e.g. `"slack"`, `"openapi__custom_api"`). Must be a valid, registered integration.
+  The integration key to use. Must be one of: `bland-sms`, `custom-code`, `slack`, `salesforce`, `rest_api`, `hubspot`, `calendly`, `cal-com-v2`, `notion`.
 </ParamField>
 
 <ParamField body="action" type="string" required>
-  The action within the integration to invoke (e.g. `"send_message"`, `"createUser_POST_users"`). Must be a valid action for the specified integration.
+  The action key to invoke within the integration. To discover available action keys, call `GET /v1/integrations/{integration}/actions`. Returns `400 ACTION_NOT_FOUND` with the list of valid actions if the key is invalid.
 </ParamField>
 
 <ParamField body="input_schema" type="object">
-  JSON Schema defining the parameters the AI should provide when invoking this tool. Validated using AJV.
+  Must be a valid OpenAI function calling parameter schema. Defines the parameters the AI will fill in when invoking this tool.
 
   ```json
   {
@@ -86,7 +86,7 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 </ParamField>
 
 <ParamField body="resource_id" type="string">
-  ID of a connected resource (e.g. an OAuth integration connection) to associate with this tool. The resource must exist and belong to your account.
+  UUID of a connected resource (e.g. a Slack workspace or Salesforce org) to scope this tool to. The resource must be active and belong to your account. Returns `404` if the ID is invalid or inactive. To list available resource IDs for an integration, call `GET /v1/integrations/{integration}/resources`.
 </ParamField>
 
 <ParamField body="public" type="boolean">
@@ -97,11 +97,12 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
   Optional human-readable label for this tool.
 </ParamField>
 
-<ParamField body="staging_tool" type="object">
-  A draft/staging version of the tool configuration. Follows the same schema as the root-level tool fields. Useful for testing changes before going live.
-</ParamField>
 
 ### Response
+
+<ResponseField name="status" type="string">
+  `"success"` on success, `"error"` on failure.
+</ResponseField>
 
 <ResponseField name="data.id" type="string">
   The ID of the newly created tool.
@@ -133,6 +134,7 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 
 ```json Response (Success)
 {
+  "status": "success",
   "data": {
     "id": "abc123def456"
   },
@@ -140,25 +142,61 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 }
 ```
 
-```json Error Response (Invalid integration)
+```json Error (INVALID_PARAMETER)
 {
   "data": null,
   "errors": [
     {
-      "code": "INTEGRATION_NOT_FOUND",
-      "message": "Integration 'my_integration' is not available. Available integrations: slack, openapi__custom_api"
+      "code": "INVALID_PARAMETER",
+      "message": "name is required"
     }
   ]
 }
 ```
 
-```json Error Response (Invalid action)
+```json Error (INVALID_TOOL_TYPE)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "INVALID_TOOL_TYPE",
+      "message": "The specified tool type is not supported"
+    }
+  ]
+}
+```
+
+```json Error (INTEGRATION_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "INTEGRATION_NOT_FOUND",
+      "message": "Integration 'my_integration' is not available. Available integrations: bland-sms, custom-code, slack, salesforce, rest_api, hubspot, calendly, cal-com-v2, notion"
+    }
+  ]
+}
+```
+
+```json Error (ACTION_NOT_FOUND)
 {
   "data": null,
   "errors": [
     {
       "code": "ACTION_NOT_FOUND",
       "message": "Action 'my_action' not found for integration 'slack'. Available actions: send_message, create_channel"
+    }
+  ]
+}
+```
+
+```json Error (RESOURCE_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "RESOURCE_NOT_FOUND",
+      "message": "Resource not found or is inactive"
     }
   ]
 }
