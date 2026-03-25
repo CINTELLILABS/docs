@@ -1,7 +1,7 @@
 ---
 title: "Create Contact Memory"
 api: "POST https://api.bland.ai/v1/memory/contact"
-description: "Get or create a contact memory for a contact/persona pair. If memory already exists, returns it; otherwise creates a new one."
+description: "Create a memory record for a contact scoped to a persona or agent number. If a record already exists for that pair, it is returned instead of creating a duplicate."
 ---
 
 ### Headers
@@ -107,12 +107,32 @@ description: "Get or create a contact memory for a contact/persona pair. If memo
       "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
       "persona_id": "persona-12345678",
       "agent_number": null,
-      "summary": "Customer inquired about order status.",
+      "summary": "Customer called about order #8821 which was delayed. Promised a follow-up within 24 hours.",
       "facts": {
-        "name": "John Doe"
+        "name": "Sarah Chen",
+        "phone": "+14155550192",
+        "preferred_contact": "phone"
       },
-      "recent_messages": [...],
-      "open_items": [],
+      "recent_messages": [
+        {
+          "role": "user",
+          "content": "Hi, I'm calling about my order",
+          "channel": "call",
+          "timestamp": "2025-07-22T10:30:00.000Z"
+        }
+      ],
+      "open_items": [
+        {
+          "type": "follow_up",
+          "description": "Follow up on order #8821 delay status",
+          "created_at": "2025-07-22T10:30:00.000Z",
+          "priority": "high",
+          "related_to": {
+            "entity_type": "order",
+            "entity_id": "order-8821"
+          }
+        }
+      ],
       "memory_history": [],
       "created_at": "2025-07-20T10:30:00.000Z",
       "updated_at": "2025-07-22T15:45:00.000Z"

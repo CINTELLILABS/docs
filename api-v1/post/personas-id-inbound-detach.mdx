@@ -1,0 +1,76 @@
+---
+title: "Detach Phone Numbers from Persona"
+api: "POST https://api.bland.ai/v1/personas/{persona_id}/inbound/detach"
+description: "Detach one or more inbound phone numbers from a persona. Detached numbers will no longer use the persona's configuration and will have their persona settings cleared."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="persona_id" type="string" required>
+  The unique identifier of the persona to detach numbers from.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="inbound_numbers" type="string[]" required>
+  Array of E.164 formatted phone numbers to detach from this persona. Only numbers currently attached to this persona will be affected.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated persona object after detaching the specified numbers.
+
+  <Expandable title="persona object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the persona.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the persona.
+    </ResponseField>
+    <ResponseField name="inbound_numbers" type="array">
+      Array of inbound number objects still attached to this persona (after detaching the specified ones).
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the persona was last modified.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response (Success)
+{
+  "data": {
+    "id": "12345678-1234-1234-1234-123456789012",
+    "name": "Support Agent",
+    "user_id": "12345678-1234-1234-1234-123456789012",
+    "inbound_numbers": [],
+    "created_at": "2025-09-23T15:13:36.348Z",
+    "updated_at": "2025-09-23T15:20:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Persona not found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PERSONA_NOT_FOUND",
+      "message": "Persona not found or access denied"
+    }
+  ]
+}
+```
+</ResponseExample>

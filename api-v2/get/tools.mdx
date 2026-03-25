@@ -1,0 +1,152 @@
+---
+title: "List Integration Tools"
+api: "GET https://api.bland.ai/v2/tools"
+description: "Retrieve a paginated list of your V2 integration tools. Returns tools that are not tied to a specific resource connection."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination. Minimum `1`. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of results per page. Minimum `1`, maximum `1000`. Defaults to `50`.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Filter results by searching the tool's `name` and `description` fields.
+</ParamField>
+
+<ParamField query="orderBy" type="string">
+  Field to sort results by. Currently only `"created_at"` is supported.
+</ParamField>
+
+<ParamField query="orderDirection" type="string">
+  Sort direction. Allowed values: `"asc"`, `"desc"`. Defaults to `"desc"`.
+</ParamField>
+
+<Info>
+  This endpoint only returns tools that are **not** tied to a specific resource connection (`resource_id: null`). Tools created as part of a connected integration resource are excluded.
+</Info>
+
+### Response
+
+<ResponseField name="data.tools" type="array">
+  Array of integration tool objects.
+
+  <Expandable title="tool object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the tool (prefixed with `TL-`).
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The tool's name.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      The tool's description.
+    </ResponseField>
+    <ResponseField name="integration" type="string">
+      The integration key (e.g. `"slack"`).
+    </ResponseField>
+    <ResponseField name="action" type="string">
+      The action within the integration.
+    </ResponseField>
+    <ResponseField name="input_schema" type="object">
+      JSON Schema for the tool's input parameters.
+    </ResponseField>
+    <ResponseField name="speech" type="string">
+      Text the AI says while using this tool.
+    </ResponseField>
+    <ResponseField name="timeout" type="number">
+      Timeout in milliseconds.
+    </ResponseField>
+    <ResponseField name="cache" type="boolean">
+      Whether response caching is enabled.
+    </ResponseField>
+    <ResponseField name="max_retries" type="number">
+      Maximum retry attempts.
+    </ResponseField>
+    <ResponseField name="cooldown" type="number">
+      Seconds between retries.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable label, if set.
+    </ResponseField>
+    <ResponseField name="public" type="boolean">
+      Whether the tool is publicly visible.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the tool was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  Pagination metadata.
+
+  <Expandable title="pagination object">
+    <ResponseField name="page" type="number">
+      The current page number.
+    </ResponseField>
+    <ResponseField name="limit" type="number">
+      Number of results per page.
+    </ResponseField>
+    <ResponseField name="hasMore" type="boolean">
+      Whether there are additional pages of results.
+    </ResponseField>
+    <ResponseField name="nextPage" type="number | null">
+      The next page number, or `null` if there are no more pages.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response (Success)
+{
+  "data": {
+    "tools": [
+      {
+        "id": "TL-abc123def456",
+        "name": "SendSlackMessage",
+        "description": "Sends a message to a Slack channel",
+        "integration": "slack",
+        "action": "send_message",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "channel": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "required": ["channel", "message"]
+        },
+        "speech": "Sending that message to Slack now.",
+        "timeout": 10000,
+        "cache": false,
+        "max_retries": 0,
+        "cooldown": null,
+        "label": null,
+        "public": false,
+        "created_at": "2025-09-23T15:13:36.348Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "hasMore": false,
+      "nextPage": null
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>

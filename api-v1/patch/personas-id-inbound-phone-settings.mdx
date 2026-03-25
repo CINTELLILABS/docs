@@ -1,0 +1,114 @@
+---
+title: "Update Persona Number Settings"
+api: "PATCH https://api.bland.ai/v1/personas/{persona_id}/inbound/{phone_number}/settings"
+description: "Update persona-specific settings for a phone number attached to a persona. Use this to configure per-number pathway overrides while still using the persona's base configuration."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="persona_id" type="string" required>
+  The unique identifier of the persona the phone number is attached to.
+</ParamField>
+
+<ParamField path="phone_number" type="string" required>
+  The E.164 formatted phone number to update settings for. This number must currently be attached to the specified persona.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="persona_settings" type="object | null" required>
+  Persona-specific settings for this phone number. Pass `null` to clear all per-number settings and fall back to the persona's defaults.
+
+  <Expandable title="persona_settings object">
+    <ParamField body="pathway_id" type="string">
+      Override the persona's default pathway with a specific pathway for calls/messages on this number.
+    </ParamField>
+    <ParamField body="pathway_version" type="number">
+      Specific version of the pathway to use.
+    </ParamField>
+    <ParamField body="start_node_id" type="string">
+      Specific node within the pathway to start from.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated inbound number record.
+
+  <Expandable title="inbound number object">
+    <ResponseField name="id" type="number">
+      Internal ID of the inbound number record.
+    </ResponseField>
+    <ResponseField name="phone_number" type="string">
+      The E.164 formatted phone number.
+    </ResponseField>
+    <ResponseField name="persona_id" type="string">
+      The persona this number is attached to.
+    </ResponseField>
+    <ResponseField name="persona_settings" type="object">
+      The updated persona settings for this number, or `null` if cleared.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the record was last modified.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Request (Set pathway override)
+{
+  "persona_settings": {
+    "pathway_id": "pathway_abc123",
+    "pathway_version": 2,
+    "start_node_id": "node_xyz"
+  }
+}
+```
+
+```json Response (Success)
+{
+  "data": {
+    "id": 42,
+    "phone_number": "+14155551234",
+    "persona_id": "12345678-1234-1234-1234-123456789012",
+    "persona_settings": {
+      "pathway_id": "pathway_abc123",
+      "pathway_version": 2,
+      "start_node_id": "node_xyz"
+    },
+    "updated_at": "2025-09-23T16:00:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Request (Clear settings)
+{
+  "persona_settings": null
+}
+```
+
+```json Error Response (Number not attached to persona)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INBOUND_NOT_FOUND",
+      "message": "Inbound number not found or not attached to this persona"
+    }
+  ]
+}
+```
+</ResponseExample>

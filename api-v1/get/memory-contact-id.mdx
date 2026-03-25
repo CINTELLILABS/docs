@@ -1,7 +1,7 @@
 ---
 title: "Get Contact Memory"
 api: "GET https://api.bland.ai/v1/memory/contact/{memory_id}"
-description: "Retrieve a contact memory record by its ID. Returns the full memory object including summary, facts, recent messages, and more."
+description: "Retrieve a contact's full memory record by ID, including their conversation summary, structured facts, recent messages, and open items."
 ---
 
 ### Headers
@@ -83,23 +83,42 @@ description: "Retrieve a contact memory record by its ID. Returns the full memor
     "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
     "persona_id": "persona-12345678",
     "agent_number": null,
-    "summary": "Customer inquired about order status. Order #12345 is in transit.",
+    "summary": "Customer called about order #8821 which was delayed. Follow-up confirmed the order shipped and is now in transit.",
     "facts": {
-      "name": "John Doe",
-      "preferred_contact": "phone"
+      "name": "Sarah Chen",
+      "phone": "+14155550192",
+      "preferred_contact": "sms",
+      "timezone": "America/Los_Angeles"
     },
     "recent_messages": [
       {
         "role": "user",
-        "content": "Hi, I'm calling about my order",
-        "channel": "call",
-        "timestamp": "2025-07-22T10:30:00.000Z"
+        "content": "Hi, has my order shipped yet?",
+        "channel": "sms",
+        "timestamp": "2025-07-23T09:10:00.000Z"
+      },
+      {
+        "role": "assistant",
+        "content": "Yes, order #8821 shipped this morning. Expected delivery is Friday July 25.",
+        "channel": "sms",
+        "timestamp": "2025-07-23T09:10:05.000Z"
       }
     ],
-    "open_items": [],
+    "open_items": [
+      {
+        "type": "follow_up",
+        "description": "Confirm delivery of order #8821 on July 25",
+        "created_at": "2025-07-23T09:10:00.000Z",
+        "priority": "medium",
+        "related_to": {
+          "entity_type": "order",
+          "entity_id": "order-8821"
+        }
+      }
+    ],
     "memory_history": [],
     "created_at": "2025-07-20T10:30:00.000Z",
-    "updated_at": "2025-07-22T15:45:00.000Z"
+    "updated_at": "2025-07-23T09:15:00.000Z"
   },
   "errors": null
 }

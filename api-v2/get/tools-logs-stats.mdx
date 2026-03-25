@@ -1,0 +1,151 @@
+---
+title: "Tool Execution Stats"
+api: "GET https://api.bland.ai/v2/tools/logs/stats"
+description: "Retrieve aggregated statistics for V2 tool executions, grouped and filtered by various dimensions. Maximum date range is 90 days."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+**Grouping**
+
+<ParamField query="group_by" type="string">
+  Comma-separated list of fields to group results by. Supported values: `integration`, `action`, `status`, `tool_id`, `resource_id`, `error_type`, `date`.
+
+  Example: `group_by=integration,status`
+</ParamField>
+
+**Metrics**
+
+<ParamField query="metrics" type="string">
+  Comma-separated list of metrics to compute. Use `"count"` for total execution count, or `"field:avg"` for averages.
+
+  Supported aggregate fields: `execution_time_ms`, `input_size_kb`, `output_size_kb`.
+
+  Defaults to `"count"`.
+
+  Example: `metrics=count,execution_time_ms:avg`
+</ParamField>
+
+**Date Range**
+
+<ParamField query="period" type="string">
+  Preset time period. Allowed values: `"today"`, `"week"`, `"month"`. Overridden by `start_date`/`end_date` if both are provided.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  Start of the date range (ISO 8601). Maximum range is 90 days from `end_date`.
+</ParamField>
+
+<ParamField query="end_date" type="string">
+  End of the date range (ISO 8601). Maximum range is 90 days from `start_date`.
+</ParamField>
+
+**Filters**
+
+<ParamField query="tool_id" type="string">
+  Filter stats to a specific tool ID.
+</ParamField>
+
+<ParamField query="resource_id" type="string">
+  Filter stats to a specific resource ID.
+</ParamField>
+
+<ParamField query="integration" type="string">
+  Filter by integration key.
+</ParamField>
+
+<ParamField query="action" type="string">
+  Filter by action name.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by execution status. Allowed values: `"success"`, `"error"`.
+</ParamField>
+
+<ParamField query="error_type" type="string">
+  Filter by error type.
+</ParamField>
+
+<ParamField query="call_id" type="string">
+  Filter to a specific call ID.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of groups to return. Minimum `1`, maximum `1000`. Defaults to `50`.
+</ParamField>
+
+### Response
+
+<ResponseField name="results" type="array">
+  Array of aggregated result objects. Each entry contains the grouped dimensions and the requested metric values.
+
+  <Expandable title="result entry">
+    <ResponseField name="integration" type="string">
+      Integration key (present when grouped by `integration`).
+    </ResponseField>
+    <ResponseField name="action" type="string">
+      Action name (present when grouped by `action`).
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Execution status (present when grouped by `status`).
+    </ResponseField>
+    <ResponseField name="tool_id" type="string">
+      Tool ID (present when grouped by `tool_id`).
+    </ResponseField>
+    <ResponseField name="date" type="string">
+      Date string (present when grouped by `date`).
+    </ResponseField>
+    <ResponseField name="count" type="number">
+      Total execution count (present when `count` is in `metrics`).
+    </ResponseField>
+    <ResponseField name="execution_time_ms_avg" type="number">
+      Average execution time in ms (present when `execution_time_ms:avg` is in `metrics`).
+    </ResponseField>
+    <ResponseField name="input_size_kb_avg" type="number">
+      Average input size in KB (present when `input_size_kb:avg` is in `metrics`).
+    </ResponseField>
+    <ResponseField name="output_size_kb_avg" type="number">
+      Average output size in KB (present when `output_size_kb:avg` is in `metrics`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Metadata about the query that was executed.
+</ResponseField>
+
+<ResponseExample>
+```json Request
+GET /v2/tools/logs/stats?group_by=integration,status&metrics=count,execution_time_ms:avg&period=week
+```
+
+```json Response (Success)
+{
+  "results": [
+    {
+      "integration": "slack",
+      "status": "success",
+      "count": 142,
+      "execution_time_ms_avg": 318.5
+    },
+    {
+      "integration": "slack",
+      "status": "error",
+      "count": 3,
+      "execution_time_ms_avg": 10000.0
+    }
+  ],
+  "meta": {
+    "group_by": ["integration", "status"],
+    "metrics": ["count", "execution_time_ms:avg"],
+    "period": "week"
+  }
+}
+```
+</ResponseExample>

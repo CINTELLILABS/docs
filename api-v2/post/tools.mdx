@@ -1,0 +1,166 @@
+---
+title: "Create Integration Tool"
+api: "POST https://api.bland.ai/v2/tools"
+description: "Create a new V2 integration tool. V2 tools connect to built-in integrations (e.g. Slack, OpenAPI) rather than arbitrary HTTP endpoints."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  The name the AI will see when deciding to use this tool. Must be at least 1 character.
+
+  Avoid names that conflict with reserved internal tools: `input`, `speak`, `transfer`, `switch`, `wait`, `finish`, `press`, `button`, `say`, `pause`, `record`, `play`, `dial`, `hang`.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Description of what the tool does. Shown to the AI to help it decide when to use this tool.
+</ParamField>
+
+<ParamField body="integration" type="string" required>
+  The integration key to use (e.g. `"slack"`, `"openapi__custom_api"`). Must be a valid, registered integration.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  The action within the integration to invoke (e.g. `"send_message"`, `"createUser_POST_users"`). Must be a valid action for the specified integration.
+</ParamField>
+
+<ParamField body="input_schema" type="object">
+  JSON Schema defining the parameters the AI should provide when invoking this tool. Validated using AJV.
+
+  ```json
+  {
+    "type": "object",
+    "properties": {
+      "channel": { "type": "string" },
+      "message": { "type": "string" }
+    },
+    "required": ["channel", "message"]
+  }
+  ```
+</ParamField>
+
+<ParamField body="body" type="string | object">
+  Request body template sent to the integration. Supports prompt variables from `input_schema` (e.g. `"{{input.channel}}"`).
+</ParamField>
+
+<ParamField body="speech" type="string">
+  Text the AI says aloud while executing this tool (e.g. `"One moment while I send that message."`).
+</ParamField>
+
+<ParamField body="timeout" type="number">
+  Maximum time in milliseconds to wait for the integration to respond. Minimum `1000`, maximum `60000`.
+</ParamField>
+
+<ParamField body="cache" type="boolean">
+  Whether to cache the tool's response. Accepts `true`, `false`, `"true"`, or `"false"`.
+</ParamField>
+
+<ParamField body="response_data" type="array">
+  Defines which fields to extract from the integration response and make available as prompt variables.
+
+  <Expandable title="response_data item">
+    <ParamField body="name" type="string" required>
+      Variable name to assign the extracted value.
+    </ParamField>
+    <ParamField body="data" type="string" required>
+      JSON path to the value in the response (e.g. `"$.message_id"`).
+    </ParamField>
+    <ParamField body="context" type="string">
+      Optional description of what this data represents.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="max_retries" type="number">
+  Number of times to retry the tool on failure. Minimum `0`, maximum `4`.
+</ParamField>
+
+<ParamField body="cooldown" type="number">
+  Seconds to wait between retries. Minimum `1`, maximum `30`.
+</ParamField>
+
+<ParamField body="resource_id" type="string">
+  ID of a connected resource (e.g. an OAuth integration connection) to associate with this tool. The resource must exist and belong to your account.
+</ParamField>
+
+<ParamField body="public" type="boolean">
+  Whether this tool is publicly visible. Defaults to `false`.
+</ParamField>
+
+<ParamField body="label" type="string">
+  Optional human-readable label for this tool.
+</ParamField>
+
+<ParamField body="staging_tool" type="object">
+  A draft/staging version of the tool configuration. Follows the same schema as the root-level tool fields. Useful for testing changes before going live.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  The ID of the newly created tool.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Request
+{
+  "name": "SendSlackMessage",
+  "description": "Sends a message to a Slack channel",
+  "integration": "slack",
+  "action": "send_message",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "channel": { "type": "string" },
+      "message": { "type": "string" }
+    },
+    "required": ["channel", "message"]
+  },
+  "speech": "Sending that message to Slack now.",
+  "timeout": 10000
+}
+```
+
+```json Response (Success)
+{
+  "data": {
+    "id": "abc123def456"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Invalid integration)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "INTEGRATION_NOT_FOUND",
+      "message": "Integration 'my_integration' is not available. Available integrations: slack, openapi__custom_api"
+    }
+  ]
+}
+```
+
+```json Error Response (Invalid action)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "ACTION_NOT_FOUND",
+      "message": "Action 'my_action' not found for integration 'slack'. Available actions: send_message, create_channel"
+    }
+  ]
+}
+```
+</ResponseExample>

@@ -36,8 +36,34 @@ description: "Send an SMS message from an agent to a user. This creates or resum
 Allows you to create a new conversation, archiving the existing conversation and ignores existing sms messages.
 </ParamField>
 
+<ParamField body="persona_id" type="string" required={false}>
+  UUID of a persona to use for this conversation. When provided, the persona's configuration is applied instead of the number's SMS config. Use `persona_version` to select which version to use.
+
+  Cannot be used as a substitute for `agent_number` — the agent number must still belong to your account. The persona_id controls *how* the conversation is handled, not *which number* sends it.
+</ParamField>
+
+<ParamField body="persona_version" type="string" required={false}>
+  Which version of the persona to use. Allowed values: `"production"` (default), `"draft"`.
+</ParamField>
+
+<ParamField body="persona_settings" type="object" required={false}>
+  Per-dispatch persona overrides. Takes priority over any pathway settings on the persona version or the `pathway_id` field below.
+
+  <Expandable title="persona_settings object">
+    <ParamField body="pathway_id" type="string">
+      Override the persona's pathway for this dispatch.
+    </ParamField>
+    <ParamField body="pathway_version" type="number">
+      Specific version of the override pathway to use.
+    </ParamField>
+    <ParamField body="start_node_id" type="string">
+      Specific node to start from within the override pathway.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
 <ParamField body="pathway_id" type="string" required={false}>
-  ID of the pathway to use for generating the SMS response.
+  ID of the pathway to use for generating the SMS response. If `persona_id` is provided, this is used as a pathway override within the persona context (lower priority than `persona_settings`).
 </ParamField>
 
 <ParamField body="pathway_version" type="number" required={false}>

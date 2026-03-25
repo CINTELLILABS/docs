@@ -5,22 +5,22 @@ description: "Preserve context across conversations by enabling memory on your p
 
 ## Introduction
 
-Memory lets Bland agents remember people across conversations—calls, SMS, and other channels—so interactions feel continuous and personalized. When someone reaches out again, your assistant already has context: who they are, what was discussed, and what’s left to do.
+Memory lets Bland agents remember people across conversations, including calls, SMS, and other channels, so each interaction feels continuous and personalized. When someone reaches out again, your agent already has context: who they are, what was discussed, and what still needs to happen.
 
 Key capabilities:
 
 <CardGroup cols={2}>
   <Card title="Automatic contacts" icon="book-user">
-    Bland creates and links contacts by phone number, email, or external ID—no manual setup.
+    Bland creates and links contacts by phone number, email, or external ID with no manual setup.
   </Card>
   <Card title="Context that sticks" icon="split">
     Rolling summaries, structured facts, and open action items are maintained per contact and persona.
   </Card>
   <Card title="Cross-channel" icon="signature">
-    The same contact is recognized across voice and SMS, with one coherent memory.
+    The same contact is recognized across voice and SMS, with one coherent history.
   </Card>
   <Card title="Per persona" icon="check">
-    Enable memory on a pathway or persona; each keeps its own conversation history with the contact.
+    Each pathway or persona keeps its own conversation history with a contact, independently.
   </Card>
 </CardGroup>
 
@@ -28,16 +28,16 @@ Key capabilities:
 
 ## How it works
 
-1. **Enable memory** on a [pathway](/tutorials/personas) or persona (in the dashboard or via the API).
-2. **Bland creates contacts automatically** when someone interacts—matched by phone number, email, or external ID.
+1. **Enable memory** on a [pathway](/tutorials/pathways) or [persona](/tutorials/personas) in the dashboard or via the API.
+2. **Bland creates contacts automatically** when someone interacts, matched by phone number, email, or external ID.
 3. **For each contact, Bland maintains:**
-   - **Facts** — Structured information (name, preferences, account details, etc.)
-   - **Summary** — A rolling summary of past conversations for LLM context
-   - **Open items** — Action items or follow-ups (e.g. “Send prescription refill”, “Call back Friday”)
-   - **Entities** — Tracked things like orders, appointments, or tickets when you use entity schemas
-   - **Recent messages** — A sliding window of the latest exchange for handoffs and continuity
+   - **Facts**: structured key-value information (name, preferences, account details, etc.)
+   - **Summary**: a rolling plain-text overview of past conversations, used for agent context
+   - **Open items**: action items or follow-ups (e.g. "Follow up on order delay", "Call back Friday")
+   - **Entities**: structured objects tracked across conversations, like orders, appointments, or tickets
+   - **Recent messages**: a sliding window of the latest exchanges across all channels
 
-Memory is scoped **per contact and per persona** (or per agent number). So one person can have separate conversation histories with different agents or campaigns, and each stays consistent over time.
+Memory is scoped per contact and per persona (or agent number). One person can have separate histories with different personas, and each stays consistent over time without mixing context.
 
 ---
 
@@ -49,8 +49,8 @@ To enable memory for a **pathway**:
 
 1. Open your pathway in the Bland dashboard.
 2. In the top-right menu (next to **Send Call**), open the dropdown.
-3. Check **Enable Memory** — "Remember previous conversations across all calls per user."
-4. Save your pathway. From the next interaction onward, Bland will create and update contacts and their memory for that pathway.
+3. Check **Enable Memory** ("Remember previous conversations across all calls per user").
+4. Save your pathway. From the next interaction onward, Bland will create and update contact memory automatically.
 
 <img style={{ borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }} src="/tutorials/tutorials-assets/memory/EnableMemory.jpeg" alt="Pathway menu with Enable Memory checkbox" />
 
@@ -58,54 +58,135 @@ To enable memory for a **pathway**:
 
 To enable memory for a **persona**, go to the **Knowledge** tab for that persona and toggle **Memory** on.
 
-Calls or conversations that use that pathway or persona will then automatically read and update the contact’s facts, summary, open items, and recent messages. No need to pass IDs or manage stores in your API calls for basic use.
+Calls or conversations that use that pathway or persona will automatically read and update the contact's facts, summary, open items, and recent messages. No extra configuration is needed for standard use.
 
-To enable or disable memory **per pathway or persona version** (e.g. for testing a specific version), use the [Enable memory](/api-v1/post/memory-enable) API with `pathway_id` + `version_number` or `persona_id` + `version_id`, and `memory_enabled`.
+To enable or disable memory per pathway or persona version (e.g. for testing), use the [Enable or Disable Memory](/api-v1/post/memory-enable) API with `pathway_id` + `version_number` or `persona_id` + `version_id`, and `memory_enabled`.
 
 ---
 
-## Viewing memory after a call
+## Viewing memory in call and SMS logs
 
-After a call (or SMS conversation) with memory enabled, Bland captures contact facts and entities from the interaction. You can view this in **Call Logs** (open a completed call and select the **MEMORY** tab) or in **SMS** logs under the **SMS** tab for that conversation.
+After a call or SMS conversation with memory enabled, Bland captures any new or updated contact information from the interaction. Open a completed call in **Call Logs** and select the **MEMORY** tab, or open an SMS conversation and select the **SMS** tab, to see:
 
-Memory works **cross-channel** between calls and SMS: the same contact’s context is shared across voice and text. That allows hand-offs (e.g. from a call to follow-up SMS, or vice versa) and multiple touchpoints while keeping one coherent view of the contact.
-
-The MEMORY tab shows:
-
-- **Memory context** — What Bland had available for that conversation.
-- **Changes made** — Contact facts (e.g. customer name, phone) and **entities** (e.g. appointments: date, time, service type) that were added or updated from the call or conversation.
+- **Memory context**: what the agent had available going into the conversation.
+- **Changes made**: facts and entities that were added or updated during the interaction (e.g. customer name, phone number, appointment details).
 
 <img style={{ borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }} src="/tutorials/tutorials-assets/memory/MemoryCallLog.jpeg" alt="Call log MEMORY tab showing contact facts and appointment entities for a completed call" />
 
-For example, after a call with a customer named Joe who scheduled a roofing inspection, the call log’s (or SMS conversation’s) MEMORY tab might show contact facts like "Customer Name: Joe" and "Customer Phone: 816-500-7458", and entities such as "Appointment Inspection" with date, time, and service type. **Bland automatically retrieves this memory for subsequent interactions** with that contact—whether they're calls or SMS—so the assistant can reference what was already discussed and what's scheduled.
+Memory is cross-channel: the same contact's context is shared across voice and SMS. Hand-offs between channels, for example a call followed by a follow-up SMS, stay coherent without any extra work on your end.
 
 ---
 
-## Managing contacts and memory stores
+## How memory evolves over time
 
-Use the [Memory Stores](https://app.bland.ai/dashboard/memory) page in your Bland workspace to:
+Here is an example showing a contact and their memory building across two interactions with a support persona.
 
-- See all contacts and their memory (summaries, facts, interaction history).
-- Search and filter by phone number, summary, or agent.
-- Inspect or edit summaries and metadata when needed.
+**First call: contact reaches out about a delayed order**
 
-Memory is organized by contact; each contact can have multiple “memories” (one per persona or agent number they’ve interacted with).
+When the call comes in, Bland matches the phone number to a contact (creating one if it does not exist yet):
+
+```json Contact record
+{
+  "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "phone_number": "+14155550192",
+  "name": "Sarah Chen",
+  "org_id": "11111111-2222-3333-4444-555555555555",
+  "created_at": "2025-07-22T10:30:00.000Z"
+}
+```
+
+By the end of the call, the memory record for this contact and persona looks like this:
+
+```json Memory after first call
+{
+  "facts": {
+    "name": "Sarah Chen",
+    "phone": "+14155550192"
+  },
+  "summary": "Customer called about order #8821 which was delayed. Promised a follow-up within 24 hours.",
+  "entities": [
+    {
+      "entity_type": "order",
+      "entity_id": "order-8821",
+      "facts": {
+        "order_number": "#8821",
+        "status": "delayed",
+        "carrier": "UPS"
+      },
+      "status": "delayed",
+      "last_discussed_at": "2025-07-22T10:30:00.000Z",
+      "notes": "Customer was promised a follow-up within 24 hours"
+    }
+  ],
+  "open_items": [
+    {
+      "type": "follow_up",
+      "description": "Follow up on order #8821 delay status",
+      "created_at": "2025-07-22T10:30:00.000Z",
+      "priority": "high",
+      "related_to": {
+        "entity_type": "order",
+        "entity_id": "order-8821"
+      }
+    }
+  ]
+}
+```
+
+**Follow-up SMS: customer checks in the next day**
+
+Bland recognizes the same contact by phone number. The agent already knows about the order and the open follow-up. After the SMS conversation ends:
+
+```json Memory after follow-up SMS
+{
+  "facts": {
+    "name": "Sarah Chen",
+    "phone": "+14155550192",
+    "preferred_contact": "sms"
+  },
+  "summary": "Order #8821 shipped and is now in transit. Expected delivery Friday July 25. Customer confirmed via SMS and prefers SMS over calls.",
+  "entities": [
+    {
+      "entity_type": "order",
+      "entity_id": "order-8821",
+      "facts": {
+        "order_number": "#8821",
+        "status": "in_transit",
+        "carrier": "UPS",
+        "expected_delivery": "2025-07-25"
+      },
+      "status": "in_transit",
+      "last_discussed_at": "2025-07-23T09:15:00.000Z",
+      "notes": null
+    }
+  ],
+  "open_items": []
+}
+```
+
+The open item was resolved, the entity's status updated, a new fact was added, and the summary refreshed. On the next interaction, the agent picks up exactly where things left off.
 
 ---
 
 ## Real-world example
 
-Imagine a company running two separate flows:
+Imagine a company running two separate personas:
 
-- **Appointment scheduling** — Bland helps contacts book and reschedule appointments (inspections, consultations, follow-ups).
-- **Support** — Bland handles open tickets, status updates, and troubleshooting.
+- **Appointment scheduling**: books and reschedules inspections, consultations, and follow-ups.
+- **Support**: handles open tickets, status updates, and troubleshooting.
 
-With **memory enabled per pathway or persona**, each flow keeps its own context for the same contact. The scheduling assistant remembers upcoming appointments and preferences; the support assistant remembers ticket details and resolution history—without mixing the two. The same person can have one conversation about booking and another about a support issue, each with the right context.
+With memory enabled on each, the same contact can have one conversation about booking and another about a support issue. Each persona keeps its own history with the right context, without mixing the two.
 
 ---
 
 ## API and programmatic access
 
-For building custom flows or reading/writing memory programmatically, use the [Contacts API](/api-v1/get/contacts) to list and manage contacts, and the memory endpoints to get or update context, summary, facts, and messages for a contact and persona (or agent). See the [Memory API reference](/api-v1/get/memory) for the full list of endpoints.
+For custom flows or reading and writing memory programmatically:
 
-No need to pass or manage memory store IDs for normal use—enable memory on your pathway or persona and Bland handles the rest.
+- **[Contacts API](/api-v1/get/contacts)**: list and look up contacts by phone number, email, or external ID.
+- **[Get Memory Context](/api-v1/get/memory-context)**: fetch everything the agent sees at the start of a conversation, including summary, facts, recent messages, entities, and open items.
+- **[Get Memory Changes](/api-v1/get/memory-changes)**: see what was captured or updated during a specific call or SMS.
+- **[Update Facts](/api-v1/patch/memory-contact-id-facts)** / **[Update Summary](/api-v1/patch/memory-contact-id-summary)**: write memory data directly.
+- **[Reset Contact Memory](/api-v1/post/memory-reset)**: permanently clear all memory for a contact/persona pair.
+
+For standard use, you do not need to manage any IDs directly. Enable memory on your pathway or persona and Bland handles the rest.
