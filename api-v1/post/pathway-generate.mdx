@@ -1,0 +1,68 @@
+---
+title: "Generate Pathway"
+api: "POST https://api.bland.ai/v1/pathway/generate"
+description: "Create an asynchronous pathway generation job from a detailed prompt."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="input_prompt" type="string" required>
+  A detailed pathway generation prompt.
+
+  Server-side requirements:
+  - Must be at least 100 characters
+  - Must be 8000 characters or fewer for non-enterprise organizations
+</ParamField>
+
+<ParamField body="input_name" type="string">
+  Optional name to use for the generated pathway
+</ParamField>
+
+### How it works
+
+This endpoint only queues generation and returns a `jobId`.
+
+Use `GET /v1/pathway/generate/status/{job_id}` to start processing and poll until generation is complete.
+
+### Response
+
+<ResponseField name="data" type="object">
+  Response object containing the generation job identifier.
+</ResponseField>
+
+<ResponseField name="data.jobId" type="string">
+  The job ID for this pathway generation request.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of errors.
+</ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "jobId": "7a9e684f-6a50-4de5-bd95-9fa5f8121ddf"
+  },
+  "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "PATHWAY_GENERATION_ERROR",
+      "error": "Prompt must be greater than 100 characters."
+    }
+  ]
+}
+```
+</ResponseExample>

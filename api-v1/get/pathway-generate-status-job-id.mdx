@@ -1,0 +1,89 @@
+---
+title: "Get Pathway Generation Status"
+api: "GET https://api.bland.ai/v1/pathway/generate/status/{job_id}"
+description: "Poll pathway generation status and retrieve the generated pathway ID when ready."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="job_id" type="string" required>
+  The `jobId` returned by `POST /v1/pathway/generate`.
+</ParamField>
+
+### How polling works
+
+- The first status request can return `ready: false` while the server begins processing.
+- Continue polling until `data.ready` is `true`.
+- On success, the response includes `pathway_id`.
+- On failure, the response includes `error`.
+
+### Response
+
+<ResponseField name="data" type="object">
+  Generation state object.
+</ResponseField>
+
+<ResponseField name="data.ready" type="boolean">
+  `false` while generation is still in progress, `true` when processing is complete.
+</ResponseField>
+
+<ResponseField name="data.pathway_id" type="string">
+  Present when generation succeeds and `ready` is `true`.
+</ResponseField>
+
+<ResponseField name="data.error" type="string">
+  Present when generation fails and `ready` is `true`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success responses, or a list of errors for invalid/unauthorized requests.
+</ResponseField>
+
+<ResponseExample>
+```json Not Ready
+{
+  "data": {
+    "ready": false
+  },
+  "errors": null
+}
+```
+
+```json Ready (Success)
+{
+  "data": {
+    "ready": true,
+    "pathway_id": "a6c24531-75b1-4334-95b2-2d0f11e8fe41"
+  },
+  "errors": null
+}
+```
+
+```json Ready (Failed)
+{
+  "data": {
+    "ready": true,
+    "error": "Prompt flagged for inappropriate content."
+  },
+  "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PATHWAY_GENERATION_FAILED",
+      "message": "Job not found"
+    }
+  ]
+}
+```
+</ResponseExample>
