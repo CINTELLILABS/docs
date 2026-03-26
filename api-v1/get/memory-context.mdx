@@ -1,7 +1,7 @@
 ---
 title: "Get Memory Context"
 api: "GET https://api.bland.ai/v1/memory/context"
-description: "Get memory context for a contact/persona pair. Returns recent messages, summary, facts, and entities."
+description: "Retrieve the full memory context for a contact scoped to a persona or agent number. Returns everything the agent sees at the start of a conversation: summary, facts, recent messages, entities, and open items."
 ---
 
 ### Headers
@@ -82,25 +82,51 @@ description: "Get memory context for a contact/persona pair. Returns recent mess
     "recentMessages": [
       {
         "role": "user",
-        "content": "Hi, I'm calling about my order",
-        "channel": "call",
-        "timestamp": "2025-07-22T10:30:00.000Z"
+        "content": "Has my order shipped yet?",
+        "channel": "sms",
+        "timestamp": "2025-07-23T09:10:00.000Z"
       },
       {
         "role": "assistant",
-        "content": "I'd be happy to help you with your order. Can you provide your order number?",
-        "channel": "call",
-        "timestamp": "2025-07-22T10:30:05.000Z"
+        "content": "Yes, order #8821 shipped this morning. Expected delivery is Friday July 25.",
+        "channel": "sms",
+        "timestamp": "2025-07-23T09:10:05.000Z"
       }
     ],
-    "summary": "Customer inquired about order status. Order #12345 is in transit, expected delivery July 25.",
+    "summary": "Customer called about order #8821 which was delayed. Follow-up confirmed the order shipped and is now in transit. Expected delivery July 25.",
     "contactFacts": {
-      "name": "John Doe",
-      "preferred_contact": "phone",
-      "timezone": "EST"
+      "name": "Sarah Chen",
+      "phone": "+14155550192",
+      "preferred_contact": "sms",
+      "timezone": "America/Los_Angeles"
     },
-    "entities": [],
-    "openItems": []
+    "entities": [
+      {
+        "entity_type": "order",
+        "entity_id": "order-8821",
+        "facts": {
+          "order_number": "#8821",
+          "status": "in_transit",
+          "carrier": "UPS",
+          "expected_delivery": "2025-07-25"
+        },
+        "status": "in_transit",
+        "last_discussed_at": "2025-07-23T09:10:00.000Z",
+        "notes": null
+      }
+    ],
+    "openItems": [
+      {
+        "type": "follow_up",
+        "description": "Confirm delivery of order #8821 on July 25",
+        "created_at": "2025-07-23T09:10:00.000Z",
+        "priority": "medium",
+        "related_to": {
+          "entity_type": "order",
+          "entity_id": "order-8821"
+        }
+      }
+    ]
   },
   "errors": null
 }

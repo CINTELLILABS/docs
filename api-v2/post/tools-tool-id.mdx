@@ -1,0 +1,211 @@
+---
+title: "Update Tool"
+api: "POST https://api.bland.ai/v2/tools/{tool_id}"
+description: "Update an existing tool. All fields are optional. Only the fields you provide will be updated."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="tool_id" type="string" required>
+  The unique identifier of the tool to update.
+</ParamField>
+
+### Body Parameters
+
+All fields are optional. Only fields included in the request body will be updated.
+
+<ParamField body="name" type="string">
+  The name the AI will see when deciding to use this tool.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of what the tool does.
+</ParamField>
+
+<ParamField body="integration" type="string">
+  The integration key to update. Must be one of: `bland-sms`, `custom-code`, `slack`, `salesforce`, `rest_api`, `hubspot`, `calendly`, `cal-com-v2`, `notion`.
+</ParamField>
+
+<ParamField body="action" type="string">
+  The action key to invoke within the integration. To discover available action keys, call `GET /v1/integrations/{integration}/actions`. Returns `400 ACTION_NOT_FOUND` with the list of valid actions if the key is invalid.
+</ParamField>
+
+<ParamField body="input_schema" type="object">
+  Must be a valid OpenAI function calling parameter schema. Defines the parameters the AI will fill in when invoking this tool.
+</ParamField>
+
+<ParamField body="body" type="string | object">
+  Request body template sent to the integration.
+</ParamField>
+
+<ParamField body="speech" type="string">
+  Text the AI says aloud while executing this tool.
+</ParamField>
+
+<ParamField body="timeout" type="number">
+  Maximum time in milliseconds to wait for the integration. Minimum `1000`, maximum `60000`.
+</ParamField>
+
+<ParamField body="cache" type="boolean">
+  Whether to cache the tool's response.
+</ParamField>
+
+<ParamField body="response_data" type="array">
+  Defines which fields to extract from the integration response.
+
+  <Expandable title="response_data item">
+    <ParamField body="name" type="string" required>
+      Variable name to assign the extracted value.
+    </ParamField>
+    <ParamField body="data" type="string" required>
+      JSON path to the value in the response.
+    </ParamField>
+    <ParamField body="context" type="string">
+      Optional description of what this data represents.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="max_retries" type="number">
+  Number of times to retry the tool on failure. Minimum `0`, maximum `4`.
+</ParamField>
+
+<ParamField body="cooldown" type="number">
+  Seconds to wait between retries. Minimum `1`, maximum `30`.
+</ParamField>
+
+<ParamField body="resource_id" type="string">
+  UUID of a connected resource (e.g. a Slack workspace or Salesforce org) to scope this tool to. The resource must be active and belong to your account. Returns `404` if the ID is invalid or inactive. To list available resource IDs for an integration, call `GET /v1/integrations/{integration}/resources`.
+</ParamField>
+
+<ParamField body="public" type="boolean">
+  Whether this tool is publicly visible.
+</ParamField>
+
+<ParamField body="label" type="string">
+  Human-readable label for this tool.
+</ParamField>
+
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"success"` on success, `"error"` on failure.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  The ID of the updated tool.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Request (Partial Update)
+{
+  "description": "Sends an urgent message to a Slack channel",
+  "timeout": 15000
+}
+```
+
+```json Response (Success)
+{
+  "status": "success",
+  "data": {
+    "id": "abc123def456"
+  },
+  "errors": null
+}
+```
+
+```json Error (TOOL_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "TOOL_NOT_FOUND",
+      "message": "Tool not found"
+    }
+  ]
+}
+```
+
+```json Error (INVALID_PARAMETER)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "INVALID_PARAMETER",
+      "message": "timeout must be between 1000 and 60000"
+    }
+  ]
+}
+```
+
+```json Error (TOOL_V2_UPDATE_VALIDATION_ERROR)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "TOOL_V2_UPDATE_VALIDATION_ERROR",
+      "message": "Validation failed for the provided tool configuration"
+    }
+  ]
+}
+```
+
+```json Error (INVALID_TOOL_TYPE)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "INVALID_TOOL_TYPE",
+      "message": "The specified tool type is not supported"
+    }
+  ]
+}
+```
+
+```json Error (INTEGRATION_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "INTEGRATION_NOT_FOUND",
+      "message": "Integration 'my_integration' is not available. Available integrations: bland-sms, custom-code, slack, salesforce, rest_api, hubspot, calendly, cal-com-v2, notion"
+    }
+  ]
+}
+```
+
+```json Error (ACTION_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "ACTION_NOT_FOUND",
+      "message": "Action 'my_action' not found for integration 'slack'"
+    }
+  ]
+}
+```
+
+```json Error (RESOURCE_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "code": "RESOURCE_NOT_FOUND",
+      "message": "Resource not found or is inactive"
+    }
+  ]
+}
+```
+</ResponseExample>

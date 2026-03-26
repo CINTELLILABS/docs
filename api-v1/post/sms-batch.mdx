@@ -1,0 +1,139 @@
+---
+title: "Send SMS Batch"
+api: "POST https://api.bland.ai/v1/sms/batch"
+description: "Send SMS messages to a large list of recipients from a pre-uploaded CSV file. Processing is handled asynchronously via a background workflow."
+---
+
+<Info>
+  **Enterprise Feature** - SMS batch sending is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="file_id" type="string" required>
+  The ID of a previously uploaded CSV file containing recipient phone numbers. The file must have been uploaded with `file_type: "batches"`.
+</ParamField>
+
+<ParamField body="global" type="object" required>
+  Default SMS parameters applied to every message in the batch. The `agent_number` field is required; all other fields from the [Send SMS](/api-v1/post/sms-send) endpoint are supported as defaults.
+
+  <Expandable title="global object">
+    <ParamField body="agent_number" type="string" required>
+      The E.164 formatted phone number to send messages from. Must be an SMS-enabled number on your account.
+    </ParamField>
+    <ParamField body="pathway_id" type="string">
+      Default pathway ID to use for generating responses.
+    </ParamField>
+    <ParamField body="pathway_version" type="number">
+      Default pathway version to use.
+    </ParamField>
+    <ParamField body="start_node_id" type="string">
+      Default starting node within the pathway.
+    </ParamField>
+    <ParamField body="persona_id" type="string">
+      Default persona ID to use for the batch. Can be overridden per-recipient via `column_mapping`.
+    </ParamField>
+    <ParamField body="request_data" type="object">
+      Default metadata to associate with each conversation.
+    </ParamField>
+    <ParamField body="channel" type="string">
+      Channel to send messages on. Defaults to `"sms"`. Allowed values: `"sms"`, `"whatsapp"`.
+    </ParamField>
+    <ParamField body="webhook" type="string">
+      Default webhook URL to override the number's configured webhook.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="column_mapping" type="object">
+  Maps column names in your CSV file to SMS send parameters. Use this to map the recipient phone number column and any per-recipient overrides.
+
+  For example, if your CSV has a column called `"phone"` that contains recipient numbers:
+  ```json
+  {
+    "phone": "user_number"
+  }
+  ```
+
+  Any field supported by the [Send SMS](/api-v1/post/sms-send) endpoint can be a target value in the mapping.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Confirmation that the batch was accepted for processing.
+
+  <Expandable title="data object">
+    <ResponseField name="message" type="string">
+      Confirmation message indicating the batch was queued.
+    </ResponseField>
+    <ResponseField name="batch_id" type="string">
+      The `file_id` used for this batch, for reference.
+    </ResponseField>
+    <ResponseField name="workflow_id" type="string">
+      The ID of the background workflow processing this batch.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Request
+{
+  "file_id": "file_abc123",
+  "global": {
+    "agent_number": "+14155551234",
+    "pathway_id": "pathway_xyz789",
+    "channel": "sms"
+  },
+  "column_mapping": {
+    "phone": "user_number",
+    "name": "request_data.name"
+  }
+}
+```
+
+```json Response (Success)
+{
+  "data": {
+    "message": "SMS batch processing initiated via Temporal workflow",
+    "batch_id": "file_abc123",
+    "workflow_id": "workflow_def456"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Missing file_id)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MISSING_FILE_ID",
+      "message": "file_id is required"
+    }
+  ]
+}
+```
+
+```json Error Response (File not found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "FILE_NOT_FOUND",
+      "message": "File not found or invalid file type for SMS batches"
+    }
+  ]
+}
+```
+</ResponseExample>
