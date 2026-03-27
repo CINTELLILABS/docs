@@ -8,6 +8,28 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
   **Enterprise Feature** - SMS batch sending is only available on Enterprise plans. Contact your Bland representative for access.
 </Info>
 
+### Before You Begin: Upload Your CSV
+
+Before calling this endpoint, you must upload your recipient CSV file and get a `file_id`.
+
+Upload your CSV via `POST https://api.bland.ai/v1/files/attach` with `file_type: "batches"`. The response will include a `file_id` (UUID) that you pass to this endpoint.
+
+**CSV format requirements:**
+- Must include a column named exactly **`phone_number`** containing E.164-formatted numbers (e.g. `+14155551234`). Numbers without a leading `+` are automatically prefixed.
+- The `phone_number` column **cannot be remapped** via `column_mapping` — the column must be named `phone_number` in the CSV itself.
+- Additional columns become dynamic variables available in your pathway via `{{column_name}}` syntax.
+- Columns named `request_data.fieldname` (dot notation) are automatically parsed into the recipient's `request_data` object.
+- JSON arrays of objects are also accepted as an alternative to CSV.
+
+Example CSV:
+```csv
+phone_number,first_name,request_data.account_id
++14155551234,Alice,acc_001
++10987654321,Bob,acc_002
+```
+
+---
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -17,7 +39,7 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
 ### Body Parameters
 
 <ParamField body="file_id" type="string" required>
-  The ID of a previously uploaded CSV file containing recipient phone numbers. The file must have been uploaded with `file_type: "batches"`.
+  The ID of a previously uploaded CSV file containing recipient phone numbers. The file must have been uploaded with `file_type: "batches"`. See [Before You Begin](#before-you-begin-upload-your-csv) above.
 </ParamField>
 
 <ParamField body="global" type="object" required>
@@ -25,7 +47,10 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
 
   <Expandable title="global object">
     <ParamField body="agent_number" type="string" required>
-      The E.164 formatted phone number to send messages from. Must be an SMS-enabled number on your account.
+      The E.164 formatted phone number to send messages from. Must be an SMS-enabled inbound number configured on your account.
+    </ParamField>
+    <ParamField body="agent_message" type="string">
+      The initial outbound message to send to each recipient. If omitted, the pathway will handle the opening message.
     </ParamField>
     <ParamField body="pathway_id" type="string">
       Default pathway ID to use for generating responses.
@@ -37,10 +62,10 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
       Default starting node within the pathway.
     </ParamField>
     <ParamField body="persona_id" type="string">
-      Default persona ID to use for the batch. Can be overridden per-recipient via `column_mapping`.
+      Persona ID to use for the batch. Applies to every recipient.
     </ParamField>
     <ParamField body="request_data" type="object">
-      Default metadata to associate with each conversation.
+      Default metadata to associate with each conversation. Per-recipient `request_data` from the CSV is merged on top of this, with recipient values taking precedence.
     </ParamField>
     <ParamField body="channel" type="string">
       Channel to send messages on. Defaults to `"sms"`. Allowed values: `"sms"`, `"whatsapp"`.
@@ -52,16 +77,19 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
 </ParamField>
 
 <ParamField body="column_mapping" type="object">
-  Maps column names in your CSV file to SMS send parameters. Use this to map the recipient phone number column and any per-recipient overrides.
+  Maps column names in your CSV to SMS send parameter names. Use this when your CSV column names don't match the expected field names.
 
-  For example, if your CSV has a column called `"phone"` that contains recipient numbers:
+  Use this to map non-phone columns to `request_data` or other SMS parameters. **Note:** `phone_number` cannot be used as a target — the phone number column in your CSV must be named `phone_number` exactly.
+
+  Map columns to `request_data` to make them available as pathway variables:
   ```json
   {
-    "phone": "user_number"
+    "customer_name": "request_data",
+    "preferred_lang": "request_data"
   }
   ```
 
-  Any field supported by the [Send SMS](/api-v1/post/sms-send) endpoint can be a target value in the mapping.
+  Only `request_data` is supported as a target — per-recipient fields like `pathway_id` or `persona_id` cannot be overridden from the CSV. Alternatively, use dot notation column names in your CSV directly (e.g. `request_data.customer_name`) to avoid needing `column_mapping` at all.
 </ParamField>
 
 ### Response
@@ -96,8 +124,7 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
     "channel": "sms"
   },
   "column_mapping": {
-    "phone": "user_number",
-    "name": "request_data.name"
+    "customer_name": "request_data"
   }
 }
 ```
@@ -132,6 +159,18 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
     {
       "error": "FILE_NOT_FOUND",
       "message": "File not found or invalid file type for SMS batches"
+    }
+  ]
+}
+```
+
+```json Error Response (Agent number not found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_NUMBER_NOT_FOUND",
+      "message": "Agent number not found or not configured for SMS"
     }
   ]
 }
