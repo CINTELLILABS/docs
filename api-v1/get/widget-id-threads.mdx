@@ -16,25 +16,41 @@ description: "Retrieves all conversation threads for a specific widget. Returns 
   UUID of the widget to retrieve threads for.
 </ParamField>
 
+### Query Parameters
+
+<ParamField query="page" type="number" default={1}>
+  Page number for pagination (minimum 1).
+</ParamField>
+
+<ParamField query="limit" type="number" default={20}>
+  Number of threads per page (minimum 1, maximum 100).
+</ParamField>
+
+<ParamField query="thread_id" type="string">
+  Filter results to a specific thread by its UUID.
+</ParamField>
+
 ### Response
 
 <ResponseField name="status" type="number">
   HTTP status code (200 for success).
 </ResponseField>
 
-<ResponseField name="data" type="array">
-  Array of thread objects, each containing:
-  
-  - `id` (string): Thread UUID
-  - `created_at` (string): ISO timestamp
-  - `visitor_id` (string | null): UUID of visitor (if available)
-  - `messages` (array): Array of message objects, each containing:
-    - `id` (string): Message UUID
-    - `sender_type` (string): Either "USER" or "ASSISTANT"
+<ResponseField name="data" type="object">
+  - `threads` (array): Array of thread objects, each containing:
+    - `id` (string): Thread UUID
     - `created_at` (string): ISO timestamp
-    - `content` (string): Message content
+    - `ended_at` (string | null): ISO timestamp of when the thread ended
+    - `live_agent_handoff_at` (string | null): ISO timestamp of when the thread was handed off to a live agent
+    - `visitor_id` (string | null): UUID of visitor (if available)
+    - `messages` (array): Array of message objects, each containing:
+      - `id` (string): Message UUID
+      - `sender_type` (string): Either "USER" or "ASSISTANT"
+      - `created_at` (string): ISO timestamp
+      - `content` (string): Message content
+      - `original_content` (string | null): Original message content before any modifications
+  - `total` (number): Total number of threads matching the query (useful for calculating total pages)
 </ResponseField>
-
 
 <Note>
 This endpoint does not return 404 if no threads exist; it returns an empty array instead.
@@ -44,52 +60,64 @@ This endpoint does not return 404 if no threads exist; it returns an empty array
 ```json Response
 {
   "status": 200,
-  "data": [
-    {
-      "id": "thread_550e8400-e29b-41d4-a716-446655440000",
-      "created_at": "2024-01-15T14:30:00Z",
-      "visitor_id": "visitor_123456789",
-      "messages": [
-        {
-          "id": "msg_001",
-          "sender_type": "USER",
-          "created_at": "2024-01-15T14:30:00Z",
-          "content": "Hello, I need help with my order"
-        },
-        {
-          "id": "msg_002",
-          "sender_type": "ASSISTANT",
-          "created_at": "2024-01-15T14:30:15Z",
-          "content": "I'd be happy to help you with your order! Can you please provide your order number?"
-        },
-        {
-          "id": "msg_003",
-          "sender_type": "USER",
-          "created_at": "2024-01-15T14:30:45Z",
-          "content": "It's order #12345"
-        }
-      ]
-    },
-    {
-      "id": "thread_660f9511-f3ac-52e5-b827-557766551111",
-      "created_at": "2024-01-15T13:15:00Z",
-      "visitor_id": null,
-      "messages": [
-        {
-          "id": "msg_101",
-          "sender_type": "USER",
-          "created_at": "2024-01-15T13:15:00Z",
-          "content": "What are your business hours?"
-        },
-        {
-          "id": "msg_102",
-          "sender_type": "ASSISTANT",
-          "created_at": "2024-01-15T13:15:05Z",
-          "content": "Our business hours are Monday through Friday, 9 AM to 6 PM EST."
-        }
-      ]
-    }
-  ],
+  "data": {
+    "threads": [
+      {
+        "id": "thread_550e8400-e29b-41d4-a716-446655440000",
+        "created_at": "2024-01-15T14:30:00Z",
+        "ended_at": null,
+        "live_agent_handoff_at": null,
+        "visitor_id": "visitor_123456789",
+        "messages": [
+          {
+            "id": "msg_001",
+            "sender_type": "USER",
+            "created_at": "2024-01-15T14:30:00Z",
+            "content": "Hello, I need help with my order",
+            "original_content": null
+          },
+          {
+            "id": "msg_002",
+            "sender_type": "ASSISTANT",
+            "created_at": "2024-01-15T14:30:15Z",
+            "content": "I'd be happy to help you with your order! Can you please provide your order number?",
+            "original_content": null
+          },
+          {
+            "id": "msg_003",
+            "sender_type": "USER",
+            "created_at": "2024-01-15T14:30:45Z",
+            "content": "It's order #12345",
+            "original_content": null
+          }
+        ]
+      },
+      {
+        "id": "thread_660f9511-f3ac-52e5-b827-557766551111",
+        "created_at": "2024-01-15T13:15:00Z",
+        "ended_at": "2024-01-15T13:20:00Z",
+        "live_agent_handoff_at": null,
+        "visitor_id": null,
+        "messages": [
+          {
+            "id": "msg_101",
+            "sender_type": "USER",
+            "created_at": "2024-01-15T13:15:00Z",
+            "content": "What are your business hours?",
+            "original_content": null
+          },
+          {
+            "id": "msg_102",
+            "sender_type": "ASSISTANT",
+            "created_at": "2024-01-15T13:15:05Z",
+            "content": "Our business hours are Monday through Friday, 9 AM to 6 PM EST.",
+            "original_content": null
+          }
+        ]
+      }
+    ],
+    "total": 2
+  },
   "errors": null
 }
 ```
