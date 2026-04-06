@@ -1,0 +1,90 @@
+---
+title: "Link to Existing Answer"
+api: "POST https://api.bland.ai/v1/knowledge/gaps/{id}/duplicate"
+description: "Links an open gap to a resolved gap by copying its answer."
+---
+
+Copies the answer from a resolved gap to an open gap, creating a new Q&A pair for the open gap's question. Both gaps must share at least one knowledge base.
+
+After linking, the source gap becomes `RESOLVED` and tracks which gap it was linked to via `merged_into_gap_id`. If the target gap's answer is later updated, use the [sync endpoint](/api-v1/post/knowledge-gaps-id-sync) to propagate the change.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The gap to link (UUID). Must have status `OPEN`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="target_gap_id" type="string" required>
+  The resolved gap whose answer to copy. Must have status `RESOLVED` and share at least one knowledge base with the source gap.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Link result.
+
+  <ResponseField name="data.success" type="boolean">
+    Whether the operation succeeded.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Status message.
+  </ResponseField>
+
+  <ResponseField name="data.target_gap" type="object">
+    The updated source gap (now `RESOLVED`).
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/knowledge/gaps/14574aa4-892c-4bc7-ac8e-9c17c886aa6d/duplicate" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "target_gap_id": "bf36cd5b-efff-45c1-ac98-cb4f0cd4f705"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Missing Fields
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "target_gap_id is required"
+    }
+  ]
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_GAPS_ERROR",
+      "message": "Source and target gaps must share at least one knowledge base"
+    }
+  ]
+}
+```
+
+</ResponseExample>

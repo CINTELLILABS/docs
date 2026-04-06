@@ -1,0 +1,210 @@
+---
+title: "List Knowledge Gaps"
+api: "GET https://api.bland.ai/v1/knowledge/gaps"
+description: "Returns a paginated list of knowledge gaps detected across your knowledge bases."
+---
+
+Knowledge gaps are questions that callers asked but the agent could not answer. The system detects these automatically and groups similar phrasings together.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="status" type="string">
+  Filter by gap status: `"OPEN"`, `"RESOLVED"`, or `"DISMISSED"`. Returns all statuses if omitted.
+</ParamField>
+
+<ParamField query="kb_id" type="string">
+  Filter to gaps from a specific knowledge base. Must be a valid, non-deleted knowledge base ID.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination.
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Items per page (maximum 100).
+</ParamField>
+
+<ParamField query="sort_by" type="string" default="created_at_desc">
+  Sort order. Options: `created_at_desc`, `created_at_asc`, `occurrences_desc`, `occurrences_asc`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Paginated list of knowledge gaps.
+
+  <ResponseField name="data.gaps" type="array">
+    Array of gap objects.
+
+    <ResponseField name="data.gaps[].id" type="string">
+      Unique identifier for the gap.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].question" type="string">
+      The generated standalone question.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].search_query" type="string">
+      The raw query that triggered this gap.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].kbs" type="array">
+      Knowledge bases that were being searched when this gap was created.
+
+      <ResponseField name="data.gaps[].kbs[].id" type="string">
+        Knowledge base ID.
+      </ResponseField>
+
+      <ResponseField name="data.gaps[].kbs[].name" type="string">
+        Knowledge base name.
+      </ResponseField>
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].occurrences" type="array">
+      Each time this question was asked.
+
+      <ResponseField name="data.gaps[].occurrences[].call_id" type="string | null">
+        Call ID if triggered during a call, or `null`.
+      </ResponseField>
+
+      <ResponseField name="data.gaps[].occurrences[].timestamp" type="string">
+        ISO timestamp of the occurrence.
+      </ResponseField>
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].status" type="string">
+      `"OPEN"`, `"RESOLVED"`, or `"DISMISSED"`.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].created_at" type="string">
+      ISO timestamp of creation.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].updated_at" type="string">
+      ISO timestamp of last update.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].resolved_at" type="string | null">
+      ISO timestamp of resolution. `null` unless status is `RESOLVED`.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].dismissed_at" type="string | null">
+      ISO timestamp of dismissal. `null` unless status is `DISMISSED`.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].asked_after_dismissal" type="number">
+      Times this question was asked after being dismissed.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].deleted_at" type="string | null">
+      ISO timestamp if soft-deleted, otherwise `null`.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].merged_into_gap_id" type="string | null">
+      If this gap was linked to another gap's answer, the target gap ID. Otherwise `null`.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].answer" type="string">
+      The answer text. Only present when status is `RESOLVED`.
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].answer_kb" type="object | null">
+      Which knowledge base the answer was saved to. Only present when status is `RESOLVED`.
+
+      <ResponseField name="data.gaps[].answer_kb.id" type="string">
+        Knowledge base ID.
+      </ResponseField>
+
+      <ResponseField name="data.gaps[].answer_kb.name" type="string">
+        Knowledge base name.
+      </ResponseField>
+    </ResponseField>
+
+    <ResponseField name="data.gaps[].resolved_by_name" type="string">
+      Name of the user who resolved this gap. Only present when status is `RESOLVED`.
+    </ResponseField>
+  </ResponseField>
+
+  <ResponseField name="data.total" type="number">
+    Total number of gaps matching the filters.
+  </ResponseField>
+
+  <ResponseField name="data.page" type="number">
+    Current page number.
+  </ResponseField>
+
+  <ResponseField name="data.limit" type="number">
+    Items per page.
+  </ResponseField>
+
+  <ResponseField name="data.has_more" type="boolean">
+    Whether more pages exist.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on successful request.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v1/knowledge/gaps?status=OPEN&sort_by=occurrences_desc" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "gaps": [
+      {
+        "id": "14574aa4-892c-4bc7-ac8e-9c17c886aa6d",
+        "question": "What is your return policy for damaged items?",
+        "search_query": "return policy damaged items",
+        "kbs": [
+          { "id": "a1b2c3d4-5678-9abc-def0-123456789abc", "name": "Company Policies" }
+        ],
+        "occurrences": [
+          { "call_id": "c_abc123", "timestamp": "2025-03-15T14:30:00Z" },
+          { "call_id": "c_def456", "timestamp": "2025-03-16T09:15:00Z" }
+        ],
+        "status": "OPEN",
+        "created_at": "2025-03-15T14:30:00Z",
+        "updated_at": "2025-03-16T09:15:00Z",
+        "asked_after_dismissal": 0,
+        "deleted_at": null,
+        "merged_into_gap_id": null
+      }
+    ],
+    "total": 42,
+    "page": 1,
+    "limit": 20,
+    "has_more": true
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_NOT_FOUND",
+      "message": "Knowledge base not found"
+    }
+  ]
+}
+```
+
+</ResponseExample>

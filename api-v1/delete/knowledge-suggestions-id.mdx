@@ -1,0 +1,73 @@
+---
+title: "Delete Q&A Pair"
+api: "DELETE https://api.bland.ai/v1/knowledge/suggestions/{suggestion_id}"
+description: "Deletes a Q&A pair from both the database and the search index."
+---
+
+Permanently removes a Q&A pair. The pair will no longer be returned in search results. Requires owner or admin role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="suggestion_id" type="string" required>
+  The Q&A pair ID (UUID).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Deletion result.
+
+  <ResponseField name="data.success" type="boolean">
+    Whether the operation succeeded.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Status message.
+  </ResponseField>
+
+  <ResponseField name="data.suggestion_id" type="string">
+    ID of the deleted Q&A pair.
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE "https://api.bland.ai/v1/knowledge/suggestions/e5f6a7b8-1234-5678-9abc-def012345678" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Suggestion deleted successfully",
+    "suggestion_id": "e5f6a7b8-1234-5678-9abc-def012345678"
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "You do not have permission to delete QA pairs"
+    }
+  ]
+}
+```
+
+</ResponseExample>
