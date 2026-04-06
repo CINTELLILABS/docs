@@ -1,0 +1,99 @@
+---
+title: 'April 6, 2026'
+description: 'Code, Custom Tool, and Tool Chain support on pathway nodes'
+---
+
+### More Tool Types on Pathway Nodes
+
+Three new tool types are now available directly on Default nodes, expanding on the [webhook tool support introduced on March 23](/changelog/03_23_2026). Each type runs inline with the node and follows the same pattern: the agent decides when to invoke based on your dialogue prompt.
+
+- **Code:** Write JavaScript directly in the node using the inline code editor. Code runs in a secure isolate and has access to conversation variables
+- **Custom Tool:** Attach any saved tool from your tool library directly to a node, with support for overriding individual fields using pathway variables
+- **Tool Chain:** Build a multi-step pipeline that sequences webhooks, code, and custom tools in order, passing variables between steps. Use Norm within the expanded view to help configure and test the chain without leaving the node drawer!
+
+The screenshots below show a customer support pathway that handles a full service interaction in three nodes: booking a service appointment, checking a product warranty, and creating a support ticket, each using a different tool type.
+
+<Tabs>
+  <Tab title="Book Appointment">
+    <img
+      src="../changelog_assets/04_06_2026/ton_custom_tool.jpeg"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Book Service Appointment node using the Cal.com Create Booking custom tool"
+    />
+    <p style={{ textAlign: "left", fontStyle: "italic", marginTop: "0.25rem", color: "#666" }}>
+      The Book Service Appointment node uses a Custom Tool to call the Cal.com Create Booking integration directly from the node
+    </p>
+  </Tab>
+  <Tab title="Check Warranty">
+    <img
+      src="../changelog_assets/04_06_2026/ton_custom_code.jpeg"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Check Warranty node using a Code tool to calculate warranty status from purchase date"
+    />
+    <p style={{ textAlign: "left", fontStyle: "italic", marginTop: "0.25rem", color: "#666" }}>
+      The Check Warranty node runs inline JavaScript to calculate whether the warranty is active, how many days remain, and the expiry date
+    </p>
+  </Tab>
+  <Tab title="Tool Chain: Variables">
+    <img
+      src="../changelog_assets/04_06_2026/ton_chain_1.jpeg"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Create Support Ticket node showing tool chain input variable configuration"
+    />
+    <p style={{ textAlign: "left", fontStyle: "italic", marginTop: "0.25rem", color: "#666" }}>
+      The Create Support Ticket node uses a Tool Chain. Input variables collected earlier in the conversation are passed into the chain
+    </p>
+  </Tab>
+  <Tab title="Tool Chain: Step 1">
+    <img
+      src="../changelog_assets/04_06_2026/ton_chain_2.jpeg"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Tool chain step 1: Code step that formats the ticket data and generates a ticket number"
+    />
+    <p style={{ textAlign: "left", fontStyle: "italic", marginTop: "0.25rem", color: "#666" }}>
+      Step 1 is a Code step that generates a ticket number and formats the full ticket payload, setting priority based on warranty status
+    </p>
+  </Tab>
+  <Tab title="Tool Chain: Step 2">
+    <img
+      src="../changelog_assets/04_06_2026/ton_chain_3.jpeg"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Tool chain step 2: Webhook step that POSTs the ticket payload and extracts the confirmed ticket number"
+    />
+    <p style={{ textAlign: "left", fontStyle: "italic", marginTop: "0.25rem", color: "#666" }}>
+      Step 2 is a Webhook step that POSTs the formatted ticket and extracts the confirmed ticket number from the response
+    </p>
+  </Tab>
+  <Tab title="Expanded View">
+    <img
+      src="../changelog_assets/04_06_2026/ton_chain_expanded.jpeg"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Expanded pipeline builder showing input variables, code editor, and AI chat panel side by side"
+    />
+    <p style={{ textAlign: "left", fontStyle: "italic", marginTop: "0.25rem", color: "#666" }}>
+      The full pipeline builder with input variables, code editor, and Norm open side by side
+    </p>
+  </Tab>
+</Tabs>
+
+The above pathway was entirely built by [Norm](/changelog/02_16_2026#norm-the-bland-console)
+
+---
+
+### Improvements
+
+**Call Logs**
+- Added Dialed At, Outcomes, and Transferred To as filterable fields in call logs. Dialed At and disposition logs are also now included in the call logs export
+
+**Languages**
+- Poly (auto-v2) is now available as the recommended multilingual language option. Supports improved language switching across English, Spanish, French, and German
+
+**Web Widget**
+- Quick replies, cards, and accordions now persist in the chat across page refreshes
+- The active widget thread ID is now reflected in the URL for direct linking
+
+**Integrations**
+- Calendly tools now support dynamic resource routing. Set `resource_id` using a pathway variable (e.g. `{{advisor_resource_id}}`) to route bookings to different calendars at call time
+
+**Settings**
+- Admins and owners can now set a default role for new members joining the organization
