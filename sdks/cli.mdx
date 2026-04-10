@@ -23,7 +23,16 @@ npx bland-cli
 bland auth login --key YOUR_API_KEY
 ```
 
+Or set the environment variable:
+
 ```bash
+export BLAND_API_KEY=your_key_here
+```
+
+```bash
+# Check your account
+bland auth whoami
+
 # Make an outbound call
 bland call send +15551234567 --task "Ask about demo" --voice nat --wait
 
@@ -41,15 +50,32 @@ bland call list
     bland call send +15551234567 --task "Schedule a follow-up" --voice maya
     bland call list
     bland call get <call_id>
+    bland call stop <call_id>
+    bland call events <call_id>
+    bland call recording <call_id>
+    bland call analyze <call_id>
     ```
   </Accordion>
 
   <Accordion title="Pathways">
-    Create and manage conversational pathways as YAML files. Run interactive tests or automated test cases without leaving your editor.
+    Create and manage conversational pathways as YAML files. Sync local YAML with the Bland API, run interactive tests, and automate test cases.
 
     ```bash
+    bland pathway init ./my-pathway --name "Customer Support"
+    bland pathway push ./my-pathway
+    bland pathway pull <id> ./my-pathway
+    bland pathway diff ./my-pathway
+    bland pathway validate ./my-pathway
+    bland pathway watch ./my-pathway
     bland pathway list
-    bland pathway test <pathway_id>
+    bland pathway get <id>
+    bland pathway create
+    bland pathway chat <id> --verbose
+    bland pathway test <id>
+    bland pathway simulate <id>
+    bland pathway promote <id>
+    bland pathway versions <id>
+    bland pathway generate --description "..."
     ```
   </Accordion>
 
@@ -57,17 +83,48 @@ bland call list
     Purchase, configure, and release phone numbers from your terminal.
 
     ```bash
-    bland numbers list
-    bland numbers purchase
+    bland number list
+    bland number buy --area-code 415
+    bland number release <number>
+    bland number update <number>
+    bland number configure <number>
     ```
   </Accordion>
 
-  <Accordion title="Voices & Personas">
-    Browse available voices, synthesize audio samples, and manage personas for your agents.
+  <Accordion title="Voices">
+    Browse available voices and synthesize audio samples.
 
     ```bash
-    bland voices list
-    bland personas list
+    bland voice list
+    bland voice speak "Hello there" --voice nat -o hello.mp3
+    ```
+  </Accordion>
+
+  <Accordion title="Personas">
+    Create and manage personas for your agents, including versioning and knowledge gap tracking.
+
+    ```bash
+    bland persona list
+    bland persona get <id>
+    bland persona create
+    bland persona update <id>
+    bland persona delete <id>
+    bland persona promote <id>
+    bland persona reset-draft <id>
+    bland persona gaps <id>
+    ```
+  </Accordion>
+
+  <Accordion title="Tools">
+    Create and manage custom tools that your agents can call during conversations.
+
+    ```bash
+    bland tool list
+    bland tool get <id>
+    bland tool create
+    bland tool update <id>
+    bland tool delete <id>
+    bland tool test <id> --input '{"key": "value"}'
     ```
   </Accordion>
 
@@ -76,7 +133,10 @@ bland call list
 
     ```bash
     bland knowledge list
-    bland knowledge create --name "Product FAQ"
+    bland knowledge create <name>
+    bland knowledge scrape <name> --urls https://example.com
+    bland knowledge status <id>
+    bland knowledge delete <id>
     ```
   </Accordion>
 
@@ -84,8 +144,10 @@ bland call list
     Automate large-scale outbound call campaigns.
 
     ```bash
+    bland batch create --file contacts.csv --pathway <id>
     bland batch list
-    bland batch create
+    bland batch get <id>
+    bland batch stop <id>
     ```
   </Accordion>
 
@@ -94,16 +156,149 @@ bland call list
 
     ```bash
     bland sms send +15551234567 --message "Hello!"
+    bland sms conversations
+    bland sms get <id>
+    ```
+  </Accordion>
+
+  <Accordion title="Agents">
+    Manage web agents.
+
+    ```bash
+    bland agent list
+    bland agent get <id>
+    bland agent create
+    bland agent update <id>
+    bland agent delete <id>
+    ```
+  </Accordion>
+
+  <Accordion title="Guard Rails">
+    Configure guard rails for your agents.
+
+    ```bash
+    bland guard list
+    bland guard create
+    bland guard delete <id>
+    ```
+  </Accordion>
+
+  <Accordion title="Monitoring & Secrets">
+    Set up monitoring alarms and manage secrets.
+
+    ```bash
+    bland alarm list
+    bland alarm create
+    bland alarm delete <id>
+
+    bland secret list
+    bland secret set
+    bland secret delete <name>
+    ```
+  </Accordion>
+
+  <Accordion title="Releases & Widgets">
+    Manage releases and embeddable widgets.
+
+    ```bash
+    bland release list
+    bland release create
+    bland release promote <id>
+
+    bland widget list
+    bland widget create
+    bland widget delete <id>
+    ```
+  </Accordion>
+
+  <Accordion title="Audio & SIP">
+    Generate TTS audio, analyze audio files, and manage SIP endpoints.
+
+    ```bash
+    bland audio generate <text> --voice nat -o output.mp3
+    bland audio analyze <file>
+    bland sip discover <host>
+    ```
+  </Accordion>
+
+  <Accordion title="Evaluations">
+    Run and manage automated pathway test cases.
+
+    ```bash
+    bland eval run <pathway_id>
+    bland eval list
+    bland eval get <id>
+    bland eval add <pathway_id>
     ```
   </Accordion>
 </AccordionGroup>
 
+## Local Webhook Development
+
+Forward Bland webhooks to your local dev server without ngrok:
+
+```bash
+# Terminal 1: your app
+node server.js
+
+# Terminal 2: bland webhook forwarder
+bland listen --forward-to http://localhost:3000/webhook
+```
+
 ## MCP Server
 
-The CLI includes an [MCP (Model Context Protocol)](https://arc.net/l/quote/vkcsuapn) server, which lets AI coding tools like Claude Code interact with your Bland account through natural language.
+The CLI includes an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server, which lets AI coding tools like Claude Code and Cursor interact with your Bland account through natural language.
 
 ```bash
 bland mcp
+
+# Or with SSE transport
+bland mcp --transport sse --port 3100
+```
+
+### Claude Code Setup
+
+Add to your Claude Code config:
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "command": "npx",
+      "args": ["bland-cli", "mcp"]
+    }
+  }
+}
 ```
 
 Once running, AI tools can make calls, manage pathways, check your balance, and more without leaving your development environment.
+
+## JSON Output
+
+Every list and get command supports `--json` for piping to `jq` or scripts:
+
+```bash
+bland pathway list --json | jq '.[].id'
+bland call get <id> --json | jq '.transcripts'
+bland number list --json | jq 'length'
+```
+
+## Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `BLAND_API_KEY` | API key (overrides stored profile) |
+| `BLAND_BASE_URL` | API base URL (default: `https://api.bland.ai`) |
+
+## Profiles
+
+The CLI supports multiple profiles for managing different API keys or organizations.
+
+```bash
+bland auth login --key sk-...    # Add a profile
+bland auth switch                # Switch between profiles
+bland auth profiles              # List all profiles
+bland auth logout                # Clear credentials
+```
+
+Profiles are stored at `~/.config/bland-cli/config.json`. You can also override the API key per-command with `BLAND_API_KEY`.
