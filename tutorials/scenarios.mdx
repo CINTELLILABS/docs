@@ -109,72 +109,48 @@ Bland provides out-of-box templates for common testing scenarios. You can clone 
 ## Getting Started
 
 <Steps>
+  <Step title="Open the Scenarios Panel">
+    From the pathway editor, click the **Scenarios** button in the top toolbar to open the scenarios panel. This shows your existing scenarios organized by **Gates** (required for promotion) and **Tests** (standard scenarios), along with recent run history.
+
+    <img
+      src="/tutorials/tutorials-assets/scenarios/scenarios-panel.png"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Scenarios panel in the pathway editor showing gates, tests, and recent runs"
+    />
+  </Step>
+
   <Step title="Create a Scenario">
-    Create a test scenario for your pathway. You can start from a template or build one from scratch.
+    Click **+ New** to open the scenario creation form. You can start from one of the 9 **pre-built scenario templates**, **generate from a call log**, or build one from scratch.
 
-    ```json Example: Create from scratch
-    {
-      "pathway_id": "your-pathway-id",
-      "name": "Angry Caller — Billing Dispute",
-      "category": "ANGRY_CALLER",
-      "tester_persona_prompt": "You are a frustrated customer who was charged twice for a subscription. You've called 3 times already...",
-      "tester_persona_name": "Frustrated Customer",
-      "max_turns": 15,
-      "bland_tone_enabled": true,
-      "assertions": [
-        {
-          "type": "LLM_JUDGE",
-          "name": "De-escalation effectiveness",
-          "config": {
-            "prompt": "Evaluate whether the agent acknowledged the customer's frustration and offered concrete next steps.",
-            "output_type": "score",
-            "threshold": 0.7
-          },
-          "is_required": true,
-          "weight": 1.5
-        },
-        {
-          "type": "VARIABLE_EXTRACTED",
-          "name": "Collected customer name",
-          "config": {
-            "variable_name": "customer_name",
-            "match_mode": "exists"
-          }
-        }
-      ]
-    }
-    ```
+    Fill in the **scenario name**, describe the **test caller persona** (how the simulated caller should behave), toggle **Bland Tone** scoring, and add **assertions** to define your pass/fail criteria.
 
-    Or clone a template:
+    <img
+      src="/tutorials/tutorials-assets/scenarios/create-scenario-form.png"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Create scenario form with name, persona, Bland Tone toggle, gate toggle, and assertions"
+    />
 
-    ```json Example: Clone template
-    {
-      "pathway_id": "your-pathway-id",
-      "name": "My Angry Caller Test"
-    }
-    ```
+    Each assertion has a **type** (LLM Judge, Variable Check, Node Reached, Regex, etc.), an optional **name**, and a **Required** toggle. Click **Test & Save** to run the scenario immediately, or **Save** to save it for later.
   </Step>
 
-  <Step title="Run the Scenario">
-    Execute the scenario against your pathway. You can optionally target a specific version.
+  <Step title="Run and Review Results">
+    Run a single scenario with the **Run** button, or click **Run All** to execute your entire test suite. Results appear on the pathway splash page showing pass/fail status, score percentages, assertion breakdowns, tone scores, and AI-generated reasoning.
 
-    ```json
-    {
-      "version_number": 3
-    }
-    ```
-
-    The endpoint returns immediately with a `run_id` (HTTP 202). The test executes asynchronously.
-  </Step>
-
-  <Step title="Check Results">
-    Poll the run status or fetch results once complete.
-
-    The response includes the full chat history, assertion results with reasoning, overall score, and Bland Tone metrics if enabled.
+    <img
+      src="/tutorials/tutorials-assets/scenarios/scenarios-results.png"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Test results showing passed and failed scenarios with assertion scores and tone metrics"
+    />
   </Step>
 
   <Step title="Gate Pathway Promotion">
-    Mark critical scenarios as `is_required_for_promotion: true`. When you promote a pathway version, these scenarios run automatically and the promotion only succeeds if all gate scenarios pass.
+    Toggle the **Production gate** switch on critical scenarios. When enabled, these scenarios must pass before a pathway version can be promoted to production. The gate count is shown in the summary bar (e.g., "1/1 gates").
+
+    <img
+      src="/tutorials/tutorials-assets/scenarios/scenario-expanded.png"
+      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
+      alt="Expanded scenario showing assertion results, tone score, and production gate toggle"
+    />
   </Step>
 </Steps>
 
@@ -183,14 +159,6 @@ Bland provides out-of-box templates for common testing scenarios. You can clone 
 ## Simulation Sets
 
 Simulation sets run the same scenario multiple times to detect **flaky behavior** — cases where your pathway passes sometimes but fails other times.
-
-```json
-{
-  "scenario_ids": ["scenario-1", "scenario-2"],
-  "simulations_per_scenario": 5,
-  "pathway_id": "your-pathway-id"
-}
-```
 
 The results include per-scenario statistics:
 - **Pass rate** across all runs
@@ -211,15 +179,6 @@ Tornado mode is an iterative auto-fix loop for your pathway. It:
 4. Applies the fixes to a forked pathway version
 5. Re-runs the tests
 6. Repeats until all tests pass or max iterations are reached
-
-```json
-{
-  "pathway_id": "your-pathway-id",
-  "scenario_ids": ["scenario-1", "scenario-2"],
-  "max_iterations": 5,
-  "timeout_ms": 900000
-}
-```
 
 Tornado statuses: `RUNNING` → `COMPLETED_ALL_PASSED` | `COMPLETED_PARTIAL` | `TIMEOUT` | `STUCK` | `CANCELLED` | `ERROR`
 
