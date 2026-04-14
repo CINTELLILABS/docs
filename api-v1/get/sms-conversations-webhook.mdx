@@ -1,0 +1,91 @@
+---
+title: "Get Conversation Webhook Log"
+api: "GET https://api.bland.ai/v1/sms/conversations/{conversationId}/webhook"
+description: "Retrieve the webhook delivery log for an SMS conversation, including the payload, URL, response codes, and timing."
+---
+
+<Info>
+  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The unique ID of the conversation to retrieve webhook logs for.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The webhook log for this conversation, or `null` if no webhook has been sent.
+</ResponseField>
+
+<ResponseField name="data.conversation_id" type="string">
+  The conversation this webhook log belongs to.
+</ResponseField>
+
+<ResponseField name="data.url" type="string">
+  The webhook URL that was called.
+</ResponseField>
+
+<ResponseField name="data.payload" type="object">
+  The full webhook payload that was sent.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO timestamp for when the webhook log was created.
+</ResponseField>
+
+<ResponseField name="data.user_id" type="string">
+  The organization ID that owns this conversation.
+</ResponseField>
+
+<ResponseField name="data.metadata" type="array">
+  An array of delivery attempt records. Each entry contains:
+  - `sent_at` — ISO timestamp of the delivery attempt
+  - `response_code` — HTTP status code returned by your endpoint, or `null` if the request failed
+  - `response_time` — how long the request took
+  - `send_type` — delivery method (e.g. `"spawn"`)
+  - `error_message` — error details if the delivery failed
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if a failure occurred.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "conversation_id": "convo_abc123",
+    "url": "https://example.com/sms-webhook",
+    "payload": {
+      "type": "status",
+      "conversation_id": "convo_abc123",
+      "status": "ended",
+      "phone_number": "+15550001111",
+      "agent_number": "+15550002222",
+      "channel": "sms",
+      "message_count": 5
+    },
+    "created_at": "2026-04-13T20:50:59.233Z",
+    "user_id": "user_abc123",
+    "metadata": [
+      {
+        "sent_at": "2026-04-13T20:50:59.000Z",
+        "response_code": 200,
+        "response_time": "142ms",
+        "send_type": "spawn"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>

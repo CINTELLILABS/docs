@@ -70,6 +70,22 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
   Whether the conversation is still active.
 </ResponseField>
 
+<ResponseField name="data.effective_channel" type="string|null">
+  The resolved delivery channel for this conversation: `"sms"`, `"rcs"`, or `"whatsapp"`. Determined based on the input channel and whether the messaging service supports RCS.
+</ResponseField>
+
+<ResponseField name="data.summary" type="string|null">
+  AI-generated conversation summary, produced when the conversation ends and a summary prompt is configured on the SMS number.
+</ResponseField>
+
+<ResponseField name="data.citation_variables" type="object|null">
+  Extracted citation variable values from the conversation transcript. Keys are variable names, values are the extracted data. Only populated when citation schemas are configured.
+</ResponseField>
+
+<ResponseField name="data.disposition_tag" type="string|null">
+  The first successful outcome result tag. Provides a quick classification of the conversation outcome without needing to inspect the full `disposition_logs`.
+</ResponseField>
+
 <ResponseField name="data.messages" type="array">
   An array of message objects in the conversation, sorted chronologically.
 </ResponseField>
@@ -99,11 +115,39 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
 </ResponseField>
 
 <ResponseField name="data.messages[].status" type="string">
-  Delivery status of the message (e.g. `"delivered"`, `"failed"`).
+  Delivery status of the message. Possible values: `"queued"`, `"sent"`, `"delivered"`, `"read"`, `"failed"`, `"undelivered"`. The `"read"` status is available for RCS and WhatsApp channels.
 </ResponseField>
 
 <ResponseField name="data.messages[].error_code" type="string|null">
   Twilio error code if the message failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs" type="array">
+  An array of outcome run results for this conversation. Each entry represents one outcome that was evaluated when the conversation ended.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs[].disposition_id" type="string">
+  The ID of the outcome that was run.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs[].snippet_version" type="number">
+  The version of the outcome's transformation code that was executed.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs[].status" type="string">
+  The execution status. `"COMPLETE"` indicates the outcome ran successfully, `"ERROR"` indicates a failure.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs[].result" type="object|null">
+  The extracted outcome values, or `null` if the run failed.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs[].error" type="string|null">
+  Error message if the outcome run failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="data.disposition_logs[].exec_time" type="number">
+  Execution time in milliseconds.
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
@@ -128,6 +172,10 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
     "timed_out_at": null,
     "last_message_at": "2025-05-13T20:50:59.233Z",
     "is_active": true,
+    "effective_channel": "sms",
+    "summary": null,
+    "citation_variables": null,
+    "disposition_tag": null,
     "messages": [
       {
         "created_at": "2025-05-13T20:50:59.708Z",
@@ -148,6 +196,19 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
         "id": 100002,
         "status": "delivered",
         "error_code": null
+      }
+    ],
+    "disposition_logs": [
+      {
+        "disposition_id": "d1234567-abcd-1234-efgh-123456789012",
+        "snippet_version": 1,
+        "status": "COMPLETE",
+        "result": {
+          "appointmentBooked": true,
+          "callDisposition": "confirmed"
+        },
+        "error": null,
+        "exec_time": 1234
       }
     ]
   },

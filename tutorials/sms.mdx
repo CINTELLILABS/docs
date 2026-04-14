@@ -183,6 +183,42 @@ After you confirm, the changes are applied so you can keep your SMS and voice pa
 
 
 
+## Outcomes, citations, and summaries
+
+SMS conversations support the same post-conversation analytics as voice calls. When a conversation ends (via timeout, end-call node, or opt-out), the platform can automatically run outcomes, extract citations, and generate summaries.
+
+### Configuring per number
+
+In the Messaging dashboard, each SMS number can be configured with:
+
+- **Outcome IDs** — outcomes to evaluate when conversations end
+- **Citation schema IDs** — citation schemas to extract from the conversation transcript
+- **Summary prompt** — a custom prompt to generate a conversation summary
+
+These are returned in the [List SMS Numbers](/api-v1/get/sms-numbers) endpoint under `sms_config`.
+
+### Configuring per request
+
+You can also pass `disposition_ids` and `citation_schema_ids` directly in the [Send SMS](/api-v1/post/sms-send) or [Send SMS Batch](/api-v1/post/sms-batch) request body. Per-request values override any configuration on the number.
+
+### Webhook payloads
+
+All SMS webhooks include a `channel` field (`"sms"`, `"rcs"`, or `"whatsapp"`) so you can identify the delivery channel.
+
+When a conversation ends, the status webhook includes the full conversation context:
+
+- `variables` — pathway variables collected during the conversation
+- `metadata` — custom metadata passed when the conversation was created
+- `pathway_tags` — tags from pathway nodes visited during the conversation
+- `concatenated_transcript` — the full conversation transcript as a single string
+- `summary` — AI-generated summary (when a summary prompt is configured)
+- `citations` — extracted citation variables (when citation schemas are configured)
+- `dispositions` — outcome run results (when outcomes are configured)
+
+Message webhooks also include `variables`, `metadata`, `pathway_tags`, and `created_at` for parity with voice call webhooks.
+
+For more on outcomes and citations, see [Outcomes](/tutorials/outcomes) and [Citations](/enterprise-features/citations).
+
 ## BYOT & A2P
 
 In the United States, all phone numbers used for SMS must be registered with an A2P (Application to Person) campaign.
@@ -218,13 +254,14 @@ For webhooks, delivery status, and number updates, see the **Messaging** section
 
 - A **Transfer Chat** node for messaging, replacing **Transfer Call** so you can transfer to an agent from an SMS conversation.
 - A2P campaign setup within Bland.
-- Batch sending for SMS.
-- Messaging-specific analytics.
 
 ## Related
 
 - [Conversational Pathways](/tutorials/pathways) — Build the flows that power your messaging and voice agents.
 - [Memory](/tutorials/memories) — Cross-channel memory so the same contact is recognized across calls and SMS.
+- [Outcomes](/tutorials/outcomes) — Define rules that classify what happened in each conversation.
+- [Citations](/enterprise-features/citations) — Extract structured data from conversation transcripts.
+- [Post-Call Webhooks](/tutorials/post-call-webhooks) — Webhook payloads for both voice calls and SMS conversations.
 - [Billing](/platform/billing#sms-billing) — SMS pricing and usage.
 
 
