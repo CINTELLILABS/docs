@@ -1,0 +1,136 @@
+---
+title: "Get Test Batch"
+api: "GET https://api.bland.ai/v1/agent-testing/batches/{id}"
+description: "Retrieve a test batch and all its runs."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test batch.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  The unique identifier for the test batch.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The overall status of the batch. One of: `PENDING`, `RUNNING`, `PASSED`, `FAILED`, `ERROR`, `CANCELLED`.
+</ResponseField>
+
+<ResponseField name="total_scenarios" type="integer">
+  The total number of scenarios included in the batch.
+</ResponseField>
+
+<ResponseField name="passed_scenarios" type="integer">
+  The number of scenarios that passed all assertions.
+</ResponseField>
+
+<ResponseField name="failed_scenarios" type="integer">
+  The number of scenarios that failed one or more assertions.
+</ResponseField>
+
+<ResponseField name="trigger_source" type="string">
+  How the batch was triggered. For example, `api`, `dashboard`, or `ci`.
+</ResponseField>
+
+<ResponseField name="publish_on_pass" type="boolean">
+  Whether the pathway version should be automatically promoted to production if all scenarios pass.
+</ResponseField>
+
+<ResponseField name="runs" type="array of objects">
+  An array of test run objects with scenario information. Each run includes the run details and the associated scenario metadata.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "e7a2c3d4-8f9b-4a1e-b5c6-d7e8f9a0b1c2",
+  "status": "FAILED",
+  "total_scenarios": 3,
+  "passed_scenarios": 2,
+  "failed_scenarios": 1,
+  "trigger_source": "api",
+  "publish_on_pass": false,
+  "created_at": "2026-04-14T10:25:00.000Z",
+  "runs": [
+    {
+      "id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+      "scenario_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "status": "PASSED",
+      "overall_score": 0.92,
+      "turn_count": 9,
+      "duration_ms": 14320,
+      "created_at": "2026-04-14T10:25:01.000Z",
+      "scenario": {
+        "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+        "name": "Appointment Booking - Happy Path"
+      },
+      "assertion_results": [
+        {
+          "assertion_id": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+          "type": "contains",
+          "target": "transcript",
+          "expected": "appointment confirmed",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "b4c2d3e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "scenario_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "status": "PASSED",
+      "overall_score": 0.87,
+      "turn_count": 11,
+      "duration_ms": 18200,
+      "created_at": "2026-04-14T10:25:01.000Z",
+      "scenario": {
+        "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+        "name": "Transfer to Agent - Escalation"
+      },
+      "assertion_results": [
+        {
+          "assertion_id": "a7b8c9d0-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+          "type": "node_visited",
+          "target": "nodes_visited",
+          "expected": "transfer_to_human",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "c5d3e4f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      "scenario_id": "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      "status": "FAILED",
+      "overall_score": 0.45,
+      "turn_count": 12,
+      "duration_ms": 21050,
+      "created_at": "2026-04-14T10:25:02.000Z",
+      "scenario": {
+        "id": "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+        "name": "Cancellation Flow - Angry Customer"
+      },
+      "assertion_results": [
+        {
+          "assertion_id": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+          "type": "contains",
+          "target": "transcript",
+          "expected": "cancellation confirmed",
+          "passed": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,172 @@
+---
+title: "Get Simulation Set"
+api: "GET https://api.bland.ai/v1/agent-testing/simulation-sets/{id}"
+description: "Retrieve a simulation set with its statistics including pass rates, flakiness detection, and score distributions."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The simulation set ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the simulation set.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the simulation set. One of `PENDING`, `RUNNING`, `PASSED`, `FAILED`, or `ERROR`.
+</ResponseField>
+
+<ResponseField name="simulations_per_scenario" type="integer">
+  Number of times each scenario is run.
+</ResponseField>
+
+<ResponseField name="total_scenarios" type="integer">
+  Total number of scenarios in this set.
+</ResponseField>
+
+<ResponseField name="statistics" type="object">
+  Aggregated statistics for the simulation set.
+
+  <Expandable title="statistics object">
+    <ResponseField name="per_scenario" type="object">
+      A map of scenario IDs to per-scenario statistics.
+
+      <Expandable title="per-scenario stats">
+        <ResponseField name="scenario_id" type="string">
+          The scenario ID.
+        </ResponseField>
+        <ResponseField name="scenario_name" type="string">
+          The scenario name.
+        </ResponseField>
+        <ResponseField name="total_runs" type="integer">
+          Total number of simulation runs for this scenario.
+        </ResponseField>
+        <ResponseField name="passed" type="integer">
+          Number of runs that passed.
+        </ResponseField>
+        <ResponseField name="failed" type="integer">
+          Number of runs that failed.
+        </ResponseField>
+        <ResponseField name="pass_rate" type="number">
+          Pass rate as a decimal between 0 and 1.
+        </ResponseField>
+        <ResponseField name="is_flaky" type="boolean">
+          Whether the scenario exhibited flaky behavior (some runs passed, some failed).
+        </ResponseField>
+        <ResponseField name="scores" type="object">
+          Score distribution statistics including `mean`, `median`, `stddev`, `min`, and `max`.
+        </ResponseField>
+        <ResponseField name="worst_run_id" type="string">
+          The ID of the worst-performing run.
+        </ResponseField>
+        <ResponseField name="common_failure_modes" type="array of strings">
+          Most common failure reasons observed across runs.
+        </ResponseField>
+        <ResponseField name="confidence" type="string">
+          Statistical confidence level. One of `low`, `medium`, or `high`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="overall" type="object">
+      Overall aggregated statistics across all scenarios.
+
+      <Expandable title="overall stats">
+        <ResponseField name="avg_pass_rate" type="number">
+          Average pass rate across all scenarios.
+        </ResponseField>
+        <ResponseField name="flaky_count" type="integer">
+          Number of scenarios detected as flaky.
+        </ResponseField>
+        <ResponseField name="reliable_count" type="integer">
+          Number of scenarios that are reliably passing or failing.
+        </ResponseField>
+        <ResponseField name="total_runs" type="integer">
+          Total simulation runs across all scenarios.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the simulation set was created.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp of when the simulation set completed (null if still running).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
+  "status": "PASSED",
+  "simulations_per_scenario": 5,
+  "total_scenarios": 2,
+  "statistics": {
+    "per_scenario": {
+      "a1b2c3d4-5678-9abc-def0-1234567890ab": {
+        "scenario_id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+        "scenario_name": "Happy Path - Booking",
+        "total_runs": 5,
+        "passed": 5,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "is_flaky": false,
+        "scores": {
+          "mean": 0.92,
+          "median": 0.93,
+          "stddev": 0.03,
+          "min": 0.87,
+          "max": 0.96
+        },
+        "worst_run_id": "b8c9d0e1-2345-6789-abcd-ef0123456789",
+        "common_failure_modes": [],
+        "confidence": "high"
+      },
+      "f6a7b8c9-0abc-def1-2345-67890abcdef0": {
+        "scenario_id": "f6a7b8c9-0abc-def1-2345-67890abcdef0",
+        "scenario_name": "Angry Caller Test",
+        "total_runs": 5,
+        "passed": 3,
+        "failed": 2,
+        "pass_rate": 0.6,
+        "is_flaky": true,
+        "scores": {
+          "mean": 0.68,
+          "median": 0.71,
+          "stddev": 0.15,
+          "min": 0.42,
+          "max": 0.85
+        },
+        "worst_run_id": "c9d0e1f2-3456-789a-bcde-f01234567890",
+        "common_failure_modes": [
+          "Agent failed to de-escalate within 3 turns",
+          "Agent used dismissive language"
+        ],
+        "confidence": "medium"
+      }
+    },
+    "overall": {
+      "avg_pass_rate": 0.8,
+      "flaky_count": 1,
+      "reliable_count": 1,
+      "total_runs": 10
+    }
+  },
+  "created_at": "2026-04-14T10:00:00.000Z",
+  "completed_at": "2026-04-14T10:05:32.000Z"
+}
+```
+</ResponseExample>

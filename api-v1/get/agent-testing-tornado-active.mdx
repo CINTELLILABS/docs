@@ -1,0 +1,82 @@
+---
+title: "Get Active Tornado Session"
+api: "GET https://api.bland.ai/v1/agent-testing/tornado/active"
+description: "Get the currently active tornado session for a pathway."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="pathway_id" type="string">
+  Filter by pathway. Either `pathway_id` or `persona_id` is required.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Filter by persona. Either `pathway_id` or `persona_id` is required.
+</ParamField>
+
+### Response
+
+<ResponseField name="session_id" type="string">
+  The unique identifier for the tornado session.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the session. Will be `RUNNING` for active sessions.
+</ResponseField>
+
+<ResponseField name="pathway_id" type="string">
+  The pathway being tested and fixed.
+</ResponseField>
+
+<ResponseField name="persona_id" type="string">
+  The persona ID (null if testing a pathway directly).
+</ResponseField>
+
+<ResponseField name="current_iteration" type="integer">
+  The current fix iteration number.
+</ResponseField>
+
+<ResponseField name="max_iterations" type="integer">
+  The maximum number of fix iterations configured.
+</ResponseField>
+
+<ResponseField name="total_scenarios" type="integer">
+  Total number of scenarios being tested.
+</ResponseField>
+
+<ResponseField name="passed_scenarios" type="integer">
+  Number of scenarios currently passing.
+</ResponseField>
+
+<ResponseField name="failed_scenarios" type="integer">
+  Number of scenarios currently failing.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the session was created.
+</ResponseField>
+
+Returns `404 Not Found` if no active tornado session exists for the specified pathway or persona.
+
+<ResponseExample>
+```json Response
+{
+  "session_id": "e1f2a3b4-5678-9cde-f012-3456789abcde",
+  "status": "RUNNING",
+  "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
+  "persona_id": null,
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "total_scenarios": 4,
+  "passed_scenarios": 2,
+  "failed_scenarios": 2,
+  "created_at": "2026-04-14T10:15:00.000Z"
+}
+```
+</ResponseExample>

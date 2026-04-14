@@ -1,0 +1,80 @@
+---
+title: "Start Tornado Session"
+api: "POST https://api.bland.ai/v1/agent-testing/tornado/start"
+description: "Start an iterative fix loop that runs tests, analyzes failures, applies fixes, and retests until all scenarios pass. Returns immediately while the loop executes asynchronously."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="pathway_id" type="string" required>
+  The pathway to fix.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  The persona ID.
+</ParamField>
+
+<ParamField body="scenario_ids" type="array of strings">
+  Specific scenarios to test. If omitted, runs all enabled scenarios for the pathway. Maximum 50 scenarios.
+</ParamField>
+
+<ParamField body="version_number" type="integer">
+  Pathway version to start from.
+</ParamField>
+
+<ParamField body="max_iterations" type="integer">
+  Maximum fix iterations. Default `5`.
+</ParamField>
+
+<ParamField body="timeout_ms" type="integer">
+  Timeout in milliseconds. Default `900000` (15 minutes).
+</ParamField>
+
+<Note>
+Only one tornado session can be active per pathway. Returns `409 Conflict` if a session is already running.
+</Note>
+
+### Response
+
+<ResponseField name="session_id" type="string">
+  The unique identifier for the tornado session.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The initial status of the session. Will be `RUNNING` upon creation.
+</ResponseField>
+
+<ResponseField name="pathway_id" type="string">
+  The pathway being tested and fixed.
+</ResponseField>
+
+<ResponseField name="max_iterations" type="integer">
+  The maximum number of fix iterations configured.
+</ResponseField>
+
+<ResponseField name="timeout_ms" type="integer">
+  The timeout configured for this session in milliseconds.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the session was created.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "session_id": "e1f2a3b4-5678-9cde-f012-3456789abcde",
+  "status": "RUNNING",
+  "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
+  "max_iterations": 5,
+  "timeout_ms": 900000,
+  "created_at": "2026-04-14T10:15:00.000Z"
+}
+```
+</ResponseExample>

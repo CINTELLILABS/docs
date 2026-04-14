@@ -1,0 +1,90 @@
+---
+title: "Analyze Failed Run"
+api: "POST https://api.bland.ai/v1/agent-testing/runs/{id}/analyze"
+description: "Run AI-powered analysis on a failed test run to get root cause and fix suggestions."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The run ID to analyze.
+</ParamField>
+
+### Response
+
+<ResponseField name="analysis" type="object">
+  The AI-generated analysis of the failed test run.
+
+  <Expandable title="analysis object">
+    <ResponseField name="root_cause" type="string">
+      Description of why the test failed.
+    </ResponseField>
+    <ResponseField name="suggestions" type="array">
+      An array of suggested fixes for the failure.
+
+      <Expandable title="suggestion object">
+        <ResponseField name="type" type="string">
+          The type of suggested change. One of: `prompt_change`, `node_config`, `flow_change`, `tone_improvement`.
+        </ResponseField>
+        <ResponseField name="target_node_id" type="string">
+          The ID of the node the suggestion applies to.
+        </ResponseField>
+        <ResponseField name="target_node_name" type="string">
+          The display name of the node the suggestion applies to.
+        </ResponseField>
+        <ResponseField name="description" type="string">
+          A human-readable description of the issue and what should change.
+        </ResponseField>
+        <ResponseField name="suggested_change" type="string">
+          The specific change to make (e.g., updated prompt text or configuration value).
+        </ResponseField>
+        <ResponseField name="confidence" type="number">
+          Confidence score for this suggestion, from 0 to 1.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="node_id_to_name" type="object">
+      A map of node IDs to their display names, covering all nodes referenced in the analysis.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "analysis": {
+    "root_cause": "The agent failed to transfer the caller to a live representative when the caller explicitly requested to speak with a manager. The 'Escalation Handler' node's prompt does not include instructions for handling direct manager requests, causing the agent to loop back to the main menu instead.",
+    "suggestions": [
+      {
+        "type": "prompt_change",
+        "target_node_id": "node_8f3a2b1c",
+        "target_node_name": "Escalation Handler",
+        "description": "The escalation node's prompt does not account for explicit manager requests. Adding a condition to detect phrases like 'speak to a manager' or 'talk to someone' would allow the agent to route correctly.",
+        "suggested_change": "Add the following to the node prompt: 'If the caller asks to speak with a manager, supervisor, or live person, immediately transfer them to the manager queue without further qualification.'",
+        "confidence": 0.92
+      },
+      {
+        "type": "flow_change",
+        "target_node_id": "node_4d7e9f0a",
+        "target_node_name": "Main Menu",
+        "description": "The Main Menu node has a fallback edge that loops back to itself when no intent is matched. This creates an infinite loop when the escalation path fails to trigger.",
+        "suggested_change": "Add a new edge from 'Main Menu' to 'Escalation Handler' that triggers when the caller's intent is classified as 'escalation' or 'transfer_request'.",
+        "confidence": 0.78
+      }
+    ],
+    "node_id_to_name": {
+      "node_8f3a2b1c": "Escalation Handler",
+      "node_4d7e9f0a": "Main Menu",
+      "node_1a2b3c4d": "Greeting",
+      "node_5e6f7a8b": "Transfer to Manager"
+    }
+  }
+}
+```
+</ResponseExample>

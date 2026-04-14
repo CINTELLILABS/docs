@@ -1,0 +1,62 @@
+---
+title: "Batch Run Scenarios"
+api: "POST https://api.bland.ai/v1/agent-testing/batch-run"
+description: "Execute multiple test scenarios as a batch. Returns immediately with a batch ID while tests execute asynchronously."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="scenario_ids" type="array of strings" required>
+  Array of scenario IDs to run. All scenario IDs must belong to your organization.
+</ParamField>
+
+<ParamField body="version_number" type="integer">
+  Pathway version to test. Defaults to the current production version.
+</ParamField>
+
+<ParamField body="webhook_url" type="string">
+  URL to receive a webhook when the entire batch completes. The webhook payload will include the batch result summary.
+</ParamField>
+
+### Response
+
+<ResponseField name="batch_id" type="string">
+  The unique identifier for the test batch.
+</ResponseField>
+
+<ResponseField name="runs" type="array of objects">
+  An array of run entries, one per scenario. Each entry contains:
+
+  - `run_id` - The unique identifier for the individual test run.
+  - `scenario_id` - The scenario ID associated with this run.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "batch_id": "e7a2c3d4-8f9b-4a1e-b5c6-d7e8f9a0b1c2",
+  "runs": [
+    {
+      "run_id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+      "scenario_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+    },
+    {
+      "run_id": "b4c2d3e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "scenario_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+<Note>
+  This endpoint is rate limited per organization. All `scenario_ids` must belong to your organization or the request will be rejected.
+</Note>
