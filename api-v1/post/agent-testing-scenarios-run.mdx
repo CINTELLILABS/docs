@@ -1,0 +1,56 @@
+---
+title: "Run Test Scenario"
+api: "POST https://api.bland.ai/v1/agent-testing/scenarios/{id}/run"
+description: "Execute a single test scenario. Returns immediately with a run ID while the test executes asynchronously."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID to run.
+</ParamField>
+
+### Body
+
+<ParamField body="version_number" type="integer">
+  Pathway version to test. Defaults to the current production version.
+</ParamField>
+
+<ParamField body="request_data_override" type="object">
+  Override the scenario's `request_data` for this run. Any keys provided here will replace the corresponding keys in the scenario's default request data.
+</ParamField>
+
+<ParamField body="webhook_url" type="string">
+  URL to receive a webhook when the run completes. The webhook payload will include the full run result.
+</ParamField>
+
+### Response
+
+<ResponseField name="run_id" type="string">
+  The unique identifier for the test run.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current status of the run. Will be `RUNNING` immediately after creation.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "run_id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+  "status": "RUNNING"
+}
+```
+
+</ResponseExample>
+
+<Note>
+  This endpoint is rate limited per organization. If you need to run multiple scenarios at once, consider using the [Batch Run](/api-v1/post/agent-testing-batch-run) endpoint instead.
+</Note>

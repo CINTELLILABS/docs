@@ -1,0 +1,237 @@
+---
+title: "Get Enhanced Analytics"
+api: "GET https://api.bland.ai/v1/agent-testing/analytics/{pathwayId}/enhanced"
+description: "Get enhanced testing analytics including node failure heatmap, weakest link, trend analysis, and Sankey flow data."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathwayId" type="string" required>
+  The pathway ID.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="days" type="integer" default="30">
+  Number of days to look back. Maximum value is 365.
+</ParamField>
+
+### Response
+
+<ResponseField name="total_runs" type="integer">
+  Total number of test runs in the time window.
+</ResponseField>
+
+<ResponseField name="passed" type="integer">
+  Number of test runs that passed.
+</ResponseField>
+
+<ResponseField name="failed" type="integer">
+  Number of test runs that failed.
+</ResponseField>
+
+<ResponseField name="pass_rate" type="number">
+  Pass rate as a decimal from 0 to 1.
+</ResponseField>
+
+<ResponseField name="avg_score" type="number">
+  Average score across all runs, from 0 to 1.
+</ResponseField>
+
+<ResponseField name="health_score" type="number">
+  Overall health score for the pathway, from 0 to 1. Combines pass rate, trend direction, and reliability.
+</ResponseField>
+
+<ResponseField name="reliability_score" type="number">
+  Reliability score measuring consistency of results over time, from 0 to 1.
+</ResponseField>
+
+<ResponseField name="trend" type="object">
+  Trend analysis for the time window.
+
+  <Expandable title="trend object">
+    <ResponseField name="weekly" type="string">
+      Weekly trend direction. One of: `improving`, `declining`, `stable`.
+    </ResponseField>
+    <ResponseField name="daily_pass_rates" type="array">
+      Daily pass rate data points.
+
+      <Expandable title="daily pass rate object">
+        <ResponseField name="date" type="string">
+          The date in ISO 8601 format.
+        </ResponseField>
+        <ResponseField name="rate" type="number">
+          Pass rate for that date, from 0 to 1.
+        </ResponseField>
+        <ResponseField name="count" type="integer">
+          Number of runs on that date.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="node_failure_heatmap" type="array">
+  Failure data per node for building a heatmap visualization.
+
+  <Expandable title="node failure object">
+    <ResponseField name="node_id" type="string">
+      The node ID.
+    </ResponseField>
+    <ResponseField name="node_name" type="string">
+      The display name of the node.
+    </ResponseField>
+    <ResponseField name="failure_count" type="integer">
+      Number of times a test failed at or through this node.
+    </ResponseField>
+    <ResponseField name="total_traversals" type="integer">
+      Total number of times this node was traversed across all runs.
+    </ResponseField>
+    <ResponseField name="failure_rate" type="number">
+      Failure rate for this node, from 0 to 1.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="weakest_link" type="object">
+  The node with the highest failure rate, or `null` if no failures exist.
+
+  <Expandable title="weakest link object">
+    <ResponseField name="node_id" type="string">
+      The node ID.
+    </ResponseField>
+    <ResponseField name="node_name" type="string">
+      The display name of the node.
+    </ResponseField>
+    <ResponseField name="failure_rate" type="number">
+      Failure rate for this node, from 0 to 1.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="sankey_data" type="object">
+  Flow data for building a Sankey diagram of test run traversals.
+
+  <Expandable title="sankey data object">
+    <ResponseField name="nodes" type="array">
+      Array of nodes in the flow.
+
+      <Expandable title="sankey node object">
+        <ResponseField name="id" type="string">
+          The node ID.
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          The display name of the node.
+        </ResponseField>
+        <ResponseField name="type" type="string">
+          The node type (e.g., `Default`, `Transfer`, `End Call`).
+        </ResponseField>
+        <ResponseField name="category" type="string">
+          The node category for coloring (e.g., `start`, `middle`, `end`, `error`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="links" type="array">
+      Array of links (edges) between nodes.
+
+      <Expandable title="sankey link object">
+        <ResponseField name="source" type="string">
+          The source node ID.
+        </ResponseField>
+        <ResponseField name="target" type="string">
+          The target node ID.
+        </ResponseField>
+        <ResponseField name="value" type="integer">
+          Total number of traversals along this link.
+        </ResponseField>
+        <ResponseField name="pass_count" type="integer">
+          Number of traversals from passing runs.
+        </ResponseField>
+        <ResponseField name="fail_count" type="integer">
+          Number of traversals from failing runs.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "total_runs": 124,
+  "passed": 98,
+  "failed": 26,
+  "pass_rate": 0.7903,
+  "avg_score": 0.82,
+  "health_score": 0.76,
+  "reliability_score": 0.85,
+  "trend": {
+    "weekly": "improving",
+    "daily_pass_rates": [
+      { "date": "2026-04-12", "rate": 0.75, "count": 8 },
+      { "date": "2026-04-13", "rate": 0.88, "count": 16 },
+      { "date": "2026-04-14", "rate": 0.90, "count": 10 }
+    ]
+  },
+  "node_failure_heatmap": [
+    {
+      "node_id": "node_8f3a2b1c",
+      "node_name": "Escalation Handler",
+      "failure_count": 14,
+      "total_traversals": 38,
+      "failure_rate": 0.3684
+    },
+    {
+      "node_id": "node_4d7e9f0a",
+      "node_name": "Appointment Booking",
+      "failure_count": 8,
+      "total_traversals": 72,
+      "failure_rate": 0.1111
+    },
+    {
+      "node_id": "node_1a2b3c4d",
+      "node_name": "Greeting",
+      "failure_count": 2,
+      "total_traversals": 124,
+      "failure_rate": 0.0161
+    },
+    {
+      "node_id": "node_5e6f7a8b",
+      "node_name": "Collect Info",
+      "failure_count": 2,
+      "total_traversals": 110,
+      "failure_rate": 0.0182
+    }
+  ],
+  "weakest_link": {
+    "node_id": "node_8f3a2b1c",
+    "node_name": "Escalation Handler",
+    "failure_rate": 0.3684
+  },
+  "sankey_data": {
+    "nodes": [
+      { "id": "node_1a2b3c4d", "name": "Greeting", "type": "Default", "category": "start" },
+      { "id": "node_5e6f7a8b", "name": "Collect Info", "type": "Default", "category": "middle" },
+      { "id": "node_4d7e9f0a", "name": "Appointment Booking", "type": "Default", "category": "middle" },
+      { "id": "node_8f3a2b1c", "name": "Escalation Handler", "type": "Transfer", "category": "middle" },
+      { "id": "node_9c0d1e2f", "name": "Confirmation", "type": "Default", "category": "middle" },
+      { "id": "node_end_001", "name": "End Call", "type": "End Call", "category": "end" }
+    ],
+    "links": [
+      { "source": "node_1a2b3c4d", "target": "node_5e6f7a8b", "value": 110, "pass_count": 96, "fail_count": 14 },
+      { "source": "node_5e6f7a8b", "target": "node_4d7e9f0a", "value": 72, "pass_count": 64, "fail_count": 8 },
+      { "source": "node_5e6f7a8b", "target": "node_8f3a2b1c", "value": 38, "pass_count": 24, "fail_count": 14 },
+      { "source": "node_4d7e9f0a", "target": "node_9c0d1e2f", "value": 64, "pass_count": 64, "fail_count": 0 },
+      { "source": "node_9c0d1e2f", "target": "node_end_001", "value": 64, "pass_count": 64, "fail_count": 0 },
+      { "source": "node_8f3a2b1c", "target": "node_end_001", "value": 24, "pass_count": 24, "fail_count": 0 }
+    ]
+  }
+}
+```
+</ResponseExample>

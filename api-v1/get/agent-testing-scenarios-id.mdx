@@ -1,0 +1,174 @@
+---
+title: "Get Test Scenario"
+api: "GET https://api.bland.ai/v1/agent-testing/scenarios/{id}"
+description: "Retrieve a specific test scenario with its assertions."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the scenario.
+</ResponseField>
+
+<ResponseField name="org_id" type="string">
+  Organization ID that owns this scenario.
+</ResponseField>
+
+<ResponseField name="pathway_id" type="string">
+  The pathway ID being tested (null if testing a persona).
+</ResponseField>
+
+<ResponseField name="persona_id" type="string">
+  The persona ID being tested (null if testing a pathway).
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the scenario.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the scenario.
+</ResponseField>
+
+<ResponseField name="category" type="string">
+  Scenario category.
+</ResponseField>
+
+<ResponseField name="scenario_type" type="string">
+  Type of scenario.
+</ResponseField>
+
+<ResponseField name="tester_persona_prompt" type="string">
+  Prompt for the simulated caller.
+</ResponseField>
+
+<ResponseField name="tester_persona_name" type="string">
+  Display name for the tester persona.
+</ResponseField>
+
+<ResponseField name="max_turns" type="integer">
+  Maximum conversation turns.
+</ResponseField>
+
+<ResponseField name="request_data" type="object">
+  Custom request data.
+</ResponseField>
+
+<ResponseField name="start_node_id" type="string">
+  Starting node ID.
+</ResponseField>
+
+<ResponseField name="bland_tone_enabled" type="boolean">
+  Whether Bland Tone scoring is enabled.
+</ResponseField>
+
+<ResponseField name="is_required_for_promotion" type="boolean">
+  Whether this scenario is required for promotion.
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the scenario is enabled.
+</ResponseField>
+
+<ResponseField name="input_messages" type="array">
+  Pre-seeded messages for replay scenarios.
+</ResponseField>
+
+<ResponseField name="advanced_instructions" type="string">
+  Additional instructions for test execution.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Arbitrary metadata.
+</ResponseField>
+
+<ResponseField name="assertions" type="array">
+  Array of assertion objects.
+
+  <Expandable title="assertion object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the assertion.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      The assertion type.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name for the assertion.
+    </ResponseField>
+    <ResponseField name="config" type="object">
+      Type-specific configuration.
+    </ResponseField>
+    <ResponseField name="is_required" type="boolean">
+      Whether this assertion must pass.
+    </ResponseField>
+    <ResponseField name="weight" type="number">
+      Weight of this assertion in the overall score.
+    </ResponseField>
+    <ResponseField name="order" type="integer">
+      Evaluation order.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the scenario was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of when the scenario was last updated.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+  "org_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
+  "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
+  "persona_id": null,
+  "name": "Angry Caller Test",
+  "description": "Tests the agent's ability to de-escalate an angry caller",
+  "category": "ANGRY_CALLER",
+  "scenario_type": "AGENT",
+  "tester_persona_prompt": "You are a frustrated customer who has been waiting on hold for 30 minutes. You are upset about a billing error on your account.",
+  "tester_persona_name": "Frustrated Customer",
+  "max_turns": 15,
+  "request_data": null,
+  "start_node_id": null,
+  "bland_tone_enabled": true,
+  "is_required_for_promotion": false,
+  "enabled": true,
+  "input_messages": null,
+  "advanced_instructions": null,
+  "metadata": null,
+  "assertions": [
+    {
+      "id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
+      "type": "LLM_JUDGE",
+      "name": "De-escalation",
+      "config": {
+        "prompt": "Did the agent successfully de-escalate the situation and address the customer's concerns?",
+        "output_type": "score",
+        "threshold": 0.7
+      },
+      "is_required": true,
+      "weight": 1.5,
+      "order": 0
+    }
+  ],
+  "created_at": "2026-04-10T12:00:00.000Z",
+  "updated_at": "2026-04-13T18:30:00.000Z"
+}
+```
+</ResponseExample>

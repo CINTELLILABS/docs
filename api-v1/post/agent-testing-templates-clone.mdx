@@ -1,0 +1,120 @@
+---
+title: "Clone Test Template"
+api: "POST https://api.bland.ai/v1/agent-testing/templates/{id}/clone"
+description: "Clone a template to create a new scenario bound to your pathway or persona."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The template ID to clone.
+</ParamField>
+
+### Body
+
+<ParamField body="pathway_id" type="string">
+  The pathway to bind the cloned scenario to. Either `pathway_id` or `persona_id` is required.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  The persona to bind the cloned scenario to. Either `pathway_id` or `persona_id` is required.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Override the template name. Defaults to the template's original name.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Override the template description.
+</ParamField>
+
+<ParamField body="tester_persona_prompt" type="string">
+  Override the tester persona prompt that drives the simulated caller's behavior.
+</ParamField>
+
+<ParamField body="max_turns" type="integer">
+  Override the maximum number of conversational turns before the test ends.
+</ParamField>
+
+<ParamField body="request_data" type="object">
+  Override the request data passed to the agent during the test call.
+</ParamField>
+
+<ParamField body="start_node_id" type="string">
+  Override the starting node for pathway-based scenarios.
+</ParamField>
+
+<ParamField body="bland_tone_enabled" type="boolean">
+  Override the Bland Tone setting for the test call.
+</ParamField>
+
+<ParamField body="is_required_for_promotion" type="boolean" default={false}>
+  Whether to require this scenario to pass before a pathway can be promoted. Default `false`.
+</ParamField>
+
+### Response
+
+<ResponseField name="scenario" type="object">
+  The newly created scenario object cloned from the template.
+    - `id` (string): The unique identifier for the new scenario.
+    - `name` (string): The scenario name.
+    - `description` (string): The scenario description.
+    - `category` (string): The category inherited from the template.
+    - `tester_persona_prompt` (string): The prompt driving the simulated caller.
+    - `tester_persona_name` (string): The name of the simulated caller persona.
+    - `pathway_id` (string): The pathway this scenario is bound to (if applicable).
+    - `persona_id` (string): The persona this scenario is bound to (if applicable).
+    - `max_turns` (integer): The maximum number of conversational turns.
+    - `request_data` (object): The request data for the test call.
+    - `start_node_id` (string): The starting node ID (if set).
+    - `bland_tone_enabled` (boolean): Whether Bland Tone is enabled.
+    - `is_required_for_promotion` (boolean): Whether this scenario is required for pathway promotion.
+    - `assertions` (array): The assertion objects inherited from the template.
+      - `type` (string): The assertion type.
+      - `config` (object): Configuration specific to the assertion type.
+      - `description` (string): A human-readable description of the assertion.
+    - `created_at` (string): ISO 8601 timestamp of when the scenario was created.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+    "scenario": {
+        "id": "scn_8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+        "name": "Voicemail Detection",
+        "description": "Simulates a voicemail greeting to verify the agent correctly detects and handles voicemail.",
+        "category": "VOICEMAIL",
+        "tester_persona_prompt": "You are a voicemail system. Greet the caller with a standard voicemail message: 'Hi, you've reached John. I'm not available right now. Please leave a message after the beep.' Then remain silent.",
+        "tester_persona_name": "Voicemail System",
+        "pathway_id": "pw_abc123",
+        "persona_id": null,
+        "max_turns": 4,
+        "request_data": {},
+        "start_node_id": null,
+        "bland_tone_enabled": true,
+        "is_required_for_promotion": false,
+        "assertions": [
+            {
+                "type": "call_ended_by_agent",
+                "config": {},
+                "description": "Agent should hang up after detecting voicemail"
+            },
+            {
+                "type": "latency_below",
+                "config": {
+                    "max_ms": 3000
+                },
+                "description": "Agent response latency stays below 3 seconds"
+            }
+        ],
+        "created_at": "2026-04-14T18:30:00.000Z"
+    }
+}
+```
+</ResponseExample>

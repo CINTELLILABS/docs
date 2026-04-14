@@ -1,0 +1,91 @@
+---
+title: "List Test Templates"
+api: "GET https://api.bland.ai/v1/agent-testing/templates"
+description: "List out-of-box test scenario templates. Templates are automatically seeded on first access."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="category" type="string">
+  Filter by category (e.g., `VOICEMAIL`, `ANGRY_CALLER`, `HAPPY_PATH`, `EDGE_CASE`, `TRANSFER`).
+</ParamField>
+
+### Response
+
+<ResponseField name="templates" type="array">
+  An array of template scenario objects. Each template contains the following fields:
+    - `id` (string): The unique identifier for the template.
+    - `name` (string): The display name of the template.
+    - `description` (string): A description of what the template tests.
+    - `category` (string): The template category (e.g., `VOICEMAIL`, `ANGRY_CALLER`).
+    - `tester_persona_prompt` (string): The prompt that drives the simulated caller's behavior.
+    - `tester_persona_name` (string): The name of the simulated caller persona.
+    - `max_turns` (integer): The maximum number of conversational turns before the test ends.
+    - `assertions` (array): An array of assertion objects that define pass/fail criteria.
+      - `type` (string): The assertion type (e.g., `pathway_node_visited`, `call_transferred`, `latency_below`).
+      - `config` (object): Configuration specific to the assertion type.
+      - `description` (string): A human-readable description of what the assertion checks.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+    "templates": [
+        {
+            "id": "tmpl_voicemail_basic",
+            "name": "Voicemail Detection",
+            "description": "Simulates a voicemail greeting to verify the agent correctly detects and handles voicemail.",
+            "category": "VOICEMAIL",
+            "tester_persona_prompt": "You are a voicemail system. Greet the caller with a standard voicemail message: 'Hi, you've reached John. I'm not available right now. Please leave a message after the beep.' Then remain silent.",
+            "tester_persona_name": "Voicemail System",
+            "max_turns": 4,
+            "assertions": [
+                {
+                    "type": "call_ended_by_agent",
+                    "config": {},
+                    "description": "Agent should hang up after detecting voicemail"
+                },
+                {
+                    "type": "latency_below",
+                    "config": {
+                        "max_ms": 3000
+                    },
+                    "description": "Agent response latency stays below 3 seconds"
+                }
+            ]
+        },
+        {
+            "id": "tmpl_angry_caller",
+            "name": "Angry Caller De-escalation",
+            "description": "Simulates an irate caller to verify the agent can de-escalate and maintain composure.",
+            "category": "ANGRY_CALLER",
+            "tester_persona_prompt": "You are an extremely frustrated customer. You are angry about being charged twice for the same order. Raise your voice, express dissatisfaction, and demand to speak to a manager. If the agent stays calm and offers a resolution, gradually calm down.",
+            "tester_persona_name": "Angry Customer",
+            "max_turns": 10,
+            "assertions": [
+                {
+                    "type": "tone_maintained",
+                    "config": {
+                        "tone": "professional"
+                    },
+                    "description": "Agent maintains a professional and calm tone throughout"
+                },
+                {
+                    "type": "pathway_node_visited",
+                    "config": {
+                        "node_name": "Escalation Offer"
+                    },
+                    "description": "Agent offers to escalate or transfer to a manager"
+                }
+            ]
+        }
+    ]
+}
+```
+</ResponseExample>

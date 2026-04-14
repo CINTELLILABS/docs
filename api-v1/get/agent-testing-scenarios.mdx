@@ -1,0 +1,172 @@
+---
+title: "List Test Scenarios"
+api: "GET https://api.bland.ai/v1/agent-testing/scenarios"
+description: "List all test scenarios for your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="pathway_id" type="string">
+  Filter by pathway ID.
+</ParamField>
+
+<ParamField query="persona_id" type="string">
+  Filter by persona ID.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by scenario category.
+</ParamField>
+
+<ParamField query="enabled" type="string">
+  Filter by enabled status. Pass `"true"` or `"false"`.
+</ParamField>
+
+### Response
+
+<ResponseField name="scenarios" type="array">
+  Array of scenario objects, each including assertions and the most recent run.
+
+  <Expandable title="scenario object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the scenario.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      Organization ID that owns this scenario.
+    </ResponseField>
+    <ResponseField name="pathway_id" type="string">
+      The pathway ID being tested (null if testing a persona).
+    </ResponseField>
+    <ResponseField name="persona_id" type="string">
+      The persona ID being tested (null if testing a pathway).
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Name of the scenario.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Description of the scenario.
+    </ResponseField>
+    <ResponseField name="category" type="string">
+      Scenario category.
+    </ResponseField>
+    <ResponseField name="scenario_type" type="string">
+      Type of scenario.
+    </ResponseField>
+    <ResponseField name="tester_persona_prompt" type="string">
+      Prompt for the simulated caller.
+    </ResponseField>
+    <ResponseField name="tester_persona_name" type="string">
+      Display name for the tester persona.
+    </ResponseField>
+    <ResponseField name="max_turns" type="integer">
+      Maximum conversation turns.
+    </ResponseField>
+    <ResponseField name="bland_tone_enabled" type="boolean">
+      Whether Bland Tone scoring is enabled.
+    </ResponseField>
+    <ResponseField name="is_required_for_promotion" type="boolean">
+      Whether this scenario is required for promotion.
+    </ResponseField>
+    <ResponseField name="enabled" type="boolean">
+      Whether the scenario is enabled.
+    </ResponseField>
+    <ResponseField name="assertions" type="array">
+      Array of assertion objects.
+    </ResponseField>
+    <ResponseField name="most_recent_run" type="object">
+      The most recent test run for this scenario (null if never run).
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the scenario was created.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the scenario was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "scenarios": [
+    {
+      "id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+      "org_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
+      "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
+      "persona_id": null,
+      "name": "Angry Caller Test",
+      "description": "Tests de-escalation handling",
+      "category": "ANGRY_CALLER",
+      "scenario_type": "AGENT",
+      "tester_persona_prompt": "You are a frustrated customer...",
+      "tester_persona_name": "Frustrated Customer",
+      "max_turns": 15,
+      "bland_tone_enabled": true,
+      "is_required_for_promotion": false,
+      "enabled": true,
+      "assertions": [
+        {
+          "id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
+          "type": "LLM_JUDGE",
+          "name": "De-escalation",
+          "config": {
+            "prompt": "Did the agent successfully de-escalate the situation?",
+            "output_type": "score",
+            "threshold": 0.7
+          },
+          "is_required": true,
+          "weight": 1.5,
+          "order": 0
+        }
+      ],
+      "most_recent_run": {
+        "id": "e5f6a7b8-9abc-def0-1234-567890abcdef",
+        "status": "PASSED",
+        "score": 0.85,
+        "completed_at": "2026-04-13T18:30:00.000Z"
+      },
+      "created_at": "2026-04-10T12:00:00.000Z",
+      "updated_at": "2026-04-13T18:30:00.000Z"
+    },
+    {
+      "id": "f6a7b8c9-0abc-def1-2345-67890abcdef0",
+      "org_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
+      "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
+      "persona_id": null,
+      "name": "Happy Path - Booking",
+      "description": "Tests the standard booking flow",
+      "category": "HAPPY_PATH",
+      "scenario_type": "AGENT",
+      "tester_persona_prompt": "You want to book an appointment for next Tuesday at 2pm.",
+      "tester_persona_name": "Polite Customer",
+      "max_turns": 20,
+      "bland_tone_enabled": false,
+      "is_required_for_promotion": true,
+      "enabled": true,
+      "assertions": [
+        {
+          "id": "a7b8c9d0-1abc-ef23-4567-890abcdef012",
+          "type": "NODE_REACHED",
+          "name": "Reached Booking Confirmation",
+          "config": {
+            "node_id": "booking-confirmation-node"
+          },
+          "is_required": true,
+          "weight": 1.0,
+          "order": 0
+        }
+      ],
+      "most_recent_run": null,
+      "created_at": "2026-04-12T09:00:00.000Z",
+      "updated_at": "2026-04-12T09:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>

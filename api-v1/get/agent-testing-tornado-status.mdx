@@ -1,0 +1,181 @@
+---
+title: "Get Tornado Status"
+api: "GET https://api.bland.ai/v1/agent-testing/tornado/{id}/status"
+description: "Get detailed progress for a tornado session including iteration data and fix plans."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The tornado session ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="session_id" type="string">
+  The unique identifier for the tornado session.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the session. One of `RUNNING`, `COMPLETED_ALL_PASSED`, `COMPLETED_PARTIAL`, `TIMEOUT`, `STUCK`, `CANCELLED`, or `ERROR`.
+</ResponseField>
+
+<ResponseField name="current_iteration" type="integer">
+  The current or final iteration number.
+</ResponseField>
+
+<ResponseField name="max_iterations" type="integer">
+  The maximum number of fix iterations configured.
+</ResponseField>
+
+<ResponseField name="total_scenarios" type="integer">
+  Total number of scenarios being tested.
+</ResponseField>
+
+<ResponseField name="passed_scenarios" type="integer">
+  Number of scenarios currently passing.
+</ResponseField>
+
+<ResponseField name="failed_scenarios" type="integer">
+  Number of scenarios currently failing.
+</ResponseField>
+
+<ResponseField name="unfixable_count" type="integer">
+  Number of scenarios that failed across multiple iterations with the same root cause.
+</ResponseField>
+
+<ResponseField name="unfixable_ids" type="array of strings">
+  IDs of scenarios deemed unfixable.
+</ResponseField>
+
+<ResponseField name="iterations" type="array">
+  Array of iteration objects describing each fix cycle.
+
+  <Expandable title="iteration object">
+    <ResponseField name="iteration" type="integer">
+      The iteration number.
+    </ResponseField>
+    <ResponseField name="batch_id" type="string">
+      The test batch ID for this iteration.
+    </ResponseField>
+    <ResponseField name="started_at" type="string">
+      ISO 8601 timestamp of when the iteration started.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string">
+      ISO 8601 timestamp of when the iteration completed.
+    </ResponseField>
+    <ResponseField name="passed_ids" type="array of strings">
+      Scenario IDs that passed in this iteration.
+    </ResponseField>
+    <ResponseField name="failed_ids" type="array of strings">
+      Scenario IDs that failed in this iteration.
+    </ResponseField>
+    <ResponseField name="newly_unfixable_ids" type="array of strings">
+      Scenario IDs newly marked as unfixable in this iteration.
+    </ResponseField>
+    <ResponseField name="fix_plan" type="object">
+      The fix plan generated for this iteration.
+
+      <Expandable title="fix_plan object">
+        <ResponseField name="fixes" type="array">
+          Array of individual fixes to be applied.
+        </ResponseField>
+        <ResponseField name="priority_order" type="array of strings">
+          Ordered list of fix IDs by priority.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="norm_prompt_excerpt" type="string">
+      An excerpt of the normalized prompt after fixes were applied.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="elapsed_ms" type="integer">
+  Time elapsed since the session started in milliseconds.
+</ResponseField>
+
+<ResponseField name="timeout_ms" type="integer">
+  The timeout configured for this session in milliseconds.
+</ResponseField>
+
+<ResponseField name="forked_version" type="integer">
+  The pathway version created from the applied fixes.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "session_id": "e1f2a3b4-5678-9cde-f012-3456789abcde",
+  "status": "COMPLETED_ALL_PASSED",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "total_scenarios": 3,
+  "passed_scenarios": 3,
+  "failed_scenarios": 0,
+  "unfixable_count": 0,
+  "unfixable_ids": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "batch_id": "b1c2d3e4-f567-890a-bcde-f01234567890",
+      "started_at": "2026-04-14T10:15:01.000Z",
+      "completed_at": "2026-04-14T10:17:45.000Z",
+      "passed_ids": [
+        "a1b2c3d4-5678-9abc-def0-1234567890ab"
+      ],
+      "failed_ids": [
+        "f6a7b8c9-0abc-def1-2345-67890abcdef0",
+        "d9e0f1a2-3456-789b-cdef-0123456789ab"
+      ],
+      "newly_unfixable_ids": [],
+      "fix_plan": {
+        "fixes": [
+          {
+            "id": "fix-001",
+            "target_node": "de-escalation-handler",
+            "description": "Add empathy statement before addressing complaint",
+            "type": "prompt_edit"
+          },
+          {
+            "id": "fix-002",
+            "target_node": "transfer-logic",
+            "description": "Lower transfer threshold from 3 failures to 2",
+            "type": "config_change"
+          }
+        ],
+        "priority_order": ["fix-001", "fix-002"]
+      },
+      "norm_prompt_excerpt": "When the caller expresses frustration, first acknowledge their feelings with an empathy statement..."
+    },
+    {
+      "iteration": 2,
+      "batch_id": "c2d3e4f5-6789-0abc-def0-123456789abc",
+      "started_at": "2026-04-14T10:17:50.000Z",
+      "completed_at": "2026-04-14T10:20:12.000Z",
+      "passed_ids": [
+        "a1b2c3d4-5678-9abc-def0-1234567890ab",
+        "f6a7b8c9-0abc-def1-2345-67890abcdef0",
+        "d9e0f1a2-3456-789b-cdef-0123456789ab"
+      ],
+      "failed_ids": [],
+      "newly_unfixable_ids": [],
+      "fix_plan": {
+        "fixes": [],
+        "priority_order": []
+      },
+      "norm_prompt_excerpt": null
+    }
+  ],
+  "elapsed_ms": 312000,
+  "timeout_ms": 900000,
+  "forked_version": 4
+}
+```
+</ResponseExample>

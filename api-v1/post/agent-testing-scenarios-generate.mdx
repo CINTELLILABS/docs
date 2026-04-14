@@ -1,0 +1,84 @@
+---
+title: "Generate Scenario from Call"
+api: "POST https://api.bland.ai/v1/agent-testing/scenarios/generate-from-call"
+description: "Generate a test scenario from a historical call transcript using AI analysis."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="call_id" type="string" required>
+  The ID of the historical call to generate a scenario from. The call transcript will be analyzed by AI to extract a realistic test scenario.
+</ParamField>
+
+<ParamField body="pathway_id" type="string">
+  The pathway to bind the generated scenario to. Either `pathway_id` or `persona_id` is required.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  The persona to bind the generated scenario to. Either `pathway_id` or `persona_id` is required.
+</ParamField>
+
+### Response
+
+The response contains the generated scenario data. This data is **not yet saved** -- it is returned so you can review and use it to create a scenario.
+
+<Note>
+  Sensitive data such as phone numbers, webhook URLs, and API keys is automatically stripped from the generated `request_data`.
+</Note>
+
+<ResponseField name="name" type="string">
+  An AI-generated name summarizing the scenario.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  An AI-generated description of what the scenario tests based on the call transcript.
+</ResponseField>
+
+<ResponseField name="category" type="string">
+  The inferred category for the scenario (e.g., `HAPPY_PATH`, `EDGE_CASE`, `ANGRY_CALLER`).
+</ResponseField>
+
+<ResponseField name="tester_persona_prompt" type="string">
+  An AI-generated prompt that instructs the simulated caller to replicate the behavior observed in the original call.
+</ResponseField>
+
+<ResponseField name="tester_persona_name" type="string">
+  A name for the simulated caller persona derived from the call.
+</ResponseField>
+
+<ResponseField name="pathway_id" type="string">
+  The pathway the scenario is bound to (if provided).
+</ResponseField>
+
+<ResponseField name="persona_id" type="string">
+  The persona the scenario is bound to (if provided).
+</ResponseField>
+
+<ResponseField name="request_data" type="object">
+  Request data extracted from the call with sensitive fields automatically removed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+    "name": "Inbound Appointment Booking - Returning Customer",
+    "description": "Simulates a returning customer calling to book a follow-up appointment. The caller provides their name and preferred time slot, and expects confirmation.",
+    "category": "HAPPY_PATH",
+    "tester_persona_prompt": "You are Sarah Chen, a returning customer. You previously visited for a consultation and want to book a follow-up appointment. You prefer afternoons, ideally next Thursday at 2 PM. Be polite but firm about your preferred time. If that slot is unavailable, accept an alternative within the same week.",
+    "tester_persona_name": "Sarah Chen",
+    "pathway_id": "pw_abc123",
+    "persona_id": null,
+    "request_data": {
+        "customer_name": "Sarah Chen",
+        "account_id": "cust_92841",
+        "appointment_type": "follow_up"
+    }
+}
+```
+</ResponseExample>

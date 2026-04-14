@@ -1,0 +1,202 @@
+---
+title: "Get Test Run"
+api: "GET https://api.bland.ai/v1/agent-testing/runs/{id}"
+description: "Retrieve detailed results for a specific test run including chat history, assertion results, and scores."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test run.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  The unique identifier for the test run.
+</ResponseField>
+
+<ResponseField name="scenario_id" type="string">
+  The ID of the scenario that was executed.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current status of the run. One of: `PENDING`, `RUNNING`, `PASSED`, `FAILED`, `ERROR`, `CANCELLED`.
+</ResponseField>
+
+<ResponseField name="chat_history" type="array of objects">
+  The full conversation history between the simulated persona and the agent. Each entry contains:
+
+  - `role` - Either `user` (the persona) or `assistant` (the agent).
+  - `content` - The text spoken in that turn.
+</ResponseField>
+
+<ResponseField name="variables_extracted" type="object">
+  Variables that were extracted or set during the test run. Keys are variable names, values are the extracted values.
+</ResponseField>
+
+<ResponseField name="nodes_visited" type="array of strings">
+  An ordered list of pathway node IDs that were visited during the test run.
+</ResponseField>
+
+<ResponseField name="current_node_id" type="string">
+  The node ID where the conversation ended.
+</ResponseField>
+
+<ResponseField name="turn_count" type="integer">
+  The total number of conversational turns in the test run.
+</ResponseField>
+
+<ResponseField name="duration_ms" type="integer">
+  The total duration of the test run in milliseconds.
+</ResponseField>
+
+<ResponseField name="overall_score" type="number">
+  A score between 0 and 1 representing how well the agent performed across all assertions and evaluations.
+</ResponseField>
+
+<ResponseField name="bland_tone_score" type="object">
+  A detailed tone analysis of the agent's responses. Contains:
+
+  - `naturalness` - Score (0-1) for how natural the agent sounded.
+  - `conciseness` - Score (0-1) for response brevity and clarity.
+  - `empathy` - Score (0-1) for empathetic responses.
+  - `flow_preservation` - Score (0-1) for maintaining conversation flow.
+  - `back_channeling` - Score (0-1) for appropriate use of acknowledgments.
+  - `topic_transitions` - Score (0-1) for smooth topic changes.
+  - `overall_tone_score` - Aggregate tone score (0-1).
+  - `issues` - Array of identified tone issues.
+  - `examples` - Array of specific examples from the conversation.
+</ResponseField>
+
+<ResponseField name="assertion_results" type="array of objects">
+  Results for each assertion defined in the scenario. Each entry includes the assertion configuration and whether it passed or failed.
+</ResponseField>
+
+<ResponseField name="error_message" type="string">
+  If the run status is `ERROR`, this contains a description of what went wrong. Otherwise `null`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp for when the run was created.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+  "scenario_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "pathway_id": "b1693602-c05e-4b5c-b187-d0189a42aebf",
+  "persona_id": "c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f",
+  "batch_id": null,
+  "status": "PASSED",
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hello! Thanks for calling Acme Dental. How can I help you today?"
+    },
+    {
+      "role": "user",
+      "content": "Hi, I'd like to book a cleaning appointment for next week."
+    },
+    {
+      "role": "assistant",
+      "content": "I'd be happy to help you schedule a cleaning. Let me check our availability. Do you have a preferred day next week?"
+    },
+    {
+      "role": "user",
+      "content": "Tuesday or Wednesday would work best for me."
+    },
+    {
+      "role": "assistant",
+      "content": "We have openings on Tuesday at 10 AM and Wednesday at 2 PM. Which works better for you?"
+    },
+    {
+      "role": "user",
+      "content": "Tuesday at 10 AM sounds perfect."
+    },
+    {
+      "role": "assistant",
+      "content": "Great, I've booked your cleaning appointment for Tuesday at 10 AM. You'll receive a confirmation text shortly. Is there anything else I can help with?"
+    },
+    {
+      "role": "user",
+      "content": "No, that's all. Thank you!"
+    },
+    {
+      "role": "assistant",
+      "content": "You're welcome! We'll see you Tuesday. Have a great day!"
+    }
+  ],
+  "variables_extracted": {
+    "appointment_date": "2026-04-21",
+    "appointment_time": "10:00",
+    "service_type": "cleaning"
+  },
+  "nodes_visited": [
+    "greeting",
+    "identify_intent",
+    "check_availability",
+    "offer_slots",
+    "confirm_booking",
+    "closing"
+  ],
+  "current_node_id": "closing",
+  "turn_count": 9,
+  "duration_ms": 14320,
+  "overall_score": 0.92,
+  "bland_tone_score": {
+    "naturalness": 0.95,
+    "conciseness": 0.88,
+    "empathy": 0.91,
+    "flow_preservation": 0.93,
+    "back_channeling": 0.85,
+    "topic_transitions": 0.90,
+    "overall_tone_score": 0.91,
+    "issues": [],
+    "examples": [
+      {
+        "turn": 3,
+        "category": "empathy",
+        "text": "I'd be happy to help you schedule a cleaning.",
+        "sentiment": "positive"
+      }
+    ]
+  },
+  "assertion_results": [
+    {
+      "assertion_id": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+      "type": "contains",
+      "target": "transcript",
+      "expected": "appointment",
+      "passed": true
+    },
+    {
+      "assertion_id": "e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+      "type": "node_visited",
+      "target": "nodes_visited",
+      "expected": "confirm_booking",
+      "passed": true
+    },
+    {
+      "assertion_id": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+      "type": "variable_equals",
+      "target": "variables_extracted",
+      "field": "service_type",
+      "expected": "cleaning",
+      "passed": true
+    }
+  ],
+  "error_message": null,
+  "created_at": "2026-04-14T10:30:00.000Z"
+}
+```
+
+</ResponseExample>
