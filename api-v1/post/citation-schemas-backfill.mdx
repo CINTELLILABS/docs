@@ -6,12 +6,12 @@ description: "Retroactively apply one or more citation schemas to extract data f
 
 ## Overview
 
-The backfill endpoint allows you to apply citation schemas to calls that have already been completed. This is useful when you:
-- Create a new schema and want to extract data from historical calls
-- Need to re-analyze calls with updated schemas
-- Want to extract data from multiple calls at scale
+The backfill endpoint allows you to apply citation schemas to calls and SMS conversations that have already been completed. This is useful when you:
+- Create a new schema and want to extract data from historical calls or conversations
+- Need to re-analyze calls or conversations with updated schemas
+- Want to extract data from multiple calls or conversations at scale
 
-Backfill operations are **asynchronous** - you'll receive a `workflow_id` immediately and can poll the status endpoint to check progress and retrieve results.
+Call backfill operations are **asynchronous** — you'll receive a `workflow_id` immediately and can poll the status endpoint to check progress. SMS conversation backfill is **synchronous** — results are returned directly in the response.
 
 <Info>
   This is an **Enterprise-only feature**. Contact your Bland representative or reach out to sales to enable this functionality.
@@ -50,10 +50,10 @@ Backfill operations are **asynchronous** - you'll receive a `workflow_id` immedi
 
   Can be combined with `call_id` or `call_ids` for multi-call analysis.
 
-  **Note**: Cannot be combined with `schema_ids`.
+  **Note**: Cannot be combined with `schema_ids`. Not supported for SMS conversation backfill.
 </ParamField>
 
-#### Call Parameters (Choose One)
+#### Call Parameters
 
 <ParamField body="call_id" type="string">
   A single call ID to analyze with the specified schema(s).
@@ -63,34 +63,56 @@ Backfill operations are **asynchronous** - you'll receive a `workflow_id` immedi
   An array of call IDs to analyze with the specified schema(s). All schemas will be applied to each call.
 </ParamField>
 
+#### SMS Conversation Parameters
+
+<ParamField body="conversation_id" type="string">
+  A single SMS conversation ID to analyze with the specified schema(s). Processed synchronously.
+</ParamField>
+
+<ParamField body="conversation_ids" type="string[]">
+  An array of SMS conversation IDs to analyze. Maximum 50 conversations per request. All schemas will be applied to each conversation. Processed synchronously.
+</ParamField>
+
 ---
 
-## Response (202 Accepted)
+## Response
 
-The endpoint returns immediately with a workflow ID. Use the [status endpoint](#checking-status) to monitor progress.
+Returns `202 Accepted` when calls are included (async processing), or `200 OK` when only SMS conversations are included (sync processing).
 
 <ResponseField name="status" type="string">
-  Always `"processing"` - indicates the workflow has been started.
+  `"processing"` when calls are being processed asynchronously, or `"complete"` when only SMS conversations were processed.
 </ResponseField>
 
 <ResponseField name="workflow_id" type="string">
-  Unique identifier for this backfill operation. Use this to check status and retrieve results.
+  Unique identifier for the call backfill workflow. Only present when calls are included. Use this to check status and retrieve results.
 </ResponseField>
 
 <ResponseField name="call_count" type="integer">
   Number of calls being processed.
 </ResponseField>
 
+<ResponseField name="conversation_count" type="integer">
+  Number of SMS conversations processed.
+</ResponseField>
+
 <ResponseField name="schema_count" type="integer">
-  Number of schemas being applied to each call.
+  Number of schemas being applied.
 </ResponseField>
 
 <ResponseField name="total_combinations" type="integer">
-  Total number of call+schema extractions that will be performed (`call_count × schema_count`).
+  Total number of call+schema extractions that will be performed (`call_count × schema_count`). Only present when calls are included.
+</ResponseField>
+
+<ResponseField name="conversations" type="array">
+  Results for SMS conversation backfill. Only present when conversations are included. Each entry contains:
+  - `conversation_id` — the conversation that was analyzed
+  - `status` — `"success"`, `"skipped"`, or `"error"`
+  - `variables_extracted` — number of citation variables extracted
+  - `error` — error message if the extraction failed
 </ResponseField>
 
 <ResponseField name="message" type="string">
-  Instructions on how to check the status of your workflow.
+  Instructions on how to check the status of the call workflow.
 </ResponseField>
 
 ---
@@ -233,6 +255,39 @@ curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
 }
 ```
 
+### SMS Conversations
+
+```bash Request
+curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation_ids": ["conv-123", "conv-456"],
+    "schema_id": "schema-abc"
+  }'
+```
+
+```json Response (200 OK)
+{
+  "status": "complete",
+  "call_count": 0,
+  "conversation_count": 2,
+  "schema_count": 1,
+  "conversations": [
+    {
+      "conversation_id": "conv-123",
+      "status": "success",
+      "variables_extracted": 3
+    },
+    {
+      "conversation_id": "conv-456",
+      "status": "success",
+      "variables_extracted": 2
+    }
+  ]
+}
+```
+
 ### Single Call with Inline Schema
 
 ```bash Request
@@ -349,15 +404,16 @@ curl https://api.bland.ai/v1/citation_schemas/backfill/status/backfill:call-123:
 
 Returned when:
 - No schema parameter provided (`schema_id`, `schema_ids`, or `schema` required)
-- No call parameter provided (`call_id` or `call_ids` required)
+- No identifier parameter provided (`call_id`, `call_ids`, `conversation_id`, `conversation_ids`, or `recording_url` required)
 - Invalid parameter combinations (e.g., `schema_ids` with inline `schema`)
 - Empty arrays provided
+- More than 50 SMS conversations in a single request
 
 ### 403 Forbidden
 
 Returned when:
 - Account does not have enterprise features enabled
-- Attempting to access another organization's calls or schemas
+- Attempting to access another organization's calls, conversations, or schemas
 
 ### 404 Not Found
 

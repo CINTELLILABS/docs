@@ -493,6 +493,45 @@ For detailed configuration options and troubleshooting, see the complete [Citati
 
 ---
 
+## SMS Conversation Webhooks
+
+SMS conversations fire webhooks with the same structure as voice calls, so you can use a single webhook endpoint for both channels.
+
+### Message Webhooks
+
+Every time a message is sent or received, a webhook fires with the message details and full chat history. The payload includes:
+
+- `conversation_id`, `phone_number`, `agent_number`, `channel` (`"sms"`, `"rcs"`, or `"whatsapp"`)
+- `pathway_id`, `pathway_version`
+- `message`, `sender` (`"USER"` or `"AGENT"`)
+- `chat_history` — the full conversation so far
+- `variables` — pathway variables collected during the conversation
+- `metadata` — custom metadata passed when the conversation was created
+- `pathway_tags` — tags from pathway nodes visited during the conversation
+
+### Status Webhooks
+
+When a conversation ends (via timeout, end-call node, or opt-out), a status webhook fires with the complete conversation context. In addition to the fields above, the status payload includes:
+
+- `status` — `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"read"`, or `"link_clicked"`
+- `message_count` — total messages in the conversation
+- `concatenated_transcript` — the full conversation as a single string
+- `summary` — AI-generated summary (when a summary prompt is configured)
+- `citations` — extracted citation variables (when citation schemas are configured)
+- `dispositions` — outcome run results (when outcomes are configured)
+
+SMS also supports `read` and `link_clicked` status events for RCS and WhatsApp channels, which fire when a recipient reads a message or taps an action button link.
+
+### Configuring SMS Webhooks
+
+You can set a webhook URL in three ways:
+
+1. **On the SMS number** — configure via the Messaging dashboard or [Update SMS Webhook](/api-v1/post/sms-webhook-update) endpoint
+2. **Per request** — pass a `webhook` parameter in [Send SMS](/api-v1/post/sms-send) to override the number's configured webhook
+3. **Per batch** — pass a `webhook` in the `global` object of [Send SMS Batch](/api-v1/post/sms-batch)
+
+---
+
 ## Error Message Reference
 
 All possible values for the `error_message` field in post-call webhooks. Note that webhook delivery uses HTTP status codes separately from call outcome errors.
