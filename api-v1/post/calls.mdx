@@ -442,6 +442,30 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ParamField>
 
+### **Outcomes**
+
+<ParamField body="disposition_ids" type="string[]">
+  Extract structured data from your calls using custom JavaScript that runs automatically as part of the post-call workflow.
+
+  - Define output fields and Bland generates a transformation script from a real call. Select any past call as test input to generate code from the actual data structure
+  - Backtest against real calls in the editor
+  - Attach outcomes to outbound calls, batch calls, inbound numbers, and send-call nodes. Results surface in a new tab on every call log with post call webhooks enabled
+
+  You can build an outcome here schema [here](https://app.bland.ai/dashboard/analytics?tab=outcomes).
+
+  After building your outcome, you can copy their UUIDs and reference them in your API request for outgoing calls (and you can also attach them to your inbound phone numbers).
+
+  Here's an example:
+
+  ```json
+  {
+    "disposition_ids": ["7a4ed332-39c4-432e-b909-d2b25f414baf", "1bf37eef-778a-439b-9331-52356fa379e8"]
+  }
+  ```
+
+  > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
+</ParamField>
+
 ### Post Call Parameters
 
 <ParamField body="summary_prompt" type="string">
@@ -858,13 +882,12 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
 
-    | Field | Type | Description |
-    |-------|------|-------------|
-    | `type` | string | One of: `tcpa:ai_disclosure`, `tcpa:self_introduction`, `tcpa:recording_disclosure` |
-    | `actions` | array | Actions to take if disclosure is NOT made within the time window |
-    | `config.end_seconds` | number | Time window in seconds (default: 30) |
+    | Field                | Type   | Description                                                                         |
+    | -------------------- | ------ | ----------------------------------------------------------------------------------- |
+    | `type`               | string | One of: `tcpa:ai_disclosure`, `tcpa:self_introduction`, `tcpa:recording_disclosure` |
+    | `actions`            | array  | Actions to take if disclosure is NOT made within the time window                    |
+    | `config.end_seconds` | number | Time window in seconds (default: 30)                                                |
   </Accordion>
-
   <Accordion title="Custom Guard Rails (Enterprise)">
     Custom guard rails with your own prompt. Enterprise customers can create up to 5 custom guard rails.
 
@@ -878,23 +901,21 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
 
-    | Field | Type | Description |
-    |-------|------|-------------|
-    | `type` | string | `custom` |
-    | `prompt` | string | Your custom detection prompt |
-    | `actions` | array | Actions to take when the guard rail triggers |
+    | Field     | Type   | Description                                  |
+    | --------- | ------ | -------------------------------------------- |
+    | `type`    | string | `custom`                                     |
+    | `prompt`  | string | Your custom detection prompt                 |
+    | `actions` | array  | Actions to take when the guard rail triggers |
   </Accordion>
-
   <Accordion title="Action Types">
     Each guard rail requires an `actions` array. Available action types:
 
-    | Action Type | Description | Config |
-    |-------------|-------------|--------|
-    | `end_call` | Immediately terminate the call | None |
-    | `transfer` | Transfer to a human agent | `{ "phone_number": "+15551234567" }` |
-    | `move_to_node` | Jump to a specific pathway node | `{ "node_id": "node-uuid" }` |
+    | Action Type    | Description                     | Config                               |
+    | -------------- | ------------------------------- | ------------------------------------ |
+    | `end_call`     | Immediately terminate the call  | None                                 |
+    | `transfer`     | Transfer to a human agent       | `{ "phone_number": "+15551234567" }` |
+    | `move_to_node` | Jump to a specific pathway node | `{ "node_id": "node-uuid" }`         |
   </Accordion>
-
   **Full example with multiple guard rails:**
 
   ```json
@@ -973,7 +994,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 ## Error Codes Reference
 
-<Accordion title="View All Error Codes" icon="warning">
+<Accordion icon="warning" title="View All Error Codes">
   This section documents all possible error codes and HTTP status codes you can receive when making a POST request to `/v1/calls`.
 
   ### Authentication & Authorization Errors
