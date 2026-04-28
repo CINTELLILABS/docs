@@ -48,9 +48,9 @@ Call backfill operations are **asynchronous** — you'll receive a `workflow_id`
 <ParamField body="schema" type="object">
   An inline citation schema definition. Useful for one-time analysis without creating a schema in your account.
 
-  Can be combined with `call_id` or `call_ids` for multi-call analysis.
+  Can be combined with `call_id`/`call_ids` or `conversation_id`/`conversation_ids` for multi-call or multi-conversation analysis.
 
-  **Note**: Cannot be combined with `schema_ids`. Not supported for SMS conversation backfill.
+  **Note**: Cannot be combined with `schema_ids`.
 </ParamField>
 
 #### Call Parameters
@@ -107,7 +107,10 @@ Returns `202 Accepted` when calls are included (async processing), or `200 OK` w
   Results for SMS conversation backfill. Only present when conversations are included. Each entry contains:
   - `conversation_id` — the conversation that was analyzed
   - `status` — `"success"`, `"skipped"`, or `"error"`
-  - `variables_extracted` — number of citation variables extracted
+  - `variables_extracted` — count of unique variable names extracted across all schemas (same definition as `result.calls[].variables_extracted_count`)
+  - `previous_variables` — the conversation's citation variables **before** this backfill operation
+  - `newly_extracted_variables` — variables that were extracted or updated by **this backfill** operation
+  - `final_variables` — the conversation's citation variables **after** this backfill operation (complete merged state)
   - `error` — error message if the extraction failed
 </ResponseField>
 
@@ -277,12 +280,33 @@ curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
     {
       "conversation_id": "conv-123",
       "status": "success",
-      "variables_extracted": 3
+      "variables_extracted": 2,
+      "previous_variables": {
+        "customer_name": "Jane"
+      },
+      "newly_extracted_variables": {
+        "intent": "support",
+        "resolved": true
+      },
+      "final_variables": {
+        "customer_name": "Jane",
+        "intent": "support",
+        "resolved": true
+      }
     },
     {
       "conversation_id": "conv-456",
       "status": "success",
-      "variables_extracted": 2
+      "variables_extracted": 2,
+      "previous_variables": {},
+      "newly_extracted_variables": {
+        "intent": "billing",
+        "resolved": false
+      },
+      "final_variables": {
+        "intent": "billing",
+        "resolved": false
+      }
     }
   ]
 }
@@ -421,6 +445,7 @@ Returned when:
 - Specified call ID(s) not found
 - Specified schema ID(s) not found
 - Resources don't belong to your organization
+- None of the provided `schema_id`/`schema_ids` can be resolved (error code: `NO_RESOLVABLE_SCHEMAS`)
 
 ### 500 Internal Server Error
 
