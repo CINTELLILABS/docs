@@ -1,7 +1,7 @@
 ---
-title: "Create a Batch or Campaign"
-api: "POST https://api.bland.ai/v2/batches"
-description: "Send large volumes of calls at once with follow-up sequences."
+title: "Create Batch"
+api: "POST https://api.bland.ai/v2/batches/create"
+description: "Create a new batch of calls using direct input."
 ---
 
 ### Headers
@@ -11,34 +11,128 @@ description: "Send large volumes of calls at once with follow-up sequences."
 </ParamField>
 
 <ParamField header="encrypted_key" type="string">
-  Use your own Twilio account and only return inbound numbers associated with that account sid (optional).
-</ParamField> 
+  Optional encrypted key used for securing batch payloads.
+
+  Learn more about BYOT [here](/tutorials/custom-twilio).
+</ParamField>
 
 ### Body
 
-<ParamField body="name" type="string" required>
-  Name for your batch/campaign to later reference.
+<ParamField body="call_objects" type="array">
+  A list of individual call objects to include in the batch. Each object follows the same schema as `/v1/calls`.
+
+  ```json Example
+  "call_objects": [
+    {
+      "phone_number": "+1234567890",
+      "task": "Say hello to the nice person!",
+  	"start_time": "2026-01-01 12:00:00-05:00",
+      // Provide a UUID v7 Compliant ID for this Call ahead of time.
+      // Requires entitlements to use. Contact your Account Executive for more information.
+      "b_cid": "<UUID v7 Compliant ID>"
+      // Remainder of /v1/call properties ...
+    },
+    {
+      "phone_number": "+1234567891",
+      "task": "Say hello to the bad person!",
+      "record": false,
+  	"start_time": "2026-01-01 1:00:00-05:00" //timezone is optional, defaults to UTC
+      // /v1/call properties
+    }
+  ]
+  ```
 </ParamField>
 
-<ParamField body="phone_numbers" type="object[]" required>
-  An array of objects representing phone numbers to send calls to and call parameters.
-  - `phone_number` - (STRING) The phone number to send a call to.
-  -  All other parameters supported by the [Send Call](/api-v1/post/calls) endpoint are supported here as well. They will be applied to each call in the batch.
+<ParamField body="global" type="object" required>
+  Global call properties to apply to all `call_objects`, unless overridden per entry. \
+  \
+  **Required keys:**
+
+  - Must include at least one of: `"task"` or `"pathway_id"`. \
+    \
+    **Forbidden keys:**
+  - `"phone_number"` is **not allowed** in the global object.
+
+  Example:
+
+  ```json Example
+  "global": {
+    "task": "Say hello to the nice person!",
+    "record": true,
+    "start_time": "2026-01-01 12:00:00-05:00" //timezone is optional, defaults to UTC
+    // /v1/call properties
+  }
+  ```
 </ParamField>
 
-<ParamField body="call_params" type="object">
-  Parameters for the call.
-
- All other parameters supported by the [Send Call](/api-v1/post/calls) endpoint are supported here as well. They will be applied to each call in the batch.
+<ParamField body="description" type="string">
+  A short label for the batch shown in the dashboard. Maximum 60 characters. Defaults to `"Untitled Batch"` if not provided.
 </ParamField>
 
-<ParamField body="sequence" type="object">
-  THIS TURNS A BATCH INTO A CAMPAIGN.
-
-  If you pass in a sequence, the batch will be turned into a campaign.
-  A campaign is a squence of calls, that continue to be sent until the user answers, or retries has been exhausted.
-
-  - `sequence.retries` - (INTEGER) Number of times to retry when no answer.
-  - `sequence.wait_period` - (INTEGER) Number of days to wait in between follow ups (retries).
-  - `sequence.wait_period_time_unit` - (STRING) Time unit for the wait period. (`MINUTE`, `HOUR`, `DAY`)
+<ParamField body="status_webhook" type="string">
+  Optional URL to receive batch status updates. We send a single POST per lifecycle phase and one final POST when the batch completes or fails. Payload is JSON with `batch_id`, `status`, and `timestamp`; final events include `calls_total` / `calls_successful` / `calls_failed` or `code` and `reason` on failure. Your endpoint should respond with 200 within a few seconds; we wait up to 10 seconds per call. See [Status webhook](#status-webhook) below for payload details.
 </ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The response includes the `batch_id` of the newly created batch.
+</ResponseField>
+
+<ResponseField name="data.batch_id" type="string">
+  The unique identifier for the batch.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "batch_id": "8b8e8c57-9e6e-4e4d-84d2-9826b2268c22"
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+### Status webhook
+
+If you provide **`status_webhook`**, we POST to that URL at each lifecycle phase and once when the batch finishes. All requests use `Content-Type: application/json`.
+
+**Status values:** `validating` | `dispatching` | `in_progress` | `in_progress_chunked` | `waiting_for_scheduled_calls` | `completed` | `failed` | `completed_partial`
+
+**Common fields on every request:** `batch_id` (string), `status` (string), `timestamp` (ISO 8601). Progress events may include `message` (string). Final events include call counts or error details as below.
+
+**Progress examples:**
+
+```json Validating
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "validating", "timestamp": "2026-02-20T15:00:05.123Z" }
+```
+
+```json In progress (with message)
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "in_progress", "message": "Requested: 100. Validated: 100. Dispatched: 100. CPS: 12.50.", "timestamp": "2026-02-20T15:00:18.789Z" }
+```
+
+**Final events:**
+
+```json Completed
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "completed", "calls_total": 100, "calls_successful": 98, "calls_failed": 2, "timestamp": "2026-02-20T15:30:00.000Z" }
+```
+
+```json Failed
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "failed", "code": "source_invalid", "reason": "Entry #7 did not have a phone number.", "timestamp": "2026-02-20T15:00:10.000Z" }
+```
+
+```json Completed partial (e.g. timeout)
+{ "batch_id": "42eb41ed-1842-40c3-b2e6-47d690c179ad", "status": "completed_partial", "code": "batch_early_exit", "reason": "Condition not met within 86400 seconds", "calls_total": 50, "calls_successful": 45, "calls_failed": 5, "timestamp": "2026-02-21T15:00:00.000Z" }
+```
+
+We send one attempt per event with a 10-second timeout. If the request fails or times out, we log and continue; the workflow is not retried or failed. Respond with 2xx quickly and perform any heavy work asynchronously.
+---
+
+Docs for agents: [llm.txt](/llm.txt)

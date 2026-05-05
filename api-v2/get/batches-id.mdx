@@ -1,7 +1,7 @@
 ---
-title: "Get a Batch or Campaign"
-api: "GET https://api.bland.ai/v2/batches/:id"
-description: "Get a batch or campaign."
+title: "Get Batch"
+api: "GET https://api.bland.ai/v2/batches/{batch_id}"
+description: "Retrieve metadata for a specific batch. This does not include logs, use the logs endpoint for that."
 ---
 
 ### Headers
@@ -10,8 +10,68 @@ description: "Get a batch or campaign."
   Your API key for authentication.
 </ParamField>
 
-### Path
+### Path Parameters
 
-<ParamField path="id" type="string" required>
-  The batch or campaign to get.
+<ParamField path="batch_id" type="string" required>
+  The unique identifier of the batch you want to fetch.
 </ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Metadata and configuration details of the batch.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  The unique identifier of the batch.
+</ResponseField>
+
+<ResponseField name="data.user_id" type="string">
+  The ID of the org that created the batch.
+</ResponseField>
+
+<ResponseField name="data.base_prompt" type="string">
+  A JSON string representing shared call properties such as `task` or `record`.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string (ISO 8601)">
+  The timestamp of when the batch was created.
+</ResponseField>
+
+<ResponseField name="data.call_objects" type="array">
+  A preview of call objects in the batch.
+</ResponseField>
+
+<ResponseField name="data.description" type="string">
+  A human-readable label or description for the batch.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "id": "a9a033b7-44d8-40c6-aaec-42cd43106273",
+    "user_id": "657ad643-92ca-477c-97cc-9d8e6e74d7af",
+    "base_prompt": "{\"record\":true,\"task\":\"Say hello to the user\"}",
+    "created_at": "2025-05-08T19:28:12.627Z",
+    "call_objects": [
+      {
+        "task": "Say hello to the user",
+        "phone_number": "+1234567890"
+      }
+    ],
+    "description": "Untitled Batch"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llm.txt](/llm.txt)
