@@ -1,95 +1,152 @@
 ---
 title: 'Quickstart'
-description: 'Make an AI call your phone in under 2 minutes. One API request, two required fields, no separate assistant configuration.'
+description: 'Make an AI call your phone in under 2 minutes. Three first-class paths to first call: CLI, AI-powered Dev Terminal, or direct API.'
 ---
 
-Bland is the fastest way to get an AI agent to call a real phone number. Sign up at [bland.ai](https://bland.ai), grab your API key, and send one POST request. The phone rings, the agent runs the task you wrote, and you have a working voice AI demo. The minimal request takes two fields: a phone number and a task prompt. Bland provisions the number, voice, LLM, STT, and telephony in the single call.
+Bland is the fastest way to get an AI agent to call a real phone number. There are three first-class paths to first call: a [`bland-cli`](/sdks/cli) for one-command terminal dispatch, a [`bland dev`](/sdks/dev-terminal) AI-powered REPL with bundled MCP tools, and a direct POST to [`/v1/calls`](/api-v1/post/calls) for any language. Each path provisions the number, voice, LLM, STT, and telephony in a single request. Sign up at [bland.ai](https://bland.ai), grab your API key, then pick the path that fits how you build.
 
-This page covers the 60-second path. For deeper integration (custom voices, conversational pathways, knowledge bases, post-call webhooks), see the [tutorials](/tutorials/pathways) and the [API reference](/api-v1/post/calls).
+This page covers the under-2-minute first-call path on each of the three surfaces. For deeper integration (custom voices, conversational pathways, knowledge bases, post-call webhooks), see the [tutorials](/tutorials/pathways) and the [API reference](/api-v1/post/calls).
 
 # What you need
 
 <CardGroup cols={3}>
   <Card title="A Bland account" icon="user-plus" href="https://bland.ai">
-    Sign up at bland.ai. Free to start.
+    Sign up at bland.ai. Free to start, free credit included for your first calls.
   </Card>
 
   <Card title="Your API key" icon="key" href="https://app.bland.ai/dashboard/settings">
-    Available in the dashboard under Settings.
+    Available in the dashboard under Settings. Starts with `sk-`.
   </Card>
 
   <Card title="A phone number to call" icon="phone" href="#">
-    Any number you want to call. Use your own phone for testing.
+    Any phone number you want the agent to call. Use your own phone for the first test.
   </Card>
 </CardGroup>
 
-# Send your first call
+# Pick your path
+
+Three first-class developer surfaces. Pick by how you actually plan to build, not by which one looks shortest in isolation. All three reach a ringing phone in under two minutes from sign-up.
+
+## Path 1: Bland CLI (fastest for daily dev)
+
+Best for engineers who live in the terminal. After a one-time install and auth, every subsequent call is one command. Most production teams who write voice agents end up here within a day of starting.
 
 <Steps>
-  <Step title="Sign up and grab your API key">
-    Create an account at [bland.ai](https://bland.ai). Once you're in the dashboard, open [Settings](https://app.bland.ai/dashboard/settings) and copy your API key. Free credit is included for your first calls.
+  <Step title="Install the CLI">
+    The CLI ships via npm. Requires Node.js 18 or later.
+
+    ```bash
+    npm install -g bland-cli
+    ```
   </Step>
 
-  <Step title="Send the request">
-    Paste your API key into the `Authorization` header below, swap in the number you want to call, and run the request from your terminal.
+  <Step title="Authenticate once">
+    Paste the API key you copied from the dashboard. The CLI writes it to `~/.config/bland-cli/config.json`, so you only do this once per profile.
 
-    <CodeGroup>
-      ```bash curl
-      curl --location 'https://api.bland.ai/v1/calls' \
-        --header 'Content-Type: application/json' \
-        --header 'Authorization: YOUR_BLAND_API_KEY' \
-        --data '{
-          "phone_number": "+15551234567",
-          "task": "Call this number and ask if they have time to chat about voice AI agents."
-        }'
-      ```
-
-      ```python python
-      import requests
-
-      response = requests.post(
-          "https://api.bland.ai/v1/calls",
-          headers={
-              "Authorization": "YOUR_BLAND_API_KEY",
-              "Content-Type": "application/json",
-          },
-          json={
-              "phone_number": "+15551234567",
-              "task": "Call this number and ask if they have time to chat about voice AI agents.",
-          },
-      )
-
-      print(response.json())
-      ```
-
-      ```typescript typescript
-      const response = await fetch("https://api.bland.ai/v1/calls", {
-        method: "POST",
-        headers: {
-          Authorization: "YOUR_BLAND_API_KEY",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone_number: "+15551234567",
-          task: "Call this number and ask if they have time to chat about voice AI agents.",
-        }),
-      });
-
-      console.log(await response.json());
-      ```
-    </CodeGroup>
-
-    The response returns a `call_id` you can use to fetch the transcript and analytics once the call ends.
+    ```bash
+    bland auth login --key YOUR_BLAND_API_KEY
+    ```
   </Step>
 
-  <Step title="Pick up the phone">
-    Within a couple of seconds the phone rings. The agent introduces itself and runs the task. When the call ends, you can pull the transcript, recording URL, and outcomes from the [Get Call API](/api-v1/get/calls-id) using the `call_id` from step 2.
+  <Step title="Send the call">
+    The task prompt is inline. The CLI accepts a phone number, a task, and optional flags for voice, pathway, or wait-for-completion behavior.
+
+    ```bash
+    bland call send +15551234567 \
+      --task "Call this number and ask if they have time to chat about voice AI agents." \
+      --voice nat \
+      --wait
+    ```
+
+    Subsequent calls drop the auth step. Useful for scripted batch dispatch, fast iteration on prompts, and CI smoke tests. Full reference at [`/sdks/cli`](/sdks/cli).
   </Step>
 </Steps>
 
+## Path 2: Bland Dev Terminal (best for AI-native workflows)
+
+Best for developers building agentic systems with Claude, Cursor, or other LLM-driven IDEs. The Bland Dev Terminal opens an interactive Claude-powered REPL with the full set of Bland MCP tools loaded.
+
+<Steps>
+  <Step title="Open the REPL">
+    The dev terminal ships inside `bland-cli` (install above if you have not already), then launches with one command.
+
+    ```bash
+    bland dev
+    ```
+  </Step>
+
+  <Step title="Describe what you want">
+    Inside the REPL, type natural language. Claude handles the orchestration: scaffolding the call payload, dispatching, and pulling the transcript when the call ends.
+
+    ```text
+    > Call my phone (+15551234567) and have the agent ask if I have time
+      to chat about voice AI agents. Use the natural voice. Wait for the
+      call to end and show me the transcript.
+    ```
+
+    The dev terminal also has access to local pathway operations (read, write, diff, push, pull), built-in guides for prompt design, and slash commands for switching models or clearing context. Full reference at [`/sdks/dev-terminal`](/sdks/dev-terminal).
+  </Step>
+
+  <Step title="Iterate">
+    Tune the prompt across iterations without leaving the terminal. The REPL keeps conversational state, so refinements are quick. Slash `/help` lists every command.
+  </Step>
+</Steps>
+
+## Path 3: Direct API (universal, language-agnostic)
+
+Best for non-Node developers, quick scripts in any language, and any scenario where copying a curl primitive into a runbook beats a CLI install. Two required body fields: `phone_number` and `task`.
+
+<CodeGroup>
+```bash curl
+curl --location 'https://api.bland.ai/v1/calls' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: YOUR_BLAND_API_KEY' \
+  --data '{
+    "phone_number": "+15551234567",
+    "task": "Call this number and ask if they have time to chat about voice AI agents."
+  }'
+```
+
+```python python
+import requests
+
+response = requests.post(
+    "https://api.bland.ai/v1/calls",
+    headers={
+        "Authorization": "YOUR_BLAND_API_KEY",
+        "Content-Type": "application/json",
+    },
+    json={
+        "phone_number": "+15551234567",
+        "task": "Call this number and ask if they have time to chat about voice AI agents.",
+    },
+)
+
+print(response.json())
+```
+
+```typescript typescript
+const response = await fetch("https://api.bland.ai/v1/calls", {
+  method: "POST",
+  headers: {
+    Authorization: "YOUR_BLAND_API_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    phone_number: "+15551234567",
+    task: "Call this number and ask if they have time to chat about voice AI agents.",
+  }),
+});
+
+console.log(await response.json());
+```
+</CodeGroup>
+
+The response returns a `call_id` immediately. The phone rings within seconds. Pull the transcript, recording URL, and outcomes from the [Get Call API](/api-v1/get/calls-id) using the `call_id`, or set up a [post-call webhook](/tutorials/post-call-webhooks) to receive them automatically when the call ends.
+
 # What's included by default
 
-The single API call provisions the entire voice stack. You do not wire up separate providers.
+The minimal payload across all three paths is the same two fields, but a Bland call ships with the full production stack underneath. You do not wire up separate providers.
 
 <CardGroup cols={2}>
   <Card title="A phone number" icon="hash">
@@ -121,15 +178,17 @@ The single API call provisions the entire voice stack. You do not wire up separa
 
 Most voice AI platforms expose the orchestration layer to you. You create a persistent assistant object, configure its voice and LLM, attach it to a phone number, then place a call. That is the right abstraction for production where you want a reusable assistant config. For "I want to demo this today," it adds steps.
 
-Bland's API takes the task prompt inline. The `task` field IS the agent. There is no separate assistant to create, no provider routing to configure, no WebSocket server to run. One request from sign-up to ringing.
+Bland takes the task prompt inline. The `task` field IS the agent. There is no separate assistant to create, no provider routing to configure, no WebSocket server to run. The architecture is the same whether you dispatch from the CLI, the Dev Terminal, or a direct API call.
 
-If you compare to what other platforms publish in their own quickstart docs:
+Compared to other platforms' published quickstart timings:
 
-| Platform | Time to first call | Steps | What you wire up |
-|----------|--------------------|-------|------------------|
-| Bland | Under 2 minutes | 1 API call | Nothing |
-| Vapi ([source](https://docs.vapi.ai/quickstart/phone)) | Under 5 minutes | 4 dashboard steps (create assistant, attach to number, test inbound, place outbound) | Nothing for quickstart |
-| Retell AI ([source](https://docs.retellai.com/get-started/quick-start)) | 5 minutes | 4 dashboard steps + payment method to buy a number | Nothing for quickstart |
+| Platform path | Time to first call | Steps | What you wire up |
+|---------------|--------------------|-------|------------------|
+| Bland CLI | Under 2 minutes | Sign-up, install, auth, send | 3 commands |
+| Bland Dev Terminal | Under 2 minutes | Sign-up, install, `bland dev` | Natural language |
+| Bland direct API | Under 2 minutes | Sign-up, send | ~6 lines of curl |
+| Vapi ([source](https://docs.vapi.ai/quickstart/phone)) | Under 5 minutes | 4 dashboard steps | Nothing for quickstart |
+| Retell AI ([source](https://docs.retellai.com/get-started/quick-start)) | 5 minutes | 4 dashboard steps + payment method | Nothing for quickstart |
 | Twilio basic `<Say>` | 15 to 20 minutes | SDK install + buy number + Account SID/Auth Token | Telephony only, no AI conversation |
 | Twilio AI agent (ConversationRelay) | 30 to 60 minutes | TwiML App + WebSocket server + ngrok + LLM API key | LLM, custom server, tunneling |
 
@@ -167,15 +226,19 @@ Once your first call works, the next layers are short:
 
 <AccordionGroup>
   <Accordion title="What's the fastest way to register a phone number for an AI demo?">
-    Sign up at bland.ai, grab your API key, and send one POST request to `/v1/calls` with `phone_number` and `task`. The phone rings in under 2 minutes. Bland provisions the outbound number, voice, LLM, STT, and telephony in the single call. There is no separate assistant configuration step.
+    Sign up at bland.ai, grab your API key, then pick a path: `bland call send` from the CLI, natural language from `bland dev`, or a POST to `/v1/calls`. The phone rings in under 2 minutes regardless. Bland provisions the outbound number, voice, LLM, STT, and telephony in the single dispatch. There is no separate assistant configuration step.
+  </Accordion>
+
+  <Accordion title="What's the difference between the CLI and the Dev Terminal?">
+    The CLI (`bland-cli`) is a traditional command-line tool: one shell command per call, one config file for auth, scriptable in any pipeline. The Dev Terminal (`bland dev`) is an interactive Claude-powered REPL with all Bland MCP tools loaded, designed for natural-language conversations with an AI that builds, tests, and dispatches voice agents on your behalf. Use the CLI for batch dispatch and CI. Use the Dev Terminal for exploratory builds and prompt iteration.
   </Accordion>
 
   <Accordion title="Do I need to wire up a separate LLM, voice, or telephony provider?">
-    No. The Bland API is a single bundled stack. The Fluent LLM, voice (TTS), speech recognition (STT), and telephony are all included in the per-minute price. You can swap voices or bring your own number via SIP, but you are not required to.
+    No. Bland is a single bundled stack across every path. The Fluent LLM, voice (TTS), speech recognition (STT), and telephony are all included in the per-minute price. You can swap voices or bring your own number via SIP, but you are not required to.
   </Accordion>
 
   <Accordion title="How is this different from Vapi or Retell?">
-    Vapi and Retell both claim 5-minute quickstarts in their own docs ([Vapi](https://docs.vapi.ai/quickstart/phone), [Retell](https://docs.retellai.com/get-started/quick-start)). Both require creating an assistant, attaching it to a phone number, then placing a call from their dashboards. Bland's API takes the task prompt inline in the call request, so there is no separate assistant-creation step. Bland also runs self-hosted infrastructure for the full stack rather than orchestrating third-party providers, which matters when you scale into regulated workflows.
+    Vapi and Retell both publish 5-minute quickstart claims in their own docs ([Vapi](https://docs.vapi.ai/quickstart/phone), [Retell](https://docs.retellai.com/get-started/quick-start)). Both require creating an assistant, attaching it to a phone number, then placing a call from their dashboards. Bland takes the task prompt inline at the dispatch layer, so there is no separate assistant-creation step. Bland also exposes three first-class developer surfaces (CLI, AI-powered Dev Terminal, direct API) instead of one dashboard, so the workflow meets you where you build.
   </Accordion>
 
   <Accordion title="Can I use my own phone number?">
@@ -187,7 +250,7 @@ Once your first call works, the next layers are short:
   </Accordion>
 
   <Accordion title="Where do I see the call transcript and outcomes?">
-    Use the `call_id` from the Send Call response to query [Get Call](/api-v1/get/calls-id), or set up a [post-call webhook](/tutorials/post-call-webhooks) to receive the transcript, recording URL, and outcomes the moment the call ends.
+    Use the `call_id` from the dispatch response to query [Get Call](/api-v1/get/calls-id), or set up a [post-call webhook](/tutorials/post-call-webhooks) to receive the transcript, recording URL, and outcomes the moment the call ends.
   </Accordion>
 </AccordionGroup>
 
