@@ -1,0 +1,106 @@
+---
+title: "Attach Resource"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/resources"
+description: "Attach a call, SMS conversation, or file to an issue."
+---
+
+## Overview
+
+Attaches a resource as evidence on an issue. Resources are what Norm reads during an investigation. Attaching the same resource twice is a no-op.
+
+For calls specifically, [Attach Call](/api-v1/put/triage-issues-id-calls-call-id) is a shorthand that takes the `call_id` directly.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="resource_type" type="string" required>
+  Type of resource to attach. One of `call`, `sms_conversation`, or `file`.
+</ParamField>
+
+<ParamField body="resource_id" type="string" required>
+  ID of the resource. For calls, this is the `call_id` returned by [Send Call](/api-v1/post/calls).
+</ParamField>
+
+---
+
+## Response
+
+Returns `201 Created` with the new resource link. If the resource was already attached, returns the existing link with `200 OK`.
+
+<ResponseField name="data" type="object">
+  <Expandable title="Resource link fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the resource link. Use this to detach with [Remove Resource](/api-v1/delete/triage-issues-id-resources-resource-link-id).
+    </ResponseField>
+    <ResponseField name="issue_id" type="string" />
+    <ResponseField name="org_id" type="string" />
+    <ResponseField name="resource_type" type="string">
+      `call`, `sms_conversation`, or `file`.
+    </ResponseField>
+    <ResponseField name="resource_id" type="string">
+      The original resource ID you attached.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Display title resolved from the resource itself. For calls this is typically a one-line summary of the conversation.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `available` if the underlying resource still exists and is readable, or `unavailable` if it has been deleted or is not accessible.
+    </ResponseField>
+    <ResponseField name="metadata" type="object | null">
+      Extra metadata snapshotted from the resource at attach time, for example the call's `created_at`.
+    </ResponseField>
+    <ResponseField name="attached_by_id" type="string | null">
+      User ID of the caller that attached the resource.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue or the underlying resource cannot be found in your org.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "1d8cec02-6b7c-43f9-9f1f-86d4f31b6d8a",
+    "issue_id": "9bbe5547-d5b1-4b83-9f80-87c4af7c6b34",
+    "org_id": "f5b40b9e-bc05-4b8a-9af1-d8f6a8a3a201",
+    "resource_type": "call",
+    "resource_id": "3e3af63d-0cc0-4525-b742-72a5367fd072",
+    "title": "Caller asked to be transferred to billing after the agent failed to verify their account.",
+    "status": "available",
+    "metadata": {
+      "created_at": "2026-04-30T14:11:08.000Z"
+    },
+    "attached_by_id": "75c5c7da-a5d6-4e26-a51e-1ae8ef2bfa4a",
+    "created_at": "2026-05-07T05:25:56.361Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

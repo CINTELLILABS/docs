@@ -1,0 +1,89 @@
+---
+title: "Get Issue"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}"
+description: "Get a triage issue by ID."
+---
+
+## Overview
+
+Returns a single issue. Same shape as [Create Issue](/api-v1/post/triage-issues). Sub-resources (resources, flags, relations, alert bindings, activity) are fetched via their own paginated endpoints.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue. This is the `id` field returned from [Create Issue](/api-v1/post/triage-issues), not the `triage_id` short code.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="object">
+  The issue. See [Create Issue](/api-v1/post/triage-issues#response) for the full field list.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 with `{ error: "not_found", message: "Issue not found" }` if the ID does not exist or is not in your org.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "e0c4d12b-34b6-4f9f-b12a-5249a351ccc8",
+    "triage_id": "T-1042",
+    "org_id": "dc899c63-277f-4bd2-8b6a-950bbb88dc15",
+    "number": 1042,
+    "title": "Agent skipped the verification step",
+    "description": "On the Aug 12 demo flow the agent jumped to the closing node without asking for the email confirmation.",
+    "status": "in_progress",
+    "severity": "high",
+    "source": "manual",
+    "category": "Routing",
+    "dispatch_id": null,
+    "dispatch_name": null,
+    "skill_id": null,
+    "skill_name": null,
+    "agent_id": null,
+    "owner_id": null,
+    "assignee_id": "51007876-c89e-4ca0-b719-390dc4cf4f72",
+    "author_id": "9a184d67-2ee4-4959-b42d-28cd80343388",
+    "external_link": null,
+    "created_at": "2026-05-04T18:24:11.482Z",
+    "updated_at": "2026-05-06T02:11:08.901Z",
+    "last_activity_at": "2026-05-06T02:11:08.901Z",
+    "resource_count": 3,
+    "flag_count": 1,
+    "relation_count": 0,
+    "linked_alert_count": 0,
+    "latest_agent_session": null,
+    "is_processing": false,
+    "has_unread_activity": false
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "not_found", "message": "Issue not found" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,235 @@
+---
+title: "Create Issue"
+api: "POST https://api.bland.ai/v1/triage/issues"
+description: "Create a triage issue."
+---
+
+## Overview
+
+Opens a new triage issue, optionally with the calls, SMS conversations, or files that prompted it. Issues are the unit of work in [Triage](https://app.bland.ai/dashboard/monitor/triage).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="title" type="string" required>
+  Short, human-readable summary of the issue. 1-200 characters.
+</ParamField>
+
+<ParamField body="severity" type="string" required>
+  How urgent the issue is. Must be one of:
+
+  - `critical`
+  - `high`
+  - `medium`
+  - `low`
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Free-form category label, 1-64 characters. Categories are scoped to your org and reused across issues. The dashboard ships with these defaults out of the box, but you can add your own with [Create Category](/api-v1/post/triage-categories):
+
+  - `Transcription`
+  - `Speech`
+  - `Dialogue`
+  - `Routing`
+  - `Tools`
+  - `Latency`
+  - `Telephony`
+  - `Bug`
+</ParamField>
+
+<ParamField body="description" type="string">
+  Longer explanation of the problem. Maximum 10,000 characters. Shown to Norm as part of the evidence snapshot when you prompt the agent.
+</ParamField>
+
+<ParamField body="status" type="string" default="todo">
+  Initial status. Defaults to `todo` if omitted. Must be one of:
+
+  - `backlog`
+  - `todo`
+  - `in_progress`
+  - `in_review`
+  - `done`
+  - `closed`
+</ParamField>
+
+<ParamField body="source" type="string" default="manual">
+  Where the issue originated. Must be one of:
+
+  - `manual`, created by a user from the dashboard or API (default)
+  - `automated`, created by an automated rule (e.g. an alert binding)
+  - `client`, created by a client integration on the user's behalf
+</ParamField>
+
+<ParamField body="owner_id" type="string">
+  User ID of the person ultimately accountable for the issue.
+</ParamField>
+
+<ParamField body="assignee_id" type="string">
+  User ID of the person currently working on the issue.
+</ParamField>
+
+<ParamField body="dispatch_id" type="string">
+  Dispatch ID this issue is scoped to. Used to filter and roll up issues by dispatch in the Triage dashboard.
+</ParamField>
+
+<ParamField body="skill_id" type="string">
+  Skill ID this issue is scoped to.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  Agent ID this issue is scoped to.
+</ParamField>
+
+<ParamField body="resource_links" type="array">
+  Evidence to attach to the issue at creation. Each entry links the issue to a call, SMS conversation, or uploaded file.
+
+  ```json
+  {
+    "resource_links": [
+      { "resource_type": "call", "resource_id": "d8ef6e50-830b-4c73-a956-3b04a1f28550" },
+      { "resource_type": "file", "resource_id": "54eaa506-8b68-4be7-8d14-1ff260899eee" }
+    ]
+  }
+  ```
+
+  <Accordion title="Resource link fields">
+    - `resource_type`, one of `call`, `sms_conversation`, or `file`.
+    - `resource_id`, the ID of the resource. For calls this is the `call_id` returned by [Send Call](/api-v1/post/calls).
+  </Accordion>
+</ParamField>
+
+---
+
+## Response
+
+Returns `201 Created` with the newly created issue.
+
+<ResponseField name="data" type="object">
+  The created issue.
+
+  <Expandable title="Issue fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the issue. Use this in all `/v1/triage/issues/{id}/...` endpoints.
+    </ResponseField>
+    <ResponseField name="triage_id" type="string">
+      Short, human-friendly issue identifier (for example `T-1001`) shown in the dashboard.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The org that owns this issue.
+    </ResponseField>
+    <ResponseField name="number" type="number">
+      Sequential issue number within your org. Matches the numeric portion of `triage_id`.
+    </ResponseField>
+    <ResponseField name="title" type="string" />
+    <ResponseField name="description" type="string" />
+    <ResponseField name="status" type="string">
+      One of `backlog`, `todo`, `in_progress`, `in_review`, `done`, `closed`.
+    </ResponseField>
+    <ResponseField name="severity" type="string">
+      One of `critical`, `high`, `medium`, `low`.
+    </ResponseField>
+    <ResponseField name="source" type="string">
+      One of `manual`, `automated`, `client`.
+    </ResponseField>
+    <ResponseField name="category" type="string" />
+    <ResponseField name="owner_id" type="string | null" />
+    <ResponseField name="assignee_id" type="string | null" />
+    <ResponseField name="author_id" type="string">
+      User ID of the caller that created the issue.
+    </ResponseField>
+    <ResponseField name="dispatch_id" type="string | null" />
+    <ResponseField name="dispatch_name" type="string | null" />
+    <ResponseField name="skill_id" type="string | null" />
+    <ResponseField name="skill_name" type="string | null" />
+    <ResponseField name="agent_id" type="string | null" />
+    <ResponseField name="external_link" type="object | null">
+      External system link (for example a GitHub issue) bound to this triage issue, if any.
+    </ResponseField>
+    <ResponseField name="resource_count" type="number">
+      Number of attached resources (calls, SMS, files).
+    </ResponseField>
+    <ResponseField name="flag_count" type="number">
+      Number of flags raised against attached calls.
+    </ResponseField>
+    <ResponseField name="relation_count" type="number">
+      Number of related issues linked to this one.
+    </ResponseField>
+    <ResponseField name="linked_alert_count" type="number">
+      Number of alert bindings on this issue.
+    </ResponseField>
+    <ResponseField name="latest_agent_session" type="object | null">
+      The most recent Norm session bound to this issue, including its run state and any draft pathway version Norm is working against. `null` if Norm has never been prompted for this issue.
+    </ResponseField>
+    <ResponseField name="is_processing" type="boolean">
+      `true` while Norm is actively running against the issue.
+    </ResponseField>
+    <ResponseField name="has_unread_activity" type="boolean">
+      `true` if there is activity since the caller last viewed the issue.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+    <ResponseField name="last_activity_at" type="string">
+      ISO 8601 timestamp of the most recent activity entry.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "68007859-4325-4ea2-bbd6-e7c8be3a233a",
+    "triage_id": "T-1001",
+    "org_id": "685b69b7-b903-4d98-9755-af3c957df9e3",
+    "number": 1001,
+    "title": "Agent skipped the verification step",
+    "description": "On the Aug 12 demo flow the agent jumped to the closing node without asking for the email confirmation.",
+    "status": "todo",
+    "severity": "high",
+    "source": "manual",
+    "category": "Routing",
+    "dispatch_id": null,
+    "dispatch_name": null,
+    "skill_id": null,
+    "skill_name": null,
+    "agent_id": null,
+    "owner_id": null,
+    "assignee_id": "beed099d-e493-4142-a68b-af13bd72c035",
+    "author_id": "4d5ac1b5-1f24-46d3-8355-5debfd029a65",
+    "external_link": null,
+    "created_at": "2026-05-06T21:09:57.081Z",
+    "updated_at": "2026-05-06T21:09:57.081Z",
+    "last_activity_at": "2026-05-06T21:09:57.081Z",
+    "resource_count": 1,
+    "flag_count": 0,
+    "relation_count": 0,
+    "linked_alert_count": 0,
+    "latest_agent_session": null,
+    "is_processing": false,
+    "has_unread_activity": false
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

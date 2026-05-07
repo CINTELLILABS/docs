@@ -1,0 +1,96 @@
+---
+title: "Bind Alert"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/alert-bindings"
+description: "Bind an active alert to an issue."
+---
+
+## Overview
+
+Links a firing alert (from [Alerts](https://app.bland.ai/dashboard/alerts)) to a triage issue so the alert is tracked through investigation and resolution. Bindings created here have `binding_mode: "manual"`; bindings created by alert config rules have `binding_mode: "auto"`. Re-binding the same alert is a no-op.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="active_alert_id" type="string" required>
+  ID of the currently-firing alert instance to bind. Must be active in your org. Returns `404 not_found` if the alert does not exist or has already resolved.
+</ParamField>
+
+<ParamField body="alert_config_id" type="string" required>
+  ID of the alert configuration the active alert came from. Used to record the binding's source rule even after the active alert resolves.
+</ParamField>
+
+---
+
+## Response
+
+Returns `201 Created` with the new binding (or `200 OK` with the existing binding if it was already bound).
+
+<ResponseField name="data" type="object">
+  <Expandable title="Alert binding fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the binding.
+    </ResponseField>
+    <ResponseField name="issue_id" type="string" />
+    <ResponseField name="active_alert_id" type="string" />
+    <ResponseField name="alert_config_id" type="string" />
+    <ResponseField name="alert_name" type="string">
+      Display name of the alert config, denormalized at bind time.
+    </ResponseField>
+    <ResponseField name="current_severity" type="string | null">
+      Current severity of the alert. One of `critical`, `warning`, `info`, or `null` if the alert has resolved.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `active` while the alert is still firing, `resolved` after it clears.
+    </ResponseField>
+    <ResponseField name="binding_mode" type="string">
+      `manual` for bindings created via this endpoint, `auto` for bindings created by alert config rules.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+    <ResponseField name="updated_at" type="string" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 with `{ error: "not_found", message: "Alert not found" }` if the active alert is unknown or already resolved.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "9b6df0aa-6e59-4f2a-a8a9-7d0ae8cf3018",
+    "issue_id": "9bbe5547-d5b1-4b83-9f80-87c4af7c6b34",
+    "active_alert_id": "1ed64dab-d6c3-4e2d-bf55-dc27b54e3bcb",
+    "alert_config_id": "07a6e94c-3eaa-4c3c-87a3-4ec1a82ec3a9",
+    "alert_name": "Avg call length over 8 minutes",
+    "current_severity": "warning",
+    "status": "active",
+    "binding_mode": "manual",
+    "created_at": "2026-05-07T05:31:11.045Z",
+    "updated_at": "2026-05-07T05:31:11.045Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

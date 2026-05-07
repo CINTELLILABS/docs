@@ -1,0 +1,212 @@
+---
+title: "List Issues"
+api: "GET https://api.bland.ai/v1/triage/issues"
+description: "List triage issues with filters and keyset pagination."
+---
+
+## Overview
+
+Lists triage issues for your org. Items have the same shape as [Create Issue](/api-v1/post/triage-issues). The same filters power the [Triage dashboard](https://app.bland.ai/dashboard/monitor/triage) sidebar.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Query Parameters
+
+### Pagination
+
+<ParamField query="limit" type="integer" default="50">
+  Number of issues to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page. Omit on the first request.
+</ParamField>
+
+### Sorting
+
+<ParamField query="sort" type="string" default="last_activity_at">
+  Field to sort by. Must be one of:
+
+  - `last_activity_at` (default)
+  - `created_at`
+  - `severity`
+  - `status`
+
+  All sorts include a stable secondary sort by `id` so keyset pagination is deterministic.
+</ParamField>
+
+<ParamField query="order" type="string" default="desc">
+  Sort direction. `asc` or `desc`.
+</ParamField>
+
+### Search
+
+<ParamField query="search" type="string">
+  Free-text search across issue title and description.
+</ParamField>
+
+### Faceted filters
+
+<ParamField query="status" type="string | string[]">
+  Filter by status. Pass a single value, or repeat the parameter for multiple. Allowed values: `backlog`, `todo`, `in_progress`, `in_review`, `done`, `closed`.
+
+  ```
+  ?status=todo&status=in_progress
+  ```
+</ParamField>
+
+<ParamField query="severity" type="string | string[]">
+  Filter by severity. Allowed values: `critical`, `high`, `medium`, `low`. Repeatable.
+</ParamField>
+
+<ParamField query="category" type="string | string[]">
+  Filter by category name. Repeatable.
+</ParamField>
+
+<ParamField query="resource_type" type="string">
+  Only return issues that have at least one resource of this type. One of `call`, `sms_conversation`, `file`.
+</ParamField>
+
+<ParamField query="has_alert" type="boolean">
+  When `true`, only return issues with at least one alert binding. When `false`, only return issues with none.
+</ParamField>
+
+### Scope filters
+
+<ParamField query="owner_id" type="string">
+  Only return issues with this owner.
+</ParamField>
+
+<ParamField query="assignee_id" type="string">
+  Only return issues with this assignee.
+</ParamField>
+
+<ParamField query="dispatch_id" type="string">
+  Only return issues scoped to this dispatch.
+</ParamField>
+
+<ParamField query="skill_id" type="string">
+  Only return issues scoped to this skill.
+</ParamField>
+
+<ParamField query="agent_id" type="string">
+  Only return issues scoped to this agent.
+</ParamField>
+
+### Date range
+
+<ParamField query="date_field" type="string" default="last_activity_at">
+  Which date field the `date_range` filter applies to. One of `last_activity_at` or `created_at`.
+</ParamField>
+
+<ParamField query="date_range" type="string">
+  Relative window from now. One of:
+
+  - `24h`
+  - `7d`
+  - `30d`
+  - `90d`
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of issues. Each issue has the same shape as the response from [Create Issue](/api-v1/post/triage-issues).
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor to pass back as the `cursor` query parameter for the next page. `null` when there are no more pages.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "1aec670c-08d1-42dd-933b-b939508e6693",
+        "triage_id": "T-1042",
+        "org_id": "4edcdd57-4b33-4d1f-a905-e6859ed8cca9",
+        "number": 1042,
+        "title": "Agent skipped the verification step",
+        "description": "On the Aug 12 demo flow the agent jumped to the closing node...",
+        "status": "in_progress",
+        "severity": "high",
+        "source": "manual",
+        "category": "Routing",
+        "dispatch_id": null,
+        "dispatch_name": null,
+        "skill_id": null,
+        "skill_name": null,
+        "agent_id": null,
+        "owner_id": null,
+        "assignee_id": "6e6c4e2f-ec3f-4582-bd95-6fa2d6375234",
+        "author_id": "4fa8878d-4091-4c19-849a-1c64a79609da",
+        "external_link": null,
+        "created_at": "2026-05-04T18:24:11.482Z",
+        "updated_at": "2026-05-06T02:11:08.901Z",
+        "last_activity_at": "2026-05-06T02:11:08.901Z",
+        "resource_count": 3,
+        "flag_count": 1,
+        "relation_count": 0,
+        "linked_alert_count": 0,
+        "latest_agent_session": null,
+        "is_processing": false,
+        "has_unread_activity": true
+      },
+      {
+        "id": "822508a1-4e77-498b-892a-01cf6f9b1801",
+        "triage_id": "T-1039",
+        "org_id": "4edcdd57-4b33-4d1f-a905-e6859ed8cca9",
+        "number": 1039,
+        "title": "Caller transferred to wrong queue",
+        "description": "",
+        "status": "todo",
+        "severity": "high",
+        "source": "automated",
+        "category": "Routing",
+        "dispatch_id": null,
+        "dispatch_name": null,
+        "skill_id": null,
+        "skill_name": null,
+        "agent_id": null,
+        "owner_id": null,
+        "assignee_id": null,
+        "author_id": "4fa8878d-4091-4c19-849a-1c64a79609da",
+        "external_link": null,
+        "created_at": "2026-05-03T22:14:01.117Z",
+        "updated_at": "2026-05-03T22:14:01.117Z",
+        "last_activity_at": "2026-05-03T22:14:01.117Z",
+        "resource_count": 1,
+        "flag_count": 0,
+        "relation_count": 0,
+        "linked_alert_count": 1,
+        "latest_agent_session": null,
+        "is_processing": false,
+        "has_unread_activity": false
+      }
+    ],
+    "next_cursor": "822508a1-4e77-498b-892a-01cf6f9b1801"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

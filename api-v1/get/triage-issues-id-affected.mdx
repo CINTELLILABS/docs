@@ -1,0 +1,143 @@
+---
+title: "Get Affected Context"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}/affected"
+description: "Calls, pathways, and personas affected by an issue."
+---
+
+## Overview
+
+Derived rollup of every call attached to an issue, grouped by pathway and persona. Powers the dashboard's Affected panel. Not paginated.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.issue_id" type="string">
+  The issue this context belongs to.
+</ResponseField>
+
+<ResponseField name="data.skill_context" type="object">
+  The dispatch, skill, and agent the issue is scoped to (mirrored from the issue itself for convenience).
+
+  <Expandable title="skill_context fields">
+    <ResponseField name="dispatch_id" type="string | null" />
+    <ResponseField name="dispatch_name" type="string | null" />
+    <ResponseField name="skill_id" type="string | null" />
+    <ResponseField name="skill_name" type="string | null" />
+    <ResponseField name="agent_id" type="string | null" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.calls" type="array">
+  Every attached call, with the pathway and persona it ran against.
+
+  <Expandable title="Call fields">
+    <ResponseField name="call_id" type="string" />
+    <ResponseField name="title" type="string">
+      Display title for the call. Falls back to a short ID if no pathway or persona name is available.
+    </ResponseField>
+    <ResponseField name="started_at" type="string | null">
+      ISO 8601 timestamp.
+    </ResponseField>
+    <ResponseField name="pathway_id" type="string | null" />
+    <ResponseField name="pathway_name" type="string | null" />
+    <ResponseField name="pathway_version_id" type="string | null" />
+    <ResponseField name="version_number" type="number | null" />
+    <ResponseField name="version_label" type="string | null" />
+    <ResponseField name="persona_id" type="string | null" />
+    <ResponseField name="persona_name" type="string | null" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.pathways" type="array">
+  One entry per distinct pathway across the attached calls, with `call_count` and `call_ids` so you can deep-link.
+
+  <Expandable title="Pathway fields">
+    <ResponseField name="pathway_id" type="string" />
+    <ResponseField name="pathway_name" type="string" />
+    <ResponseField name="pathway_version_id" type="string | null" />
+    <ResponseField name="version_number" type="number | null" />
+    <ResponseField name="version_label" type="string | null" />
+    <ResponseField name="call_count" type="number" />
+    <ResponseField name="call_ids" type="string[]" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.personas" type="array">
+  One entry per distinct persona, with `call_count` and `call_ids`.
+
+  <Expandable title="Persona fields">
+    <ResponseField name="persona_id" type="string" />
+    <ResponseField name="persona_name" type="string" />
+    <ResponseField name="call_count" type="number" />
+    <ResponseField name="call_ids" type="string[]" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "issue_id": "db49f7b8-3214-4cb2-9f80-9d04379a9b8a",
+    "skill_context": {
+      "dispatch_id": null,
+      "dispatch_name": null,
+      "skill_id": null,
+      "skill_name": null,
+      "agent_id": null
+    },
+    "calls": [
+      {
+        "call_id": "95330a0e-d441-4586-96f8-28ea60677296",
+        "title": "Sales demo flow",
+        "started_at": "2026-04-30T14:11:08.000Z",
+        "pathway_id": "8b2bb517-94d3-4cf6-9c7b-8c8ab9f8c4a1",
+        "pathway_name": "Sales demo flow",
+        "pathway_version_id": "f3ad7b24-8ab2-4f01-b04e-2c9f96d0d124",
+        "version_number": 12,
+        "version_label": "production",
+        "persona_id": null,
+        "persona_name": null
+      }
+    ],
+    "pathways": [
+      {
+        "pathway_id": "8b2bb517-94d3-4cf6-9c7b-8c8ab9f8c4a1",
+        "pathway_name": "Sales demo flow",
+        "pathway_version_id": "f3ad7b24-8ab2-4f01-b04e-2c9f96d0d124",
+        "version_number": 12,
+        "version_label": "production",
+        "call_count": 1,
+        "call_ids": ["95330a0e-d441-4586-96f8-28ea60677296"]
+      }
+    ],
+    "personas": []
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

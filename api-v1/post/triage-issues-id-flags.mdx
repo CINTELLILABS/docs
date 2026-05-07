@@ -1,0 +1,127 @@
+---
+title: "Add Flag"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/flags"
+description: "Flag a moment on an attached call."
+---
+
+## Overview
+
+Flags pinpoint where on a call something went wrong. The `call_id` must already be attached as a resource on this issue, otherwise the request fails with `409 conflict` and `{ error: "call_not_attached" }`. Flag types accumulate into a reusable per-org catalog (see [List Flag Types](/api-v1/get/triage-flag-types)).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="call_id" type="string" required>
+  ID of the attached call this flag points at. Must already be attached as a resource on this issue.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Flag type. Free-form, but normalized to lower_snake_case before storage. Reusing a type increments its `usage_count` in [List Flag Types](/api-v1/get/triage-flag-types).
+</ParamField>
+
+<ParamField body="note" type="string">
+  Free-text note explaining why this moment was flagged. 1-4000 characters.
+</ParamField>
+
+<ParamField body="node_id" type="string">
+  ID of the pathway node the flag is attached to, if known.
+</ParamField>
+
+<ParamField body="node_name" type="string">
+  Display name of the pathway node, captured at flag time so the dashboard can render the node name even if the pathway later changes.
+</ParamField>
+
+<ParamField body="message_index" type="integer">
+  Zero-based index of the message turn in the call transcript that this flag points at.
+</ParamField>
+
+<ParamField body="message_text" type="string">
+  Verbatim text of the flagged message, captured at flag time.
+</ParamField>
+
+---
+
+## Response
+
+Returns `201 Created` with the new flag.
+
+<ResponseField name="data" type="object">
+  <Expandable title="Flag fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the flag.
+    </ResponseField>
+    <ResponseField name="org_id" type="string" />
+    <ResponseField name="issue_id" type="string" />
+    <ResponseField name="call_id" type="string" />
+    <ResponseField name="type" type="string">
+      The normalized flag type (lower_snake_case).
+    </ResponseField>
+    <ResponseField name="note" type="string">
+      Empty string if no note was provided.
+    </ResponseField>
+    <ResponseField name="node_id" type="string | null" />
+    <ResponseField name="node_name" type="string | null" />
+    <ResponseField name="message_index" type="number | null" />
+    <ResponseField name="message_text" type="string | null" />
+    <ResponseField name="author_id" type="string">
+      User ID of the caller that filed the flag.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "ad0931e4-b0e1-4bd6-a5b1-09e7c9123dba",
+    "org_id": "f5b40b9e-bc05-4b8a-9af1-d8f6a8a3a201",
+    "issue_id": "9bbe5547-d5b1-4b83-9f80-87c4af7c6b34",
+    "call_id": "3aefc79d-1870-4514-b32b-b9212ae32bc8",
+    "type": "missed_handoff",
+    "note": "Agent transferred without confirming the email.",
+    "node_id": null,
+    "node_name": null,
+    "message_index": 12,
+    "message_text": "OK, transferring you now.",
+    "author_id": "75c5c7da-a5d6-4e26-a51e-1ae8ef2bfa4a",
+    "created_at": "2026-05-07T05:26:11.327Z"
+  },
+  "errors": null
+}
+```
+
+```json Call Not Attached
+{
+  "data": null,
+  "errors": [
+    { "error": "call_not_attached", "message": "Call must be attached to issue first" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

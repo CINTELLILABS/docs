@@ -1,0 +1,82 @@
+---
+title: "List Alert Bindings"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}/alert-bindings"
+description: "List alert bindings on an issue."
+---
+
+## Overview
+
+Returns alerts currently bound to this issue. Each binding records both the active alert (which may have since resolved) and the alert config rule it came from.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of bindings to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of alert bindings. See [Bind Alert](/api-v1/post/triage-issues-id-alert-bindings#response) for the field list.
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "9b6df0aa-6e59-4f2a-a8a9-7d0ae8cf3018",
+        "issue_id": "9bbe5547-d5b1-4b83-9f80-87c4af7c6b34",
+        "active_alert_id": "1ed64dab-d6c3-4e2d-bf55-dc27b54e3bcb",
+        "alert_config_id": "07a6e94c-3eaa-4c3c-87a3-4ec1a82ec3a9",
+        "alert_name": "Avg call length over 8 minutes",
+        "current_severity": "warning",
+        "status": "active",
+        "binding_mode": "manual",
+        "created_at": "2026-05-07T05:31:11.045Z",
+        "updated_at": "2026-05-07T05:31:11.045Z"
+      }
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

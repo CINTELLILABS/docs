@@ -1,0 +1,85 @@
+---
+title: "List Agents"
+api: "GET https://api.bland.ai/v1/triage/agents"
+description: "List triage agent profiles."
+---
+
+## Overview
+
+Returns the triage agent profiles available to your org. Today this is a single built-in profile, **Norm**. The endpoint exists for forward compatibility.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of agents to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of agent profiles.
+
+  <Expandable title="Agent profile fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the agent profile. Sessions on an issue carry this ID as `agent_profile_id`.
+    </ResponseField>
+    <ResponseField name="provider_type" type="string">
+      Backing provider for this agent. Currently `blandcode` for Norm.
+    </ResponseField>
+    <ResponseField name="display_name" type="string">
+      Human-readable name shown in the dashboard. Always `Norm` for the built-in profile.
+    </ResponseField>
+    <ResponseField name="description" type="string | null" />
+    <ResponseField name="is_active" type="boolean">
+      Whether this agent is available for new sessions.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "66720f06-f492-4ce6-a2f2-cd84fd54613e",
+        "provider_type": "blandcode",
+        "display_name": "Norm",
+        "description": "Default triage agent",
+        "is_active": true
+      }
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
