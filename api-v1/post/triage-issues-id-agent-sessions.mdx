@@ -1,0 +1,76 @@
+---
+title: "Create Agent Session"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/agent-sessions"
+description: "Create a Norm agent session on an issue."
+---
+
+## Overview
+
+Creates a Norm session on an issue. Most callers can skip this, [Prompt Norm](/api-v1/post/triage-issues-id-agent-sessions-session-id-prompts) creates a session implicitly on the first prompt. Use this only when you want to mount the session in your UI before the first prompt is sent.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+This endpoint takes no body parameters. Pass an empty body or `{}`.
+
+---
+
+## Response
+
+Returns `201 Created` with a session summary.
+
+<ResponseField name="data" type="object">
+  <Expandable title="Session summary fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the session. Pass this as `{session_id}` to [Prompt Norm](/api-v1/post/triage-issues-id-agent-sessions-session-id-prompts).
+    </ResponseField>
+    <ResponseField name="agent_profile_id" type="string">
+      ID of the agent profile backing this session, from [List Agents](/api-v1/get/triage-agents).
+    </ResponseField>
+    <ResponseField name="agent_name" type="string">
+      Always `Norm`.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Lifecycle status. New sessions are returned with `status: "active"`. The full set of values that can appear on a session (for example via the issue's `latest_agent_session.status` field) is: `pending`, `active`, `awaiting_input`, `complete`, `error`, `cancelled`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "0431f6ad-fdd3-4408-a6cc-909842d1db41",
+    "agent_profile_id": "66720f06-f492-4ce6-a2f2-cd84fd54613e",
+    "agent_name": "Norm",
+    "status": "active"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

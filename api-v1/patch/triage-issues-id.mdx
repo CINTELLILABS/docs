@@ -1,0 +1,108 @@
+---
+title: "Update Issue"
+api: "PATCH https://api.bland.ai/v1/triage/issues/{id}"
+description: "Update a triage issue. All fields optional."
+---
+
+## Overview
+
+Partial update. Send only the fields you want to change. Pass `null` for `owner_id` or `assignee_id` to clear them. Returns the full updated issue.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+Send any combination of the fields below. Sending an empty body is allowed but a no-op.
+
+<ParamField body="title" type="string">
+  New title. 1-200 characters.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description. Maximum 10,000 characters.
+</ParamField>
+
+<ParamField body="status" type="string">
+  New status. One of `backlog`, `todo`, `in_progress`, `in_review`, `done`, `closed`.
+</ParamField>
+
+<ParamField body="severity" type="string">
+  New severity. One of `critical`, `high`, `medium`, `low`.
+</ParamField>
+
+<ParamField body="category" type="string">
+  New category. 1-64 characters. The category does not need to exist in the [Categories](/api-v1/get/triage-categories) catalog beforehand, freely-typed values are accepted.
+</ParamField>
+
+<ParamField body="owner_id" type="string | null">
+  New owner. Pass a user ID to assign, or `null` to clear.
+</ParamField>
+
+<ParamField body="assignee_id" type="string | null">
+  New assignee. Pass a user ID to assign, or `null` to clear.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="object">
+  The updated issue. See [Create Issue](/api-v1/post/triage-issues#response) for the full field list.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist or is not in your org. Returns 400 with `{ error: "bad_request" }` if any field fails validation, the message lists each invalid path.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "b4f022b0-e47e-4c8e-b67c-b763db7b4ba4",
+    "triage_id": "T-1042",
+    "org_id": "f038cd1d-aa49-4127-ab2d-90c3fce669f3",
+    "number": 1042,
+    "title": "Agent skipped the verification step (confirmed)",
+    "description": "On the Aug 12 demo flow the agent jumped to the closing node without asking for the email confirmation.",
+    "status": "in_progress",
+    "severity": "high",
+    "source": "manual",
+    "category": "Routing",
+    "owner_id": null,
+    "assignee_id": "d8dddfff-cc75-4e31-8056-cf3521e8055b",
+    "author_id": "df480553-8bf8-4327-917d-402c33282a2e",
+    "external_link": null,
+    "created_at": "2026-05-04T18:24:11.482Z",
+    "updated_at": "2026-05-07T02:29:25.744Z",
+    "last_activity_at": "2026-05-07T02:29:25.744Z",
+    "resource_count": 3,
+    "flag_count": 1,
+    "relation_count": 0,
+    "latest_agent_session": null,
+    "is_processing": false,
+    "has_unread_activity": true
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,57 @@
+---
+title: "Remove Resource"
+api: "DELETE https://api.bland.ai/v1/triage/issues/{id}/resources/{resource_link_id}"
+description: "Detach a resource from an issue."
+---
+
+## Overview
+
+Detaches a resource link from an issue. The underlying call, SMS conversation, or file is unaffected. Pass the resource link `id`, not the underlying `resource_id`. To detach a call by `call_id` instead, use [Detach Call](/api-v1/delete/triage-issues-id-calls-call-id).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+<ParamField path="resource_link_id" type="string" required>
+  Internal UUID of the resource link (the `id` field on a resource link object).
+</ParamField>
+
+---
+
+## Response
+
+Returns `204 No Content` on success with an empty body.
+
+Returns 404 with `{ error: "not_found" }` if the issue does not exist or the resource link does not belong to this issue.
+
+
+<ResponseExample>
+```http No Content
+HTTP/1.1 204 No Content
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "not_found", "message": "Resource not found" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

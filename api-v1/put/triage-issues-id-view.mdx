@@ -1,0 +1,57 @@
+---
+title: "Mark Issue Viewed"
+api: "PUT https://api.bland.ai/v1/triage/issues/{id}/view"
+description: "Mark an issue as viewed by the calling user."
+---
+
+## Overview
+
+Records the calling user's view at the current time. Clears `has_unread_activity` on subsequent fetches for this user. View timestamps are per-user, so each org member has their own unread state.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.issue_id" type="string">
+  The issue that was marked viewed.
+</ResponseField>
+
+<ResponseField name="data.last_viewed_at" type="string">
+  ISO 8601 timestamp the view was recorded at.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "issue_id": "4f9a7c2d-7f88-4dc4-9d1e-be83c5067f1c",
+    "last_viewed_at": "2026-05-07T05:26:21.694Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,85 @@
+---
+title: "Prompt Norm"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/agent-sessions/{session_id}/prompts"
+description: "Send a prompt to Norm. Returns 202 with a run ID."
+---
+
+## Overview
+
+Dispatches a Norm run against the issue. Asynchronous, returns 202 once queued. Progress, tool calls, and final output stream into the issue's [Activity feed](/api-v1/get/triage-issues-id-activity) as `entry_kind: "agent"` entries.
+
+The first word of `detail` is parsed as an intent. Slashes are optional.
+
+- `/fix` (default), full read+write toolbelt including pathway editing, tool config, and snippet/pipeline tests.
+- `/verify`, read-only. Norm checks the current draft against the evidence and reports.
+- `/status`, read-only. Norm summarizes current state, leading diagnosis, and any draft verification.
+- `/debug`, alias for `/fix`.
+
+The `@norm` mention in [Add Comment](/api-v1/post/triage-issues-id-comments) calls this same flow.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+<ParamField path="session_id" type="string" required>
+  Internal UUID of the agent session, from [Create Agent Session](/api-v1/post/triage-issues-id-agent-sessions) or the `latest_agent_session.id` field on the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="detail" type="string" required>
+  The prompt to send to Norm. 1-4000 characters. Begin with `/fix`, `/verify`, `/status`, or `/debug` to set the intent. The intent prefix is stripped before the message reaches Norm.
+</ParamField>
+
+---
+
+## Response
+
+Returns `202 Accepted`. The body acknowledges the dispatch but does not include Norm's reply. Subscribe to the issue's [Activity feed](/api-v1/get/triage-issues-id-activity) (or refetch it on a poll) to read Norm's progress and final output.
+
+<ResponseField name="data.session_id" type="string">
+  ID of the session the prompt was dispatched to. Matches the `{session_id}` in the URL.
+</ResponseField>
+
+<ResponseField name="data.run_id" type="string">
+  ID of the Norm run created for this prompt. Each prompt produces one run; multi-turn conversations on the same session produce multiple runs.
+</ResponseField>
+
+<ResponseField name="data.intent" type="string">
+  The parsed intent. One of `fix`, `verify`, or `status`. `/debug` is normalized to `fix`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue or session does not exist, or if the session does not belong to the named issue.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "session_id": "0431f6ad-fdd3-4408-a6cc-909842d1db41",
+    "run_id": "56cae586-0670-4f1b-8113-96a2421d56d5",
+    "intent": "fix"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

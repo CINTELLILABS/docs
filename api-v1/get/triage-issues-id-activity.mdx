@@ -1,0 +1,175 @@
+---
+title: "List Activity"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}/activity"
+description: "Activity feed for an issue."
+---
+
+## Overview
+
+Reverse-chronological feed of issue events and Norm session events. Each entry is either `entry_kind: "issue"` (status changes, attachments, flags, comments, etc.) or `entry_kind: "agent"` (Norm session events with optional artifacts).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of entries to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Mixed array of `IssueTimelineEntry` and `AgentTimelineEntry` objects.
+
+  <Expandable title="Common fields">
+    <ResponseField name="entry_kind" type="string">
+      `issue` or `agent`.
+    </ResponseField>
+    <ResponseField name="id" type="string" />
+    <ResponseField name="issue_id" type="string" />
+    <ResponseField name="type" type="string">
+      Specific event type.
+
+      For `issue` entries, one of: `created`, `status_changed`, `severity_changed`, `category_changed`, `assignee_changed`, `owner_changed`, `comment`, `resource_added`, `resource_removed`, `flag_added`, `flag_removed`, `relation_added`, `relation_removed`, `alert_transition`, `accepted`, `declined`, `merged`.
+
+      For `agent` entries, one of: `session_started`, `prompt`, `thought`, `action`, `response`, `artifact`, `error`, `session_stopped`.
+    </ResponseField>
+    <ResponseField name="actor" type="object | null">
+      Who or what produced the event. `actor.kind` is `user`, `system`, or `agent`. For agent entries, `actor.label` is normalized to `Norm` even when the underlying record stores `blandcode`.
+    </ResponseField>
+    <ResponseField name="detail" type="string">
+      Short, human-readable description rendered in the UI.
+    </ResponseField>
+    <ResponseField name="metadata" type="object | null">
+      Optional structured metadata for this entry. Shape varies by `type`.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+  </Expandable>
+
+  <Expandable title="Issue entry only fields">
+    <ResponseField name="from_status" type="string | null">
+      Previous status, when the entry is `status_changed`.
+    </ResponseField>
+    <ResponseField name="to_status" type="string | null">
+      New status, when the entry is `status_changed`.
+    </ResponseField>
+    <ResponseField name="resources" type="array">
+      Resource link snapshots referenced by this entry, for example the resource that was attached or removed.
+    </ResponseField>
+    <ResponseField name="referenced_issues" type="array">
+      Other issues referenced by this entry, for example the related issue when a relation was added.
+    </ResponseField>
+  </Expandable>
+
+  <Expandable title="Agent entry only fields">
+    <ResponseField name="agent_session" type="object">
+      Reference to the Norm session this entry belongs to.
+
+      - `id` (string)
+      - `agent_profile_id` (string)
+      - `agent_name` (string), always `Norm`
+      - `status` (string)
+    </ResponseField>
+    <ResponseField name="artifact" type="object | null">
+      An artifact Norm produced (for example a draft pathway version, a snippet, or a verification report). Contains `id`, `type`, `title`, `renderer`, `status` (`pending`, `ready`, or `error`), `payload`, and `external_urls` for deep-linking.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "entry_kind": "issue",
+        "id": "0d10c1a4-8f27-4e91-a1b3-3fa7a7f3f58e",
+        "issue_id": "4f9a7c2d-7f88-4dc4-9d1e-be83c5067f1c",
+        "type": "comment",
+        "actor": {
+          "kind": "user",
+          "id": "1f4cabe4-5f9b-4b30-bc4f-fcd3e94a5b15",
+          "label": "John Bland",
+          "avatar_url": null
+        },
+        "detail": "Pinged the on-call eng to look at the routing rule.",
+        "from_status": null,
+        "to_status": null,
+        "metadata": null,
+        "resources": [],
+        "referenced_issues": [],
+        "created_at": "2026-05-07T05:26:21.449Z"
+      },
+      {
+        "entry_kind": "issue",
+        "id": "f8c3d1c3-6c9e-4ebf-bf0a-2a8b5b2e3d31",
+        "issue_id": "4f9a7c2d-7f88-4dc4-9d1e-be83c5067f1c",
+        "type": "flag_added",
+        "actor": {
+          "kind": "user",
+          "id": "1f4cabe4-5f9b-4b30-bc4f-fcd3e94a5b15",
+          "label": "John Bland",
+          "avatar_url": null
+        },
+        "detail": "Added a flag.",
+        "from_status": null,
+        "to_status": null,
+        "metadata": null,
+        "resources": [
+          {
+            "id": "0a9d6b23-3e0f-4f3b-9d5e-2bfa3ddbd86c",
+            "issue_id": "4f9a7c2d-7f88-4dc4-9d1e-be83c5067f1c",
+            "org_id": "8a73d4d5-d9a0-4c01-9b1a-0e5d3a3b4e2c",
+            "resource_type": "call",
+            "resource_id": "0c9b2cc5-3f4e-4057-8ad3-546e5d33a6d1",
+            "title": "Caller asked to be transferred to billing after the agent failed to verify their account.",
+            "status": "available",
+            "metadata": { "created_at": "2026-04-30T14:11:08.000Z" },
+            "attached_by_id": "1f4cabe4-5f9b-4b30-bc4f-fcd3e94a5b15",
+            "created_at": "2026-05-07T05:25:56.361Z"
+          }
+        ],
+        "referenced_issues": [],
+        "created_at": "2026-05-07T05:26:11.327Z"
+      }
+    ],
+    "next_cursor": "f8c3d1c3-6c9e-4ebf-bf0a-2a8b5b2e3d31"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

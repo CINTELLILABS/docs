@@ -1,0 +1,93 @@
+---
+title: "List Categories"
+api: "GET https://api.bland.ai/v1/triage/categories"
+description: "List issue categories."
+---
+
+## Overview
+
+Returns the org's category catalog. Built-in defaults (Transcription, Speech, Dialogue, Routing, Tools, Latency, Telephony, Bug) use IDs like `built-in:<name>`. Custom categories created with [Create Category](/api-v1/post/triage-categories) use a UUID. Sorted alphabetically, so `next_cursor` is the name of the last item.
+
+Issue `category` is free-form on creation, this catalog is just used for autocomplete and faceted filters in the dashboard.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of categories to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page. For categories, this is the name of the last item from the previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of categories.
+
+  <Expandable title="Category fields">
+    <ResponseField name="id" type="string">
+      `built-in:<name>` for default categories, UUID for custom categories.
+    </ResponseField>
+    <ResponseField name="org_id" type="string" />
+    <ResponseField name="name" type="string">
+      Display name. 1-64 characters.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "built-in:bug",
+        "org_id": "5fa6dc9e-ec4d-4f94-9e0e-21f6f6a1e8f1",
+        "name": "Bug",
+        "created_at": "2026-05-07T05:25:56.034Z"
+      },
+      {
+        "id": "built-in:dialogue",
+        "org_id": "5fa6dc9e-ec4d-4f94-9e0e-21f6f6a1e8f1",
+        "name": "Dialogue",
+        "created_at": "2026-05-07T05:26:21.855Z"
+      },
+      {
+        "id": "built-in:latency",
+        "org_id": "5fa6dc9e-ec4d-4f94-9e0e-21f6f6a1e8f1",
+        "name": "Latency",
+        "created_at": "2026-05-07T05:26:21.855Z"
+      }
+    ],
+    "next_cursor": "Latency"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

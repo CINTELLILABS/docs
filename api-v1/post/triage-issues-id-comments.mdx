@@ -1,0 +1,82 @@
+---
+title: "Add Comment"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/comments"
+description: "Comment on an issue. Mention @norm to dispatch a Norm investigation."
+---
+
+## Overview
+
+Adds a comment to the issue's activity feed. If the body contains `@norm`, the same call also dispatches a Norm investigation, creating a session if none exists. The mention is stripped before the prompt reaches Norm. The HTTP response returns once the comment is saved, so the comment is durable even if the dispatch fails.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="detail" type="string" required>
+  Comment body. 1-4000 characters. Include `@norm` anywhere in the body to also dispatch a Norm investigation.
+</ParamField>
+
+<ParamField body="resource_link_ids" type="string[]">
+  Optional array of resource link IDs (from [List Resources](/api-v1/get/triage-issues-id-resources)) to attach to this comment as inline references. The dashboard renders these as chips alongside the comment.
+</ParamField>
+
+---
+
+## Response
+
+Returns `201 Created` with the comment timeline entry. See [List Activity](/api-v1/get/triage-issues-id-activity#response) for the full field list.
+
+<ResponseField name="data" type="object">
+  An `IssueTimelineEntry` with `entry_kind: "issue"` and `type: "comment"`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "entry_kind": "issue",
+    "id": "5a9d0fa9-27b7-414c-9e49-5fc32f240c01",
+    "issue_id": "4f9a7c2d-7f88-4dc4-9d1e-be83c5067f1c",
+    "type": "comment",
+    "actor": {
+      "kind": "user",
+      "id": "1f4cabe4-5f9b-4b30-bc4f-fcd3e94a5b15",
+      "label": "John Bland",
+      "avatar_url": null
+    },
+    "detail": "@norm please look at the routing logic on the closing node, this looks like the same bug from T-1029.",
+    "from_status": null,
+    "to_status": null,
+    "metadata": null,
+    "resources": [],
+    "referenced_issues": [],
+    "created_at": "2026-05-07T05:26:21.449Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
