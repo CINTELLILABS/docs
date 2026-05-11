@@ -4,6 +4,8 @@ api: "POST https://api.bland.ai/v1/agents"
 description: "Configure all of the settings for a new web agent."
 ---
 
+Web Agents power **embedded browser voice and chat** via the [`@blandsdk/client`](/sdks/cli) library. They are configured directly on `/v1/agents` and authorized per-session through [`/v1/agents/{id}/authorize`](/api-v1/post/agents-id-authorize). For inbound phone numbers or SMS, use [Personas](/api-v1/post/personas) instead; see [Personas vs. Web Agents](/tutorials/personas#personas-vs-web-agents) for the full comparison.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -144,9 +146,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 </ParamField>
 
 <ParamField body="tools" type="array">
-  Interact with the real world through API calls.
+  Interact with the real world through API calls, and attach knowledge bases for retrieval during the call. The array accepts both tool IDs and knowledge base UUIDs.
 
-  Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
+  ```json
+  {
+    "tools": [
+      "TL-ba6c4237-67c2-40e8-868b-60d429a84eda",
+      "389abfee-3a07-4dfb-be71-91c9c3705704"
+    ]
+  }
+  ```
+
+  Knowledge base UUIDs come from [Upload Text](/api-v1/post/knowledge-learn-text), [Upload File](/api-v1/post/knowledge-learn-file), or [Crawl Web](/api-v1/post/knowledge-learn-web). See the [attachment matrix](/api-v1/post/knowledge-learn-text#where-can-a-knowledge-base-be-attached) for the other surfaces that consume the same UUID. Detailed tools tutorial: [Custom Tools](/tutorials/custom-tools).
 </ParamField>
 
 <ParamField body="dynamic_data" type="object">
