@@ -1,0 +1,106 @@
+---
+title: "Link Related Issue"
+api: "POST https://api.bland.ai/v1/triage/issues/{id}/relations"
+description: "Link an issue to another issue."
+---
+
+## Overview
+
+Creates a typed link from one issue to another. Relations are directed: stored on the source issue (`{id}`) and outgoing to `related_issue_id`. The same relation appears with `direction: "incoming"` when listed from the target issue.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the source issue.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="related_issue_id" type="string" required>
+  Internal UUID of the target issue.
+</ParamField>
+
+<ParamField body="relation_type" type="string" required>
+  Relationship type. Must be one of:
+
+  - `related_to`
+  - `blocks`
+  - `duplicate_of`
+</ParamField>
+
+---
+
+## Response
+
+Returns `201 Created` with the new relation.
+
+<ResponseField name="data" type="object">
+  <Expandable title="Relation fields">
+    <ResponseField name="id" type="string">
+      Internal UUID of the relation.
+    </ResponseField>
+    <ResponseField name="org_id" type="string" />
+    <ResponseField name="issue_id" type="string">
+      Source issue UUID.
+    </ResponseField>
+    <ResponseField name="related_issue_id" type="string">
+      Target issue UUID.
+    </ResponseField>
+    <ResponseField name="related_triage_id" type="string">
+      Short identifier of the target issue (e.g. `T-1004`), denormalized for display.
+    </ResponseField>
+    <ResponseField name="related_title" type="string">
+      Title of the target issue, denormalized for display.
+    </ResponseField>
+    <ResponseField name="relation_type" type="string">
+      `related_to`, `blocks`, or `duplicate_of`.
+    </ResponseField>
+    <ResponseField name="direction" type="string">
+      Always `outgoing` on creation, since the relation lives on the source issue.
+    </ResponseField>
+    <ResponseField name="created_by_id" type="string | null">
+      User ID of the caller that created the relation.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if either issue does not exist or is not in your org.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "172c839b-130d-4712-a09c-b767a78542ea",
+    "org_id": "f5b40b9e-bc05-4b8a-9af1-d8f6a8a3a201",
+    "issue_id": "9bbe5547-d5b1-4b83-9f80-87c4af7c6b34",
+    "related_issue_id": "849ee9ce-be6b-4f9c-8e55-2736aeeb579f",
+    "related_triage_id": "T-1004",
+    "related_title": "Caller transferred to wrong queue",
+    "relation_type": "duplicate_of",
+    "created_by_id": "75c5c7da-a5d6-4e26-a51e-1ae8ef2bfa4a",
+    "created_at": "2026-05-07T05:28:29.358Z",
+    "direction": "outgoing"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

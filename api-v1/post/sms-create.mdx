@@ -56,6 +56,22 @@ description: "Create an SMS conversation with specific pathway state without tri
   Specifies who sent this message. Allowed values: "USER" or "AGENT". Defaults to "USER" if not specified.
 </ParamField>
 
+<ParamField body="time_out" type="number" required={false}>
+  Per-conversation timeout override, in seconds. When the user goes silent for this long after an agent message, the timeout flow fires (warning message and/or conversation end). Takes priority over the `time_out` on the number's sms_config/whatsapp_config. Persists on the conversation, so subsequent turns use the same override until another `/send` or `/create` replaces it.
+</ParamField>
+
+<ParamField body="timeout_message" type="string" required={false}>
+  Per-conversation override for the message sent when the timeout fires. Takes priority over `timeout_message` on sms_config/whatsapp_config.
+</ParamField>
+
+<ParamField body="warning_time" type="number" required={false}>
+  Per-conversation override for how long, in seconds, to wait before sending the warning message. Must be less than `time_out`; the request is rejected with `INVALID_TIMEOUT_CONFIG` otherwise. Takes priority over `warning_time` on sms_config/whatsapp_config.
+</ParamField>
+
+<ParamField body="warning_message" type="string" required={false}>
+  Per-conversation override for the warning message sent at `warning_time`. Takes priority over `warning_message` on sms_config/whatsapp_config.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="object">
@@ -90,3 +106,6 @@ description: "Create an SMS conversation with specific pathway state without tri
 }
 ```
 </ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)

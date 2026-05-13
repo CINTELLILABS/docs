@@ -1,0 +1,84 @@
+---
+title: "List Flags"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}/flags"
+description: "List flags on an issue."
+---
+
+## Overview
+
+Returns the flags filed on this issue. Same shape as [Add Flag](/api-v1/post/triage-issues-id-flags).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of flags to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of flags. See [Add Flag](/api-v1/post/triage-issues-id-flags#response) for the field list.
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "8ce11a7a-1a30-4c2c-9d3a-3e9aa56d2f02",
+        "org_id": "5fa6dc9e-ec4d-4f94-9e0e-21f6f6a1e8f1",
+        "issue_id": "cd4e1b6a-9a4c-4ec7-9c91-aa8b8aef0c89",
+        "call_id": "02d77f64-342d-4c41-b2f6-02621eb94fc3",
+        "type": "missed_handoff",
+        "note": "Agent transferred without confirming the email.",
+        "node_id": null,
+        "node_name": null,
+        "message_index": 12,
+        "message_text": "OK, transferring you now.",
+        "author_id": "32c10b62-0a4e-4ad8-bd4e-9b6e2a6e0a4f",
+        "created_at": "2026-05-07T05:26:11.327Z"
+      }
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

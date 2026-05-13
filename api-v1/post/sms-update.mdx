@@ -29,7 +29,23 @@ description: "Update the SMS configuration for a phone number owned by the authe
 </ParamField>
 
 <ParamField body="time_out" type="number" required={false}>
-  Maximum time to wait for a response. Default is no timeout.
+  Maximum time to wait for a user response, in seconds, before the timeout flow fires. Default is no timeout. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
+</ParamField>
+
+<ParamField body="timeout_action" type="string" required={false}>
+  What to do when the timeout fires. Allowed values depend on your configuration (e.g. `"send_sms"` to send `timeout_message`).
+</ParamField>
+
+<ParamField body="timeout_message" type="string" required={false}>
+  Message sent when the timeout fires. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
+</ParamField>
+
+<ParamField body="warning_time" type="number" required={false}>
+  Seconds to wait before sending the warning message. Must be less than `time_out`, otherwise the update is rejected. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
+</ParamField>
+
+<ParamField body="warning_message" type="string" required={false}>
+  Message sent at `warning_time`. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
 </ParamField>
 
 <ParamField body="messaging_service_sid" type="string" required={false}>
@@ -117,6 +133,10 @@ description: "Update the SMS configuration for a phone number owned by the authe
       "webhook": null,
       "request_data": [],
       "time_out": null,
+      "timeout_action": null,
+      "timeout_message": null,
+      "warning_time": null,
+      "warning_message": null,
       "messaging_service_sid": null,
       "objective": "Chat with the user",
       "tools": [],
@@ -136,3 +156,6 @@ description: "Update the SMS configuration for a phone number owned by the authe
 ```
 
 </ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)

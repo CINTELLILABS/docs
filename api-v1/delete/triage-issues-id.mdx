@@ -1,0 +1,51 @@
+---
+title: "Delete Issue"
+api: "DELETE https://api.bland.ai/v1/triage/issues/{id}"
+description: "Permanently delete a triage issue."
+---
+
+## Overview
+
+Deletes an issue and everything attached: resources, flags, relations, alert bindings, comments, Norm sessions. The underlying calls, SMS conversations, and files are not affected. To take an issue off the board without losing it, [update](/api-v1/patch/triage-issues-id) `status` to `closed` instead.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue to delete.
+</ParamField>
+
+---
+
+## Response
+
+Returns `204 No Content` on success with an empty body. Subsequent calls to [Get Issue](/api-v1/get/triage-issues-id) for the same ID return 404.
+
+
+<ResponseExample>
+```http No Content
+HTTP/1.1 204 No Content
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "not_found", "message": "Issue not found" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

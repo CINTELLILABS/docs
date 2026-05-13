@@ -1,0 +1,89 @@
+---
+title: "List Flag Types"
+api: "GET https://api.bland.ai/v1/triage/flag-types"
+description: "List reusable flag types in your org."
+---
+
+## Overview
+
+Catalog of flag types your org has used, with usage counts and the most recent note for each. Use it to render a flag-type picker. Types are normalized to lower_snake_case before storage.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of types to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of flag types.
+
+  <Expandable title="Flag type fields">
+    <ResponseField name="type" type="string">
+      The normalized flag type (lower_snake_case).
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      The note from the most recently filed flag of this type. Empty string if none of the flags carried a note.
+    </ResponseField>
+    <ResponseField name="usage_count" type="number">
+      How many flags of this type currently exist in your org.
+    </ResponseField>
+    <ResponseField name="last_used_at" type="string | null">
+      ISO 8601 timestamp of the most recent flag of this type.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "type": "missed_handoff",
+        "description": "Agent transferred without confirming the email.",
+        "usage_count": 4,
+        "last_used_at": "2026-05-07T05:26:11.327Z"
+      },
+      {
+        "type": "wrong_pathway_node",
+        "description": "Agent jumped to closing without verifying.",
+        "usage_count": 2,
+        "last_used_at": "2026-05-05T22:14:01.117Z"
+      }
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

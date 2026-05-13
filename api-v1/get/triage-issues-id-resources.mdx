@@ -1,0 +1,82 @@
+---
+title: "List Resources"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}/resources"
+description: "List resources attached to an issue."
+---
+
+## Overview
+
+Returns the resources currently attached. Same shape as [Attach Resource](/api-v1/post/triage-issues-id-resources). For a rollup of calls, pathways, and personas, use [Get Affected Context](/api-v1/get/triage-issues-id-affected).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of resources to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Array of resource links. See [Attach Resource](/api-v1/post/triage-issues-id-resources#response) for the field list.
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "0a9d6b23-3e0f-4f3b-9d5e-2bfa3ddbd86c",
+        "issue_id": "4f9a7c2d-7f88-4dc4-9d1e-be83c5067f1c",
+        "org_id": "8a73d4d5-d9a0-4c01-9b1a-0e5d3a3b4e2c",
+        "resource_type": "call",
+        "resource_id": "4d6e79af-13ad-4c85-8c6d-7e696d6b6380",
+        "title": "Caller asked to be transferred to billing after the agent failed to verify their account.",
+        "status": "available",
+        "metadata": { "created_at": "2026-04-30T14:11:08.000Z" },
+        "attached_by_id": "1f4cabe4-5f9b-4b30-bc4f-fcd3e94a5b15",
+        "created_at": "2026-05-07T05:25:56.361Z"
+      }
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

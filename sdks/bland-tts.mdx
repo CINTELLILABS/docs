@@ -1,0 +1,178 @@
+---
+title: "Bland TTS"
+description: "A focused TTS and voice toolkit for Bland AI — CLI, Node library, and MCP server in one lightweight package."
+---
+
+`bland-tts` is a focused text-to-speech and voice toolkit for Bland AI. Three modes ship in one package: a CLI, a Node library (`BlandTtsClient`), and an MCP server.
+
+## bland-tts vs. bland-cli
+
+[`bland-cli`](/sdks/cli) is the full kitchen sink — calls, pathways, scenarios, knowledge bases, personas, batch campaigns. Big install, broad surface.
+
+`bland-tts` is for projects that just need speech: a podcast generator, a voice notification system, an experimentation harness for prompt phrasing. Tiny dependency footprint (`chalk`, `commander`, `ora`). Library-first design means you can drop the MCP server and import `BlandTtsClient` directly.
+
+If you need the full Bland API surface, use `bland-cli`. If you only need speech synthesis and voice management, use `bland-tts`.
+
+## Install
+
+```bash
+# Install globally for CLI use
+npm install -g bland-tts
+
+# Or install per-project as a library
+npm install bland-tts
+
+# Or run without installing
+npx bland-tts speak "hello world"
+```
+
+**Requirements:** Node.js 20+
+
+## Authentication
+
+Set your Bland API key in the environment:
+
+```bash
+export BLAND_API_KEY=org_your_key_here
+```
+
+You can also pass `apiKey` directly to the `BlandTtsClient` constructor when using the library.
+
+## Default voices
+
+When you call `speak()` without specifying a voice, one is picked at random from:
+
+- **Karen**
+- **Valentine Experimental**
+- **Willow**
+
+To lock a single default for a process, pass `defaultVoice` to the client constructor. To opt out and let the server choose, pass `defaultVoice: null`. The CLI surfaces which voice was actually used (`voice_used` in `--json`, dimmed line otherwise).
+
+## CLI
+
+```bash
+# Speak some text — voice picked from the rotation
+bland-tts speak "Hey, thanks for calling Maple Vet"
+# → "voice: Karen" (or Valentine Experimental, or Willow)
+
+# Pin a specific voice
+bland-tts speak "Hello world" --voice maya -o hello.mp3
+bland-tts speak "Hola" --language es --json
+
+# Voices
+bland-tts voices                       # list
+bland-tts voices --custom              # only voices you've cloned
+bland-tts voice maya                   # full details for one voice
+
+# Voice cloning (BTTS v2)
+bland-tts clone "MyVoice" sample1.wav sample2.wav
+bland-tts rename <voice_id> "NewName"
+bland-tts delete <voice_id>
+
+# Browse stored TTS generations (auto-stored from `speak`)
+bland-tts samples list
+bland-tts samples list --voice <voice_id> --limit 10
+bland-tts samples get <sample_id> -o sample.mp3
+```
+
+Every command supports `--json` for scripting.
+
+## Library
+
+```ts
+import { BlandTtsClient } from "bland-tts";
+import fs from "node:fs/promises";
+
+const tts = new BlandTtsClient(); // reads BLAND_API_KEY from env
+
+// One-shot synthesis to a file
+const { audio } = await tts.speakToBuffer({
+  text: "Hello world",
+  voice: "maya",
+});
+await fs.writeFile("out.mp3", audio);
+
+// Just get the URL
+const res = await tts.speak({ text: "Hi", voice: "nat", language: "en" });
+console.log(res.url);
+
+// Voices
+const voices = await tts.listVoices();
+const maya = await tts.getVoice("maya");
+
+// Clone
+await tts.cloneVoice({
+  name: "MyVoice",
+  samples: [
+    { filename: "a.wav", content: await fs.readFile("a.wav") },
+  ],
+});
+
+// Manage
+await tts.renameVoice(voiceId, "NewName");
+await tts.deleteVoice(voiceId);
+
+// Stored samples
+const recent = await tts.listSamples({ limit: 10 });
+const sample = await tts.getSample(recent[0].id);
+```
+
+### Library API
+
+| Method | Endpoint | Notes |
+|---|---|---|
+| `speak({text, voice?, language?})` | `POST /v1/speak` | Returns `{url, sample_id}`. Auto-stores. |
+| `speakToBuffer({...})` | (same) + download | One-call synth-and-download. Returns `Uint8Array`. |
+| `listVoices()` | `GET /v1/voices` | All voices on your account. |
+| `getVoice(idOrName)` | `GET /v1/voices/:id` | Accepts UUID or name. |
+| `cloneVoice({name, samples})` | `POST /v1/voices/clone` | Multipart. `name` ≤ 30 chars. |
+| `renameVoice(id, name)` | `PATCH /v1/voices/:id` | |
+| `deleteVoice(id)` | `DELETE /v1/voices/:id` | Permanent. |
+| `listSamples({voiceId?, limit?, offset?})` | `GET /v1/speak/samples` | Past `speak()` outputs. |
+| `getSample(id)` | `GET /v1/speak/samples/:id` | One sample by ID. |
+
+All methods throw `BlandApiError` (with `.status` and `.body`) on API failures.
+
+## MCP server
+
+Hook into Claude Code, Cursor, Claude Desktop, Windsurf, and other MCP-compatible clients.
+
+Add to `~/.config/claude-code/mcp.json` (or your client's equivalent):
+
+```json
+{
+  "mcpServers": {
+    "bland-tts": {
+      "command": "npx",
+      "args": ["-y", "bland-tts", "mcp"],
+      "env": { "BLAND_API_KEY": "org_your_key_here" }
+    }
+  }
+}
+```
+
+### Tools exposed
+
+| Tool | Does what |
+|---|---|
+| `tts_speak` | Convert text to speech with a chosen voice |
+| `tts_voices_list` | List voices on your account |
+| `tts_voice_get` | Details for one voice (by ID or name) |
+| `tts_voice_rename` | Rename a cloned voice |
+| `tts_voice_delete` | Delete a cloned voice |
+| `tts_samples_list` | Browse past TTS generations |
+| `tts_sample_get` | Fetch one stored generation |
+
+<Note>
+Voice cloning is intentionally CLI-only since multipart file uploads aren't well-suited to stdio JSON-RPC. Use `bland-tts clone <name> <files...>` for that.
+</Note>
+
+## Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `BLAND_API_KEY` | Your Bland API key |
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
