@@ -1,5 +1,5 @@
 ---
-title: "Tools: Custom API Integration"
+title: "Custom API Integration"
 description: "Create tools that call your own backend, internal services, or any HTTP endpoint."
 ---
 
@@ -18,6 +18,8 @@ This tutorial walks through creating a tool that saves call summaries to Bland's
 - Configure request bodies with dynamic fields
 - Capture and use response data
 
+For shared concepts (parameter modes, response variables, response routing), see the [Tools overview](/tutorials/tools/overview).
+
 ---
 
 ## Step 1: Create an API Connection
@@ -31,13 +33,13 @@ Before creating a tool, you need to set up a connection. This stores your base U
 
 ### Connection Details
 
-**Connection Name** - Give it a descriptive name. For this tutorial, use "Bland API".
+**Connection Name:** Give it a descriptive name. For this tutorial, use "Bland API".
 
 ![Bland Connection Setup](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/BlandConnectionSetup.png)
 
-**Base URL** - The root URL for your API. For Bland's API, enter `https://api.bland.ai`. When you create tools, you'll add the specific path (like `/v1/prompts`).
+**Base URL:** The root URL for your API. For Bland's API, enter `https://api.bland.ai`. When you create tools, you'll add the specific path (like `/v1/prompts`).
 
-**Description** (optional) - Add notes about what this connection is for.
+**Description** (optional): Add notes about what this connection is for.
 
 ![API Integration Config Settings](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integration_config_settings.png)
 
@@ -45,13 +47,13 @@ Before creating a tool, you need to set up a connection. This stores your base U
 
 Choose how your API authenticates requests:
 
-**Bearer Token** - For Bland's API, select this option. Your API key goes in the Authorization header as `Authorization: Bearer your-key`.
+**Bearer Token:** For Bland's API, select this option. Your API key goes in the Authorization header as `Authorization: Bearer your-key`.
 
-**API Key** - For APIs that expect a key in a custom header (e.g., `X-API-Key: your-key`).
+**API Key:** For APIs that expect a key in a custom header (e.g., `X-API-Key: your-key`).
 
-**Basic Auth** - For APIs using username/password authentication.
+**Basic Auth:** For APIs using username/password authentication.
 
-**No Authentication** - For public APIs or when you'll handle auth in custom headers.
+**No Authentication:** For public APIs or when you'll handle auth in custom headers.
 
 ![API Integration Authentication](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integrtaion_config_step_3.png)
 
@@ -77,7 +79,7 @@ In the Actions panel, click **POST** (or **GET** depending on your API) to open 
 
 ## Step 3: Configure Prompting
 
-The Prompting section tells your AI agent about this tool - what it does and when to use it.
+The Prompting section tells your AI agent about this tool: what it does and when to use it.
 
 ### Tool Name
 
@@ -115,10 +117,10 @@ Configure the request body by adding variables. Each variable becomes a field in
 
 Click **Add Variable** to create a new field. For each variable, you provide:
 
-- **Name** - The field name in your request body (e.g., `userName`, `prompt`)
-- **Description** - Tell the AI what to extract from the conversation
-- **Type** - String, Number, or Boolean
-- **Required** - Whether the field must have a value
+- **Name:** The field name in your request body (e.g., `userName`, `prompt`)
+- **Description:** Tell the AI what to extract from the conversation
+- **Type:** String, Number, or Boolean
+- **Required:** Whether the field must have a value
 
 ![Adding a Custom Variable](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/custom_variable_addition.png)
 
@@ -133,10 +135,7 @@ Click **Add Variable** to create a new field. For each variable, you provide:
 - Mention the format if it matters ("email address in standard format")
 - The AI only has access to what was said in the conversation
 
-**How these variables work:**
-
-- **In Personas** - The AI fills these fields automatically by extracting from the conversation
-- **In Pathways** - These variables become fields in the Custom Tool node. You link pathway variables to them (variables you extracted in earlier nodes using Variable Extraction).
+How these variables get filled differs between Personas and Pathways. See [Parameter Modes in Personas](/tutorials/tools/overview#parameter-modes-in-personas) and [Parameter Mapping in Pathways](/tutorials/tools/overview#parameter-mapping-in-pathways) for details.
 
 **Referencing variables in the body:**
 
@@ -153,23 +152,11 @@ Variables are referenced using `{{input.variableName}}` syntax:
 
 ## Step 5: Configure Response Variables
 
-When your API responds, you can capture data from the response to use later in your pathway.
-
-### Response Modes
-
-**Capture Response** (recommended) - The tool waits for the API response and captures specified fields. Use this when you need to:
-- Check if the request succeeded
-- Get data back (like a confirmation number)
-- Route your pathway based on the response
-
-**Fire and Forget** - The tool sends the request but doesn't wait for a response. Use this when:
-- You don't need confirmation
-- Speed is critical
-- The action is fire-and-forget
+When your API responds, you can capture data from the response to use later in your pathway. See [Response Modes](/tutorials/tools/overview#response-modes) in the overview for when to use Capture Response vs Fire and Forget.
 
 ### Default Response Fields
 
-Every response includes these fields (for POST requests):
+Unlike built-in integrations, API tools return raw HTTP response fields. For a POST request, every response includes:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -177,6 +164,8 @@ Every response includes these fields (for POST requests):
 | `rest_api_post_status` | number | HTTP status (200, 400, 500, etc.) |
 | `rest_api_post_status_text` | string | "OK", "Bad Request", "Internal Server Error" |
 | `rest_api_post_data` | object | The full response body from your API |
+
+GET, PUT, PATCH, and DELETE follow the same pattern with `rest_api_get_*`, `rest_api_put_*`, etc.
 
 ---
 
@@ -197,9 +186,9 @@ After saving your tool, you can use it in pathways and make decisions based on t
 
 ### Response Pathways (Routing Based on Output)
 
-After the tool runs, you can route to different nodes based on the response.
+Route to different nodes based on what the API returned. For the full list of available conditions, see [Response Routing](/tutorials/tools/overview#response-routing).
 
-In the Custom Tool node, add **Response Pathways**:
+Common patterns for API tools:
 
 | Variable | Condition | Value | Then Go To |
 |----------|-----------|-------|------------|
@@ -207,18 +196,6 @@ In the Custom Tool node, add **Response Pathways**:
 | `ok` | equals | `false` | Error Node |
 | `rest_api_post_status` | equals | `401` | Auth Error Node |
 | `prompt_id` | is not null | - | Confirmation Node |
-
-**Available Conditions:**
-- `==` (equals)
-- `!=` (not equals)
-- `>` (greater than)
-- `<` (less than)
-- `>=` (greater than or equal)
-- `<=` (less than or equal)
-- `contains` (string contains)
-- `!contains` (string does not contain)
-- `is null`
-- `is not null`
 
 ### Using Response Data in Dialogue
 
@@ -241,7 +218,7 @@ For dynamic endpoints where part of the URL changes per request, use angle brack
 
 ![Path Parameters](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integration_path_params.jpeg)
 
-**Input modes:** Manual or Linked. Agent Mode is not available for path parameters—extract the value as a pathway variable first, then link it here.
+**Input modes:** Manual or Linked. Agent Mode is not available for path parameters: extract the value as a pathway variable first, then link it here.
 
 ### Custom Headers
 
