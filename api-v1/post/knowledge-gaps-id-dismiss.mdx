@@ -1,0 +1,48 @@
+---
+title: "Dismiss Gap"
+api: "POST https://api.bland.ai/v1/knowledge/gaps/{id}/dismiss"
+description: "Marks a gap as irrelevant. The system continues tracking how often the question is asked afterward."
+---
+
+Dismisses an open gap. The gap remains in the system and the `asked_after_dismissal` counter tracks repeat occurrences. A dismissed gap can be reopened later.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The gap ID (UUID). Must have status `OPEN`.
+</ParamField>
+
+### Response
+
+The updated gap object with status `DISMISSED`.
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/knowledge/gaps/14574aa4-892c-4bc7-ac8e-9c17c886aa6d/dismiss" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_GAPS_ERROR",
+      "message": "Can only dismiss gaps with OPEN status"
+    }
+  ]
+}
+```
+
+</ResponseExample>
