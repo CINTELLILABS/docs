@@ -1,0 +1,97 @@
+---
+title: "Alerts"
+description: "Monitor agent behavior in real time. Configure thresholds on built-in call metrics or define custom conditions, then route notifications to email, phone, or a custom tool."
+---
+
+Alerts watch your call traffic continuously and notify you when something starts trending the wrong way. Instead of polling dashboards or sampling transcripts, you define the conditions that matter, set severity levels, and let the platform fire a notification the moment a threshold is crossed.
+
+Configure alerts at the [Alerts dashboard](https://app.bland.ai/dashboard/alerts).
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/alerts/alerts-dashboard.png" alt="Alerts dashboard listing configured alerts with status and frequency" />
+
+## How alerts work
+
+Each alert is a configuration that combines three things:
+
+1. **A condition**: what to measure on each call (a built-in metric or a custom signal).
+2. **One or more severity levels**: INFO, WARNING, and CRITICAL, each with its own threshold, percentage trigger, and lookback window.
+3. **A delivery target**: email, phone, or a custom tool to notify when a level fires.
+
+The platform evaluates every completed call in your org against the alert's condition, then checks whether the percentage of violating calls within the lookback window crosses a level's threshold. If it does, the alert becomes "Triggered" and your notifications go out.
+
+## Conditions
+
+### Built-in metrics
+
+Two metrics are available on every plan:
+
+- **Call length**: total duration of the call.
+- **API errors**: calls where an API hit returned a non-2xx status or timed out.
+
+Enterprise plans unlock advanced metrics:
+
+- **Latency**: average response latency.
+- **Transcription score**: speech-to-text confidence.
+- **Silence count**: long pauses where neither party is speaking.
+- **Sentiment score**: how the contact reacted during the call.
+- **Low engagement ratio**: share of the call where the contact gave very short responses.
+- **User interruption count**: how often the contact interrupted the agent.
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/alerts/condition-templates.png" alt="Condition template picker showing performance, quality, and experience categories" />
+
+### Custom conditions
+
+When the built-in metrics aren't enough, write a custom condition in plain language (for example, *"caller asked for a manager"*). Custom conditions can also point at structured signals you already produce:
+
+- **Citation variables**: values extracted by a [citation schema](/enterprise-features/citations) (e.g. `appointmentConfirmed: true`).
+- **Disposition fields**: results from an [outcome](/tutorials/outcomes) (e.g. `disposition.qualified === false`).
+- **Pathway tags**: whether a specific tag was hit on the call.
+
+This lets you alert on business outcomes, not just system metrics.
+
+## Severity levels
+
+Every alert supports up to three levels:
+
+| Level    | Use it for                                                |
+| -------- | --------------------------------------------------------- |
+| INFO     | Heads-up signals you want to track but don't page on.     |
+| WARNING  | Trending issues worth investigating soon.                 |
+| CRITICAL | Active problems that need immediate attention.            |
+
+Each level has its own:
+
+- **Operator and value**: e.g. `call_length > 600s`.
+- **Percentage trigger**: the share of calls in the window that must violate before the level fires (e.g. fire when 10% of calls exceed the threshold).
+- **Lookback window**: how far back to look. Options are 10 minutes, 30 minutes, 1 hour, 3 hours, or 24 hours.
+
+The percentage trigger is what keeps alerts from being noisy. A single long call won't fire a CRITICAL alert. The platform waits until enough calls in the window are violating before it considers the condition "trending."
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/alerts/severity-config.png" alt="Configuring INFO, WARNING, and CRITICAL thresholds with percentage triggers and lookback windows" />
+
+You can also set a **minimum call count** so alerts don't fire during low-volume periods where percentages are misleading.
+
+## Notifications
+
+When a level fires, the platform delivers a notification to any of the following:
+
+- **Email**: one or more email addresses.
+- **Phone**: an outbound voice call to a list of numbers, optionally using a specific caller ID and a custom spoken message.
+- **Custom tool**: invoke one of your [custom tools](/tutorials/v2-tools) with an input payload. Useful for routing to Slack, PagerDuty, a webhook, or anything else you've already wired up.
+
+You can mix and match. The same alert can email a team alias *and* trigger a Slack tool.
+
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/alerts/notification-targets.png" alt="Notification configuration showing email, phone, and tool delivery options" />
+
+## Alert lifecycle
+
+An alert config has two pieces of state visible in the dashboard:
+
+- **Status**: whether the config is **Active** (currently evaluating) or **Inactive** (paused). Toggle this without deleting the alert.
+- **Alert state**: the live result. **OK** if no level is currently breached, or **Triggered** with a severity badge if one is. The dashboard also shows the time of the last trigger so you can spot patterns.
+
+When a triggered alert recovers (the percentage drops back below all thresholds), the alert state returns to OK. The history is preserved so you can review past incidents.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
