@@ -1,95 +1,131 @@
 ---
 title: 'Quickstart'
-description: 'Start building awesome documentation in under 5 minutes'
+description: 'Send your first AI phone call with Bland in under 5 minutes'
 ---
 
-## Setup your development
+This quickstart walks you through sending your first AI phone call with the Bland API. By the end, you'll have placed a live call from a script.
 
-Learn how to update your docs locally and deploy them to the public.
+## Prerequisites
 
-### Edit and preview
+- A [Bland account](https://app.bland.ai)
+- Your API key from the [dashboard](https://app.bland.ai/dashboard/settings)
+- A phone number to call (include the country code, e.g. `+15551234567`)
 
-<AccordionGroup>
-  <Accordion icon="github" title="Clone your docs locally">
-    During the onboarding process, we created a repository on your Github with
-    your docs content. You can find this repository on our
-    [dashboard](https://dashboard.mintlify.com). To clone the repository
-    locally, follow these
-    [instructions](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-    in your terminal.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Preview changes">
-    Previewing helps you make sure your changes look as intended. We built a
-    command line interface to render these changes locally. 1. Install the
-    [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the
-    documentation changes locally with this command: ``` npm i -g mintlify ```
-    2. Run the following command at the root of your documentation (where
-    `mint.json` is): ``` mintlify dev ```
-  </Accordion>
-</AccordionGroup>
+## Step 1: Get your API key
 
-### Deploy your changes
+1. Sign in to the [Bland dashboard](https://app.bland.ai).
+2. Open **Settings** and copy your API key.
+3. Store it as an environment variable so you don't commit it to source:
 
-<AccordionGroup>
+```bash
+export BLAND_API_KEY="your-api-key-here"
+```
 
-<Accordion icon="message-bot" title="Install our Github app">
-  Our Github app automatically deploys your changes to your docs site, so you
-  don't need to manage deployments yourself. You can find the link to install on
-  your [dashboard](https://dashboard.mintlify.com). Once the bot has been
-  successfully installed, there should be a check mark next to the commit hash
-  of the repo.
-</Accordion>
-<Accordion icon="rocket" title="Push your changes">
-  [Commit and push your changes to
-  Git](https://docs.github.com/en/get-started/using-git/pushing-commits-to-a-remote-repository#about-git-push)
-  for your changes to update in your docs site. If you push and don't see that
-  the Github app successfully deployed your changes, you can also manually
-  update your docs through our [dashboard](https://dashboard.mintlify.com).
-</Accordion>
+## Step 2: Send a call
 
-</AccordionGroup>
+Use the `POST /v1/calls` endpoint to dispatch a call. The `task` field describes what the AI agent should do on the call.
 
-## Update your docs
+<CodeGroup>
 
-Add content directly in your files with MDX syntax and React components. You can use any of our components, or even build your own.
+```bash cURL
+curl -X POST https://api.bland.ai/v1/calls \
+  -H "Authorization: $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+15551234567",
+    "task": "You are calling to confirm a dentist appointment for tomorrow at 2pm. Be polite and friendly.",
+    "voice": "maya",
+    "record": true
+  }'
+```
 
-<CardGroup>
+```javascript Node.js
+const response = await fetch("https://api.bland.ai/v1/calls", {
+  method: "POST",
+  headers: {
+    Authorization: process.env.BLAND_API_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    phone_number: "+15551234567",
+    task: "You are calling to confirm a dentist appointment for tomorrow at 2pm. Be polite and friendly.",
+    voice: "maya",
+    record: true,
+  }),
+});
 
-<Card title="Style Your Docs" icon="paintbrush" href="/settings/global">
-  Add flair to your docs with personalized branding.
-</Card>
+const data = await response.json();
+console.log(data);
+```
 
-<Card
-  title="Add API Endpoints"
-  icon="square-code"
-  href="/api-playground/configuration"
->
-  Implement your OpenAPI spec and enable API user interaction.
-</Card>
+```python Python
+import os
+import requests
 
-<Card
-  title="Integrate Analytics"
-  icon="chart-mixed"
-  href="/analytics/supported-integrations"
->
-  Draw insights from user interactions with your documentation.
-</Card>
+response = requests.post(
+    "https://api.bland.ai/v1/calls",
+    headers={"Authorization": os.environ["BLAND_API_KEY"]},
+    json={
+        "phone_number": "+15551234567",
+        "task": "You are calling to confirm a dentist appointment for tomorrow at 2pm. Be polite and friendly.",
+        "voice": "maya",
+        "record": True,
+    },
+)
 
-<Card
-  title="Host on a Custom Domain"
-  icon="browser"
-  href="/settings/custom-domain/subdomain"
->
-  Keep your docs on your own website's subdomain.
-</Card>
+print(response.json())
+```
 
+</CodeGroup>
+
+A successful response returns a `call_id` you can use to track the call:
+
+```json
+{
+  "status": "success",
+  "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1"
+}
+```
+
+## Step 3: Check the call status
+
+Use the `call_id` to fetch call details, including the transcript and recording URL once the call completes.
+
+```bash
+curl https://api.bland.ai/v1/calls/$CALL_ID \
+  -H "Authorization: $BLAND_API_KEY"
+```
+
+You can also watch calls in real time on the [Call Logs](https://app.bland.ai/dashboard/call-logs) page.
+
+## Common parameters
+
+| Parameter | Description |
+| --- | --- |
+| `phone_number` | The number to call, in E.164 format (e.g. `+15551234567`). |
+| `task` | Plain-language instructions for the agent. |
+| `voice` | Voice persona for the agent. Browse options in the dashboard. |
+| `first_sentence` | The first line the agent speaks. |
+| `wait_for_greeting` | If `true`, the agent waits for the recipient to speak first. |
+| `max_duration` | Maximum call length in minutes. |
+| `record` | Set to `true` to record the call. |
+| `webhook` | URL to receive a post-call payload with transcript and metadata. |
+
+See the [Send Call API reference](/api-v1/post/calls) for the full list.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Send 1,000 calls at once" icon="megaphone" href="/tutorials/send-1000-calls-at-once">
+    Batch dispatch calls from a CSV or list.
+  </Card>
+  <Card title="Build a conversational pathway" icon="diagram-project" href="/tutorials/pathways">
+    Design branching conversations with structured logic.
+  </Card>
+  <Card title="Set up post-call webhooks" icon="webhook" href="/tutorials/post-call-webhooks">
+    Receive transcripts and analysis after each call.
+  </Card>
+  <Card title="Create an agent persona" icon="user-robot" href="/tutorials/personas">
+    Define reusable agent personalities across calls.
+  </Card>
 </CardGroup>
-
-
-
-
-
-
-
-
-
