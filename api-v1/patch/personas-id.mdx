@@ -4,6 +4,10 @@ api: "PATCH https://api.bland.ai/v1/personas/{persona_id}"
 description: "Update an existing persona configuration."
 ---
 
+<Info>
+  **Updates write to the draft, not production.** This endpoint stages changes in `current_draft_version`. Live inbound and SMS calls keep using `current_production_version` until you promote the draft with [Promote Version](/api-v1/post/personas-id-versions-promote).
+</Info>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -63,6 +67,9 @@ description: "Update an existing persona configuration."
     <ParamField body="interruption_threshold" type="number">
       Interruption sensitivity threshold.
     </ParamField>
+    <ParamField body="first_sentence" type="string">
+      Phrase the agent says first instead of generating a greeting on the fly. Must be under 200 characters.
+    </ParamField>
   </Expandable>
 </ParamField>
 
@@ -101,7 +108,9 @@ description: "Update an existing persona configuration."
 </ParamField>
 
 <ParamField body="kb_ids" type="array">
-  Updated array of knowledge base IDs to connect to the persona.
+  Replacement array of knowledge base UUIDs for the persona. Pass the full set you want attached; omitted IDs will be detached on the draft.
+
+  IDs come from [Upload Text](/api-v1/post/knowledge-learn-text), [Upload File](/api-v1/post/knowledge-learn-file), or [Crawl Web](/api-v1/post/knowledge-learn-web). The same knowledge base can be attached to multiple personas. Changes only affect live calls after the draft is promoted.
 </ParamField>
 
 ### Response
