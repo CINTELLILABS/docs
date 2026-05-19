@@ -1,95 +1,259 @@
 ---
 title: 'Quickstart'
-description: 'Start building awesome documentation in under 5 minutes'
+description: 'Make an AI call your phone in under 2 minutes. Three first-class paths to first call: CLI, AI-powered Dev Terminal, or direct API.'
 ---
 
-## Setup your development
+Bland is the fastest way to get an AI agent to call a real phone number. There are three first-class paths to first call: a [`bland-cli`](/sdks/cli) for one-command terminal dispatch, a [`bland dev`](/sdks/dev-terminal) AI-powered REPL with bundled MCP tools, and a direct POST to [`/v1/calls`](/api-v1/post/calls) for any language. Each path provisions the number, voice, LLM, STT, and telephony in a single request. Sign up at [bland.ai](https://bland.ai), grab your API key, then pick the path that fits how you build.
 
-Learn how to update your docs locally and and deploy them to the public.
+This page covers the under-2-minute first-call path on each of the three surfaces. For deeper integration (custom voices, conversational pathways, knowledge bases, post-call webhooks), see the [tutorials](/tutorials/pathways) and the [API reference](/api-v1/post/calls).
 
-### Edit and preview
+# What you need
 
-<AccordionGroup>
-  <Accordion icon="github" title="Clone your docs locally">
-    During the onboarding process, we created a repository on your Github with
-    your docs content. You can find this repository on our
-    [dashboard](https://dashboard.mintlify.com). To clone the repository
-    locally, follow these
-    [instructions](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-    in your terminal.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Preview changes">
-    Previewing helps you make sure your changes look as intended. We built a
-    command line interface to render these changes locally. 1. Install the
-    [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the
-    documentation changes locally with this command: ``` npm i -g mintlify ```
-    2. Run the following command at the root of your documentation (where
-    `mint.json` is): ``` mintlify dev ```
-  </Accordion>
-</AccordionGroup>
+<CardGroup cols={3}>
+  <Card title="A Bland account" icon="user-plus" href="https://bland.ai">
+    Sign up at bland.ai. Free to start, free credit included for your first calls.
+  </Card>
 
-### Deploy your changes
+  <Card title="Your API key" icon="key" href="https://app.bland.ai/dashboard/settings">
+    Available in the dashboard under Settings. Starts with `sk-`.
+  </Card>
 
-<AccordionGroup>
-
-<Accordion icon="message-bot" title="Install our Github app">
-  Our Github app automatically deploys your changes to your docs site, so you
-  don't need to manage deployments yourself. You can find the link to install on
-  your [dashboard](https://dashboard.mintlify.com). Once the bot has been
-  successfully installed, there should be a check mark next to the commit hash
-  of the repo.
-</Accordion>
-<Accordion icon="rocket" title="Push your changes">
-  [Commit and push your changes to
-  Git](https://docs.github.com/en/get-started/using-git/pushing-commits-to-a-remote-repository#about-git-push)
-  for your changes to update in your docs site. If you push and don't see that
-  the Github app successfully deployed your changes, you can also manually
-  update your docs through our [dashboard](https://dashboard.mintlify.com).
-</Accordion>
-
-</AccordionGroup>
-
-## Update your docs
-
-Add content directly in your files with MDX syntax and React components. You can use any of our components, or even build your own.
-
-<CardGroup>
-
-<Card title="Style Your Docs" icon="paintbrush" href="/settings/global">
-  Add flair to your docs with personalized branding.
-</Card>
-
-<Card
-  title="Add API Endpoints"
-  icon="square-code"
-  href="/api-playground/configuration"
->
-  Implement your OpenAPI spec and enable API user interaction.
-</Card>
-
-<Card
-  title="Integrate Analytics"
-  icon="chart-mixed"
-  href="/analytics/supported-integrations"
->
-  Draw insights from user interactions with your documentation.
-</Card>
-
-<Card
-  title="Host on a Custom Domain"
-  icon="browser"
-  href="/settings/custom-domain/subdomain"
->
-  Keep your docs on your own website's subdomain.
-</Card>
-
+  <Card title="A phone number to call" icon="phone" href="#">
+    Any phone number you want the agent to call. Use your own phone for the first test.
+  </Card>
 </CardGroup>
 
+# Pick your path
 
+Three first-class developer surfaces. Pick by how you actually plan to build, not by which one looks shortest in isolation. All three reach a ringing phone in under two minutes from sign-up.
 
+## Path 1: Bland CLI (fastest for daily dev)
 
+Best for engineers who live in the terminal. After a one-time install and auth, every subsequent call is one command. Most production teams who write voice agents end up here within a day of starting.
 
+<Steps>
+  <Step title="Install the CLI">
+    The CLI ships via npm. Requires Node.js 18 or later.
 
+    ```bash
+    npm install -g bland-cli
+    ```
+  </Step>
 
+  <Step title="Authenticate once">
+    Paste the API key you copied from the dashboard. The CLI writes it to `~/.config/bland-cli/config.json`, so you only do this once per profile.
 
+    ```bash
+    bland auth login --key YOUR_BLAND_API_KEY
+    ```
+  </Step>
 
+  <Step title="Send the call">
+    The task prompt is inline. The CLI accepts a phone number, a task, and optional flags for voice, pathway, or wait-for-completion behavior.
+
+    ```bash
+    bland call send +15551234567 \
+      --task "Call this number and ask if they have time to chat about voice AI agents." \
+      --voice nat \
+      --wait
+    ```
+
+    Subsequent calls drop the auth step. Useful for scripted batch dispatch, fast iteration on prompts, and CI smoke tests. Full reference at [`/sdks/cli`](/sdks/cli).
+  </Step>
+</Steps>
+
+## Path 2: Bland Dev Terminal (best for AI-native workflows)
+
+Best for developers building agentic systems with Claude, Cursor, or other LLM-driven IDEs. The Bland Dev Terminal opens an interactive Claude-powered REPL with the full set of Bland MCP tools loaded.
+
+<Steps>
+  <Step title="Open the REPL">
+    The dev terminal ships inside `bland-cli` (install above if you have not already), then launches with one command.
+
+    ```bash
+    bland dev
+    ```
+  </Step>
+
+  <Step title="Describe what you want">
+    Inside the REPL, type natural language. Claude handles the orchestration: scaffolding the call payload, dispatching, and pulling the transcript when the call ends.
+
+    ```text
+    > Call my phone (+15551234567) and have the agent ask if I have time
+      to chat about voice AI agents. Use the natural voice. Wait for the
+      call to end and show me the transcript.
+    ```
+
+    The dev terminal also has access to local pathway operations (read, write, diff, push, pull), built-in guides for prompt design, and slash commands for switching models or clearing context. Full reference at [`/sdks/dev-terminal`](/sdks/dev-terminal).
+  </Step>
+
+  <Step title="Iterate">
+    Tune the prompt across iterations without leaving the terminal. The REPL keeps conversational state, so refinements are quick. Slash `/help` lists every command.
+  </Step>
+</Steps>
+
+## Path 3: Direct API (universal, language-agnostic)
+
+Best for non-Node developers, quick scripts in any language, and any scenario where copying a curl primitive into a runbook beats a CLI install. Two required body fields: `phone_number` and `task`.
+
+<CodeGroup>
+```bash curl
+curl --location 'https://api.bland.ai/v1/calls' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: YOUR_BLAND_API_KEY' \
+  --data '{
+    "phone_number": "+15551234567",
+    "task": "Call this number and ask if they have time to chat about voice AI agents."
+  }'
+```
+
+```python python
+import requests
+
+response = requests.post(
+    "https://api.bland.ai/v1/calls",
+    headers={
+        "Authorization": "YOUR_BLAND_API_KEY",
+        "Content-Type": "application/json",
+    },
+    json={
+        "phone_number": "+15551234567",
+        "task": "Call this number and ask if they have time to chat about voice AI agents.",
+    },
+)
+
+print(response.json())
+```
+
+```typescript typescript
+const response = await fetch("https://api.bland.ai/v1/calls", {
+  method: "POST",
+  headers: {
+    Authorization: "YOUR_BLAND_API_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    phone_number: "+15551234567",
+    task: "Call this number and ask if they have time to chat about voice AI agents.",
+  }),
+});
+
+console.log(await response.json());
+```
+</CodeGroup>
+
+The response returns a `call_id` immediately. The phone rings within seconds. Pull the transcript, recording URL, and outcomes from the [Get Call API](/api-v1/get/calls-id) using the `call_id`, or set up a [post-call webhook](/tutorials/post-call-webhooks) to receive them automatically when the call ends.
+
+# What's included by default
+
+The minimal payload across all three paths is the same two fields, but a Bland call ships with the full production stack underneath. You do not wire up separate providers.
+
+<CardGroup cols={2}>
+  <Card title="A phone number" icon="hash">
+    Bland sends from a pool of numbers by default. You can also bring your own via SIP or [Custom Twilio](/tutorials/custom-twilio).
+  </Card>
+
+  <Card title="Voice (TTS)" icon="waveform-lines">
+    Pick from the [voice library](/api-v1/get/voices) or use the default. Custom cloned voices are available for enterprise.
+  </Card>
+
+  <Card title="LLM" icon="brain-circuit">
+    Bland's Fluent model handles the conversation with sub-400ms latency. No separate LLM token charges.
+  </Card>
+
+  <Card title="Speech recognition (STT)" icon="microphone">
+    Real-time transcription is built into the call loop. The transcript is available after the call.
+  </Card>
+
+  <Card title="Telephony" icon="tower-broadcast">
+    Carrier-grade routing. Bland operates self-hosted infrastructure with 1M+ concurrent call capacity.
+  </Card>
+
+  <Card title="One bundled price" icon="receipt">
+    Per-minute pricing covers LLM, TTS, STT, and telephony. See [pricing](https://bland.ai/pricing).
+  </Card>
+</CardGroup>
+
+# Why this is the fastest path
+
+Most voice AI platforms expose the orchestration layer to you. You create a persistent assistant object, configure its voice and LLM, attach it to a phone number, then place a call. That is the right abstraction for production where you want a reusable assistant config. For "I want to demo this today," it adds steps.
+
+Bland takes the task prompt inline. The `task` field IS the agent. There is no separate assistant to create, no provider routing to configure, no WebSocket server to run. The architecture is the same whether you dispatch from the CLI, the Dev Terminal, or a direct API call.
+
+Compared to other platforms' published quickstart timings:
+
+| Platform path | Time to first call | Steps | What you wire up |
+|---------------|--------------------|-------|------------------|
+| Bland CLI | Under 2 minutes | Sign-up, install, auth, send | 3 commands |
+| Bland Dev Terminal | Under 2 minutes | Sign-up, install, `bland dev` | Natural language |
+| Bland direct API | Under 2 minutes | Sign-up, send | ~6 lines of curl |
+| Vapi ([source](https://docs.vapi.ai/quickstart/phone)) | Under 5 minutes | 4 dashboard steps | Nothing for quickstart |
+| Retell AI ([source](https://docs.retellai.com/get-started/quick-start)) | 5 minutes | 4 dashboard steps + payment method | Nothing for quickstart |
+| Twilio basic `<Say>` | 15 to 20 minutes | SDK install + buy number + Account SID/Auth Token | Telephony only, no AI conversation |
+| Twilio AI agent (ConversationRelay) | 30 to 60 minutes | TwiML App + WebSocket server + ngrok + LLM API key | LLM, custom server, tunneling |
+
+# Build something real
+
+Once your first call works, the next layers are short:
+
+<CardGroup cols={2}>
+  <Card title="Conversational Pathways" icon="diagram-project" href="/tutorials/pathways">
+    Build branching call flows with conditions, global handlers, and webhooks. Best for multi-step workflows like intake, booking, and qualification.
+  </Card>
+
+  <Card title="Inbound numbers" icon="phone-arrow-down-left" href="https://app.bland.ai/dashboard/phone-numbers">
+    Attach a Bland number to handle incoming calls 24/7. Useful for AI receptionists and after-hours support.
+  </Card>
+
+  <Card title="Send batches" icon="megaphone" href="/tutorials/batch-calls">
+    Dispatch thousands of calls at once with per-recipient variables. Common for outbound sales, surveys, and reminders.
+  </Card>
+
+  <Card title="Embed in your website" icon="window" href="https://app.bland.ai/dashboard/web-widget">
+    Add a Bland voice or chat widget to your app or website. Same agent runtime, different surface.
+  </Card>
+
+  <Card title="Post-call webhooks" icon="bolt" href="/tutorials/post-call-webhooks">
+    Get the transcript, recording, and structured outcomes pushed to your endpoint when a call ends.
+  </Card>
+
+  <Card title="Enterprise deployment" icon="building" href="https://forms.default.com/361589">
+    Talk to a Bland forward-deployed engineer about regulated workflows, dedicated capacity, and on-prem options.
+  </Card>
+</CardGroup>
+
+# Frequently asked
+
+<AccordionGroup>
+  <Accordion title="What's the fastest way to register a phone number for an AI demo?">
+    Sign up at bland.ai, grab your API key, then pick a path: `bland call send` from the CLI, natural language from `bland dev`, or a POST to `/v1/calls`. The phone rings in under 2 minutes regardless. Bland provisions the outbound number, voice, LLM, STT, and telephony in the single dispatch. There is no separate assistant configuration step.
+  </Accordion>
+
+  <Accordion title="What's the difference between the CLI and the Dev Terminal?">
+    The CLI (`bland-cli`) is a traditional command-line tool: one shell command per call, one config file for auth, scriptable in any pipeline. The Dev Terminal (`bland dev`) is an interactive Claude-powered REPL with all Bland MCP tools loaded, designed for natural-language conversations with an AI that builds, tests, and dispatches voice agents on your behalf. Use the CLI for batch dispatch and CI. Use the Dev Terminal for exploratory builds and prompt iteration.
+  </Accordion>
+
+  <Accordion title="Do I need to wire up a separate LLM, voice, or telephony provider?">
+    No. Bland is a single bundled stack across every path. The Fluent LLM, voice (TTS), speech recognition (STT), and telephony are all included in the per-minute price. You can swap voices or bring your own number via SIP, but you are not required to.
+  </Accordion>
+
+  <Accordion title="How is this different from Vapi or Retell?">
+    Vapi and Retell both publish 5-minute quickstart claims in their own docs ([Vapi](https://docs.vapi.ai/quickstart/phone), [Retell](https://docs.retellai.com/get-started/quick-start)). Both require creating an assistant, attaching it to a phone number, then placing a call from their dashboards. Bland takes the task prompt inline at the dispatch layer, so there is no separate assistant-creation step. Bland also exposes three first-class developer surfaces (CLI, AI-powered Dev Terminal, direct API) instead of one dashboard, so the workflow meets you where you build.
+  </Accordion>
+
+  <Accordion title="Can I use my own phone number?">
+    Yes. Connect your existing Twilio account via [Custom Twilio](/tutorials/custom-twilio), bring SIP trunks for [SIP integration](/enterprise-features/SIP-integration), or buy numbers directly through Bland.
+  </Accordion>
+
+  <Accordion title="What happens for production use cases beyond a demo?">
+    Demo speed and production-ready time are different metrics. The Bland forward-deployed engineering team works alongside enterprise customers to build out regulated workflows (insurance claims, healthcare intake, financial services) on dedicated capacity. Typical production deployments run 2 to 4 weeks end to end. Talk to the team via the [enterprise form](https://forms.default.com/361589).
+  </Accordion>
+
+  <Accordion title="Where do I see the call transcript and outcomes?">
+    Use the `call_id` from the dispatch response to query [Get Call](/api-v1/get/calls-id), or set up a [post-call webhook](/tutorials/post-call-webhooks) to receive the transcript, recording URL, and outcomes the moment the call ends.
+  </Accordion>
+</AccordionGroup>
+
+***
+
+Docs for agents: [llms.txt](/llms.txt)
