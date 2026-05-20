@@ -1,0 +1,175 @@
+---
+title: "Triage"
+description: "Capture issues from your calls and resolve them inside the console with Norm"
+---
+
+## Introduction
+
+Triage is a monitoring product for tracking issues against your calls and resolving them without leaving Bland. Flag a problem from the call detail view, write a description, and Norm uses the attached evidence to reproduce the failure, find the root cause, patch the pathway, and verify the fix with testbed simulations.
+
+Triage lives at the [Triage dashboard](https://app.bland.ai/dashboard/monitor/triage).
+
+<iframe
+  src="https://www.loom.com/embed/cd851a3070e24c3bb6d49bd53462fa8b"
+  frameBorder="0"
+  allowFullScreen
+  style={{ width: "100%", aspectRatio: "16 / 9", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem", display: "block" }}
+/>
+
+<CardGroup cols={2}>
+  <Card title="Flag any call" icon="flag">
+    Open a call in [Call Logs](/tutorials/call-logs) and hit **Triage** to file an issue or attach the call to an existing one.
+  </Card>
+  <Card title="Auto-built evidence" icon="folder-tree">
+    Each issue auto-attaches the originating call and its pathway, so Norm has the full context before it starts.
+  </Card>
+  <Card title="Norm Fix" icon="screwdriver-wrench">
+    Run **Norm Fix** to investigate, identify the root cause, patch the pathway, and verify with [testbed](/tutorials/testbed) simulations.
+  </Card>
+  <Card title="Test from the issue" icon="comments">
+    Chat with the fixed pathway directly from the issue, or open the pathway to review every change Norm made.
+  </Card>
+</CardGroup>
+
+---
+
+## Filing an issue from a call
+
+The fastest way into Triage is from the call detail view in [Call Logs](/tutorials/call-logs). Open the call you want to flag and click **Triage** in the header.
+
+The Triage popover gives you two modes:
+
+- **New issue** files a fresh issue with the call already attached as evidence.
+- **Add to existing** searches your open issues so you can attach the call to one that already covers the problem.
+
+If the call is already linked to one or more issues, the **Triage** button turns orange and shows the linked issue count. The popover surfaces those existing issues at the top under **Already linked**, so you can jump into one instead of duplicating work.
+
+### Issue fields
+
+When you file a new issue you set:
+
+| Field | Notes |
+|---|---|
+| Title | Short summary of the problem. Required. |
+| Description | Free text. Be specific about what went wrong — Norm uses this as its instructions. |
+| Severity | `Critical`, `High`, `Medium`, or `Low`. |
+| Status | `Backlog`, `Todo`, `In progress`, `In review`, `Done`, or `Closed`. New issues default to a workable status; you can move them through the lifecycle from the issue header. |
+| Category | Pick an existing category or create a new one. Categories are org-defined, so your team's taxonomy is whatever you make it. |
+| Author | The user who owns the issue (typically you). |
+| Assignee | The user responsible for resolving it. |
+
+Author and Assignee are independent, so you can own an issue without being on the hook to fix it, or assign it to a teammate while keeping yourself as the point of contact.
+
+---
+
+## The issue page
+
+Every issue has its own page with the header (title, severity, status, category, author, assignee) and a set of tabs for evidence, activity, and related issues.
+
+### Evidence
+
+The Evidence tab is the full context profile that Norm works against.
+
+**Auto-attached** when you flag a call:
+
+- The originating call, with its pathway name and version
+- The pathway involved in that call
+
+**Add more** from the Evidence tab:
+
+- **Attach calls** to bring in additional examples of the same problem.
+- **Attach files** for screenshots, exports, or any supporting document.
+- **SMS conversations** to attach a messaging thread as evidence.
+
+The more representative calls you attach, the more confident Norm's fix will be — it tests against every attached call when it verifies.
+
+### Activity and comments
+
+The Activity tab is a chronological feed of everything that has happened on the issue: status and severity changes, owner/assignee changes, resources added, flags, comments, and every step Norm takes during a Norm Fix run.
+
+Use the comment composer at the bottom to leave notes for teammates or attach supporting resources alongside the comment.
+
+### Related issues
+
+The Related tab lists issues linked to this one. Relations can be:
+
+- **Related to** for general links between issues.
+- **Blocks** when one issue must be resolved before another can be.
+- **Duplicate of** to fold a duplicate report into the canonical issue.
+
+---
+
+## Norm Fix
+
+Once the evidence is in place, hit **Norm Fix** to have Norm work the issue.
+
+Norm runs through a fixed set of stages, and you can watch each one update live in the Activity tab:
+
+<Steps>
+  <Step title="Reading ticket">
+    Norm parses your description and pulls in the issue metadata.
+  </Step>
+  <Step title="Reviewing evidence">
+    Norm reads the attached calls, transcripts, and pathway state.
+  </Step>
+  <Step title="Analyzing system">
+    Norm traces the failure across the pathway to identify the root cause.
+  </Step>
+  <Step title="Editing draft">
+    Norm forks the affected pathway into a draft version and applies the fix.
+  </Step>
+  <Step title="Verifying">
+    Norm runs [testbed](/tutorials/testbed) simulations against the patched draft, using the attached calls as the input scenarios.
+  </Step>
+</Steps>
+
+When Norm finishes, the Activity feed posts a triage summary you can expand: the root cause, every change it made, and the verification results (how many testbed simulations ran and whether each one passed).
+
+<Info>
+  Norm never edits a live pathway. Every fix lands in a new draft version of the affected pathway, so production keeps running the previous version until you promote the fix. See [Norm](/tutorials/norm) for the full draft-and-promote model.
+</Info>
+
+---
+
+## Verifying the fix
+
+When Norm completes a Norm Fix run, the issue surfaces an **Updated pathway v{N}** card with two ways to verify:
+
+- **Test updated pathway v{N}** opens a testing panel scoped to Norm's draft version. Place a test call or chat with the fixed pathway directly from the issue to confirm the problem is gone.
+- **Open pathway v{N}** jumps into the [pathway editor](/tutorials/pathways) at the draft version, so you can read every node-level change Norm made before promoting it.
+
+The testing panel lets you compare the draft against production by switching the version selector — useful when you want to confirm the fix without losing your place in the issue.
+
+---
+
+## End-to-end workflow
+
+1. See a problem in [Call Logs](/tutorials/call-logs) and open the call's detail view.
+2. Hit **Triage**. Either link the call to an existing issue or create a new one with a clear title, description, severity, and assignee.
+3. Attach any additional calls, files, or SMS conversations that show the same problem.
+4. Click **Norm Fix** and watch the activity feed as Norm reviews evidence, edits a draft, and verifies.
+5. Use **Test updated pathway** to place a test call against the patched draft, or **Open pathway** to review Norm's changes node by node.
+6. When you're satisfied, promote the draft to production from the pathway editor and move the issue to `Done`.
+
+---
+
+## Related docs
+
+<CardGroup cols={2}>
+  <Card title="Call Logs" icon="phone" href="/tutorials/call-logs">
+    Where most issues originate. The **Triage** button on the call detail view is the entry point into a new issue.
+  </Card>
+  <Card title="Norm" icon="wand-magic-sparkles" href="/tutorials/norm">
+    The AI assistant that runs Norm Fix. The same draft-and-promote model applies to every change Norm makes.
+  </Card>
+  <Card title="Testbed" icon="vial" href="/tutorials/testbed">
+    The simulation surface Norm uses to verify a fix against the attached calls before reporting back.
+  </Card>
+  <Card title="Pathways" icon="diagram-project" href="/tutorials/pathways">
+    Norm's fixes land in a new draft version of the affected pathway. Promote from the pathway editor.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
