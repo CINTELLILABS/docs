@@ -1,7 +1,7 @@
 ---
 title: "Clone"
 api: "POST https://api.bland.ai/v1/voices/clone"
-description: "Create a custom voice clone using Bland's BTTS"
+description: "Create a custom voice clone using Bland's BTTS v3 engine"
 contentType: 'multipart/form-data'
 ---
 
@@ -25,19 +25,17 @@ The request must be sent as `multipart/form-data` with the following fields:
 </ParamField>
 
 <ParamField body="audio_samples" type="file[]" required>
-  Audio files containing voice samples for cloning. Multiple files can be uploaded.
-  
+  Audio file(s) containing voice samples for cloning.
+
   **Requirements:**
   - At least one audio file is required
-  - Maximum 5 files per upload
+  - The default BTTS v3 engine only consumes a single sample; additional files are ignored
   - Supported formats: WAV, MP3, and other common audio formats
   - Maximum file size: 10MB per file
   - Maximum total upload size: 25MB
   - Audio duration: 1-60 seconds per sample
-  - Maximum 5 samples per voice (total across all uploads)
   - Higher quality audio samples produce better voice clones
-  - Recommended: 10-30 seconds of clear speech per sample
-  - 1-2 samples is recommended for optimal results
+  - Recommended: 10-15 seconds of clear speech
 </ParamField>
 
 <ParamField body="gender" type="string">
@@ -57,6 +55,14 @@ The request must be sent as `multipart/form-data` with the following fields:
   
   **Usage:**
   - Provides additional context to underlying model for tone/style/etc.
+</ParamField>
+
+<ParamField body="isBTTS_V2" type="boolean">
+  Opt into the production-grade BTTS v2 cloning engine instead of the default BTTS v3.
+
+  **Usage:**
+  - Pass `"true"` (as a string) in the multipart form to use BTTS v2
+  - V2 is the previous-generation stable engine; V3 is the default
 </ParamField>
 
 ## Audio Validation Limits
@@ -96,11 +102,10 @@ The following limits are enforced for audio file uploads:
 
 ```bash cURL
 curl -X POST "https://api.bland.ai/v1/voices/clone" \
-  -H "Authorization: Bearer your_jwt_token_here" \
+  -H "Authorization: your_api_key_here" \
   -F "name=Professional Voice" \
-  -F "audio_samples=@voice_sample1.wav" \
-  -F "audio_samples=@voice_sample2.wav" \
-  -F "gender=female" \
+  -F "audio_samples=@voice_sample.wav" \
+  -F "gender=female"
 ```
 
 ```javascript JavaScript
