@@ -90,9 +90,9 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="persona_id" type="string">
   The ID of the persona to use for the call.
 
-  Personas act as pre-configured templates that automatically apply a configuration when you pass a persona_id to an outbound call. Think of them as "call presets" that you can reuse across multiple calls.
+  Personas act as pre-configured templates that automatically apply a configuration when you pass a persona\_id to an outbound call. Think of them as "call presets" that you can reuse across multiple calls.
 
-  When using a persona_id, any parameters specified in your request body will override the corresponding parameters from the persona's configuration.
+  When using a persona\_id, any parameters specified in your request body will override the corresponding parameters from the persona's configuration.
 
   You can access your persona IDs by clicking the "Personas" button at the bottom of the Send Call page, and then "Use and Manage".
 </ParamField>
@@ -185,7 +185,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="wait_for_greeting" default="false" type="boolean">
   By default, the agent starts talking as soon as the call connects.
 
-  When wait_for_greeting is set to true, the agent will wait for the call recipient to speak first before responding.
+  When wait\_for\_greeting is set to true, the agent will wait for the call recipient to speak first before responding.
 </ParamField>
 
 <ParamField body="pronunciation_guide" type="array">
@@ -233,7 +233,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="from" type="string">
   Specify a phone number to call from that you own or have uploaded from your Twilio account. Country code is required, spaces or parentheses must be excluded.
 
-  By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted_key in the create call request headers.
+  By default, calls are initiated from a separate pool of numbers owned by Bland. If you are using your own twilio numbers, you must specify a matching encrypted\_key in the create call request headers.
 </ParamField>
 
 <ParamField body="dialing_strategy" type="object">
@@ -288,7 +288,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
   The timezone is optional, and defaults to UTC if not specified.
 
-  Note: Scheduled calls can be cancelled with the POST /v1/calls/:call_id/stop endpoint.
+  Note: Scheduled calls can be cancelled with the POST /v1/calls/:call\_id/stop endpoint.
 </ParamField>
 
 <ParamField body="transfer_phone_number" type="string">
@@ -306,9 +306,9 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField body="transfer_list" type="object">
   Give your agent the ability to transfer calls to a set of phone numbers. This option will be ignored for pathways.
 
-  Overrides transfer_phone_number if a transfer_list.default is specified.
+  Overrides transfer\_phone\_number if a transfer\_list.default is specified.
 
-  Will default to transfer_list.default, or the chosen phone number.
+  Will default to transfer\_list.default, or the chosen phone number.
 
   Example usage to route calls to different departments:
 
@@ -439,7 +439,9 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
+  > <Info>
+  >   **Enterprise Feature** - Citation schemas is only available on Enterprise plans. Contact your Bland representative for access.
+  > </Info>
 </ParamField>
 
 ### **Outcomes**
@@ -463,7 +465,11 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
- > Note: This is distinct from **Citations**, which is another Enterprise feature for extracting structured data from transcripts using schemas with variables, groupings, and conditions. Outcomes specifically use custom JavaScript transformation scripts.
+  Outcomes specifically use custom JavaScript transformation scripts.
+
+  > <Info>
+  >   **Enterprise Feature** - **Outcomes** is only available on Enterprise plans and this is distinct from **Citations**. Contact your Bland representative for access.
+  > </Info>
 </ParamField>
 
 ### Post Call Parameters
@@ -481,7 +487,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 </ParamField>
 
 <ParamField body="retry" type="object">
-  If the call goes to voicemail, you can set up the call to retry, after a configurable delay. You can also update the voicemail_action, and voicemail_message in the retry object, for the re-tried call.
+  If the call goes to voicemail, you can set up the call to retry, after a configurable delay. You can also update the voicemail\_action, and voicemail\_message in the retry object, for the re-tried call.
 
   Takes in the following parameters:
 
@@ -529,6 +535,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `CANCELED` - Call was canceled (auto-assigned by system)
     - `FAILED` - Call failed to connect (auto-assigned by system)
   </Accordion>
+
   Example:
 
   ```json
@@ -583,10 +590,11 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     **Citation Webhook Requirements:**
 
     - Include `citations` for any citation webhooks (sent separately after call completion)
-    - For delayed post-call webhooks with citations, you need `citations` + dashboard delay toggle enabled
+    - For delayed post-call webhooks with citations, you need `citations` \+ dashboard delay toggle enabled
 
     See the [Citations documentation](/enterprise-features/citations#webhook-integration-options) for complete setup instructions.
   </Info>
+
   Options:
 
   - `queue`
@@ -611,7 +619,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  
   ```json call
   // ex 1
   {
@@ -650,7 +657,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  
   ```json latency
   // ex 1
   {
@@ -668,7 +674,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  
   ```json webhook
   {
     "message": "Storing dynamic data messages: \n\n answer : \"true\"",
@@ -678,7 +683,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  
   ```json tool
   {
     "message": "Executing custom tool: Test Tool 4 with input: [object Object]",
@@ -688,7 +692,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  
   ```json dynamic_data
   {
     "message": "Storing dynamic data: \n\n vector_data : {\"data\":{\"results\":[{\"id\":\"fedcba98-7654-3210-fedc-ba9876543210\",\"input_text\":\"Here are details on the restaurant...\",\"similarity\":0.103339002763233,\"chunk_index\":0}]},\"errors\":null}",
@@ -698,7 +701,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   }
   ```
 
-  
   ```json citations
   {
     "call_id": "12345678-1234-1234-1234-123456789abc",
@@ -883,7 +885,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     ```
 
     | Field | Type | Description |
-    |-------|------|-------------|
+    | --- | --- | --- |
     | `type` | string | One of: `tcpa:ai_disclosure`, `tcpa:self_introduction`, `tcpa:recording_disclosure` |
     | `actions` | array | Actions to take if disclosure is NOT made within the time window |
     | `config.end_seconds` | number | Time window in seconds (default: 30) |
@@ -903,7 +905,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     ```
 
     | Field | Type | Description |
-    |-------|------|-------------|
+    | --- | --- | --- |
     | `type` | string | `custom` |
     | `prompt` | string | Your custom detection prompt |
     | `actions` | array | Actions to take when the guard rail triggers |
@@ -913,7 +915,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     Each guard rail requires an `actions` array. Available action types:
 
     | Action Type | Description | Config |
-    |-------------|-------------|--------|
+    | --- | --- | --- |
     | `end_call` | Immediately terminate the call | None |
     | `transfer` | Transfer to a human agent | `{ "phone_number": "+15551234567" }` |
     | `move_to_node` | Jump to a specific pathway node | `{ "node_id": "node-uuid" }` |
@@ -1023,6 +1025,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - Invalid API key
     - Expired API key
   </ResponseField>
+
   <ResponseField name="403 - Account Flagged" type="object">
     Account has been flagged or banned for security purposes.
 
@@ -1033,6 +1036,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   ### Rate Limiting Errors (HTTP 429)
 
   <ResponseField name="429 - Call Frequency Limit" type="object">
@@ -1045,6 +1049,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="429 - General Rate Limit" type="object">
     Rate limit exceeded for your account.
 
@@ -1055,6 +1060,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="429 - Blacklisted Number" type="object">
     Attempting to call a blacklisted number.
 
@@ -1065,6 +1071,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="429 - New Customer Rate Limit" type="object">
     Rate limits for newly created accounts.
 
@@ -1075,6 +1082,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="429 - International Rate Limit" type="object">
     International calling rate limit exceeded.
 
@@ -1085,6 +1093,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   ### Parameter Validation Errors (HTTP 400)
 
   <ResponseField name="400 - Missing Required Parameter" type="object">
@@ -1103,6 +1112,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `phone_number` (always required)
     - `task` (required if `pathway_id` is not provided)
   </ResponseField>
+
   <ResponseField name="400 - Invalid Field Types" type="object">
     Field values are the wrong data type according to TypeBox validation.
 
@@ -1123,6 +1133,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `"Dynamic data must be an array"`
     - `"Metadata must be a record of string keys and any values"`
   </ResponseField>
+
   <ResponseField name="400 - Invalid Voicemail Action" type="object">
     Voicemail action must be one of the allowed values.
 
@@ -1133,6 +1144,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Number Range Validation" type="object">
     Numeric values are outside their allowed ranges.
 
@@ -1143,6 +1155,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid DTMF Sequence" type="object">
     Precall DTMF sequence contains invalid characters.
 
@@ -1155,6 +1168,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
     **Valid DTMF characters:** 0-9, \*, #, w (wait)
   </ResponseField>
+
   <ResponseField name="400 - Invalid Date Format" type="object">
     Start time must be a valid ISO date-time string.
 
@@ -1165,6 +1179,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Webhook URL" type="object">
     Webhook URL format is invalid.
 
@@ -1175,6 +1190,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid From Number Format" type="object">
     From number doesn't match phone number pattern.
 
@@ -1185,6 +1201,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Transfer Phone Format" type="object">
     Transfer phone number format validation error.
 
@@ -1195,6 +1212,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Transfer List Format" type="object">
     Transfer list contains phone numbers with invalid format.
 
@@ -1205,6 +1223,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Additional Properties Not Allowed" type="object">
     Request contains fields that are not allowed in the schema.
 
@@ -1215,6 +1234,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Phone Number" type="object">
     Phone number format is invalid, missing country code, or invalid length.
 
@@ -1247,6 +1267,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - Missing country code for international numbers
     - Phone number fails Twilio validation
   </ResponseField>
+
   <ResponseField name="400 - Invalid Transfer Number" type="object">
     Transfer phone number is invalid.
 
@@ -1257,6 +1278,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Language Code" type="object">
     Language code is not supported.
 
@@ -1267,6 +1289,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Pronunciation Guide" type="object">
     Pronunciation guide format is incorrect.
 
@@ -1277,6 +1300,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Platform Not Supported" type="object">
     Feature not supported on the specified platform.
 
@@ -1287,6 +1311,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid From Number" type="object">
     The 'from' number is invalid or not owned by your account.
 
@@ -1297,6 +1322,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - DNC List Violation" type="object">
     Attempting to call a number on the Do Not Call list.
 
@@ -1307,6 +1333,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Transfer List Validation" type="object">
     Transfer list configuration errors.
 
@@ -1331,6 +1358,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Retry Parameter Validation" type="object">
     Retry configuration must be an object.
 
@@ -1341,6 +1369,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Version Number Validation" type="object">
     Version number must be a valid number.
 
@@ -1351,6 +1380,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Pathway Version Validation" type="object">
     Pathway version must be a number or specific string value.
 
@@ -1368,6 +1398,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - From Phone Number Validation" type="object">
     The 'from' number format is invalid.
 
@@ -1378,6 +1409,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Boolean Parameter Validation" type="object">
     Boolean parameters must be true/false or string equivalents.
 
@@ -1390,6 +1422,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
     **Valid for parameters**: `wait_for_greeting`, `record`, `answered_by_enabled`, `block_interruptions`, `sensitive_voicemail_detection`, `ignore_button_press`
   </ResponseField>
+
   <ResponseField name="400 - First Sentence Validation" type="object">
     First sentence must be a string.
 
@@ -1400,6 +1433,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Voicemail Message Validation" type="object">
     Voicemail message must be a string.
 
@@ -1410,6 +1444,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Voicemail SMS Validation" type="object">
     Voicemail SMS configuration errors.
 
@@ -1434,6 +1469,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Interruption Threshold Validation" type="object">
     Interruption threshold must be a number.
 
@@ -1444,6 +1480,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Webhook URL Validation" type="object">
     Webhook URL must be a valid HTTPS URL.
 
@@ -1454,6 +1491,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Request Data Validation" type="object">
     Request data must be an object.
 
@@ -1464,6 +1502,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Metadata Validation" type="object">
     Metadata must be an object.
 
@@ -1474,6 +1513,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Analysis Schema Validation" type="object">
     Analysis schema must be an object.
 
@@ -1484,6 +1524,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Voice Parameter Validation" type="object">
     Voice parameter must be a string.
 
@@ -1494,6 +1535,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Voicemail Action Validation" type="object">
     Voicemail action must be one of the allowed values.
 
@@ -1504,6 +1546,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Keywords Validation" type="object">
     Keywords configuration errors.
 
@@ -1549,6 +1592,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Timezone Validation" type="object">
     Timezone validation errors.
 
@@ -1566,6 +1610,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Summary Prompt Validation" type="object">
     Summary prompt validation errors.
 
@@ -1583,6 +1628,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Start Time Validation" type="object">
     Start time scheduling validation errors.
 
@@ -1607,6 +1653,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Background Track Validation" type="object">
     Background track validation errors.
 
@@ -1624,6 +1671,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Max Duration Validation" type="object">
     Max duration validation errors.
 
@@ -1648,6 +1696,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Dynamic Data" type="object">
     Dynamic data or tools configuration is invalid.
 
@@ -1672,6 +1721,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Pathway Data" type="object">
     Pathway configuration is invalid or missing required components.
 
@@ -1691,6 +1741,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Invalid Start Node ID" type="object">
     The specified start node ID does not exist in the pathway.
 
@@ -1701,6 +1752,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Content Flagged" type="object">
     Content failed moderation and was flagged as inappropriate.
 
@@ -1711,6 +1763,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Sensitive Number Protection" type="object">
     Attempting to call emergency or sensitive numbers.
 
@@ -1721,6 +1774,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Unable to Save Request" type="object">
     Server unable to save the request body or call data.
 
@@ -1731,6 +1785,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Unable to Queue Call" type="object">
     Call could not be queued for processing.
 
@@ -1741,6 +1796,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="400 - Warm Transfer Parent Call Completed" type="object">
     Parent call for warm transfer has already completed or doesn't exist.
 
@@ -1751,6 +1807,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - Internal Server Errors" type="object">
     General server errors and catch-all error handlers.
 
@@ -1768,6 +1825,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - Memory allocation or resource exhaustion errors
     - Network connectivity issues
   </ResponseField>
+
   <ResponseField name="400 - Call Parameters Validation" type="object">
     Basic call parameters validation from the main validation function.
 
@@ -1778,6 +1836,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   ### Business Logic Errors
 
   <ResponseField name="402 - No Billing Record" type="object">
@@ -1790,6 +1849,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="402 - Insufficient Balance" type="object">
     Account balance is insufficient for the call.
 
@@ -1800,6 +1860,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="404 - Pathway Not Found" type="object">
     The specified pathway ID does not exist or is not accessible.
 
@@ -1810,6 +1871,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="404 - Pathway Version Not Found" type="object">
     The specified pathway version does not exist.
 
@@ -1820,6 +1882,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="418 - Invalid Objective" type="object">
     The objective parameter failed validation (returns validation details).
 
@@ -1830,6 +1893,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   ### Service Errors (HTTP 500)
 
   <ResponseField name="500 - Twilio Connection Error" type="object">
@@ -1842,6 +1906,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - Invalid Encrypted Key" type="object">
     The encrypted key provided is invalid or corrupted.
 
@@ -1852,6 +1917,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - Internal Server Error" type="object">
     General internal server error during call processing.
 
@@ -1862,6 +1928,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - Content Moderation Error" type="object">
     Error occurred during the content flagging process.
 
@@ -1872,6 +1939,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - BYOT Number Error" type="object">
     Error retrieving Bring Your Own Twilio (BYOT) phone number.
 
@@ -1882,6 +1950,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - Dialer Data Error" type="object">
     Error retrieving dialer data from encrypted key.
 
@@ -1892,6 +1961,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - User Data Fetch Error" type="object">
     Error fetching user data for account verification.
 
@@ -1911,6 +1981,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
     ```
   </ResponseField>
+
   <ResponseField name="500 - Retry Call Error" type="object">
     Missing retry attempt information for retry calls.
 
