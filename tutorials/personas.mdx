@@ -5,7 +5,24 @@ description: "Create unified AI agents that manage all your phone numbers and us
 
 ## Introduction
 
-Personas are unified AI agents that manage all your phone numbers and use cases in one place. Instead of configuring each phone number separately with different prompts and settings, create a single intelligent persona that handles everything - from smart call routing to maintaining consistent personality across all interactions.
+Personas are reusable agent configurations for **inbound phone numbers** and **SMS / iMessage**. Instead of configuring each phone number separately with different prompts and settings, create one persona and attach it to any number that should answer the same way.
+
+For embedded **browser** voice or chat (the `@blandsdk/client` widget), use [Web Agents](/api-v1/post/agents) instead. The two systems are parallel, not nested; see [Personas vs. Web Agents](#personas-vs-web-agents) below.
+
+## Personas vs. Web Agents
+
+Both objects are commonly called "agents", but they are distinct primitives with different APIs and different surfaces.
+
+|  | Personas | Web Agents |
+| --- | --- | --- |
+| **Use case** | Inbound phone, outbound phone, SMS, iMessage | Embedded browser voice and chat |
+| **Create endpoint** | [`POST /v1/personas`](/api-v1/post/personas) | [`POST /v1/agents`](/api-v1/post/agents) |
+| **Attaches to** | Phone numbers via [`/personas/{id}/inbound/attach`](/api-v1/post/personas-id-inbound-attach); outbound calls via the `persona_id` param on [`/v1/calls`](/api-v1/post/calls) | Browser sessions via [`@blandsdk/client`](/sdks/cli), authorized through [`/v1/agents/{id}/authorize`](/api-v1/post/agents-id-authorize) |
+| **Knowledge bases** | Attached via the persona's `kb_ids` array | Attached via the agent's `tools` array (mixed with tool IDs) |
+| **Draft / production** | Yes; updates land on a draft and must be promoted | No; updates take effect immediately |
+| **Routing** | `pathway_conditions` choose between pathways inside the persona | One agent, one pathway at a time |
+
+There is no `persona_id` field on `POST /v1/agents`, and no Web Agent authorize endpoint on `/v1/personas/{id}`. Personas and Web Agents do not wrap each other.
 
 <CardGroup cols={2}>
   <Card title="Smart Routing" icon="route">
@@ -24,7 +41,7 @@ Personas are unified AI agents that manage all your phone numbers and use cases 
     Apply one persona across multiple phone numbers, or use different personas for specific use cases.
   </Card>
   <Card title="API Compatible" icon="code">
-    Use personas programmatically through the `persona_id` parameter in your API calls.
+    Reference a persona on outbound calls with the `persona_id` parameter on [`POST /v1/calls`](/api-v1/post/calls).
   </Card>
 </CardGroup>
 
@@ -61,8 +78,8 @@ Define your persona's identity, voice settings, and communication channels.
 - **Background Noise**: Add ambient sounds like "Office-style soundscape" with typing, chatter, and office sounds
 - **Modalities**: Configure communication channels:
   - Voice & Calls (with "Add to Inbound Numbers" integration)
-  - SMS Messaging (coming soon)
-  - Web Widget (coming soon)
+  - SMS and iMessage (via SMS-capable numbers attached to the persona)
+  - Embedded browser voice is **not** a persona modality. Use a [Web Agent](/api-v1/post/agents) instead.
 
 ### Behavior Configuration
 
@@ -91,7 +108,7 @@ Configure your persona's conversational behavior and routing logic.
 
 ### Knowledge Integration
 
-Connect your persona to knowledge bases for intelligent information retrieval.
+Connect your persona to knowledge bases for intelligent information retrieval. Knowledge bases attached here run on every inbound call and SMS routed through the persona.
 
 <img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/personas/persona_knowledge.jpeg" />
 
@@ -102,6 +119,8 @@ Connect your persona to knowledge bases for intelligent information retrieval.
 - **Continuous Learning** (Coming Soon):
   - Question & Answer Improvements
   - Conversational Memory
+
+Via the API, the same attachment happens through the `kb_ids` array on [`POST /v1/personas`](/api-v1/post/personas) or [`PATCH /v1/personas/{id}`](/api-v1/patch/personas-id). The IDs are UUIDs returned by [`POST /v1/knowledge/learn`](/api-v1/post/knowledge-learn-text). One knowledge base can be attached to any number of personas.
 
 ### Analysis & Webhooks
 
