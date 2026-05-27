@@ -1,0 +1,226 @@
+---
+title: "List Eval Runs"
+api: "GET https://api.bland.ai/v1/evals/runs"
+description: "List eval runs in your organization, with optional filters."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="eval_agent_id" type="string">
+  Filter to runs that included this eval agent.
+</ParamField>
+
+<ParamField query="workbench_setup_id" type="string">
+  Filter to runs started from this workbench setup.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by run status. Possible values: `PENDING`, `QUEUED`, `RUNNING`, `COMPLETE`, `PARTIAL`, `FAILED`, `CANCELLED`.
+</ParamField>
+
+<ParamField query="triggered_by" type="string">
+  Filter by how the run was triggered. Possible values: `manual`, `auto`, `backfill`.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="25">
+  Number of results to return. Between 1 and 100.
+</ParamField>
+
+<ParamField query="starting_after" type="string">
+  Cursor: return results after this object ID.
+</ParamField>
+
+<ParamField query="ending_before" type="string">
+  Cursor: return results before this object ID. Cannot be combined with `starting_after`.
+</ParamField>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `"list"`.
+</ResponseField>
+
+<ResponseField name="data" type="array of objects">
+  The list of eval run objects.
+
+  <Expandable title="EvalRun list item fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the eval run.
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+      Current status of the run. One of `PENDING`, `QUEUED`, `RUNNING`, `COMPLETE`, `PARTIAL`, `FAILED`, `CANCELLED`.
+    </ResponseField>
+
+    <ResponseField name="triggered_by" type="string">
+      How the run was triggered. One of `manual`, `auto`, `backfill`.
+    </ResponseField>
+
+    <ResponseField name="run_mode" type="string">
+      The scoring modality used. One of `text`, `audio`, `full`.
+    </ResponseField>
+
+    <ResponseField name="resolved_call_count" type="integer">
+      Number of calls resolved for the run.
+    </ResponseField>
+
+    <ResponseField name="resolved_agent_count" type="integer">
+      Number of eval agents resolved for the run.
+    </ResponseField>
+
+    <ResponseField name="resolved_atom_count" type="integer">
+      Total number of call-by-agent evaluations in the run.
+    </ResponseField>
+
+    <ResponseField name="completed_atom_count" type="integer">
+      Number of evaluations that have completed.
+    </ResponseField>
+
+    <ResponseField name="summary" type="object or null">
+      Aggregate scoring summary for the run, or `null` if not yet available.
+
+      <Expandable title="Summary fields">
+        <ResponseField name="overall_score_mean" type="number or null">
+          Mean overall score across all completed evaluations, normalized 0-100.
+        </ResponseField>
+
+        <ResponseField name="text_score_mean" type="number or null">
+          Mean text-modality score, normalized 0-100.
+        </ResponseField>
+
+        <ResponseField name="audio_score_mean" type="number or null">
+          Mean audio-modality score, normalized 0-100.
+        </ResponseField>
+
+        <ResponseField name="successful_call_count" type="integer">
+          Number of calls that were graded successfully.
+        </ResponseField>
+
+        <ResponseField name="failed_call_count" type="integer">
+          Number of calls that failed to grade.
+        </ResponseField>
+
+        <ResponseField name="insufficient_evidence_count" type="integer">
+          Number of evaluations where evidence was insufficient to produce a verdict.
+        </ResponseField>
+
+        <ResponseField name="target_match_count" type="integer">
+          Number of evaluations where the selected level matched a target level.
+        </ResponseField>
+
+        <ResponseField name="pass_threshold_pct" type="number or null">
+          The pass threshold percentage configured for the run, 0-100.
+        </ResponseField>
+
+        <ResponseField name="overall_pass" type="boolean or null">
+          Whether the run met its pass threshold, or `null` if no threshold was set.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="billable_cost_usd" type="number or null">
+      Billable cost for this run in USD.
+    </ResponseField>
+
+    <ResponseField name="workbench_setup_id" type="string or null">
+      The workbench setup the run was started from, if any.
+    </ResponseField>
+
+    <ResponseField name="workbench_setup_version_id" type="string or null">
+      The pinned workbench setup version used, if any.
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Key-value metadata attached to the run.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when the run was created.
+    </ResponseField>
+
+    <ResponseField name="started_at" type="string or null">
+      ISO 8601 timestamp when the run started, or `null` if not yet started.
+    </ResponseField>
+
+    <ResponseField name="completed_at" type="string or null">
+      ISO 8601 timestamp when the run completed, or `null` if not yet complete.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results exist beyond this page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string or null">
+  Cursor to use in `starting_after` to retrieve the next page, or `null` if there are no more results.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "status": "COMPLETE",
+        "triggered_by": "manual",
+        "run_mode": "text",
+        "resolved_call_count": 50,
+        "resolved_agent_count": 3,
+        "resolved_atom_count": 150,
+        "completed_atom_count": 150,
+        "summary": {
+          "overall_score_mean": 82.4,
+          "text_score_mean": 82.4,
+          "audio_score_mean": null,
+          "successful_call_count": 48,
+          "failed_call_count": 2,
+          "insufficient_evidence_count": 1,
+          "target_match_count": 39,
+          "pass_threshold_pct": 75,
+          "overall_pass": true
+        },
+        "billable_cost_usd": 1.24,
+        "workbench_setup_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "workbench_setup_version_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+        "metadata": {},
+        "created_at": "2026-05-20T14:00:00.000Z",
+        "started_at": "2026-05-20T14:00:05.000Z",
+        "completed_at": "2026-05-20T14:03:42.000Z"
+      },
+      {
+        "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+        "status": "RUNNING",
+        "triggered_by": "auto",
+        "run_mode": "full",
+        "resolved_call_count": 100,
+        "resolved_agent_count": 2,
+        "resolved_atom_count": 200,
+        "completed_atom_count": 87,
+        "summary": null,
+        "billable_cost_usd": null,
+        "workbench_setup_id": null,
+        "workbench_setup_version_id": null,
+        "metadata": { "pipeline": "nightly" },
+        "created_at": "2026-05-27T02:00:00.000Z",
+        "started_at": "2026-05-27T02:00:08.000Z",
+        "completed_at": null
+      }
+    ],
+    "has_more": false,
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

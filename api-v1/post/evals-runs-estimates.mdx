@@ -1,0 +1,61 @@
+---
+title: "Estimate Eval Run"
+api: "POST https://api.bland.ai/v1/evals/runs/estimates"
+description: "Preview the size and cost of a run before starting it."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+Accepts the same body as [Create Eval Run](/api-v1/post/evals-runs). Key fields:
+
+<ParamField body="call_ids" type="array of string" required>
+  The call IDs to include in the estimate. Between 1 and 5000 calls.
+</ParamField>
+
+<ParamField body="attached_agents" type="array of objects">
+  The eval agents to score with. Required when `workbench_setup_version_id` is not provided.
+</ParamField>
+
+<ParamField body="workbench_setup_version_id" type="string">
+  Pinned workbench setup version whose agent roster supplies the agents. Required when `attached_agents` is not provided. Must be provided together with `workbench_setup_id`.
+</ParamField>
+
+### Response
+
+<ResponseField name="resolved_atom_count" type="integer">
+  Number of call-by-agent evaluations the run will perform.
+</ResponseField>
+
+<ResponseField name="estimated_input_tokens" type="integer">
+  Estimated number of input tokens consumed by judge calls.
+</ResponseField>
+
+<ResponseField name="estimated_output_tokens" type="integer">
+  Estimated number of output tokens produced by judge calls.
+</ResponseField>
+
+<ResponseField name="estimated_cost_usd_cents" type="number">
+  Estimated billable cost in USD cents.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "resolved_atom_count": 150,
+    "estimated_input_tokens": 420000,
+    "estimated_output_tokens": 15000,
+    "estimated_cost_usd_cents": 87.5
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,141 @@
+---
+title: "List Eval Agent Templates"
+api: "GET https://api.bland.ai/v1/evals/agent-templates"
+description: "List the read-only library of shipped eval agent templates."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of eval agent template objects.
+
+  <Expandable title="template object">
+    <ResponseField name="key" type="string">
+      Unique identifier key for the template, for example `hallucination_detection`.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Human-readable display name.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Brief description of what the template evaluates.
+    </ResponseField>
+    <ResponseField name="category" type="string">
+      Template category. One of `voice`, `sales`, `support`, `scheduling`, `compliance`, or `quality`.
+    </ResponseField>
+    <ResponseField name="modality" type="string">
+      Evaluation modality. Either `text` or `audio`.
+    </ResponseField>
+    <ResponseField name="system_prompt_md" type="string">
+      The system prompt used for this eval agent, in Markdown.
+    </ResponseField>
+    <ResponseField name="prompt_md" type="string">
+      The evaluation prompt, in Markdown.
+    </ResponseField>
+    <ResponseField name="levels" type="array">
+      Ordered scoring levels for this template.
+
+      <Expandable title="level object">
+        <ResponseField name="level_key" type="string">
+          Short identifier for the level, 1-64 characters.
+        </ResponseField>
+        <ResponseField name="label" type="string">
+          Display label for the level, 1-80 characters.
+        </ResponseField>
+        <ResponseField name="prompt_md" type="string">
+          Prompt describing this level's criteria, in Markdown.
+        </ResponseField>
+        <ResponseField name="color" type="string">
+          Optional display color. One of `rose`, `amber`, `gold`, `emerald`, `blue`, `indigo`, `violet`, or `fog`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="target_level_keys" type="array">
+      Array of `level_key` strings that represent the passing threshold for this template.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Always `false`. This endpoint returns the full library in a single page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Always `null` for this endpoint.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "key": "hallucination_detection",
+        "name": "Hallucination Detection",
+        "description": "Detects factual inaccuracies or fabricated information in agent responses.",
+        "category": "quality",
+        "modality": "text",
+        "system_prompt_md": "You are an expert evaluator assessing whether an AI agent fabricated information.",
+        "prompt_md": "Review the conversation and determine whether the agent stated anything that was factually incorrect or unsupported.",
+        "levels": [
+          {
+            "level_key": "no_hallucination",
+            "label": "No Hallucination",
+            "prompt_md": "The agent made no factually incorrect or unsupported claims.",
+            "color": "emerald"
+          },
+          {
+            "level_key": "minor_hallucination",
+            "label": "Minor Hallucination",
+            "prompt_md": "The agent made one or more small inaccuracies that did not materially mislead the user.",
+            "color": "amber"
+          }
+        ],
+        "target_level_keys": ["no_hallucination"]
+      },
+      {
+        "key": "call_resolution",
+        "name": "Call Resolution",
+        "description": "Assesses whether the agent successfully resolved the caller's issue.",
+        "category": "support",
+        "modality": "audio",
+        "system_prompt_md": "You are an expert evaluator assessing call resolution quality.",
+        "prompt_md": "Did the agent fully resolve the caller's stated issue before ending the call?",
+        "levels": [
+          {
+            "level_key": "resolved",
+            "label": "Resolved",
+            "prompt_md": "The caller's issue was fully addressed.",
+            "color": "emerald"
+          },
+          {
+            "level_key": "unresolved",
+            "label": "Unresolved",
+            "prompt_md": "The caller's issue was not addressed or was left open.",
+            "color": "rose"
+          }
+        ],
+        "target_level_keys": ["resolved"]
+      }
+    ],
+    "has_more": false,
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

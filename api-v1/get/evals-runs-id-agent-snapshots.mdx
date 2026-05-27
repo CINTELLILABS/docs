@@ -1,0 +1,177 @@
+---
+title: "List Agent Snapshots"
+api: "GET https://api.bland.ai/v1/evals/runs/{run_id}/agent-snapshots"
+description: "List the frozen agent configurations a run scored against."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="run_id" type="string" required>
+  The ID of the eval run.
+</ParamField>
+
+<Note>
+  Snapshots freeze each agent's prompt, levels, and targets at submission time, so historical results never change if you later edit the agent.
+</Note>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `"list"`.
+</ResponseField>
+
+<ResponseField name="data" type="array of objects">
+  All agent snapshots for the run. Returns all snapshots in a single page.
+
+  <Expandable title="EvalRunAgentSnapshot fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for this snapshot.
+    </ResponseField>
+
+    <ResponseField name="org_id" type="string">
+      The organization that owns this snapshot.
+    </ResponseField>
+
+    <ResponseField name="eval_run_id" type="string">
+      The eval run this snapshot belongs to.
+    </ResponseField>
+
+    <ResponseField name="eval_agent_id" type="string">
+      The source eval agent.
+    </ResponseField>
+
+    <ResponseField name="eval_agent_version_id" type="string">
+      The specific version of the eval agent that was frozen.
+    </ResponseField>
+
+    <ResponseField name="position" type="integer">
+      The ordering position of this agent within the run's agent roster.
+    </ResponseField>
+
+    <ResponseField name="key" type="string">
+      Machine-readable key identifying this agent in the run.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Human-readable name of the agent at snapshot time.
+    </ResponseField>
+
+    <ResponseField name="modality" type="string">
+      Scoring modality for this agent. One of `text` or `audio`.
+    </ResponseField>
+
+    <ResponseField name="system_prompt_md" type="string">
+      The system prompt used by the judge, frozen at submission time.
+    </ResponseField>
+
+    <ResponseField name="prompt_md" type="string">
+      The evaluation prompt, frozen at submission time.
+    </ResponseField>
+
+    <ResponseField name="prompt_version" type="string">
+      Version identifier for the prompt.
+    </ResponseField>
+
+    <ResponseField name="levels" type="array of objects">
+      The scoring levels defined for this agent, frozen at submission time.
+
+      <Expandable title="Level fields">
+        <ResponseField name="level_key" type="string">
+          Machine-readable key for this level.
+        </ResponseField>
+
+        <ResponseField name="label" type="string">
+          Human-readable label for this level.
+        </ResponseField>
+
+        <ResponseField name="prompt_md" type="string">
+          Description of what qualifies a call for this level.
+        </ResponseField>
+
+        <ResponseField name="color" type="string">
+          Optional display color for this level.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="target_level_keys" type="array of string">
+      Level keys that are considered a passing result, frozen at submission time.
+    </ResponseField>
+
+    <ResponseField name="weight" type="number">
+      Relative weight of this agent in the overall score, 0-100.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when this snapshot was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Always `false`. All snapshots are returned in a single page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="null">
+  Always `null`.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "33333333-aaaa-bbbb-cccc-dddddddddddd",
+        "org_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+        "eval_run_id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+        "eval_agent_id": "11111111-aaaa-bbbb-cccc-dddddddddddd",
+        "eval_agent_version_id": "22222222-aaaa-bbbb-cccc-dddddddddddd",
+        "position": 0,
+        "key": "resolution_quality",
+        "name": "Resolution Quality",
+        "modality": "text",
+        "system_prompt_md": "You are an expert call quality analyst evaluating customer service interactions.",
+        "prompt_md": "Did the agent fully resolve the customer's issue without requiring a callback?",
+        "prompt_version": "v3.1.0",
+        "levels": [
+          {
+            "level_key": "pass",
+            "label": "Pass",
+            "prompt_md": "The agent resolved the issue completely and the customer confirmed satisfaction.",
+            "color": "#22c55e"
+          },
+          {
+            "level_key": "partial",
+            "label": "Partial",
+            "prompt_md": "The agent addressed the issue but the customer expressed some remaining concern.",
+            "color": "#f59e0b"
+          },
+          {
+            "level_key": "fail",
+            "label": "Fail",
+            "prompt_md": "The issue was not resolved or the customer was transferred unnecessarily.",
+            "color": "#ef4444"
+          }
+        ],
+        "target_level_keys": ["pass"],
+        "weight": 100,
+        "created_at": "2026-05-27T10:00:00.000Z"
+      }
+    ],
+    "has_more": false,
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

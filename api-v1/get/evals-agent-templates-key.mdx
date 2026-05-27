@@ -1,0 +1,114 @@
+---
+title: "Get Eval Agent Template"
+api: "GET https://api.bland.ai/v1/evals/agent-templates/{template_key}"
+description: "Fetch a single shipped eval agent template by its key."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="template_key" type="string" required>
+  The template's key, for example `hallucination_detection`.
+</ParamField>
+
+### Response
+
+<ResponseField name="key" type="string">
+  Unique identifier key for the template.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable display name.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Brief description of what the template evaluates.
+</ResponseField>
+
+<ResponseField name="category" type="string">
+  Template category. One of `voice`, `sales`, `support`, `scheduling`, `compliance`, or `quality`.
+</ResponseField>
+
+<ResponseField name="modality" type="string">
+  Evaluation modality. Either `text` or `audio`.
+</ResponseField>
+
+<ResponseField name="system_prompt_md" type="string">
+  The system prompt used for this eval agent, in Markdown.
+</ResponseField>
+
+<ResponseField name="prompt_md" type="string">
+  The evaluation prompt, in Markdown.
+</ResponseField>
+
+<ResponseField name="levels" type="array">
+  Ordered scoring levels for this template.
+
+  <Expandable title="level object">
+    <ResponseField name="level_key" type="string">
+      Short identifier for the level, 1-64 characters.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Display label for the level, 1-80 characters.
+    </ResponseField>
+    <ResponseField name="prompt_md" type="string">
+      Prompt describing this level's criteria, in Markdown.
+    </ResponseField>
+    <ResponseField name="color" type="string">
+      Optional display color. One of `rose`, `amber`, `gold`, `emerald`, `blue`, `indigo`, `violet`, or `fog`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="target_level_keys" type="array">
+  Array of `level_key` strings that represent the passing threshold for this template.
+</ResponseField>
+
+Returns `404` with code `EVAL_AGENT_TEMPLATE_NOT_FOUND` if the key does not match any shipped template.
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "key": "hallucination_detection",
+    "name": "Hallucination Detection",
+    "description": "Detects factual inaccuracies or fabricated information in agent responses.",
+    "category": "quality",
+    "modality": "text",
+    "system_prompt_md": "You are an expert evaluator assessing whether an AI agent fabricated information.",
+    "prompt_md": "Review the conversation and determine whether the agent stated anything that was factually incorrect or unsupported.",
+    "levels": [
+      {
+        "level_key": "no_hallucination",
+        "label": "No Hallucination",
+        "prompt_md": "The agent made no factually incorrect or unsupported claims.",
+        "color": "emerald"
+      },
+      {
+        "level_key": "minor_hallucination",
+        "label": "Minor Hallucination",
+        "prompt_md": "The agent made one or more small inaccuracies that did not materially mislead the user.",
+        "color": "amber"
+      },
+      {
+        "level_key": "major_hallucination",
+        "label": "Major Hallucination",
+        "prompt_md": "The agent stated clearly false or fabricated information that could mislead the user.",
+        "color": "rose"
+      }
+    ],
+    "target_level_keys": ["no_hallucination"]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

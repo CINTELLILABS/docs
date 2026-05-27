@@ -1,0 +1,201 @@
+---
+title: "Create Eval Run"
+api: "POST https://api.bland.ai/v1/evals/runs"
+description: "Start a new eval run over a batch of calls."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="call_ids" type="array of string" required>
+  The call IDs to score. Between 1 and 5000 calls.
+</ParamField>
+
+<ParamField body="attached_agents" type="array of objects">
+  The eval agents to score with. Maximum 50 agents. Each object:
+
+  <Expandable title="Agent attachment fields">
+    <ParamField body="eval_agent_id" type="string" required>
+      The UUID of the eval agent.
+    </ParamField>
+
+    <ParamField body="eval_agent_version_id" type="string">
+      Pin a specific version of the agent. Omit to use the latest published version.
+    </ParamField>
+
+    <ParamField body="weight" type="number">
+      Relative weight of this agent in the overall score, 0-100.
+    </ParamField>
+
+    <ParamField body="target_level_keys" type="array of string">
+      Level keys considered a passing result for this agent.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="run_mode" type="string">
+  The scoring modality. One of `text`, `audio`, or `full`. Defaults to `text`.
+</ParamField>
+
+<ParamField body="pass_threshold_pct" type="number">
+  Percentage of evaluations that must pass for the run to be marked passing overall, 0-100. Omit to run without a threshold.
+</ParamField>
+
+<ParamField body="workbench_setup_id" type="string">
+  UUID of a workbench setup to associate with this run. Must be provided together with `workbench_setup_version_id`.
+</ParamField>
+
+<ParamField body="workbench_setup_version_id" type="string">
+  UUID of the pinned workbench setup version. The version's agent roster is used when `attached_agents` is omitted. Must be provided together with `workbench_setup_id`.
+</ParamField>
+
+<ParamField body="triggered_by" type="string">
+  How this run was initiated. One of `manual`, `auto`, or `backfill`. Defaults to `manual`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Key-value metadata to attach to the run. Keys and values must be strings.
+</ParamField>
+
+<Note>
+  You must supply either a non-empty `attached_agents` array or a `workbench_setup_version_id` (whose pinned roster supplies the agents). If you provide `workbench_setup_id` or `workbench_setup_version_id`, both fields are required together. A valid billing record must be on file before a run can start.
+</Note>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the newly created eval run.
+</ResponseField>
+
+<ResponseField name="org_id" type="string">
+  The organization that owns this run.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Initial status of the run. Will be `PENDING` immediately after creation.
+</ResponseField>
+
+<ResponseField name="triggered_by" type="string">
+  How the run was triggered.
+</ResponseField>
+
+<ResponseField name="run_mode" type="string">
+  The scoring modality for this run.
+</ResponseField>
+
+<ResponseField name="submitted_call_ids" type="array of string">
+  The call IDs submitted for scoring.
+</ResponseField>
+
+<ResponseField name="submitted_attached_agents" type="array of objects">
+  The agent attachments submitted with the run. Each object contains `eval_agent_id`, `eval_agent_version_id`, `weight`, and `target_level_keys`.
+</ResponseField>
+
+<ResponseField name="workbench_setup_id" type="string or null">
+  The associated workbench setup, if provided.
+</ResponseField>
+
+<ResponseField name="workbench_setup_version_id" type="string or null">
+  The pinned workbench setup version, if provided.
+</ResponseField>
+
+<ResponseField name="resolved_call_count" type="integer">
+  Number of calls resolved for the run.
+</ResponseField>
+
+<ResponseField name="resolved_agent_count" type="integer">
+  Number of eval agents resolved for the run.
+</ResponseField>
+
+<ResponseField name="resolved_atom_count" type="integer">
+  Total call-by-agent evaluations to perform.
+</ResponseField>
+
+<ResponseField name="completed_atom_count" type="integer">
+  Number of evaluations completed so far.
+</ResponseField>
+
+<ResponseField name="summary" type="null">
+  Always `null` at creation time.
+</ResponseField>
+
+<ResponseField name="billable_cost_usd" type="null">
+  Always `null` at creation time.
+</ResponseField>
+
+<ResponseField name="error_code" type="string or null">
+  Error code if the run failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="error_message" type="string or null">
+  Human-readable error message if the run failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="workflow_id" type="string or null">
+  Internal workflow identifier, if applicable.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Key-value metadata attached to the run.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp when the run was created.
+</ResponseField>
+
+<ResponseField name="started_at" type="null">
+  Always `null` at creation time.
+</ResponseField>
+
+<ResponseField name="completed_at" type="null">
+  Always `null` at creation time.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+    "org_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+    "status": "PENDING",
+    "triggered_by": "manual",
+    "run_mode": "text",
+    "submitted_call_ids": [
+      "a1b2c3d4-0000-0000-0000-000000000001",
+      "a1b2c3d4-0000-0000-0000-000000000002"
+    ],
+    "submitted_attached_agents": [
+      {
+        "eval_agent_id": "11111111-aaaa-bbbb-cccc-dddddddddddd",
+        "eval_agent_version_id": "22222222-aaaa-bbbb-cccc-dddddddddddd",
+        "weight": 100,
+        "target_level_keys": ["pass"]
+      }
+    ],
+    "workbench_setup_id": null,
+    "workbench_setup_version_id": null,
+    "resolved_call_count": 2,
+    "resolved_agent_count": 1,
+    "resolved_atom_count": 2,
+    "completed_atom_count": 0,
+    "summary": null,
+    "billable_cost_usd": null,
+    "error_code": null,
+    "error_message": null,
+    "workflow_id": null,
+    "metadata": {},
+    "created_at": "2026-05-27T10:00:00.000Z",
+    "started_at": null,
+    "completed_at": null
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
