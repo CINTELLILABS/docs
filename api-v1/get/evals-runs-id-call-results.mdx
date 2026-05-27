@@ -1,0 +1,184 @@
+---
+title: "List Call Results"
+api: "GET https://api.bland.ai/v1/evals/runs/{run_id}/call-results"
+description: "List the per-call results for an eval run."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="run_id" type="string" required>
+  The ID of the eval run.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="include_agent_results" type="boolean" default="false">
+  Embed each call's per-agent verdicts inline in the `agent_results` field. When `false`, `agent_results` is an empty array.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="25">
+  Number of results to return. Between 1 and 100.
+</ParamField>
+
+<ParamField query="starting_after" type="string">
+  Cursor: return results after this object ID.
+</ParamField>
+
+<ParamField query="ending_before" type="string">
+  Cursor: return results before this object ID. Cannot be combined with `starting_after`.
+</ParamField>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `"list"`.
+</ResponseField>
+
+<ResponseField name="data" type="array of objects">
+  The list of call result objects.
+
+  <Expandable title="EvalRunCallResult fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for this call result.
+    </ResponseField>
+
+    <ResponseField name="org_id" type="string">
+      The organization that owns this result.
+    </ResponseField>
+
+    <ResponseField name="eval_run_id" type="string">
+      The eval run this result belongs to.
+    </ResponseField>
+
+    <ResponseField name="call_id" type="string">
+      The ID of the call that was scored.
+    </ResponseField>
+
+    <ResponseField name="call_display_name" type="string or null">
+      Display name of the call, if available.
+    </ResponseField>
+
+    <ResponseField name="call_started_at" type="string or null">
+      ISO 8601 timestamp when the call started.
+    </ResponseField>
+
+    <ResponseField name="call_duration_seconds" type="number or null">
+      Duration of the call in seconds.
+    </ResponseField>
+
+    <ResponseField name="call_ended_by" type="string or null">
+      Which party ended the call.
+    </ResponseField>
+
+    <ResponseField name="transcript_snapshot_ref" type="string or null">
+      Reference to the transcript snapshot used for scoring.
+    </ResponseField>
+
+    <ResponseField name="transcript_snapshot_expires_at" type="string or null">
+      ISO 8601 timestamp when the transcript snapshot expires.
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+      Status of this call's evaluation. One of `PENDING`, `QUEUED`, `RUNNING`, `COMPLETE`, `FAILED`, `INSUFFICIENT_EVIDENCE`.
+    </ResponseField>
+
+    <ResponseField name="started_at" type="string or null">
+      ISO 8601 timestamp when scoring started for this call.
+    </ResponseField>
+
+    <ResponseField name="completed_at" type="string or null">
+      ISO 8601 timestamp when scoring completed for this call.
+    </ResponseField>
+
+    <ResponseField name="overall_score_normalized_0_100" type="number or null">
+      Overall weighted score for this call, normalized 0-100.
+    </ResponseField>
+
+    <ResponseField name="text_score_normalized_0_100" type="number or null">
+      Text-modality score for this call, normalized 0-100.
+    </ResponseField>
+
+    <ResponseField name="audio_score_normalized_0_100" type="number or null">
+      Audio-modality score for this call, normalized 0-100.
+    </ResponseField>
+
+    <ResponseField name="failed_agent_count" type="integer">
+      Number of agent evaluations that failed for this call.
+    </ResponseField>
+
+    <ResponseField name="insufficient_evidence_agent_count" type="integer">
+      Number of agent evaluations that returned insufficient evidence for this call.
+    </ResponseField>
+
+    <ResponseField name="agent_results" type="array of objects">
+      Per-agent verdicts for this call. Populated only when `include_agent_results=true`; otherwise an empty array. See [List Agent Results](/api-v1/get/evals-runs-id-agent-results) for the full field reference.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when this call result was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results exist beyond this page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string or null">
+  Cursor to use in `starting_after` to retrieve the next page, or `null` if there are no more results.
+</ResponseField>
+
+<ResponseField name="run_status" type="string">
+  The eval run's current status.
+</ResponseField>
+
+<ResponseField name="run_resolved_call_count" type="integer">
+  Total number of calls resolved for the run.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "b1c2d3e4-f5a6-7890-bcde-f12345678901",
+        "org_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+        "eval_run_id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+        "call_id": "a1b2c3d4-0000-0000-0000-000000000001",
+        "call_display_name": "Inbound - Account Inquiry",
+        "call_started_at": "2026-05-20T13:45:00.000Z",
+        "call_duration_seconds": 187.4,
+        "call_ended_by": "agent",
+        "transcript_snapshot_ref": "snapshots/a1b2c3d4-0000-0000-0000-000000000001/v1",
+        "transcript_snapshot_expires_at": "2026-06-20T13:45:00.000Z",
+        "status": "COMPLETE",
+        "started_at": "2026-05-27T10:00:06.000Z",
+        "completed_at": "2026-05-27T10:00:48.000Z",
+        "overall_score_normalized_0_100": 88.0,
+        "text_score_normalized_0_100": 88.0,
+        "audio_score_normalized_0_100": null,
+        "failed_agent_count": 0,
+        "insufficient_evidence_agent_count": 0,
+        "agent_results": [],
+        "created_at": "2026-05-27T10:00:05.000Z"
+      }
+    ],
+    "has_more": true,
+    "next_cursor": "b1c2d3e4-f5a6-7890-bcde-f12345678901"
+  },
+  "errors": null,
+  "run_status": "COMPLETE",
+  "run_resolved_call_count": 50
+}
+```
+
+</ResponseExample>

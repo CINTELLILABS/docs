@@ -1,0 +1,199 @@
+---
+title: "Get Eval Run"
+api: "GET https://api.bland.ai/v1/evals/runs/{run_id}"
+description: "Fetch one eval run and its current status and summary."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="run_id" type="string" required>
+  The ID of the eval run to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the eval run.
+</ResponseField>
+
+<ResponseField name="org_id" type="string">
+  The organization that owns this run.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status. One of `PENDING`, `QUEUED`, `RUNNING`, `COMPLETE`, `PARTIAL`, `FAILED`, `CANCELLED`.
+</ResponseField>
+
+<ResponseField name="triggered_by" type="string">
+  How the run was triggered. One of `manual`, `auto`, `backfill`.
+</ResponseField>
+
+<ResponseField name="run_mode" type="string">
+  The scoring modality. One of `text`, `audio`, `full`.
+</ResponseField>
+
+<ResponseField name="submitted_call_ids" type="array of string">
+  The call IDs submitted for scoring.
+</ResponseField>
+
+<ResponseField name="submitted_attached_agents" type="array of objects">
+  The agent attachments submitted with the run. Each object contains `eval_agent_id`, `eval_agent_version_id`, `weight`, and `target_level_keys`.
+</ResponseField>
+
+<ResponseField name="workbench_setup_id" type="string or null">
+  The associated workbench setup, if any.
+</ResponseField>
+
+<ResponseField name="workbench_setup_version_id" type="string or null">
+  The pinned workbench setup version, if any.
+</ResponseField>
+
+<ResponseField name="resolved_call_count" type="integer">
+  Number of calls resolved for the run.
+</ResponseField>
+
+<ResponseField name="resolved_agent_count" type="integer">
+  Number of eval agents resolved for the run.
+</ResponseField>
+
+<ResponseField name="resolved_atom_count" type="integer">
+  Total call-by-agent evaluations in the run.
+</ResponseField>
+
+<ResponseField name="completed_atom_count" type="integer">
+  Number of evaluations completed so far.
+</ResponseField>
+
+<ResponseField name="summary" type="object or null">
+  Aggregate scoring summary, or `null` if not yet available.
+
+  <Expandable title="Summary fields">
+    <ResponseField name="overall_score_mean" type="number or null">
+      Mean overall score across all completed evaluations, normalized 0-100.
+    </ResponseField>
+
+    <ResponseField name="text_score_mean" type="number or null">
+      Mean text-modality score, normalized 0-100.
+    </ResponseField>
+
+    <ResponseField name="audio_score_mean" type="number or null">
+      Mean audio-modality score, normalized 0-100.
+    </ResponseField>
+
+    <ResponseField name="successful_call_count" type="integer">
+      Number of calls graded successfully.
+    </ResponseField>
+
+    <ResponseField name="failed_call_count" type="integer">
+      Number of calls that failed to grade.
+    </ResponseField>
+
+    <ResponseField name="insufficient_evidence_count" type="integer">
+      Number of evaluations where evidence was insufficient to produce a verdict.
+    </ResponseField>
+
+    <ResponseField name="target_match_count" type="integer">
+      Number of evaluations where the selected level matched a target level.
+    </ResponseField>
+
+    <ResponseField name="pass_threshold_pct" type="number or null">
+      The pass threshold configured for the run, 0-100.
+    </ResponseField>
+
+    <ResponseField name="overall_pass" type="boolean or null">
+      Whether the run met its pass threshold, or `null` if no threshold was set.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="billable_cost_usd" type="number or null">
+  Billable cost for this run in USD, or `null` if not yet finalized.
+</ResponseField>
+
+<ResponseField name="error_code" type="string or null">
+  Error code if the run failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="error_message" type="string or null">
+  Human-readable error message if the run failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="workflow_id" type="string or null">
+  Internal workflow identifier, if applicable.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Key-value metadata attached to the run.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp when the run was created.
+</ResponseField>
+
+<ResponseField name="started_at" type="string or null">
+  ISO 8601 timestamp when the run started, or `null` if not yet started.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string or null">
+  ISO 8601 timestamp when the run completed, or `null` if not yet complete.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+    "org_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+    "status": "COMPLETE",
+    "triggered_by": "manual",
+    "run_mode": "text",
+    "submitted_call_ids": [
+      "a1b2c3d4-0000-0000-0000-000000000001",
+      "a1b2c3d4-0000-0000-0000-000000000002"
+    ],
+    "submitted_attached_agents": [
+      {
+        "eval_agent_id": "11111111-aaaa-bbbb-cccc-dddddddddddd",
+        "eval_agent_version_id": "22222222-aaaa-bbbb-cccc-dddddddddddd",
+        "weight": 100,
+        "target_level_keys": ["pass"]
+      }
+    ],
+    "workbench_setup_id": null,
+    "workbench_setup_version_id": null,
+    "resolved_call_count": 2,
+    "resolved_agent_count": 1,
+    "resolved_atom_count": 2,
+    "completed_atom_count": 2,
+    "summary": {
+      "overall_score_mean": 91.5,
+      "text_score_mean": 91.5,
+      "audio_score_mean": null,
+      "successful_call_count": 2,
+      "failed_call_count": 0,
+      "insufficient_evidence_count": 0,
+      "target_match_count": 2,
+      "pass_threshold_pct": 80,
+      "overall_pass": true
+    },
+    "billable_cost_usd": 0.04,
+    "error_code": null,
+    "error_message": null,
+    "workflow_id": null,
+    "metadata": {},
+    "created_at": "2026-05-27T10:00:00.000Z",
+    "started_at": "2026-05-27T10:00:05.000Z",
+    "completed_at": "2026-05-27T10:01:12.000Z"
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,129 @@
+---
+title: "List User Templates"
+api: "GET https://api.bland.ai/v1/evals/user-templates"
+description: "List your organization's saved eval agent templates."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="25">
+  Number of results to return. Between 1 and 100.
+</ParamField>
+
+<ParamField query="starting_after" type="string">
+  Cursor: return results after this object ID.
+</ParamField>
+
+<ParamField query="ending_before" type="string">
+  Cursor: return results before this object ID. Cannot be combined with `starting_after`.
+</ParamField>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of user template summary objects.
+
+  <Expandable title="user template object">
+    <ResponseField name="id" type="string">
+      Unique identifier (UUID) for the template.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Short key used to reference the template.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the template.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Description of the template, or `null`.
+    </ResponseField>
+    <ResponseField name="category" type="string">
+      Category of the template, or `null`.
+    </ResponseField>
+    <ResponseField name="modality" type="string">
+      Evaluation modality. Either `text` or `audio`.
+    </ResponseField>
+    <ResponseField name="visibility" type="string">
+      Who can access this template. One of `private`, `org`, or `public`.
+    </ResponseField>
+    <ResponseField name="level_count" type="integer">
+      Number of scoring levels defined on this template.
+    </ResponseField>
+    <ResponseField name="source_agent_id" type="string">
+      UUID of the eval agent this template was snapshotted from, or `null`.
+    </ResponseField>
+    <ResponseField name="created_by" type="string">
+      UUID of the user who created the template, or `null`.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the template was created.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the template was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether additional results exist beyond this page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Cursor to pass as `starting_after` to fetch the next page, or `null` when there are no more results.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+        "key": "my_hallucination_check",
+        "name": "My Hallucination Check",
+        "description": "Customized hallucination detection for our product domain.",
+        "category": "quality",
+        "modality": "text",
+        "visibility": "org",
+        "level_count": 3,
+        "source_agent_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
+        "created_by": "9a8b7c6d-5e4f-3210-9876-543210fedcba",
+        "created_at": "2026-05-01T10:00:00.000Z",
+        "updated_at": "2026-05-10T14:30:00.000Z"
+      },
+      {
+        "id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
+        "key": "sales_compliance_v2",
+        "name": "Sales Compliance v2",
+        "description": null,
+        "category": "compliance",
+        "modality": "audio",
+        "visibility": "private",
+        "level_count": 2,
+        "source_agent_id": null,
+        "created_by": "9a8b7c6d-5e4f-3210-9876-543210fedcba",
+        "created_at": "2026-05-15T08:00:00.000Z",
+        "updated_at": "2026-05-15T08:00:00.000Z"
+      }
+    ],
+    "has_more": false,
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,163 @@
+---
+title: "Create Workbench Setup"
+api: "POST https://api.bland.ai/v1/evals/workbench-setups"
+description: "Create a new workbench setup with an empty draft version."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  Display name for the setup. Between 1 and 200 characters.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Optional description of the setup.
+</ParamField>
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data" type="object">
+  An object containing the new setup and its draft version.
+
+  <Expandable title="setup">
+    <ResponseField name="data.setup.id" type="string">
+      Unique identifier for the workbench setup.
+    </ResponseField>
+    <ResponseField name="data.setup.org_id" type="string">
+      ID of the organization that owns this setup.
+    </ResponseField>
+    <ResponseField name="data.setup.key" type="string">
+      Stable slug key for the setup.
+    </ResponseField>
+    <ResponseField name="data.setup.name" type="string">
+      Display name of the setup.
+    </ResponseField>
+    <ResponseField name="data.setup.description" type="string | null">
+      Description of the setup, or `null` if not set.
+    </ResponseField>
+    <ResponseField name="data.setup.current_version_id" type="string">
+      ID of the current editable draft version.
+    </ResponseField>
+    <ResponseField name="data.setup.active_version_id" type="string | null">
+      ID of the published version, or `null` if never published.
+    </ResponseField>
+    <ResponseField name="data.setup.metadata" type="object">
+      Key-value metadata. Values are strings.
+    </ResponseField>
+    <ResponseField name="data.setup.created_at" type="string">
+      ISO 8601 timestamp for when the setup was created.
+    </ResponseField>
+    <ResponseField name="data.setup.updated_at" type="string">
+      ISO 8601 timestamp for when the setup was last updated.
+    </ResponseField>
+    <ResponseField name="data.setup.deleted_at" type="string | null">
+      ISO 8601 timestamp for when the setup was deleted, or `null` if not deleted.
+    </ResponseField>
+  </Expandable>
+
+  <Expandable title="current_version">
+    <ResponseField name="data.current_version.id" type="string">
+      Unique identifier for this version.
+    </ResponseField>
+    <ResponseField name="data.current_version.org_id" type="string">
+      ID of the organization that owns this version.
+    </ResponseField>
+    <ResponseField name="data.current_version.workbench_setup_id" type="string">
+      ID of the parent workbench setup.
+    </ResponseField>
+    <ResponseField name="data.current_version.version_number" type="integer">
+      Monotonically increasing version number.
+    </ResponseField>
+    <ResponseField name="data.current_version.name" type="string">
+      Display name of this version.
+    </ResponseField>
+    <ResponseField name="data.current_version.description" type="string | null">
+      Description of this version, or `null` if not set.
+    </ResponseField>
+    <ResponseField name="data.current_version.state" type="string">
+      `"editable"` for a draft, `"archived"` for a published snapshot.
+    </ResponseField>
+    <ResponseField name="data.current_version.attached_agents" type="array">
+      Eval agents attached to this version. Each item contains `eval_agent_id`, `eval_agent_version_id`, `weight` (0-100), and `target_level_keys` (array of strings).
+    </ResponseField>
+    <ResponseField name="data.current_version.pass_threshold_pct" type="integer | null">
+      Percentage of calls that must pass for a run to be considered passing (0-100), or `null` if not set.
+    </ResponseField>
+    <ResponseField name="data.current_version.run_mode" type="string">
+      How calls are evaluated. One of `text`, `audio`, or `full`.
+    </ResponseField>
+    <ResponseField name="data.current_version.default_test_config_id" type="string | null">
+      ID of the default test configuration, or `null` if not set.
+    </ResponseField>
+    <ResponseField name="data.current_version.default_call_ids" type="array of strings">
+      Default call IDs to evaluate against. Up to 5000 entries.
+    </ResponseField>
+    <ResponseField name="data.current_version.created_from_version_id" type="string | null">
+      ID of the version this was forked from, or `null` if it is the first version.
+    </ResponseField>
+    <ResponseField name="data.current_version.created_by" type="string | null">
+      Identifier of the user who created this version, or `null`.
+    </ResponseField>
+    <ResponseField name="data.current_version.created_at" type="string">
+      ISO 8601 timestamp for when this version was created.
+    </ResponseField>
+    <ResponseField name="data.current_version.updated_at" type="string">
+      ISO 8601 timestamp for when this version was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "errors": null,
+  "data": {
+    "setup": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "org_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "key": "onboarding-quality-check",
+      "name": "Onboarding Quality Check",
+      "description": "Evaluates tone, accuracy, and resolution rate across onboarding calls.",
+      "current_version_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "active_version_id": null,
+      "metadata": {},
+      "created_at": "2026-05-27T09:00:00.000Z",
+      "updated_at": "2026-05-27T09:00:00.000Z",
+      "deleted_at": null
+    },
+    "current_version": {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "org_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "workbench_setup_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "version_number": 1,
+      "name": "Onboarding Quality Check",
+      "description": "Evaluates tone, accuracy, and resolution rate across onboarding calls.",
+      "state": "editable",
+      "attached_agents": [],
+      "pass_threshold_pct": null,
+      "run_mode": "text",
+      "default_test_config_id": null,
+      "default_call_ids": [],
+      "created_from_version_id": null,
+      "created_by": "9a8b7c6d-5e4f-3210-9876-543210fedcba",
+      "created_at": "2026-05-27T09:00:00.000Z",
+      "updated_at": "2026-05-27T09:00:00.000Z"
+    }
+  }
+}
+```
+
+</ResponseExample>

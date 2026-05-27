@@ -1,0 +1,143 @@
+---
+title: "Get Eval Agent Version"
+api: "GET https://api.bland.ai/v1/evals/agents/{eval_agent_id}/versions/{version_id}"
+description: "Fetch one version of an eval agent."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="eval_agent_id" type="string" required>
+  The unique identifier of the eval agent.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The unique identifier of the version to fetch.
+</ParamField>
+
+<Note>
+  Returns a `404` with error code `EVAL_AGENT_VERSION_NOT_FOUND` if the version does not exist or does not belong to the specified eval agent.
+</Note>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for this version.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  ID of the organization that owns this version.
+</ResponseField>
+
+<ResponseField name="data.eval_agent_id" type="string">
+  ID of the parent eval agent.
+</ResponseField>
+
+<ResponseField name="data.version_number" type="integer">
+  Sequential version number.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Name of this version.
+</ResponseField>
+
+<ResponseField name="data.description" type="string | null">
+  Optional description of this version.
+</ResponseField>
+
+<ResponseField name="data.state" type="string">
+  State of this version. One of `editable` or `archived`.
+</ResponseField>
+
+<ResponseField name="data.modality" type="string">
+  One of `text` or `audio`.
+</ResponseField>
+
+<ResponseField name="data.system_prompt_md" type="string">
+  The system prompt for the judge LLM, in Markdown.
+</ResponseField>
+
+<ResponseField name="data.prompt_md" type="string">
+  The grading prompt for the judge LLM, in Markdown.
+</ResponseField>
+
+<ResponseField name="data.levels" type="array of objects">
+  Verdict levels for graded mode. Empty array for pass/fail mode. Each level contains `level_key`, `label`, `prompt_md`, and optionally `color`.
+</ResponseField>
+
+<ResponseField name="data.target_level_keys" type="array of strings">
+  Which level keys count as a target match. Empty array for pass/fail agents.
+</ResponseField>
+
+<ResponseField name="data.weight" type="number">
+  Relative weight of this version in aggregate scoring. Between 0 and 100.
+</ResponseField>
+
+<ResponseField name="data.created_from_version_id" type="string | null">
+  ID of the version this was forked from, or `null` if this is the first version.
+</ResponseField>
+
+<ResponseField name="data.created_by" type="string | null">
+  Identifier of the user who created this version, or `null`.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp for when this version was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO 8601 timestamp for when this version was last updated.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "errors": null,
+  "data": {
+    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "org_id": "f0e1d2c3-b4a5-9678-fedc-ba9876543210",
+    "eval_agent_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "version_number": 2,
+    "name": "Empathy Check v2",
+    "description": "Expanded grading criteria with three verdict levels.",
+    "state": "archived",
+    "modality": "audio",
+    "system_prompt_md": "You are an expert call quality reviewer.",
+    "prompt_md": "Did the agent express empathy when the caller described their problem?",
+    "levels": [
+      {
+        "level_key": "excellent",
+        "label": "Excellent",
+        "prompt_md": "The agent clearly and warmly acknowledged the caller's feelings.",
+        "color": "emerald"
+      },
+      {
+        "level_key": "adequate",
+        "label": "Adequate",
+        "prompt_md": "The agent showed some empathy but could have been warmer.",
+        "color": "amber"
+      },
+      {
+        "level_key": "poor",
+        "label": "Poor",
+        "prompt_md": "The agent ignored or dismissed the caller's feelings.",
+        "color": "rose"
+      }
+    ],
+    "target_level_keys": ["excellent"],
+    "weight": 10,
+    "created_from_version_id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+    "created_by": "9a8b7c6d-5e4f-3210-9876-543210fedcba",
+    "created_at": "2026-04-10T12:00:00.000Z",
+    "updated_at": "2026-04-10T12:00:00.000Z"
+  }
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,127 @@
+---
+title: "List Workbench Setups"
+api: "GET https://api.bland.ai/v1/evals/workbench-setups"
+description: "List the workbench setups in your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="25">
+  Number of results to return. Between 1 and 100.
+</ParamField>
+
+<ParamField query="starting_after" type="string">
+  Cursor: return results after this object ID.
+</ParamField>
+
+<ParamField query="ending_before" type="string">
+  Cursor: return results before this object ID. Cannot be combined with `starting_after`.
+</ParamField>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `"list"`.
+</ResponseField>
+
+<ResponseField name="data" type="array of objects">
+  The list of workbench setups. Each item contains the fields below.
+</ResponseField>
+
+<ResponseField name="data[].id" type="string">
+  Unique identifier for the workbench setup.
+</ResponseField>
+
+<ResponseField name="data[].name" type="string">
+  Display name of the workbench setup.
+</ResponseField>
+
+<ResponseField name="data[].description" type="string | null">
+  Optional description of the workbench setup.
+</ResponseField>
+
+<ResponseField name="data[].current_version_id" type="string">
+  ID of the current editable draft version.
+</ResponseField>
+
+<ResponseField name="data[].active_version_id" type="string | null">
+  ID of the published version, or `null` if never published.
+</ResponseField>
+
+<ResponseField name="data[].active_version_number" type="integer | null">
+  Version number of the published version, or `null` if never published.
+</ResponseField>
+
+<ResponseField name="data[].attached_agent_count" type="integer">
+  Number of eval agents currently attached to the draft version.
+</ResponseField>
+
+<ResponseField name="data[].latest_run" type="object | null">
+  Summary of the most recent run against this setup, or `null` if no runs exist.
+
+  - `id` - Run ID.
+  - `status` - Status of the run.
+  - `created_at` - ISO 8601 timestamp.
+  - `call_count` - Number of calls evaluated.
+</ResponseField>
+
+<ResponseField name="data[].metadata" type="object">
+  Key-value metadata associated with the setup. Values are strings.
+</ResponseField>
+
+<ResponseField name="data[].created_at" type="string">
+  ISO 8601 timestamp for when the setup was created.
+</ResponseField>
+
+<ResponseField name="data[].updated_at" type="string">
+  ISO 8601 timestamp for when the setup was last updated.
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results exist beyond this page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string | null">
+  Cursor to pass as `starting_after` to fetch the next page, or `null` if there are no more results.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "errors": null,
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "Onboarding Quality Check",
+        "description": "Evaluates tone, accuracy, and resolution rate across onboarding calls.",
+        "current_version_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "active_version_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+        "active_version_number": 3,
+        "attached_agent_count": 4,
+        "latest_run": {
+          "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+          "status": "completed",
+          "created_at": "2026-05-22T10:00:00.000Z",
+          "call_count": 200
+        },
+        "metadata": {},
+        "created_at": "2026-03-15T08:00:00.000Z",
+        "updated_at": "2026-05-22T10:05:00.000Z"
+      }
+    ],
+    "has_more": false,
+    "next_cursor": null
+  }
+}
+```
+
+</ResponseExample>
