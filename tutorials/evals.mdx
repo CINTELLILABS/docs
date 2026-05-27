@@ -24,6 +24,10 @@ You can build and run Evals from the **Evals** section of the [dashboard](https:
   </Card>
 </CardGroup>
 
+<Frame>
+  <img src="/images/evals/evals-overview.jpg" alt="The Evals home screen with the prompt to define what good calls sound like and a list of built-in eval agents" />
+</Frame>
+
 ---
 
 ## Core concepts
@@ -39,6 +43,10 @@ An eval agent is a single LLM judge that grades one quality of a call. Each agen
   - **Graded**: `2` to `5` levels (for example *Poor*, *Adequate*, *Excellent*). Each level has a key, a label, a description prompt, and an optional color.
 - **Target levels**: which levels count as "hitting the target." Used to compute hit rate. Pass/fail agents do not set targets.
 - **Weight**: `0` to `100`. Controls how much this agent contributes to a call's overall score when it runs alongside other agents.
+
+<Frame>
+  <img src="/images/evals/evals-agent-editor.jpg" alt="The eval agent editor showing the eval task prompt and the ordered scoring levels for a Resolution agent" />
+</Frame>
 
 ### Versions
 
@@ -63,6 +71,10 @@ When a judge grades a call, it returns a verdict for that call and agent:
 | `reasoning_md` | The judge's written rationale |
 | `evidence` | Quoted snippets from the transcript or audio that support the verdict |
 
+<Frame>
+  <img src="/images/evals/evals-verdicts.jpg" alt="The verdict drawer showing each agent's selected level, written reasoning, and quoted evidence next to the call transcript" />
+</Frame>
+
 ### Experiments
 
 An experiment (an **eval run** in the API) is one batch of calls scored by one group of eval agents. You submit:
@@ -71,6 +83,10 @@ An experiment (an **eval run** in the API) is one batch of calls scored by one g
 - **Attached agents**: up to 50 agents, each with a weight and target levels for this run.
 - **Run mode**: `text`, `audio`, or `full`. Controls which agents score against each call based on modality.
 - **Pass threshold**: the percentage at or above which the run counts as an overall pass.
+
+<Frame>
+  <img src="/images/evals/evals-experiment.jpg" alt="The experiment builder with selected calls, attached agents and their weights and targets, and the live results grid" />
+</Frame>
 
 Each call paired with each agent is one judge evaluation. The run produces:
 
@@ -113,6 +129,10 @@ Creating an agent from a template copies the template's prompt and levels into a
 For each call in a run, every attached agent of a matching modality produces a verdict. The verdict's `score_normalized_0_100` is combined across agents using their weights to produce the call's overall score. The run's summary averages these across all calls and compares the result against the pass threshold to decide `overall_pass`.
 
 Verdicts marked `is_insufficient_evidence` or that failed to grade are excluded from the averages so they do not dilute the score.
+
+<Frame>
+  <img src="/images/evals/evals-analysis.jpg" alt="The run analysis view showing each agent's success rate and a distribution histogram of weighted call scores" />
+</Frame>
 
 ---
 
