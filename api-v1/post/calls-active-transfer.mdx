@@ -1,0 +1,94 @@
+---
+title: "Transfer Active Call"
+api: "POST https://api.bland.ai/v1/calls/active/transfer"
+description: "Transfer an in-progress call to a different phone number."
+---
+
+## Overview
+
+Transfers an active call to a different phone number while the call is in progress. The current call leg is replaced with a `<Dial>` to the new number, no announcement is played to either party.
+
+Only calls in `queue_status: "started"` are eligible. Once transferred, the call record's `transferred_to` field is updated so the new number appears in call details.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="call_id" type="string" required>
+  ID of the active call to transfer. Must currently be in progress.
+</ParamField>
+
+<ParamField body="transfer_number" type="string" required>
+  Destination phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format (for example `+12223334444`). Parsed against the US region by default, so 10-digit US numbers also work.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.message" type="string">
+  Confirmation message including the `call_id` and the destination number.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "Call 29f01d00-5197-4b83-bc0f-161e14533a78 transferred to +12223334444 successfully"
+  },
+  "errors": null
+}
+```
+
+```json Validation Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "VALIDATION_ERROR",
+      "message": "Call ID is required"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Call with id 29f01d00-5197-4b83-bc0f-161e14533a78 not found or has already been completed."
+    }
+  ]
+}
+```
+
+```json Forbidden
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "FORBIDDEN",
+      "message": "Transfer blocked by international restrictions for your account type."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
