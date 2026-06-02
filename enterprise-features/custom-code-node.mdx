@@ -97,6 +97,41 @@ The Custom Code Node includes a robust testing environment:
 **Mock Test Variables**: In test mode, you can provide sample data to test your code:
 **Run Test Button**: Execute your code with the mock data to see returned variables immediately
 
+### Accessing Secrets and Integration Connections
+
+If your snippet needs an API key or a connected integration (Salesforce, HubSpot, and so on), do not put those values in your reference variables. They are delivered to your code separately, under `input.metadata`, so authentication material stays out of the conversation payload.
+
+- `input.metadata.secrets.<alias>` — stored secret values resolved from `{{SECRET.secret_name}}` references
+- `input.metadata.connections.<alias>` — selected integration resource details, including `access_token`, `resource_id`, `integration`, and `connection_config`
+
+Reference variables remain available at the root of the payload (for example, `input.customer_email`). Only auth material is namespaced under `metadata`.
+
+Example — call an external API using a stored secret and a connected integration:
+
+```javascript
+export default {
+  async fetch(request) {
+    const input = await request.json();
+    const apiKey = input.metadata?.secrets?.api_key;
+    const salesforce = input.metadata?.connections?.salesforce;
+
+    const response = await fetch(
+      `https://api.example.com/customers?email=${input.customer_email}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "X-Salesforce-Token": salesforce?.access_token,
+        },
+      },
+    );
+    const data = await response.json();
+    return Response.json({ found: data.length > 0, customer: data[0] ?? null });
+  }
+}
+```
+
+Never hardcode tokens in the code editor. Manage secrets from the [Secrets dashboard](/tutorials/secrets) and connections from the [Tools Hub](https://app.bland.ai/dashboard/tools), then reference them by alias when configuring the tool.
+
 ### Response Handling
 The response from your custom code becomes available as variables in subsequent pathway nodes. Your code must return a JSON response using `Response.json()`.
 Example response:
