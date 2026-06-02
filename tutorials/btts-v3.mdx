@@ -1,0 +1,84 @@
+---
+title: "BTTS v3 Voice Cloning"
+description: "Create BTTS v3 voice clones and tune the Boost Language Consistency setting for same-language or cross-lingual speech."
+---
+
+## Introduction
+
+BTTS v3 is the default engine for new voice clones. It produces a clone from a single short audio sample and exposes a per-voice **Boost Language Consistency** setting that controls how closely synthesis tracks the original sample.
+
+To create or manage v3 clones, open Voice Studio:
+
+[https://app.bland.ai/dashboard/voices?tab=studio](https://app.bland.ai/dashboard/voices?tab=studio)
+
+For the previous-generation engine, see [BTTS v2 Voice Cloning](/tutorials/btts).
+
+---
+
+## Creating a v3 voice clone
+
+1. Open the **Voices Studio** tab.
+2. Select **New Voice**.
+3. Upload a single audio sample (10–15 seconds recommended).
+4. Set **Boost Language Consistency** based on how you plan to use the voice (see below).
+5. Save the clone.
+
+BTTS v3 only uses one sample per clone. If you upload more, the extras are ignored.
+
+### Sample requirements
+
+* Clear enunciation with a single speaker
+* No background noise
+* At least 100 ms of silence at the start and end
+* Emotional variety produces more expressive output
+
+---
+
+## Boost Language Consistency
+
+**Boost Language Consistency** is a per-voice toggle on every BTTS v3 clone. It changes how the clone's latents are applied during synthesis.
+
+| Setting       | Behavior              | Use when                                                                                                |
+| ------------- | --------------------- | ------------------------------------------------------------------------------------------------------- |
+| On (default)  | Continuation cloning  | You generate speech in the same language as your sample. Mimics the source voice as closely as possible.|
+| Off           | Reference cloning     | You need natural cross-lingual generations. The clone still resembles the source but with looser mimicry.|
+
+Turn the setting off when your agent needs to speak languages that aren't present in the original sample, or when you hear unnatural accent artifacts in non-source languages.
+
+### Where to configure it
+
+* **Create Voice Clone**: set the initial value when uploading your sample.
+* **Voice Studio test panel**: toggle the setting on an existing clone, then **Save** to persist or **Reset** to revert.
+* **Synthesis settings** and **VoiceLab detail panel**: adjust the active value when previewing or using the voice.
+
+<Note>
+The v2 **Clone Consistency Boost** setting does not apply to v3 voices. Use **Boost Language Consistency** instead — v3 voices reject the v2 payload.
+</Note>
+
+---
+
+## Creating a v3 clone via API
+
+Pass `boost_language_consistency` as a string in the multipart form to set the initial value when calling the [Clone endpoint](/api-v1/post/clone). Omit the field to use the default (`true`).
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/voices/clone" \
+  -H "Authorization: your_api_key_here" \
+  -F "name=Multilingual Agent" \
+  -F "audio_samples=@voice_sample.wav" \
+  -F "gender=female" \
+  -F "boost_language_consistency=false"
+```
+
+---
+
+## Choosing between v2 and v3
+
+* **BTTS v3 (default)**: single-sample clones, faster setup, per-voice language-consistency control.
+* **BTTS v2**: multi-sample clones with the original **Clone Consistency Boost** and **Speed vs. Smoothness** controls. Opt in by passing `isBTTS_V2=true` when calling the Clone endpoint.
+
+See [BTTS v2 Voice Cloning](/tutorials/btts) for v2-specific text formatting, normalization, and punctuation guidance — those rules also apply when sending text to a v3 voice.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
