@@ -65,6 +65,18 @@ The request must be sent as `multipart/form-data` with the following fields:
   - V2 is the previous-generation stable engine; V3 is the default
 </ParamField>
 
+<ParamField body="boost_language_consistency" type="boolean" default="true">
+  Controls how closely the v3 clone mimics the source recording versus how naturally it generalizes to other languages. BTTS v3 only.
+
+  **Valid values:**
+  - `"true"` (default) — boost on. The clone stays closest to the source voice and is the best choice when the agent speaks the same language as the sample.
+  - `"false"` — boost off. The clone generalizes better for cross-lingual generation (the agent speaks a language other than the sample), at the cost of slightly looser voice mimicry.
+
+  **Usage:**
+  - Pass as a string (`"true"` or `"false"`) in the multipart form
+  - You can change this later on the voice without re-cloning (see [Configuring a voice clone](#configuring-a-voice-clone))
+</ParamField>
+
 ## Audio Validation Limits
 
 The following limits are enforced for audio file uploads:
@@ -424,6 +436,19 @@ result = response.json()
 ## Usage in Text-to-Speech
 
 Once created, your BTTS voice clone can be used from our /speak endpoint, by referencing the returned `voice_id` or `name`.
+
+## Configuring a voice clone
+
+For BTTS v3 voices, you can toggle **Boost Language Consistency** after the voice has been created without re-cloning. Send a `PATCH` to `/v1/voices/{voice_id}/config` with `boost_language_consistency` set to `true` or `false`.
+
+```bash cURL
+curl -X PATCH "https://api.bland.ai/v1/voices/{voice_id}/config" \
+  -H "Authorization: your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{ "boost_language_consistency": false }'
+```
+
+Turn the boost off when the agent needs to speak a language that isn't well represented in the original sample. Leave it on (the default) when you want the tightest match to the source voice.
 ---
 
 Docs for agents: [llms.txt](/llms.txt)
