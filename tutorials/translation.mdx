@@ -1,0 +1,257 @@
+---
+title: "Live Translation API"
+description: "Stream audio in one language, get translated speech back in real time."
+---
+
+## Introduction
+
+The Live Translation API gives you Bland's real-time speech translation engine as a standalone service. Open a WebSocket, stream audio in the source language, and receive translated speech back — along with transcript events for every utterance.
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Streaming" icon="bolt">
+    Speech-to-speech translation over a single WebSocket. Transcripts and translated audio arrive per utterance as the speaker talks.
+  </Card>
+  <Card title="Two Audio Protocols" icon="waveform-lines">
+    Raw PCM-16 for web and custom integrations, or Twilio Media Streams envelopes for drop-in interop with Twilio `<Stream>`.
+  </Card>
+  <Card title="23 Languages" icon="globe">
+    Translate between any pair of supported languages, with configurable Bland voices for the translated speech.
+  </Card>
+  <Card title="Session-Based Billing" icon="clock">
+    Billed per minute of connected session time. Track duration and billed minutes through the session API.
+  </Card>
+</CardGroup>
+
+<Note>
+  The Translation API is currently available by request. Contact your Bland representative to enable it for your organization. Attempting to create a session without access returns `403 TAAS_NOT_ENABLED`.
+</Note>
+
+---
+
+## How It Works
+
+```
+POST /v1/translation/sessions          ① create a session
+        │  returns ws_url (single-use, valid 10 min)
+        ▼
+wss://… (connect to ws_url)            ② open the WebSocket
+        │
+        │  ──► you stream source-language audio
+        │  ◄── { "type": "ready" }
+        │  ◄── translated audio frames
+        │  ◄── { "type": "transcript", … }   per utterance
+        │  ◄── { "type": "tts_complete", … } per utterance
+        ▼
+close (either side)                     ③ session ends
+        │  ◄── { "type": "session_ended", … }
+        ▼
+GET /v1/translation/sessions/:id       ④ read final state + billed minutes
+```
+
+1. **Create a session** with [`POST /v1/translation/sessions`](/api-v1/post/translation-sessions). You choose the language pair, audio protocol, and optionally a voice.
+2. **Connect to `ws_url`** exactly as returned — it's an opaque, single-use URL valid for 10 minutes. Do not parse or modify it.
+3. **Stream audio and consume events.** Binary frames are audio; text frames are JSON control events.
+4. **Close the WebSocket** when done (or call [`DELETE`](/api-v1/delete/translation-sessions-id), or let `max_duration_seconds` end it).
+
+<Warning>
+  `ws_url` authenticates **exactly one** connection. If the WebSocket drops, the session is over — create a new session to continue. Reconnect attempts with a used URL are rejected with close code `4001`.
+</Warning>
+
+---
+
+## Audio Protocols
+
+Declare the protocol at session creation with `audio_protocol`. The server also verifies it against the first frame you send — a mismatch closes the connection with code `4004`.
+
+### `pcm16` (default)
+
+Best for web apps, native clients, and server-side integrations.
+
+| Direction | Format |
+|---|---|
+| **You → Bland** | Binary WebSocket frames of raw PCM-16 little-endian mono audio at your declared `sample_rate` (8000–48000 Hz; 16000 recommended) |
+| **Bland → You** | Binary WebSocket frames of raw PCM-16 little-endian mono audio at **16000 Hz** |
+
+No framing or headers — just raw samples. Chunk size is up to you; 20ms chunks (640 bytes at 16kHz) are typical.
+
+### `twilio_ulaw`
+
+Best for piping a Twilio call into translation. The wire format matches [Twilio Media Streams](https://www.twilio.com/docs/voice/media-streams) exactly, so you can forward Twilio's WebSocket messages with minimal glue.
+
+| Direction | Format |
+|---|---|
+| **You → Bland** | JSON text frames in Twilio Media Streams shape (see below). Audio is base64 8kHz μ-law in `media.payload`. |
+| **Bland → You** | JSON text frames: `{"event":"media","streamSid":"<your sid>","media":{"payload":"<base64 8kHz μ-law>"}}` |
+
+Send a `start` event first so outbound envelopes echo your `streamSid`:
+
+```json
+{ "event": "start", "start": { "streamSid": "MZ..." } }
+{ "event": "media", "media": { "payload": "<base64 μ-law>" } }
+{ "event": "stop" }
+```
+
+Do **not** set `sample_rate` for `twilio_ulaw` sessions — Twilio audio is always 8kHz.
+
+---
+
+## Control Events
+
+JSON text frames from the server. Every event has a `type` discriminator.
+
+### `ready`
+
+The pipeline is warmed up. Audio sent before `ready` is buffered, so you can start streaming immediately on connection open — but transcripts won't flow until after `ready`.
+
+```json
+{ "type": "ready", "session_id": "9592342c-…" }
+```
+
+### `transcript`
+
+One finalized utterance with its translation.
+
+```json
+{
+  "type": "transcript",
+  "turn_id": "5862a126-2e88-46b1-bb95-0ed5c57155c1",
+  "original": "Hello. This is a translation test.",
+  "translation": "Hola. Esta es una prueba de traducción.",
+  "source_language": "en",
+  "target_language": "es",
+  "is_final": true
+}
+```
+
+### `tts_complete`
+
+All translated audio for a turn has been written to the WebSocket.
+
+```json
+{ "type": "tts_complete", "turn_id": "5862a126-…", "audio_duration_ms": 6440 }
+```
+
+<Tip>
+  Translated audio can arrive **faster than real time** — a 13-second utterance may be delivered in 7 seconds of wall-clock time. Buffer it client-side and play at the natural rate; use `tts_complete` to know when a turn's audio is fully delivered.
+</Tip>
+
+### `session_ended`
+
+The last JSON frame before the server closes the WebSocket.
+
+```json
+{
+  "type": "session_ended",
+  "reason": "max_duration",
+  "session_seconds": 1800,
+  "end_reason": "max_duration"
+}
+```
+
+`reason` is one of `client_disconnect`, `max_duration`, `error`, `api_terminated`.
+
+### `error`
+
+```json
+{ "type": "error", "code": "taas/tts_failed", "message": "…", "fatal": false }
+```
+
+Non-fatal errors (`fatal: false`) mean the session continues — e.g. a single turn's TTS failed. Fatal errors are followed by `session_ended` and a close.
+
+---
+
+## Close Codes
+
+| Code | Meaning |
+|---|---|
+| `1000` | Normal close after `session_ended` |
+| `1011` | Internal server error |
+| `4001` | Invalid, expired, or already-used session token |
+| `4002` | Session not found |
+| `4003` | Session already ended |
+| `4004` | Audio protocol mismatch (first frame didn't match the declared `audio_protocol`) |
+| `4005` | `max_duration_seconds` reached |
+
+---
+
+## Quickstart (Node.js, pcm16)
+
+```javascript
+const WebSocket = require("ws");
+
+// 1. Create a session
+const resp = await fetch("https://api.bland.ai/v1/translation/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: "YOUR_API_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    source_language: "en",
+    target_language: "es",
+    audio_protocol: "pcm16",
+    sample_rate: 16000,
+  }),
+});
+const { data } = await resp.json();
+
+// 2. Connect — ws_url is opaque and single-use
+const ws = new WebSocket(data.ws_url);
+
+ws.on("open", () => {
+  // Safe to start streaming immediately; frames are buffered until ready.
+  streamMicrophoneAudio(ws); // your code: send raw PCM-16 LE 16k binary frames
+});
+
+ws.on("message", (frame, isBinary) => {
+  if (isBinary) {
+    playTranslatedAudio(frame); // raw PCM-16 LE 16k — buffer and play
+    return;
+  }
+  const event = JSON.parse(frame.toString());
+  switch (event.type) {
+    case "ready":
+      console.log("pipeline ready");
+      break;
+    case "transcript":
+      console.log(`${event.original} → ${event.translation}`);
+      break;
+    case "session_ended":
+      console.log(`ended: ${event.reason} (${event.session_seconds}s)`);
+      break;
+    case "error":
+      if (event.fatal) console.error("fatal:", event.code);
+      break;
+  }
+});
+```
+
+---
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Concurrent sessions per organization | 3 (contact us to raise) |
+| Session length | 30s minimum, 30 minutes maximum |
+| Connection window after create | 10 minutes |
+| Daily translation minutes | Per-organization rate limit |
+| Reconnection | Not supported — create a new session |
+
+## Billing
+
+Sessions are billed per minute of connected time, rounded up to the next whole minute (a 19-second session bills as 1 minute). The per-minute rate depends on your plan. Read `billable_minutes` from [`GET /v1/translation/sessions/:id`](/api-v1/get/translation-sessions-id) after a session ends.
+
+## API Reference
+
+<CardGroup cols={3}>
+  <Card title="Create Session" icon="plus" href="/api-v1/post/translation-sessions">
+    `POST /v1/translation/sessions`
+  </Card>
+  <Card title="Get Session" icon="magnifying-glass" href="/api-v1/get/translation-sessions-id">
+    `GET /v1/translation/sessions/:id`
+  </Card>
+  <Card title="End Session" icon="stop" href="/api-v1/delete/translation-sessions-id">
+    `DELETE /v1/translation/sessions/:id`
+  </Card>
+</CardGroup>
