@@ -1,0 +1,54 @@
+---
+title: "List SIP Trunks"
+api: "GET https://api.bland.ai/v1/sip/trunks"
+description: "List all SIP trunks for your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.trunks" type="array">
+  Array of trunk summaries. Each entry includes:
+  - `trunk_id` (string) — Unique trunk identifier
+  - `name` (string) — Trunk name
+  - `provider` (string) — Provider label
+  - `direction` (string) — `"inbound"` or `"outbound"`
+  - `sip_endpoint` (string) — The SIP endpoint
+  - `auth_mode` (string) — `"ip"` or `"register"`
+  - `bound_number_count` (number) — How many numbers are bound to this trunk
+</ResponseField>
+
+```json Example Request
+curl -X GET https://api.bland.ai/v1/sip/trunks \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "trunks": [
+      {
+        "trunk_id": "trk_abc123",
+        "name": "Acme Carrier — US East",
+        "provider": "custom",
+        "direction": "outbound",
+        "sip_endpoint": "sip:trunk.acme.example",
+        "auth_mode": "register",
+        "bound_number_count": 12
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,78 @@
+---
+title: "Get SIP Trunk Calls"
+api: "GET https://api.bland.ai/v1/sip/trunks/{trunk_id}/calls"
+description: "Paginated call history aggregated across every number bound to a SIP trunk."
+---
+
+Like [`GET /v1/sip/calls`](/api-v1/get/sip-calls), but scoped to the trunk — useful for seeing all activity across a carrier or PBX in one view.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="trunk_id" type="string" required>
+  The trunk identifier.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="number">
+  Maximum number of calls to return. Default: 50.
+</ParamField>
+
+<ParamField query="before" type="string">
+  Cursor for pagination. Pass the `call_id` of the last call from the previous page.
+</ParamField>
+
+### Response
+
+<ResponseField name="calls" type="array">
+  Array of call records. Each includes:
+  - `call_id` (string) — Unique SIP Call-ID
+  - `phone_number` (string) — The bound number, DID, or extension involved
+  - `direction` (string) — `"inbound"` or `"outbound"`
+  - `from` (string)
+  - `to` (string)
+  - `status` (string) — Final SIP status (e.g., `"200 OK"`, `"486 Busy"`)
+  - `sip_code` (number)
+  - `duration_seconds` (number)
+  - `started_at` (string) — ISO 8601 timestamp
+  - `ended_at` (string) — ISO 8601 timestamp
+</ResponseField>
+
+```json Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/trunks/trk_abc123/calls?limit=25' \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "calls": [
+      {
+        "call_id": "abc123@sip.bland.ai",
+        "phone_number": "+14150000000",
+        "direction": "outbound",
+        "from": "+14150000000",
+        "to": "+15105551234",
+        "status": "200 OK",
+        "sip_code": 200,
+        "duration_seconds": 45,
+        "started_at": "2026-06-09T11:00:00Z",
+        "ended_at": "2026-06-09T11:00:45Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

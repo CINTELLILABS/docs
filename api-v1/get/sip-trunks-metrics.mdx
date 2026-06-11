@@ -1,0 +1,62 @@
+---
+title: "Get SIP Trunk Metrics"
+api: "GET https://api.bland.ai/v1/sip/trunks/{trunk_id}/metrics"
+description: "Return 30-day call metrics aggregated across every number bound to a trunk."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="trunk_id" type="string" required>
+  The trunk identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="total_calls" type="number">
+  Total call attempts in the last 30 days across all bound numbers.
+</ResponseField>
+
+<ResponseField name="answered_calls" type="number">
+  Calls that were answered.
+</ResponseField>
+
+<ResponseField name="failed_calls" type="number">
+  Calls that failed to connect.
+</ResponseField>
+
+<ResponseField name="top_failure_codes" type="array">
+  The most common SIP failure codes. Each entry includes `sip_code` (number), `description` (string), and `count` (number).
+</ResponseField>
+
+```json Example Request
+curl -X GET https://api.bland.ai/v1/sip/trunks/trk_abc123/metrics \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "total_calls": 12480,
+    "answered_calls": 11203,
+    "failed_calls": 1277,
+    "top_failure_codes": [
+      { "sip_code": 486, "description": "Busy Here", "count": 612 },
+      { "sip_code": 480, "description": "Temporarily Unavailable", "count": 401 },
+      { "sip_code": 503, "description": "Service Unavailable", "count": 88 }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

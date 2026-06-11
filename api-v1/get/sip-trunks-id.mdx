@@ -1,0 +1,67 @@
+---
+title: "Get SIP Trunk"
+api: "GET https://api.bland.ai/v1/sip/trunks/{trunk_id}"
+description: "Fetch a single SIP trunk along with the phone numbers, DIDs, and extensions bound to it."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="trunk_id" type="string" required>
+  The trunk identifier returned from `POST /v1/sip/trunks`.
+</ParamField>
+
+### Response
+
+<ResponseField name="trunk_id" type="string" />
+<ResponseField name="name" type="string" />
+<ResponseField name="provider" type="string" />
+<ResponseField name="direction" type="string" />
+<ResponseField name="sip_endpoint" type="string" />
+<ResponseField name="auth_mode" type="string" />
+<ResponseField name="headers" type="object">
+  The shared SIP header mappings.
+</ResponseField>
+<ResponseField name="bound_numbers" type="array">
+  Numbers, DIDs, or extensions bound to this trunk. Each entry includes the identifier and the configured directions.
+</ResponseField>
+
+Secrets are redacted from the response.
+
+```json Example Request
+curl -X GET https://api.bland.ai/v1/sip/trunks/trk_abc123 \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "trunk_id": "trk_abc123",
+    "name": "Acme Carrier — US East",
+    "provider": "custom",
+    "direction": "outbound",
+    "sip_endpoint": "sip:trunk.acme.example",
+    "auth_mode": "register",
+    "headers": {
+      "X-Account": "acme"
+    },
+    "bound_numbers": [
+      { "phone_number": "+14150000000", "directions": ["outbound"] },
+      { "phone_number": "bland-001", "directions": ["outbound"] },
+      { "phone_number": "100", "directions": ["outbound"] }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

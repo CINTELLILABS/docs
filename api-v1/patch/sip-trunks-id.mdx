@@ -1,0 +1,72 @@
+---
+title: "Update SIP Trunk"
+api: "PATCH https://api.bland.ai/v1/sip/trunks/{trunk_id}"
+description: "Update a SIP trunk. Header updates propagate to every number bound to the trunk."
+---
+
+Use this endpoint to rename a trunk, swap its SIP endpoint, change auth, or update shared headers. When you save headers on the trunk, the new headers are propagated to all bound numbers automatically — you don't need to update each number individually.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="trunk_id" type="string" required>
+  The trunk identifier.
+</ParamField>
+
+### Body
+
+All fields are optional. Only the fields you include are updated.
+
+<ParamField body="name" type="string" />
+<ParamField body="provider" type="string" />
+<ParamField body="sip_endpoint" type="string" />
+<ParamField body="auth_mode" type="string">
+  `"ip"` or `"register"`.
+</ParamField>
+<ParamField body="register_auth" type="object">
+  `username` and `password`. Required when changing `auth_mode` to `"register"`.
+</ParamField>
+<ParamField body="headers" type="object">
+  Shared SIP header mappings. Saving this field propagates the new headers to every bound number.
+</ParamField>
+
+### Response
+
+The updated trunk. Secrets are redacted.
+
+```json Example Request
+curl -X PATCH https://api.bland.ai/v1/sip/trunks/trk_abc123 \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headers": {
+      "X-Account": "acme",
+      "X-Customer-Tier": "gold"
+    }
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "trunk_id": "trk_abc123",
+    "name": "Acme Carrier — US East",
+    "headers": {
+      "X-Account": "acme",
+      "X-Customer-Tier": "gold"
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

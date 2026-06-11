@@ -1,0 +1,92 @@
+---
+title: "Create SIP Trunk"
+api: "POST https://api.bland.ai/v1/sip/trunks"
+description: "Create a reusable SIP trunk that holds shared connection settings for one or more numbers."
+---
+
+A SIP trunk is a reusable connection profile. You set the SIP endpoint, direction, authentication, and shared headers once on the trunk, then bind any number of phone numbers, DIDs, or extensions to it instead of repeating the same configuration per number.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="name" type="string" required>
+  A friendly name for the trunk (e.g. `"Acme Carrier — US East"`).
+</ParamField>
+
+<ParamField body="provider" type="string">
+  The SIP provider this trunk connects to (e.g. `"twilio"`, `"telnyx"`, `"bandwidth"`, `"custom"`). Used for display and provider-specific behavior.
+</ParamField>
+
+<ParamField body="direction" type="string" required>
+  `"inbound"` or `"outbound"`.
+</ParamField>
+
+<ParamField body="sip_endpoint" type="string" required>
+  The SIP endpoint for the trunk. Format: `sip:host` or `host`.
+</ParamField>
+
+<ParamField body="auth_mode" type="string">
+  Authentication mode: `"ip"` (default) or `"register"`. When set to `"register"`, you must also provide `register_auth`.
+</ParamField>
+
+<ParamField body="register_auth" type="object">
+  Required when `auth_mode` is `"register"`. Contains `username` (string) and `password` (string, min 8 characters).
+</ParamField>
+
+<ParamField body="headers" type="object">
+  Shared SIP header mappings applied to every number bound to this trunk.
+</ParamField>
+
+### Response
+
+<ResponseField name="trunk_id" type="string">
+  Unique identifier for the new trunk.
+</ResponseField>
+
+<ResponseField name="name" type="string" />
+<ResponseField name="direction" type="string" />
+<ResponseField name="sip_endpoint" type="string" />
+<ResponseField name="auth_mode" type="string" />
+
+Secrets such as `register_auth.password` are redacted from the response.
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/trunks \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Carrier — US East",
+    "provider": "custom",
+    "direction": "outbound",
+    "sip_endpoint": "sip:trunk.acme.example",
+    "auth_mode": "register",
+    "register_auth": {
+      "username": "acme-bland",
+      "password": "<generated-password>"
+    }
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "trunk_id": "trk_abc123",
+    "name": "Acme Carrier — US East",
+    "direction": "outbound",
+    "sip_endpoint": "sip:trunk.acme.example",
+    "auth_mode": "register"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -286,6 +286,78 @@ Your SIP trunk is now configured and active. You can view and manage it from the
 
 ---
 
+## Reusable SIP Trunks
+
+A **SIP trunk** is a reusable connection profile. Instead of repeating the same SIP endpoint, auth, and headers on every number, you create a named trunk once and bind any number of phone numbers, DIDs, or extensions to it. Update the trunk and the change applies to every bound number.
+
+Use trunks when you have:
+
+- Multiple numbers that share the same carrier or PBX
+- DIDs and extensions that should all route through the same upstream endpoint
+- Shared SIP headers (account tags, customer IDs) that need to stay in sync across many numbers
+
+### Managing trunks
+
+| Action | Endpoint |
+|--------|----------|
+| Create a trunk | [`POST /v1/sip/trunks`](/api-v1/post/sip-trunks) |
+| List trunks | [`GET /v1/sip/trunks`](/api-v1/get/sip-trunks) |
+| Get one trunk (with bound numbers) | [`GET /v1/sip/trunks/:id`](/api-v1/get/sip-trunks-id) |
+| Update a trunk | [`PATCH /v1/sip/trunks/:id`](/api-v1/patch/sip-trunks-id) |
+| Delete a trunk | [`DELETE /v1/sip/trunks/:id`](/api-v1/delete/sip-trunks-id) |
+| Test reachability | [`POST /v1/sip/trunks/:id/test-connection`](/api-v1/post/sip-trunks-test-connection) |
+| 30-day metrics | [`GET /v1/sip/trunks/:id/metrics`](/api-v1/get/sip-trunks-metrics) |
+| Aggregated call history | [`GET /v1/sip/trunks/:id/calls`](/api-v1/get/sip-trunks-calls) |
+
+Updating headers on a trunk **propagates** the new headers to every bound number — you don't have to edit each number separately. Deleting a trunk does **not** delete the SIP configurations on its bound numbers; they keep their settings and simply become unbound.
+
+```bash
+# Create an outbound trunk
+curl -X POST https://api.bland.ai/v1/sip/trunks \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Carrier — US East",
+    "direction": "outbound",
+    "sip_endpoint": "sip:trunk.acme.example",
+    "auth_mode": "register",
+    "register_auth": { "username": "acme-bland", "password": "<generated>" }
+  }'
+
+# Confirm the trunk is reachable over TLS
+curl -X POST https://api.bland.ai/v1/sip/trunks/trk_abc123/test-connection \
+  -H "Authorization: Bearer <token>"
+```
+
+### Generating a SIP password
+
+When configuring `register` auth, use [`GET /v1/sip/generate-password`](/api-v1/get/sip-generate-password) to get a cryptographically random password that is safe to paste into PBX config files and SIP URIs. Lengths from 8–256 characters are supported, plus `standard` and `long` presets.
+
+### Cold transfer routing
+
+When an inbound call on a bound number is cold-transferred via SIP `REFER`, the transfer is routed back through the **originating trunk's** SIP endpoint. This keeps the REFER on the same carrier that delivered the call, so providers that scope routing per trunk accept it without rejecting the transfer.
+
+---
+
+## Non-E.164 DIDs and extensions
+
+You can attach SIP routing to identifiers that aren't standard phone numbers — text DIDs like `bland-001` or extensions like `100` — anywhere a phone number is accepted (attach, status, calls, inbound routing). They are stored verbatim and matched per-organization, so two organizations can independently own the same DID or extension without conflicting.
+
+```bash
+curl -X POST https://api.bland.ai/v1/sip/attach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["bland-001", "100"],
+    "directions": [{ "type": "outbound", "sip_endpoint": "sip:pbx.acme.example" }],
+    "service": "sip"
+  }'
+```
+
+Standard E.164 phone numbers continue to be globally unique. Non-E.164 identifiers are only scoped within your organization.
+
+---
+
 ## SIP Dashboard
 
 The SIP Dashboard at [app.bland.ai/dashboard/sip-trunks](https://app.bland.ai/dashboard/sip-trunks) is your central hub for managing SIP trunks.
@@ -545,7 +617,7 @@ You can also retrieve your region's IP addresses and ports programmatically via 
 * DTMF: RFC 2833 (Out-of-band via RTP payload)
 * Transport: TCP over TLS
 * Methods: INVITE, ACK, BYE, CANCEL, OPTIONS, REFER
-* Number Format: +E.164 or E.164 (both supported)
+* Number Format: +E.164 or E.164 (both supported). Non-E.164 DIDs and extensions (e.g., `bland-001`, `100`) are also accepted and stored verbatim, scoped per organization.
 * Authentication: IP-based (default) or SIP REGISTER digest auth
 
 ---
@@ -571,6 +643,20 @@ All SIP endpoints are under `/v1/sip` and require authentication via your API ke
 | `POST` | [`/v1/sip/update`](/api-v1/post/sip-update) | Update SIP direction settings |
 | `POST` | [`/v1/sip/detach`](/api-v1/post/sip-detach) | Remove SIP configuration |
 | `GET` | [`/v1/sip/numbers`](/api-v1/get/sip-numbers) | List all SIP-configured numbers |
+| `GET` | [`/v1/sip/generate-password`](/api-v1/get/sip-generate-password) | Generate a strong SIP password |
+
+### Reusable SIP Trunks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | [`/v1/sip/trunks`](/api-v1/post/sip-trunks) | Create a reusable SIP trunk |
+| `GET` | [`/v1/sip/trunks`](/api-v1/get/sip-trunks) | List trunks |
+| `GET` | [`/v1/sip/trunks/:id`](/api-v1/get/sip-trunks-id) | Get a trunk with bound numbers |
+| `PATCH` | [`/v1/sip/trunks/:id`](/api-v1/patch/sip-trunks-id) | Update a trunk (headers propagate) |
+| `DELETE` | [`/v1/sip/trunks/:id`](/api-v1/delete/sip-trunks-id) | Delete a trunk; bound configs become unbound |
+| `POST` | [`/v1/sip/trunks/:id/test-connection`](/api-v1/post/sip-trunks-test-connection) | TLS SIP OPTIONS reachability check |
+| `GET` | [`/v1/sip/trunks/:id/metrics`](/api-v1/get/sip-trunks-metrics) | 30-day call metrics across bound numbers |
+| `GET` | [`/v1/sip/trunks/:id/calls`](/api-v1/get/sip-trunks-calls) | Aggregated call history across bound numbers |
 
 ### Discovery & Testing
 

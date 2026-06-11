@@ -1,0 +1,59 @@
+---
+title: "Test SIP Trunk Connection"
+api: "POST https://api.bland.ai/v1/sip/trunks/{trunk_id}/test-connection"
+description: "Send a TLS SIP OPTIONS ping to the trunk's endpoint to confirm reachability."
+---
+
+Use this to verify a trunk is reachable before binding numbers to it, or to debug connectivity issues. Bland sends a SIP `OPTIONS` request over TLS to the trunk's `sip_endpoint` on port `5061` and returns the response.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="trunk_id" type="string" required>
+  The trunk identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="reachable" type="boolean">
+  `true` if the trunk responded to the OPTIONS probe.
+</ResponseField>
+
+<ResponseField name="sip_code" type="number">
+  The SIP response code returned (e.g., `200`, `404`, `503`).
+</ResponseField>
+
+<ResponseField name="response_time_ms" type="number">
+  Round-trip time of the probe in milliseconds.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Populated when `reachable` is `false` (e.g., `"tls_handshake_failed"`, `"timeout"`).
+</ResponseField>
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/trunks/trk_abc123/test-connection \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "reachable": true,
+    "sip_code": 200,
+    "response_time_ms": 42
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

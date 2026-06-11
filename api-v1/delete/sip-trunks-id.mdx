@@ -1,0 +1,50 @@
+---
+title: "Delete SIP Trunk"
+api: "DELETE https://api.bland.ai/v1/sip/trunks/{trunk_id}"
+description: "Delete a SIP trunk. Bound number configurations are preserved and become unbound."
+---
+
+Deleting a trunk removes the shared trunk profile but **does not** delete the SIP configurations on numbers that were bound to it. Those numbers become unbound — they keep their individual configuration and continue to work, but no longer share settings via the trunk.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="trunk_id" type="string" required>
+  The trunk identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="trunk_id" type="string">
+  The deleted trunk identifier.
+</ResponseField>
+
+<ResponseField name="unbound_number_count" type="number">
+  How many number configurations were unbound from this trunk.
+</ResponseField>
+
+```json Example Request
+curl -X DELETE https://api.bland.ai/v1/sip/trunks/trk_abc123 \
+  -H "Authorization: Bearer <token>"
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "trunk_id": "trk_abc123",
+    "unbound_number_count": 12
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
