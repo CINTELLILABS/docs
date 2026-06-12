@@ -1,0 +1,94 @@
+---
+title: "Update Resolved Gap"
+api: "POST https://api.bland.ai/v1/knowledge/gaps/{id}"
+description: "Updates the question or answer on a previously resolved gap."
+---
+
+Updates a resolved gap's question, answer, or both. The associated Q&A pair in the knowledge base is updated to match.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The gap ID (UUID). Must have status `RESOLVED`.
+</ParamField>
+
+### Body Parameters
+
+At least one field is required.
+
+<ParamField body="question" type="string">
+  Updated question text.
+</ParamField>
+
+<ParamField body="answer" type="string">
+  Updated answer text. Minimum 10 characters.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Update result.
+
+  <ResponseField name="data.success" type="boolean">
+    Whether the operation succeeded.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Status message.
+  </ResponseField>
+
+  <ResponseField name="data.gap" type="object">
+    The updated gap.
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/knowledge/gaps/14574aa4-892c-4bc7-ac8e-9c17c886aa6d" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "answer": "Updated: For damaged items, we offer a full refund within 90 days."
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Missing Fields
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "At least one field (question or answer) is required"
+    }
+  ]
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_GAPS_ERROR",
+      "message": "Can only update RESOLVED gaps"
+    }
+  ]
+}
+```
+
+</ResponseExample>

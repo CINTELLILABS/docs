@@ -1,0 +1,64 @@
+---
+title: "Get Knowledge Gap"
+api: "GET https://api.bland.ai/v1/knowledge/gaps/{id}"
+description: "Returns a single knowledge gap by ID, including linked gap details."
+---
+
+Retrieves the full details of a knowledge gap, including any gaps that have been linked to it via the duplicate endpoint.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The gap ID (UUID).
+</ParamField>
+
+### Response
+
+Same fields as a single item in the [List Knowledge Gaps](/api-v1/get/knowledge-gaps) response, plus:
+
+<ResponseField name="data.linked_gaps_count" type="number">
+  Number of other gaps using this gap's answer.
+</ResponseField>
+
+<ResponseField name="data.linked_gaps" type="array">
+  The linked gaps. Only present when `linked_gaps_count` is greater than zero.
+
+  <ResponseField name="data.linked_gaps[].id" type="string">
+    Linked gap ID.
+  </ResponseField>
+
+  <ResponseField name="data.linked_gaps[].question" type="string">
+    Linked gap question.
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v1/knowledge/gaps/14574aa4-892c-4bc7-ac8e-9c17c886aa6d" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_GAPS_ERROR",
+      "message": "Knowledge gap not found"
+    }
+  ]
+}
+```
+
+</ResponseExample>

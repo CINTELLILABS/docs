@@ -1,0 +1,113 @@
+---
+title: "Resolve Gap"
+api: "POST https://api.bland.ai/v1/knowledge/gaps/{id}/resolve"
+description: "Resolves a gap by creating a Q&A pair with the provided answer."
+---
+
+Creates a Q&A pair (suggestion) from the provided answer and marks the gap as resolved. Works on `OPEN` or `DISMISSED` gaps. The answer is saved to the specified knowledge base and becomes searchable immediately.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The gap ID (UUID). Must not already be `RESOLVED`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="answer" type="string" required>
+  The answer to this question. Minimum 10 characters.
+</ParamField>
+
+<ParamField body="target_kb_id" type="string" required>
+  Which knowledge base to save the answer to. Must be one of the knowledge bases that were searched when this gap was created.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Resolution result.
+
+  <ResponseField name="data.success" type="boolean">
+    Whether the operation succeeded.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Status message.
+  </ResponseField>
+
+  <ResponseField name="data.gap" type="object">
+    The updated gap (now `RESOLVED`).
+  </ResponseField>
+
+  <ResponseField name="data.qa_pair" type="object">
+    The created Q&A pair.
+
+    <ResponseField name="data.qa_pair.id" type="string">
+      Q&A pair ID.
+    </ResponseField>
+
+    <ResponseField name="data.qa_pair.question" type="string">
+      The question.
+    </ResponseField>
+
+    <ResponseField name="data.qa_pair.answer" type="string">
+      The answer.
+    </ResponseField>
+
+    <ResponseField name="data.qa_pair.kb_id" type="string">
+      Knowledge base the pair was saved to.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/knowledge/gaps/14574aa4-892c-4bc7-ac8e-9c17c886aa6d/resolve" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "answer": "For damaged items, we offer a full refund or replacement within 60 days of purchase. Contact support with photos of the damage.",
+    "target_kb_id": "a1b2c3d4-5678-9abc-def0-123456789abc"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_GAPS_ERROR",
+      "message": "Answer must be at least 10 characters"
+    }
+  ]
+}
+```
+
+```json Missing Fields
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "answer and target_kb_id are required"
+    }
+  ]
+}
+```
+
+</ResponseExample>

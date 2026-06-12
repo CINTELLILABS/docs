@@ -1,0 +1,82 @@
+---
+title: "Sync Answer to Linked Gaps"
+api: "POST https://api.bland.ai/v1/knowledge/gaps/{id}/sync"
+description: "Propagates an updated answer to all gaps linked via the duplicate endpoint."
+---
+
+After updating a resolved gap's answer, use this to push the change to all gaps that were linked to it. Only affects gaps where `merged_into_gap_id` points to this gap.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The resolved gap whose answer to sync (UUID). Must have status `RESOLVED`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Sync result.
+
+  <ResponseField name="data.success" type="boolean">
+    Whether the operation succeeded.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    Status message.
+  </ResponseField>
+
+  <ResponseField name="data.synced_gap_ids" type="array">
+    IDs of the gaps that were updated.
+  </ResponseField>
+
+  <ResponseField name="data.synced_count" type="number">
+    Number of gaps updated.
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/knowledge/gaps/bf36cd5b-efff-45c1-ac98-cb4f0cd4f705/sync" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Successfully synced answer to 3 linked gap(s)",
+    "synced_gap_ids": [
+      "14574aa4-892c-4bc7-ac8e-9c17c886aa6d",
+      "21c65c45-8a1b-41b6-82c4-331f0791095a",
+      "addf4000-a7d3-433b-9e56-5273e67ca64a"
+    ],
+    "synced_count": 3
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_GAPS_ERROR",
+      "message": "Can only sync answers from RESOLVED gaps"
+    }
+  ]
+}
+```
+
+</ResponseExample>
