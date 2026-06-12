@@ -288,15 +288,30 @@ Your SIP trunk is now configured and active. You can view and manage it from the
 
 ## SIP Dashboard
 
-The SIP Dashboard at [app.bland.ai/dashboard/sip-trunks](https://app.bland.ai/dashboard/sip-trunks) is your central hub for managing SIP trunks.
+The SIP Dashboard at [app.bland.ai/dashboard/sip-trunks](https://app.bland.ai/dashboard/sip-trunks) is your central hub for managing SIP trunks. It is organized into three tabs:
+
+- **Trunks** — all configured trunks, grouped by SIP endpoint, with direction, health, and number counts.
+- **Inbound numbers** — inbound SIP numbers with quick links to configure pathway, persona, and voice.
+- **Live logs** — a real-time, org-wide stream of SIP calls across every trunk, with call-level filtering and a roll-up of volume, answer-seizure ratio (ASR), and top failure reasons.
 
 ### Trunk Overview
 
 View all configured trunks with summary cards showing total SIP trunks, inbound count, and outbound count. Each trunk row displays the phone number, direction (inbound/outbound), SIP endpoint, and health status.
 
+### Trunk Detail
+
+Click **"View"** on any trunk to open its dedicated detail page. The page is split into tabs:
+
+- **Overview** — Health status, SIP endpoint, attached numbers, recent call volume, ASR, and a roll-up of top failure reasons for this trunk.
+- **Connection** — Trunk name, SIP endpoint, and authentication settings (IP-based or REGISTER). Update credentials or change the endpoint here. Bland always connects over **TLS on port 5061** — there is no UDP or TCP transport option to select.
+- **Calls** — Paginated call history for the trunk, filterable by Call ID. Click any row to open the call detail, including the full SIP trace ladder (INVITE / 100 Trying / 180 Ringing / 200 OK / ACK with headers).
+- **Numbers** — Phone numbers attached to the trunk, with inbound/outbound direction badges. Add or remove numbers without leaving the trunk.
+- **Headers** — Custom SIP headers added to outbound INVITEs or passed through on inbound calls. Supports custom `X-` headers and **UUI** (User-to-User Information) headers, with Bland template variables (for example `{call_id}`, `{caller_id}`) that are substituted at call time.
+- **Diagnostics** — Run a **Connection test** that sends a SIP OPTIONS ping over TLS to your endpoint and reports reachability, response code, and round-trip time. No call is placed and no number is dialed — use this to confirm your firewall and TLS configuration before sending real traffic.
+
 ### Configuration Details
 
-Click **"View"** on any trunk to see its full configuration, including the SIP trace viewer for recent calls, firewall IP addresses, and connection settings.
+The trunk detail page also surfaces the SIP trace viewer for recent calls, firewall IP addresses, and connection settings.
 
 <img
   src="../tutorials/tutorials-assets/sip-wizard/SIPConfigurationDetails.jpeg"
@@ -310,6 +325,7 @@ The configuration detail view includes:
 - **Call Logs** — Paginated call history with direction, status, SIP response code, duration, and timestamps. Auto-refreshes every 30 seconds.
 - **Firewall & Ports** — Bland's egress IP addresses and SIP/RTP ports for your region, with a copy-all button.
 - **Health Monitoring** — Real-time health status via SIP OPTIONS probes (healthy/unreachable/unchecked), uptime percentage, and average response time.
+- **On-demand Connection Test** — From the **Diagnostics** tab, run an ad-hoc SIP OPTIONS ping to confirm reachability without placing a call.
 
 ### Configuring Inbound Numbers
 
@@ -442,7 +458,7 @@ After the port completes, your numbers are automatically registered as inbound n
 
 **SIP Signaling Endpoint FQDNs:**
 
-- You **must** use TCP over TLS for all SIP signaling.
+- You **must** use TCP over TLS on port **5061** for all SIP signaling. TLS is the only supported transport — there is no UDP or plain-TCP fallback, and the dashboard does not expose a transport selector.
 - You **must** use Secure Media / SRTP for all media streams.
 - Bland **does not** accept UDP for SIP signaling.
 - You **must** whitelist all IP addresses listed below in your firewall.
