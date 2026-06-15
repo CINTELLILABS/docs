@@ -493,6 +493,16 @@ For detailed configuration options and troubleshooting, see the complete [Citati
 
 ---
 
+## Evals Webhook
+
+If you attach an evals workbench to a call, Bland sends a second webhook to the same webhook URL once the eval run finishes — typically 1–3 minutes after the call ends. The main post-call webhook still fires immediately and includes a `post_call_evals` acknowledgement with `status: "pending"` so you know the follow-up is coming.
+
+The evals webhook uses `event_type: "evals"` and includes the eval run ID, run status, your workbench IDs, the run summary, and the call's full per-agent results (selected level, normalized score, target match, confidence, judge reasoning, and evidence quotes). It fires on every terminal status — including `FAILED` and `CANCELLED` — so a `pending` acknowledgement is always followed by an outcome.
+
+See the [Evals tutorial](/tutorials/evals#post-call-evals-webhook) for the full payload and subscription rules.
+
+---
+
 ## SMS Conversation Webhooks
 
 SMS conversations fire webhooks with the same structure as voice calls, so you can use a single webhook endpoint for both channels.
