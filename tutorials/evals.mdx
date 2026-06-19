@@ -158,3 +158,64 @@ The Evals API is rooted at `/v1/evals`. A typical end-to-end flow:
 </Steps>
 
 To run the same composition repeatedly, save it as a [workbench setup](/api-v1/post/evals-workbench-setups) and pass `workbench_setup_id` plus `workbench_setup_version_id` when creating a run.
+
+---
+
+## Post-call evals webhook
+
+When a call with an attached evals workbench finishes evaluating, Bland sends a second webhook to your call's webhook URL with `event_type: "evals"`. This closes the loop on calls where evals run automatically after the call ends — you do not need to poll [`GET /v1/evals/runs/{run_id}`](/api-v1/get/evals-runs-id) to learn the outcome.
+
+The main post-call webhook still fires immediately when the call ends. It includes a `post_call_evals` acknowledgement with `status: "pending"` so you know a follow-up is coming. The evals webhook then arrives once the eval run reaches a terminal status — typically 1–3 minutes later, depending on judge load.
+
+### When it fires
+
+The evals webhook fires for every terminal status, so a `pending` acknowledgement is always followed by an outcome:
+
+- `COMPLETE` — every call in the run was graded.
+- `PARTIAL` — the run finished with some calls graded and some failed.
+- `FAILED` — the run did not produce results.
+- `CANCELLED` — the run was cancelled before completion.
+
+On `FAILED` and `CANCELLED`, `summary` and `call_result` are `null`.
+
+The webhook only fires for eval runs Bland triggered automatically after the call. Manual runs you start from the dashboard or [`POST /v1/evals/runs`](/api-v1/post/evals-runs) do not send this webhook — fetch their results from the API instead.
+
+### Subscribing
+
+Attaching an evals workbench to a call is the subscription. You do not need to add `"evals"` to the call's `webhook_events` for the webhook to fire — the post-call delivery happens automatically as long as a webhook URL was configured on the call.
+
+If you also want explicit subscription parity with other event types (for example, on an inbound number), `"evals"` is accepted in `webhook_events`.
+
+### Payload
+
+```json
+{
+  "event_type": "evals",
+  "timestamp": "2026-06-15T18:24:11.482Z",
+  "call_id": "8a9620f6-d634-4b92-8d75-93280a894a71",
+  "eval_run_id": "f12c4a90-1ab2-4c8d-9e0f-6a7b8c9d0e1f",
+  "status": "COMPLETE",
+  "workbench_setup_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "workbench_setup_version_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "summary": {
+    "overall_pass": true,
+    "weighted_score_mean": 87.5
+  },
+  "call_result": {
+    "call_id": "8a9620f6-d634-4b92-8d75-93280a894a71",
+    "agent_verdicts": [
+      {
+        "agent_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "selected_level_key": "resolved",
+        "score_normalized_0_100": 100,
+        "is_target_match": true,
+        "confidence": 0.92,
+        "reasoning_md": "The caller's question was answered completely...",
+        "evidence": ["\"Yes, that's exactly what I needed, thank you.\""]
+      }
+    ]
+  }
+}
+```
+
+`summary` and `call_result` carry the same data [`GET /v1/evals/runs/{run_id}`](/api-v1/get/evals-runs-id) returns for that call — selected level, normalized score, target match, confidence, judge reasoning, and evidence quotes — so you can act on the verdict without a follow-up API call.
