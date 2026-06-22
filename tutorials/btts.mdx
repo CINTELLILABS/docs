@@ -1,78 +1,92 @@
 ---
-title: "BTTS v2 Voice Cloning"
-description: "How to create, configure, and optimize voice clones using BTTS v2."
+title: "BTTS Voice Cloning"
+description: "Create, configure, and optimize Bland TTS voice clones with V1, V2, or V3."
 ---
 
 ## Introduction
 
-BTTS v2 allows you to create custom voice clones from short audio samples. This guide covers how to create high-quality voice clones and format your text inputs for the best results.
+Bland TTS lets you clone a voice from short audio samples and use that voice anywhere a Bland agent speaks, on calls, on the [Speak](/api-v1/post/speak) endpoint, or over the [streaming WebSocket](/api-v1/post/speak-stream-input).
 
-To access the voice studio, go to:
+Three cloning engines are available:
+
+- **V3** (default), single 10-second sample, 17+ languages, highest fidelity. Backed by service `VOX_CPM`.
+- **V2**, exactly 1 WAV file, 17+ languages, production-stable previous generation.
+- **V1**, 1-5 WAV files (1-60 seconds each), English only, legacy.
+
+To create or manage voices in the dashboard:
 
 [https://app.bland.ai/dashboard/voices?tab=studio](https://app.bland.ai/dashboard/voices?tab=studio)
 
----
-
-## Creating a Voice Clone
-
-To create a new voice clone:
-
-1. Navigate to the **Voices Studio** tab
-2. Click **New Voice**
-3. Upload a 10–15 second audio sample
-
-### Sample Requirements
-
-For best results, your audio sample should have:
-
-* Clear enunciation
-* No background noise
-* A single speaker
-* At least 100ms of silence at the beginning and end (avoid cutting off mid-word)
-* Emotional variety (for more expressive output)
-
-> **Tip**: You can use [Audacity](https://www.audacityteam.org/) to edit and trim your clips. To download audio from YouTube videos, we recommend [yt-dlp](https://github.com/yt-dlp/yt-dlp).
+To clone programmatically, see [Clone Voice](/api-v1/post/clone).
 
 ---
 
-## Configuration Settings
+## Sample requirements
 
-BTTS v2 provides two configuration options to fine-tune your voice clone.
+For any engine, the source sample should have:
 
-### Speed vs. Smoothness
+- Clear enunciation
+- No background noise
+- A single speaker
+- At least 100 ms of silence at the start and end (avoid cutting off mid-word)
+- Emotional variety, for more expressive output
 
-This setting controls how many frames the system waits for before decoding the first audio frame.
+> **Tip**: [Audacity](https://www.audacityteam.org/) is an easy way to edit and trim clips. To pull audio from a YouTube video, [yt-dlp](https://github.com/yt-dlp/yt-dlp) works well.
 
-* **Lower values**: Faster initial audio output, but reduced quality in the first few hundred milliseconds
-* **Higher values**: Smoother output, but potentially slower response time
+### Per-engine constraints
 
-### Clone Consistency Boost
+| Engine | Files | Length per file | Languages |
+|---|---|---|---|
+| V3 (default) | 1 | ~10s ideal | 17+ |
+| V2 | 1 | ~10s ideal | 17+ |
+| V1 | 1-5 | 1-60s | English |
 
-This feature adds additional prompting to align output more closely with your original voice sample.
-
-> **Important Note**: Disable Clone Consistency Boost if your agent needs to code-switch or speak multiple languages not present in your sample. If you're experiencing broken or distorted outputs, try toggling this setting off.
+V1 voices accept additional samples after the initial clone via [Add Voice Sample](/api-v1/post/voices-samples) (up to 5 total). V2 and V3 voices are single-sample by design.
 
 ---
 
-## Text Formatting
+## Voice configuration
 
-### Spacing Requirements
+Each cloned voice has two adjustable defaults. Set them via the Studio UI or [Update Voice Config](/api-v1/patch/voices-id-config), or override per call via the [Speak](/api-v1/post/speak) body parameters.
 
-BTTS v2 processes text by splitting on spaces. Each word is generated individually, so proper spacing is essential for accurate output.
+### Consistency (V2 and V3)
 
-**Correct formatting:**
+`consistency` controls how many frames the decoder waits before emitting the first audio frame.
+
+- Lower values: faster first audio, but slightly reduced quality in the opening few hundred milliseconds.
+- Higher values: smoother output, slightly slower time-to-first-audio.
+
+Range: integer 1-32 (V2/V3), float 0.0-1.0 (V1, where higher = more consistent).
+
+### Boost / Expressiveness (V2 and V3 use `boost`; V1 uses `expressiveness`)
+
+Adds prompting to align the output more closely with the original voice sample.
+
+> **Important Note**: Disable `boost` if your agent needs to code-switch or speak multiple languages not present in your sample. If you see broken or distorted output, try toggling it off.
+
+V1 uses a continuous `expressiveness` (0.0-1.0) instead of the binary `boost` switch.
+
+---
+
+## Text formatting
+
+### Spacing
+
+V2 and V3 process text token by token, so spacing matters.
+
+**Correct:**
 
 ```text
 Hello <vocal burst> world.
 ```
 
-**Incorrect formatting:**
+**Incorrect:**
 
 ```text
 Hello<vocal burst>world.
 ```
 
-Hyphenated or concatenated words may cause reduced accuracy:
+Hyphenated or concatenated words can reduce accuracy:
 
 ```text
 # Avoid
@@ -84,30 +98,38 @@ concatenated word
 from the same array
 ```
 
-> **Note**: For Asian languages (Chinese, Japanese), the tokenizer handles character segmentation automatically—no manual spacing required.
+> **Note**: For Chinese and Japanese, the tokenizer handles character segmentation automatically. No manual spacing required.
+
+### Pause markers
+
+Insert `<|N|>` where `N` is a duration in seconds (0.1-10.0) to add a pause:
+
+```text
+Welcome to Bland. <|0.8|> Let's get started.
+```
 
 ---
 
-## Text Normalization
+## Text normalization
 
-The model automatically normalizes common text patterns before processing. You do not need to pre-format these inputs:
+The model automatically normalizes common patterns. You do not need to pre-format these:
 
-* **Emails**: `john@gmail.com` → `john @ gmail dot com`
-* **URLs**: `www.google.com` → `www dot google dot com`
-* **Smart quotes**: Converted to straight quotes
-* **Repeated punctuation**: `Hello!!!` → `Hello!`
-* **Missing spaces**: `End.Start` → `End. Start`
+- Emails: `john@gmail.com` becomes `john at gmail dot com`
+- URLs: `www.google.com` becomes `www dot google dot com`
+- Smart quotes: converted to straight quotes
+- Repeated punctuation: `Hello!!!` becomes `Hello!`
+- Missing spaces: `End.Start` becomes `End. Start`
 
 ---
 
-## Working with Numbers
+## Numbers
 
-For best results when generating numbers:
+For best results with numbers:
 
-* Keep number sequences to 6 characters or fewer
-* Format numbers as words when possible
-* Always end sentences containing numbers with a period
-* For long number strings, use pause tags to break up the generation
+- Keep sequences to roughly 6 characters or fewer
+- Format numbers as words when possible
+- End sentences containing numbers with a period
+- For long sequences, break them up with pause markers
 
 ```text
 # Recommended
@@ -117,28 +139,28 @@ One two three four five.
 One two three <|0.5|> four five six.
 ```
 
-> **Important Note**: If your sentence does not end with proper punctuation, the model may drop the last number.
+> **Important Note**: If a sentence does not end with proper punctuation, the model may drop the last number.
 
 ---
 
-## Using Punctuation
+## Punctuation
 
-Punctuation directly affects speech delivery in BTTS v2:
+Punctuation directly affects speech delivery:
 
-* **Ellipses (…)**: Adds pauses and weight
-* **CAPITALIZATION**: Increases emphasis
-* **Standard punctuation (. , !)**: Provides natural speech rhythm
-* **Dashes (—)**: Can add stutters or breaks
+- Ellipses (`…`): add pauses and weight
+- CAPITALIZATION: increases emphasis
+- Standard punctuation (`.`, `,`, `!`): natural speech rhythm
+- Dashes: can add stutters or breaks
 
 ---
 
-## Best Practices
+## Best practices
 
-* Choose a voice sample with emotional variety for more expressive output
-* Use natural speech patterns and proper punctuation
-* Avoid unusual formatting (excessive dashes or ellipses) for timing control
-* Always include proper spacing between words and tags
-* End sentences with appropriate punctuation, especially when numbers are involved
+- Pick a sample with emotional variety for more expressive output.
+- Use natural speech patterns and proper punctuation.
+- Avoid unusual formatting (excessive dashes or ellipses) for timing control. Use pause markers (`<|N|>`) instead.
+- Keep word spacing clean.
+- End sentences with appropriate punctuation, especially when numbers are involved.
 
 ---
 

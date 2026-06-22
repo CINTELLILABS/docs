@@ -1,0 +1,65 @@
+---
+title: "Rate Voice"
+api: "POST https://api.bland.ai/v1/voices/{id}/rate"
+description: "Give a public library voice a 1-5 star rating."
+---
+
+## Overview
+
+Records your rating (1-5) for a public voice in the Bland library. Ratings are aggregated and surfaced as `average_rating` and `total_ratings` on each voice. Each caller can have at most one active rating per voice, sending a new rating overwrites the previous one.
+
+This call is throttled to 20 ratings per minute per org.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice to rate.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="rating" type="integer" required>
+  Rating value, 1 to 5.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="total_ratings" type="number">
+  The voice's new total rating count.
+</ResponseField>
+
+<ResponseField name="average_rating" type="number">
+  The voice's new average rating.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "total_ratings": 8,
+  "average_rating": 4.875
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

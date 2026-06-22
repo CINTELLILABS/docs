@@ -1,0 +1,71 @@
+---
+title: "Delete Voice Samples"
+api: "DELETE https://api.bland.ai/v1/voices/{id}/samples"
+description: "Remove one or more training samples from a voice clone you own."
+---
+
+## Overview
+
+Removes the specified samples from a voice clone. The voice is retrained against the remaining samples. If you remove every sample from a voice it becomes unusable for synthesis; delete the voice itself via [Delete Voice](/api-v1/delete/voices-id) if that is your intent.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the parent voice.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="sample_ids" type="string[]" required>
+  Array of sample UUIDs to delete.
+
+  ```json
+  { "sample_ids": ["d15b199a-1b79-4664-9a9a-b149ee3b136a"] }
+  ```
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="samples" type="array">
+  The samples remaining on the voice after the deletion.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "samples": []
+}
+```
+
+```json Invalid Request
+{
+  "data": null,
+  "errors": [
+    { "error": "INVALID_REQUEST", "message": "Missing or invalid sample_ids array" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

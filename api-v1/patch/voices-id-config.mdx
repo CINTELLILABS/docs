@@ -1,0 +1,95 @@
+---
+title: "Update Voice Config"
+api: "PATCH https://api.bland.ai/v1/voices/{id}/config"
+description: "Update default synthesis settings on a voice you own."
+---
+
+## Overview
+
+Updates the default consistency and expressiveness settings on a voice clone. These defaults are applied when [Speak](/api-v1/post/speak) is called without per-request overrides.
+
+The accepted parameters depend on the voice's engine:
+
+- **BTTS V1** voices accept `consistency` (0.0-1.0 float) and `expressiveness` (0.0-1.0 float).
+- **BTTS V2 / V3** voices accept `consistency` (1-32 integer, lower is more consistent) and `boost` (0 or 1).
+
+Only voices owned by your org can be configured.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice to configure.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="consistency" type="number">
+  Default consistency for this voice. Float 0.0-1.0 for V1 voices; integer 1-32 for V2/V3 voices (lower is more consistent).
+</ParamField>
+
+<ParamField body="expressiveness" type="number">
+  Default expressiveness for V1 voices only. Float 0.0-1.0.
+</ParamField>
+
+<ParamField body="boost" type="integer">
+  Expressiveness boost for V2 and V3 voices only. `0` or `1`.
+</ParamField>
+
+---
+
+## Response
+
+Returns the full updated voice.
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable confirmation, for example `"Voice configuration updated successfully"`.
+</ResponseField>
+
+<ResponseField name="voice" type="object">
+  The updated voice. See [Get Voice](/api-v1/get/voices-id#response) for the full field list.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Voice configuration updated successfully",
+  "voice": {
+    "id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+    "name": "DocTestRename",
+    "description": null,
+    "public": false,
+    "ratings": 0,
+    "tags": ["Beige Clone V2", "male"],
+    "user_id": "fea2a74f-9bd7-4b5d-a52e-c3c1a3f58bb0",
+    "voice_id": "ff595c98-da38-4617-ada3-df42561a2379",
+    "service": "BTTS_V2",
+    "finetuned": false,
+    "consistency": 8,
+    "expressiveness": null,
+    "voice_meta": { "per_decode": 8 },
+    "is_creator_voice": false
+  }
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

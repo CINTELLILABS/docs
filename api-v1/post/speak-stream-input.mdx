@@ -1,0 +1,127 @@
+---
+title: "Stream Speech (WebSocket)"
+api: "WSS https://api.bland.ai/v1/speak/stream-input"
+description: "Open a bidirectional WebSocket to send text as it arrives and receive audio chunks back."
+---
+
+## Overview
+
+Opens a WebSocket session for incremental synthesis. The client streams text into the socket as it becomes available (LLM tokens, live transcription, etc.) and the server returns PCM/ULAW audio chunks as they are generated. Lowest possible latency for live agents and real-time pipelines.
+
+Use this when [Speak](/api-v1/post/speak) or [Stream Speech](/api-v1/post/speak-stream) are not low-latency enough because the source text is itself being produced incrementally.
+
+<Note>
+  Requires a Bland TTS voice (`BTTS`, `BTTS_V2`, or `BTTS_V3`).
+</Note>
+
+---
+
+## Connecting
+
+Open a WebSocket to `wss://api.bland.ai/v1/speak/stream-input`. Authentication is via one of:
+
+- The standard `authorization: <api_key>` header on the upgrade request.
+- A short-lived JWT minted by [Mint Stream Input Token](/api-v1/post/speak-stream-input-token), passed as the `token` query parameter. Use the JWT path for browser clients so you do not embed the long-lived API key in client-side code.
+
+---
+
+## Protocol
+
+Messages are JSON in both directions. After connecting, the client must send an `init` message before any `speak`.
+
+### Client → Server messages
+
+<ParamField body="init" type="object">
+  Sent once, immediately after connection. Configures the synthesis session.
+
+  - `type` (string, required), `"init"`.
+  - `voice_id` (string, required), UUID or curated voice name.
+  - `output_format` (string), default `"pcm_44100"`. Same enum as [Speak](/api-v1/post/speak).
+  - `consistency` (number), V1: 0-1; V2/V3: integer 0-64 (lower is more consistent).
+  - `expressiveness` (number), V1: 0-1 continuous; V2/V3: 0 or 1.
+  - `auto_flush` (boolean), default `true`. When true, the server auto-flushes the text buffer at sentence boundaries (`.`, `!`, `?`, `…`) or when the buffer hits `auto_flush_char_threshold` chars.
+  - `auto_flush_char_threshold` (integer), default `120`. Only meaningful when `auto_flush: true`.
+</ParamField>
+
+<ParamField body="speak" type="object">
+  Sent zero or more times after `ready`. Appends text to the synthesis buffer.
+
+  - `type` (string, required), `"speak"`.
+  - `text` (string, required), the text to append.
+  - `flush` (boolean), when `true`, force a flush after appending this text.
+</ParamField>
+
+<ParamField body="flush" type="object">
+  Sent when you want to force the server to synthesize whatever is currently buffered, without sending new text. Useful when `auto_flush: false`.
+
+  - `type` (string, required), `"flush"`.
+</ParamField>
+
+<ParamField body="close" type="object">
+  Sent to end the session cleanly. The server emits one final `done` message before closing.
+
+  - `type` (string, required), `"close"`.
+</ParamField>
+
+### Server → Client messages
+
+<ResponseField name="ready" type="object">
+  Sent once after the server validates `init`. Echoes back the resolved parameters so the client can confirm.
+
+  ```json
+  { "type": "ready", "session_id": "...", "output_format": "pcm_44100" }
+  ```
+</ResponseField>
+
+<ResponseField name="audio" type="object">
+  Streamed for every flush. `data` is base64-encoded PCM or u-law bytes with no WAV header. `is_final` is `true` on the last chunk of a given flush.
+
+  ```json
+  { "type": "audio", "data": "<base64>", "is_final": false }
+  ```
+</ResponseField>
+
+<ResponseField name="done" type="object">
+  Sent in response to a `close` (or when the server tears the session down). Includes billing.
+
+  ```json
+  {
+    "type": "done",
+    "session_id": "...",
+    "characters_billed": 142,
+    "cost_usd": 0.0028,
+    "latency_ms": 412
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="error" type="object">
+  Sent when the server cannot proceed. The client should close the socket.
+
+  `code` is one of: `AUTH_FAILED`, `USER_BANNED`, `ORG_DELETED`, `ORG_SUSPENDED`, `ORG_STRIPE_OVERDUE`, `RATE_LIMITED`, `INVALID_VOICE`, `INVALID_OUTPUT_FORMAT`, `INVALID_CONSISTENCY`, `INVALID_EXPRESSIVENESS`, `INVALID_THRESHOLD`, `SERVICE_NOT_SUPPORTED`, `INVALID_MESSAGE`, `INIT_REQUIRED`, `ALREADY_INITIALIZED`, `BUFFER_OVERFLOW`, `TEXT_TOO_LONG`, `SYNTHESIS_FAILED`, `IDLE_TIMEOUT`, `SLOW_CONSUMER`, `INTERNAL`.
+
+  ```json
+  { "type": "error", "code": "INVALID_VOICE", "message": "..." }
+  ```
+</ResponseField>
+
+---
+
+## Example session
+
+```text Client                          Server
+─────────                       ─────────
+{type:"init", voice_id:...}  →
+                             ←  {type:"ready", session_id:"...", output_format:"pcm_44100"}
+{type:"speak", text:"Hello"} →
+{type:"speak", text:" world."} →
+                             ←  {type:"audio", data:"<base64>", is_final:false}
+                             ←  {type:"audio", data:"<base64>", is_final:true}
+{type:"close"}              →
+                             ←  {type:"done", characters_billed:12, cost_usd:0.0002, latency_ms:380}
+                                <socket closes>
+```
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
