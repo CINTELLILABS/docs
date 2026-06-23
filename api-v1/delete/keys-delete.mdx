@@ -25,15 +25,19 @@ Note: this endpoint lives at `/keys/delete`, not `/v1/keys/delete`.
 ## Body Parameters
 
 <ParamField body="key" type="string" required>
-  The full API key string to revoke.
+  The 14-character key identifier to revoke. This is the **first 14 characters** of the API key string (for example `org_abcdef1234`), not the full key. Passing the full key returns `Invalid key`.
+
+  Key identifiers can be fetched from [List API Keys](/api-v1/post/keys-list), which returns the full `key` value; trim it to 14 characters before passing here.
 </ParamField>
 
 ---
 
 ## Response
 
-<ResponseField name="data" type="object">
-  Confirmation of the revocation.
+Returns `200 OK` with an empty payload on success.
+
+<ResponseField name="data" type="null">
+  Always `null` on success.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
@@ -43,7 +47,7 @@ Note: this endpoint lives at `/keys/delete`, not `/v1/keys/delete`.
 <ResponseExample>
 ```json Response
 {
-  "data": { "status": "success" },
+  "data": null,
   "errors": null
 }
 ```
@@ -53,6 +57,15 @@ Note: this endpoint lives at `/keys/delete`, not `/v1/keys/delete`.
   "data": null,
   "errors": [
     { "error": "API_KEY_DELETE_FAILURE", "message": "Missing key in request body" }
+  ]
+}
+```
+
+```json Invalid Key
+{
+  "data": null,
+  "errors": [
+    { "error": "API_KEY_DELETE_FAILURE", "message": "Failed to delete key: Invalid key" }
   ]
 }
 ```

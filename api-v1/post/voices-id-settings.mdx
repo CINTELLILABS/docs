@@ -46,33 +46,34 @@ At least one of the body fields must be provided.
 
 ## Response
 
-Returns the full updated voice.
+Echoes back the resolved settings on success. For V1 and V2 voices:
 
-<ResponseField name="status" type="string">
-  `success`.
+<ResponseField name="consistency" type="number" />
+<ResponseField name="expressiveness" type="number" />
+<ResponseField name="service" type="string">
+  The engine identifier of the voice.
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  Human-readable confirmation.
-</ResponseField>
+For V3 voices:
 
-<ResponseField name="voice" type="object">
-  The updated voice. See [Get Voice](/api-v1/get/voices-id#response) for the field list.
-</ResponseField>
+<ResponseField name="boost_language_consistency" type="boolean" />
+<ResponseField name="service" type="string" />
+
+To see the rest of the voice's fields after an update, call [Get Voice](/api-v1/get/voices-id).
 
 <ResponseExample>
-```json Response
+```json V2 Response
 {
-  "status": "success",
-  "message": "Voice settings updated successfully",
-  "voice": {
-    "id": "9a0b12e8-20e4-400e-bd2a-d67ffab0e38d",
-    "name": "MyClone",
-    "service": "BTTS_V2",
-    "consistency": 8,
-    "expressiveness": 1,
-    "voice_meta": { "boost": 1, "per_decode": 8, "max_words_to_add": 100 }
-  }
+  "consistency": 16,
+  "expressiveness": 0.8,
+  "service": "BTTS_V2"
+}
+```
+
+```json V3 Response
+{
+  "boost_language_consistency": true,
+  "service": "BTTS_V3"
 }
 ```
 
