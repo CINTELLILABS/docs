@@ -1,0 +1,63 @@
+---
+title: "Revoke API Key"
+api: "DELETE https://api.bland.ai/keys/delete"
+description: "Revoke an API key. The revocation is immediate."
+---
+
+## Overview
+
+Revokes the specified API key. Once revoked, the key can no longer authenticate any request.
+
+The caller must have permission to revoke the key (the key's owning user or an admin of the owning org).
+
+Note: this endpoint lives at `/keys/delete`, not `/v1/keys/delete`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. Cannot be the same key you are trying to revoke.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="key" type="string" required>
+  The full API key string to revoke.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="object">
+  Confirmation of the revocation.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": { "status": "success" },
+  "errors": null
+}
+```
+
+```json Missing Key
+{
+  "data": null,
+  "errors": [
+    { "error": "API_KEY_DELETE_FAILURE", "message": "Missing key in request body" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

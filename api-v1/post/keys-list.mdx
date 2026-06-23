@@ -1,0 +1,92 @@
+---
+title: "List API Keys"
+api: "POST https://api.bland.ai/keys/list"
+description: "List the API keys scoped to your user or to an org you have permission for."
+---
+
+## Overview
+
+Returns the API keys that exist under a given scope. Two scopes are supported:
+
+- `user`, lists keys owned by the calling user (across any org).
+- `org`, lists keys owned by a specific org. Requires `target_id` to identify the org.
+
+The full key values are returned in the response, treat them like passwords.
+
+Note: this endpoint lives at `/keys/list`, not `/v1/keys/list`. The router is mounted without the `/v1/` prefix.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. The caller's identity is resolved from this key and is used to gate access to the requested scope.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="type" type="string" required>
+  Scope to list. One of `user` or `org`.
+</ParamField>
+
+<ParamField body="target_id" type="string">
+  Required when `type` is `org`. UUID of the org whose keys you want to list. Must be an org you have permission to read keys for.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.keys" type="array">
+  Array of API keys.
+
+  <Expandable title="Key fields">
+    <ResponseField name="key" type="string">
+      The full API key value.
+    </ResponseField>
+    <ResponseField name="owner" type="string">
+      UUID of the user or org that owns the key.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Org Scope
+{
+  "data": {
+    "keys": [
+      { "key": "org_d27ace37439f486593c1bc6ffe5b3eed...", "owner": "34b047c7-a8ed-47da-9bc8-bf6062eb2cf2" }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Invalid Type
+{
+  "data": null,
+  "errors": [
+    { "error": "API_KEY_LIST_FAILURE", "message": "Invalid type in query params" }
+  ]
+}
+```
+
+```json Missing target_id
+{
+  "data": null,
+  "errors": [
+    { "error": "API_KEY_LIST_FAILURE", "message": "Missing target_id in payload body when type is org" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

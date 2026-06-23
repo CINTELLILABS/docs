@@ -1,0 +1,81 @@
+---
+title: "Create API Key"
+api: "POST https://api.bland.ai/keys/create"
+description: "Mint a new API key scoped to your user or to an org you administer."
+---
+
+## Overview
+
+Creates a new API key. Two scopes are supported:
+
+- `user`, mints a key owned by the calling user.
+- `org`, mints a key owned by an org you administer. Requires `target_id`.
+
+The full key is returned **once, in plaintext** in the response. It cannot be retrieved again afterwards. Store it immediately or you will have to mint another.
+
+Note: this endpoint lives at `/keys/create`, not `/v1/keys/create`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. The caller's identity is resolved from this key and is used to gate access to the requested scope.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="type" type="string" required>
+  Scope of the new key. One of `user` or `org`.
+</ParamField>
+
+<ParamField body="target_id" type="string">
+  Required when `type` is `org`. UUID of the org the new key should belong to.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.key" type="string">
+  The full API key value. Save this immediately, it is not retrievable later.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "key": "org_41df6a216b5f4e7c90a51e42721d782b..."
+  },
+  "errors": null
+}
+```
+
+```json Missing Type
+{
+  "data": null,
+  "errors": [
+    { "error": "API_KEY_CREATION_FAILURE", "message": "Missing type in request body" }
+  ]
+}
+```
+
+```json Missing target_id
+{
+  "data": null,
+  "errors": [
+    { "error": "API_KEY_CREATION_FAILURE", "message": "Missing target_id in request body when type is org" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

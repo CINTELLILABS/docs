@@ -1,0 +1,103 @@
+---
+title: "Update Voice Settings"
+api: "POST https://api.bland.ai/v1/voices/{id}/settings"
+description: "Update the consistency/expressiveness defaults on a voice you own."
+---
+
+## Overview
+
+Updates one or more synthesis defaults on a voice you own. Equivalent to [Update Voice Config](/api-v1/patch/voices-id-config), kept under both verbs and paths for backwards compatibility. New integrations should use this `POST /settings` form.
+
+At least one of the body fields must be provided.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="consistency" type="number">
+  Default consistency for V1 and V2 voices. V1: 0-1 float (higher is more consistent). V2: 0-64 integer (lower is more consistent). Reject values outside that range.
+</ParamField>
+
+<ParamField body="expressiveness" type="number">
+  Default expressiveness for V1 and V2 voices. 0-1 float.
+</ParamField>
+
+<ParamField body="boost_language_consistency" type="boolean">
+  Boost flag for V3 voices only. `true` adds language-consistency prompting at the cost of some flexibility for code-switching. Disable if your agent needs to speak languages outside the source sample.
+</ParamField>
+
+---
+
+## Response
+
+Returns the full updated voice.
+
+<ResponseField name="status" type="string">
+  `success`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable confirmation.
+</ResponseField>
+
+<ResponseField name="voice" type="object">
+  The updated voice. See [Get Voice](/api-v1/get/voices-id#response) for the field list.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Voice settings updated successfully",
+  "voice": {
+    "id": "9a0b12e8-20e4-400e-bd2a-d67ffab0e38d",
+    "name": "MyClone",
+    "service": "BTTS_V2",
+    "consistency": 8,
+    "expressiveness": 1,
+    "voice_meta": { "boost": 1, "per_decode": 8, "max_words_to_add": 100 }
+  }
+}
+```
+
+```json Nothing Provided
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "At least one of consistency, expressiveness or boost_language_consistency must be provided"
+    }
+  ]
+}
+```
+
+```json Out of Range
+{
+  "data": null,
+  "errors": [
+    { "error": "INVALID_CONSISTENCY", "message": "consistency must be a number between 0 and 64" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

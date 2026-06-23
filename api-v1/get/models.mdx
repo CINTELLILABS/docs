@@ -1,0 +1,88 @@
+---
+title: "List TTS Models"
+api: "GET https://api.bland.ai/v1/models"
+description: "List the available Bland TTS models and their capabilities."
+---
+
+## Overview
+
+Returns the Bland TTS models currently available for synthesis and cloning, with each model's supported sample rates, language list, and clone eligibility.
+
+Use this endpoint to render model pickers, pre-validate a request before calling [Speak](/api-v1/post/speak), or check which engines support cloning before calling [Clone Voice](/api-v1/post/clone).
+
+Results are cached for up to 5 minutes.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="models" type="array">
+  Array of available models.
+
+  <Expandable title="Model fields">
+    <ResponseField name="model_id" type="string">
+      Engine identifier. Use this to map a voice's `service` field back to its model.
+    </ResponseField>
+    <ResponseField name="display_name" type="string">
+      Human-readable name suitable for UI (for example `V1`, `V2`).
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Short description of the model's positioning.
+    </ResponseField>
+    <ResponseField name="sample_rates" type="number[]">
+      Supported audio sample rates in Hz. Pass an `output_format` to [Speak](/api-v1/post/speak) that matches one of these.
+    </ResponseField>
+    <ResponseField name="max_characters" type="number">
+      Maximum characters per synthesis request supported by the model.
+    </ResponseField>
+    <ResponseField name="can_clone" type="boolean">
+      Whether [Clone Voice](/api-v1/post/clone) can produce voices on this model.
+    </ResponseField>
+    <ResponseField name="languages" type="string[]">
+      Language codes supported for synthesis.
+    </ResponseField>
+    <ResponseField name="is_recommended" type="boolean">
+      `true` for the model Bland currently recommends for new integrations.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "models": [
+    {
+      "model_id": "BTTS_V2",
+      "display_name": "V2",
+      "description": "Current-generation TTS with multilingual output and instant single-sample cloning.",
+      "sample_rates": [8000, 16000, 24000, 44100],
+      "max_characters": 1000,
+      "can_clone": true,
+      "languages": ["en", "de", "es", "fr", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "tr", "zh", "ar", "id", "sv"],
+      "is_recommended": true
+    },
+    {
+      "model_id": "BTTS",
+      "display_name": "V1",
+      "description": "Legacy English-only TTS. Retained for backward compatibility, prefer V2 for new integrations.",
+      "sample_rates": [8000, 16000, 24000, 44100],
+      "max_characters": 1000,
+      "can_clone": true,
+      "languages": ["en"]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
