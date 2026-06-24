@@ -4,6 +4,12 @@ api: "POST https://api.bland.ai/v1/personas"
 description: "Create a new persona."
 ---
 
+Personas are reusable agent configurations for **inbound phone numbers** and **SMS**. Once created, attach a persona to one or more numbers with [Attach Phone Numbers to Persona](/api-v1/post/personas-id-inbound-attach). For embedded **browser** voice agents, use [Create a Web Agent](/api-v1/post/agents) instead. See [Personas vs. Web Agents](/tutorials/personas#personas-vs-web-agents) for the full comparison.
+
+<Info>
+  **Draft / production split.** Creating a persona writes the initial configuration to both `current_production_version` and `current_draft_version` and auto-promotes it. Any later [Update Persona](/api-v1/patch/personas-id) call writes only to the draft; the draft must be promoted with [Promote Version](/api-v1/post/personas-id-versions-promote) before it affects live calls.
+</Info>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -57,6 +63,9 @@ description: "Create a new persona."
     <ParamField body="interruption_threshold" type="number">
       Interruption sensitivity threshold.
     </ParamField>
+    <ParamField body="first_sentence" type="string">
+      Phrase the agent says first instead of generating a greeting on the fly. Must be under 200 characters.
+    </ParamField>
   </Expandable>
 </ParamField>
 
@@ -95,8 +104,49 @@ description: "Create a new persona."
 </ParamField>
 
 <ParamField body="kb_ids" type="array">
-  Array of knowledge base IDs to connect to the persona.
+  Array of knowledge base UUIDs to attach to the persona. The agent retrieves from these knowledge bases on every call routed through this persona, on both voice and SMS channels.
+
+  IDs come from [Upload Text](/api-v1/post/knowledge-learn-text), [Upload File](/api-v1/post/knowledge-learn-file), or [Crawl Web](/api-v1/post/knowledge-learn-web). Use the `data.id` returned by those endpoints. The relationship is many-to-many: one knowledge base can be referenced from any number of personas.
+
+  Legacy `KB-` prefixed vector store IDs are no longer issued. Existing `KB-` IDs still resolve for backward compatibility, but new knowledge bases use UUIDs.
 </ParamField>
+
+### Request Example
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v1/personas \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "name": "Support persona",
+    "personality_prompt": "You are a helpful support agent for Acme Corp. Be concise and friendly.",
+    "call_config": {
+      "voice": "june",
+      "first_sentence": "Hi, this is Acme support. How can I help?",
+      "interruption_threshold": 100
+    },
+    "kb_ids": [
+      "389abfee-3a07-4dfb-be71-91c9c3705704"
+    ]
+  }'
+```
+
+```json Request Body
+{
+  "name": "Support persona",
+  "personality_prompt": "You are a helpful support agent for Acme Corp. Be concise and friendly.",
+  "call_config": {
+    "voice": "june",
+    "first_sentence": "Hi, this is Acme support. How can I help?",
+    "interruption_threshold": 100
+  },
+  "kb_ids": [
+    "389abfee-3a07-4dfb-be71-91c9c3705704"
+  ]
+}
+```
+</RequestExample>
 
 ### Response
 
