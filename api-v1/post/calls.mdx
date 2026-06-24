@@ -327,6 +327,23 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 </ParamField>
 
+<ParamField body="transfer_target_type" type="string" default="phone">
+  Specifies how the transfer destination should be treated. Accepts `"phone"` or `"did"`.
+
+  - `"phone"` (default) — The transfer destination is a standard PSTN phone number and is validated as E.164.
+  - `"did"` — The transfer destination is a free-form SIP/DID target (such as a DID, extension, or `sip:user@host` URI) routed over your organization's [SIP trunk](/enterprise-features/SIP-integration). E.164 validation and geo checks are skipped.
+
+  Use `"did"` when transferring to a SIP destination that is not a standard phone number.
+</ParamField>
+
+<ParamField body="enable_sip_refer" type="boolean" default="false">
+  For inbound SIP calls performing a cold transfer, hand the call off using SIP REFER instead of bridging a new dial leg. Only applies to SIP-based calls.
+</ParamField>
+
+<ParamField body="transfer_extension" type="string">
+  An optional extension that is dialed after the transfer connects. Useful when the destination requires an extension (for example, an IVR option or a direct extension on a PBX).
+</ParamField>
+
 <ParamField body="max_duration" default="30" type="integer">
   When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
 
