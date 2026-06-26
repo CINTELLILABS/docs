@@ -1,35 +1,73 @@
 ---
-title: "Delete a Voice" 
+title: "Delete Voice"
 api: "DELETE https://api.bland.ai/v1/voices/{id}"
-description: "Delete an existing cloned voice."
+description: "Permanently delete a voice you own."
 ---
 
-### Headers
+## Overview
+
+Soft-deletes a voice from your library. The voice's `deleted_at` column is stamped and it stops appearing in [List Voices](/api-v1/get/voices) and synthesis flows.
+
+Only voices owned by your org can be deleted; curated default voices, voices in the public library you have not added, and voices owned by other orgs return `400 ERROR_DELETING_VOICE`.
+
+---
+
+## Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
 
-### Path Parameters
+---
+
+## Path Parameters
 
 <ParamField path="id" type="string" required>
-    The `id` of the voice to delete.
+  UUID of the voice to delete.
 </ParamField>
 
+---
 
-### Response
+## Response
 
-<ResponseField name="voice_id" type="integer">
-  The unique identifier of the deleted voice.
+<ResponseField name="data" type="object">
+  Confirmation that the voice was deleted.
+
+  <Expandable title="Fields">
+    <ResponseField name="status" type="string">
+      `success` on success.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Human-readable confirmation, for example `"Voice deleted successfully"`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
-```json
+```json Response
 {
-  "voice_id": 12345
+  "data": {
+    "status": "success",
+    "message": "Voice deleted successfully"
+  },
+  "errors": null
+}
+```
+
+```json Error Deleting Voice
+{
+  "data": null,
+  "errors": [
+    { "error": "ERROR_DELETING_VOICE", "message": "Error deleting voice" }
+  ]
 }
 ```
 </ResponseExample>
+
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

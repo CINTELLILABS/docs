@@ -1,0 +1,110 @@
+---
+title: "Stream Speech"
+api: "POST https://api.bland.ai/v1/speak/stream"
+description: "Generate speech audio with chunked transfer for the lowest possible time-to-first-byte."
+---
+
+## Overview
+
+Streams synthesized audio to the client as it is generated, using `Transfer-Encoding: chunked`. Functionally equivalent to [Speak](/api-v1/post/speak) with `stream: true`, but mounted as its own canonical endpoint for parity with our internal services and to avoid prefix conflicts with the non-streaming handler.
+
+Use this endpoint when you care about time-to-first-byte (live preview, voice assistants, IVRs). Use [Speak](/api-v1/post/speak) when you want to buffer the full audio before delivering it.
+
+<Note>
+  Requires a Bland TTS voice (`BTTS`, `BTTS_V2`, or `BTTS_V3`). Other voice services are not supported on this endpoint.
+</Note>
+
+<Note>
+  Every generation is automatically stored and retrievable via [List TTS Generations](/api-v1/get/speak-samples) and [Get TTS Generation](/api-v1/get/speak-samples-id), the same as the non-streaming endpoint.
+</Note>
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="text" type="string" required>
+  The text to synthesize. Maximum 5,000 characters per request. Supports pause markers in the form `<|N|>` (0.1-10.0 seconds).
+</ParamField>
+
+<ParamField body="voice_id" type="string" required>
+  ID of the Bland TTS voice to use. Pass either the voice UUID from [List Voices](/api-v1/get/voices) or a curated voice name.
+</ParamField>
+
+<ParamField body="output_format" type="string" default="pcm_44100">
+  Audio container/sample rate.
+
+  - `pcm_8000`, `pcm_16000`, `pcm_24000`, `pcm_44100`, `ulaw_8000`
+</ParamField>
+
+<ParamField body="language" type="string">
+  Language code. Defaults to the voice's primary language.
+</ParamField>
+
+<ParamField body="consistency" type="number">
+  V1: float 0.0-1.0 (higher = more consistent). V2/V3: integer 1-32 (lower = more consistent).
+</ParamField>
+
+<ParamField body="expressiveness" type="number">
+  V1 only. Float 0.0-1.0.
+</ParamField>
+
+<ParamField body="boost" type="integer">
+  V2/V3 only. `0` or `1`.
+</ParamField>
+
+---
+
+## Streaming response format
+
+The response is a single WAV file delivered in chunks:
+
+1. **First 44 bytes**, a standard WAV header with **placeholder sizes**: bytes 4-7 (RIFF chunk size) and 40-43 (data chunk size) are both filled with `0xFFFFFFFF` because the final length is not yet known.
+2. **Subsequent chunks**, raw PCM16 audio data, written as it is synthesized.
+3. **After the stream closes**, the client patches the WAV header in place: bytes 4-7 become the total file size minus 8, bytes 40-43 become the total data chunk size. Most decoders ignore the placeholder size and play the file fine without the patch, but tools that strictly validate the header will need it.
+
+`Content-Type` is `audio/x-wav`. No `Content-Length` header is sent.
+
+<ResponseField name="x-latency" type="string">
+  Time in milliseconds from request to first audio byte.
+</ResponseField>
+
+<ResponseField name="x-cost" type="string">
+  Cost in USD for the synthesis.
+</ResponseField>
+
+<ResponseField name="Transfer-Encoding" type="string">
+  Always `chunked`.
+</ResponseField>
+
+<ResponseExample>
+```http Response
+HTTP/1.1 200 OK
+Content-Type: audio/x-wav
+Transfer-Encoding: chunked
+x-latency: 396
+x-cost: 0.001
+
+<chunked WAV with placeholder header sizes followed by PCM16 data>
+```
+
+```json Service Not Supported
+{
+  "data": null,
+  "errors": [
+    { "error": "Service Not Supported", "message": "This endpoint only supports Bland's Beige Voices" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

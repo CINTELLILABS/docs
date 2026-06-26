@@ -1,0 +1,57 @@
+---
+title: "Mint Stream Input Token"
+api: "POST https://api.bland.ai/v1/speak/stream-input/token"
+description: "Mint a short-lived JWT for browser clients connecting to the streaming WebSocket."
+---
+
+## Overview
+
+Mints a short-lived JWT scoped to your account that can be passed as the `token` query parameter when opening [Stream Speech (WebSocket)](/api-v1/post/speak-stream-input). Use this from your backend so browser clients never see your long-lived API key.
+
+Tokens are valid for 5 minutes and can only authorize a WebSocket session against the same org that minted them.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+This endpoint takes no body. POST an empty body or `{}`.
+
+---
+
+## Response
+
+<ResponseField name="data.token" type="string">
+  JWT to pass as `?token=<token>` on the WebSocket upgrade URL.
+</ResponseField>
+
+<ResponseField name="data.expires_in_seconds" type="number">
+  Lifetime of the token. Currently `300` (5 minutes).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expires_in_seconds": 300
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
