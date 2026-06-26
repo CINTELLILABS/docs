@@ -1,0 +1,53 @@
+---
+title: "Knowledge base retrieval settings"
+description: "Tune retrieval on CSV knowledge bases by marking columns as Boosted or Ignored from the dashboard."
+---
+
+## Overview
+
+Retrieval settings let you tune how a CSV knowledge base is searched at runtime. For each column in your CSV, you can mark it as **Boosted** (used to anchor retrieval against the user's query) or **Ignored** (dropped before indexing). Use this when some columns in your CSV are strong matching signals (like product names, SKUs, or topics) and others are noisy or unrelated to what users ask about.
+
+This feature is available on CSV knowledge base sources from the dashboard.
+
+## When to use it
+
+Reach for retrieval settings when:
+
+- A CSV column contains the **values users actually ask about** (product name, customer name, ticket ID, category). Mark it **Boosted** so retrieval ranks rows matching that column higher.
+- A CSV column adds noise that hurts relevance (internal IDs, timestamps, formatting columns, free-form notes that aren't useful for matching). Mark it **Ignored** to keep it out of the indexed body.
+- The default behavior, where every column is treated equally, is returning the wrong rows for your queries.
+
+A column can be Boosted or Ignored, but not both at once.
+
+## Configure retrieval settings
+
+<Steps>
+  <Step title="Open the knowledge base">
+    Go to **Knowledge Bases** in the [Bland dashboard](https://app.bland.ai) and open a CSV knowledge base.
+  </Step>
+  <Step title="Open Retrieval Settings">
+    Click **Retrieval Settings** in the toolbar, next to **Replace File**. The button only appears for CSV sources.
+  </Step>
+  <Step title="Mark columns as Boosted or Ignored">
+    For each column header from your CSV, toggle **Boosted** or **Ignored**. Leave a column unmarked to keep it in the indexed body with normal weighting.
+  </Step>
+  <Step title="(Optional) Use Suggest">
+    Click **Suggest** to have Bland propose a starting configuration based on your column headers and sample rows. The suggestion includes a short explanation of why each column was picked. You can accept the picks as-is or edit them before saving.
+  </Step>
+  <Step title="Save">
+    Click **Save** to persist the configuration.
+  </Step>
+  <Step title="Run Replace File to apply">
+    Saving the configuration does **not** automatically reindex your data. To apply the new settings, click **Replace File** and upload the same (or updated) CSV. Indexing runs against the new settings and your knowledge base reflects them once processing finishes.
+  </Step>
+</Steps>
+
+<Info>
+  Closing the modal without saving discards any pending changes. Reopening the modal reloads the last saved configuration.
+</Info>
+
+## Tips
+
+- Start with one or two strong **Boosted** columns rather than boosting many at once. Over-boosting can crowd out useful context from other columns.
+- Use **Ignored** for columns that are constant, formatting-only, or contain values users never reference (like row numbers or internal flags).
+- After applying new settings with Replace File, test a handful of representative queries in the **Testing** tab to confirm retrieval improved before connecting the knowledge base to production agents.
