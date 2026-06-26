@@ -1,108 +1,121 @@
 ---
 title: "List Voices"
 api: "GET https://api.bland.ai/v1/voices"
-description: "Retrieves all available voices for your account."
+description: "List all voices available to your account."
 ---
 
-### Headers
+## Overview
+
+Returns every voice your account can use: Bland's curated default voices, voices you have cloned, voices you have added to your library from the public catalog, and voices owned by your org.
+
+For just the publicly-shared library, use [List Shared Voices](/api-v1/get/voices-shared) instead.
+
+---
+
+## Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
 
-### Response
+---
 
-<ResponseField type="array" name="voices">
-    Contains a list of the voices available for your account.
+## Response
 
-    <ResponseField type="string" name="voices[].id">
-        The unique identifier for the voice.
+<ResponseField name="voices" type="array">
+  Array of voices.
+
+  <Expandable title="Voice fields">
+    <ResponseField name="id" type="string">
+      UUID of the voice. Pass this as `voice_id` to [Speak](/api-v1/post/speak) or any voice management endpoint.
     </ResponseField>
-
-    <ResponseField type="string" name="voices[].name">
-        The name of the voice. This value can also be used in the `voice` parameter when sending calls.
+    <ResponseField name="name" type="string">
+      Display name. For curated default voices this can also be used in the `voice` field when sending calls.
     </ResponseField>
-
-    <ResponseField type="string" name="voices[].description">
-        A brief description of the voice.
+    <ResponseField name="description" type="string | null">
+      Short human-readable description of the voice.
     </ResponseField>
-
-    <ResponseField type="boolean" name="voices[].public">
-        Indicates whether the voice is publicly available or specific to your account.
+    <ResponseField name="public" type="boolean">
+      `true` for shared library voices and Bland curated voices, `false` for voices private to your org.
     </ResponseField>
-
-    <ResponseField type="array" name="voices[].tags">
-        A list of tags that describe the voice. We recommend "Bland Curated" voices for the best quality over the phone.
+    <ResponseField name="tags" type="string[]">
+      Labels describing the voice (language, style, source). Bland's recommended curated voices carry the `"Bland Curated"` tag.
     </ResponseField>
-
-    <ResponseField type="number" name="voices[].total_ratings">
-        The number of ratings the voice has received.
+    <ResponseField name="user_id" type="string | null">
+      Owner UUID. `null` for curated default voices.
     </ResponseField>
-
-    <ResponseField type="number" name="voices[].average_rating">
-        The average rating of the voice, out of 5.
+    <ResponseField name="voice_id" type="string">
+      Underlying model identifier. Format varies by engine; treat as opaque.
     </ResponseField>
-
-    Note: Ratings are under development at this time and may display incomplete/inaccurate data.
+    <ResponseField name="service" type="string">
+      Engine identifier. One of `BTTS`, `BTTS_V2`, `BTTS_V3`, or `LEGACY`.
+    </ResponseField>
+    <ResponseField name="finetuned" type="boolean">
+      `true` if the voice has been fine-tuned past the base clone.
+    </ResponseField>
+    <ResponseField name="is_creator_voice" type="boolean">
+      `true` for voices in the Bland creator program. Creator voices may carry a per-character fee in addition to synthesis cost.
+    </ResponseField>
+    <ResponseField name="ratings" type="number">
+      Total number of ratings the voice has received.
+    </ResponseField>
+    <ResponseField name="total_ratings" type="number">
+      Alias of `ratings` returned for backwards compatibility.
+    </ResponseField>
+    <ResponseField name="average_rating" type="number">
+      Average rating, 0-5.
+    </ResponseField>
+    <ResponseField name="my_rating" type="number | null">
+      The calling user's rating for this voice, if any. `null` when the caller has not rated it. Submit via [Rate Voice](/api-v1/post/voices-id-rate).
+    </ResponseField>
+    <ResponseField name="creator_display_name" type="string | null">
+      Creator name for voices in the creator program. `null` otherwise.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json Response
 {
-    "voices": [
-        {
-            "id": "2f9fdbc7-4bf2-4792-8a18-21ce3c93978f",
-            "name": "maya",
-            "description": "Young American Female",
-            "public": true,
-            "tags": [
-                "english",
-                "soft",
-                "Bland Curated"
-            ]
-        },
-        {
-            "id": "37b3f1c8-a01e-4d70-b251-294733f08371",
-            "name": "ryan",
-            "description": "Professional American Male",
-            "public": true,
-            "tags": [
-                "english",
-                "Bland Curated"
-            ]
-        },
-        {
-            "id": "90295ec4-f0fe-4783-ab33-8b997ddc3ae4",
-            "name": "mason",
-            "description": "American Male",
-            "public": true,
-            "tags": [
-                "english",
-                "Bland Curated"
-            ]
-        },
-        {
-            "id": "bbeabae6-ec8d-444f-92ad-c8e620d3de8d",
-            "name": "tina",
-            "description": "Gentle American Female",
-            "public": true,
-            "tags": [
-                "english",
-                "gentle"
-            ]
-        },
-        //...
-    ]
+  "voices": [
+    {
+      "id": "d4610ec1-933d-44c9-a05f-53df2437808d",
+      "name": "maya",
+      "description": "Young American Female",
+      "public": true,
+      "tags": ["english", "soft", "Bland Curated"],
+      "user_id": null,
+      "voice_id": "5134ee24-7d14-49a4-8aff-2215d295b6cc",
+      "service": "BTTS_V2",
+      "finetuned": false,
+      "is_creator_voice": false,
+      "ratings": 1234,
+      "total_ratings": 1234,
+      "average_rating": 4.6,
+      "my_rating": null,
+      "creator_display_name": null
+    },
+    {
+      "id": "5f29c646-1881-4882-8d8c-8616a2d5ce9c",
+      "name": "MyClone",
+      "description": null,
+      "public": false,
+      "tags": ["Beige Clone V3", "cloned", "female"],
+      "user_id": "ffcf63aa-6298-471f-91ad-5d2653812042",
+      "voice_id": "c18a1cd5-91ef-4b06-841a-e58b8b487e8c",
+      "service": "BTTS_V3",
+      "finetuned": false,
+      "is_creator_voice": false,
+      "ratings": 0,
+      "total_ratings": 0,
+      "average_rating": 0,
+      "my_rating": null,
+      "creator_display_name": null
+    }
+  ]
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
 
 ---
 

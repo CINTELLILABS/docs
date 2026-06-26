@@ -9,11 +9,10 @@ contentType: "multipart/form-data"
 
 Creates a Bland TTS voice clone from one or more audio samples. Sent as `multipart/form-data`. The new voice is private to your org and immediately usable with [Speak](/api-v1/post/speak).
 
-Three cloning engines are available, selectable per request:
+Two cloning engines are available, selectable per request:
 
 - **BTTS V3** (default), single 10-second sample, 17+ languages, highest fidelity. Returned `service: "BTTS_V3"`.
 - **BTTS V2**, exactly 1 WAV file, 17+ languages. Returned `service: "BTTS_V2"`.
-- **BTTS V1** (legacy), 1-5 WAV files (1-60 seconds each), English only. Returned `service: "BTTS"`. V1 is kept for backwards compatibility; new clones should use V3.
 
 ---
 
@@ -51,10 +50,6 @@ Three cloning engines are available, selectable per request:
   Use the V2 engine instead of V3. Pass `"true"` as a multipart string.
 </ParamField>
 
-<ParamField body="isBTTS" type="boolean">
-  Use the V1 (legacy) engine instead of V3. Pass `"true"` as a multipart string.
-</ParamField>
-
 ---
 
 ## Engine constraints
@@ -73,13 +68,6 @@ Each engine validates `audio_samples` differently. Mismatched files will return 
   - Roughly 10 seconds is ideal.
   - Max 10 MB.
   - 17+ languages supported.
-</Accordion>
-
-<Accordion title="V1 (isBTTS=true)">
-  - 1 to 5 WAV files.
-  - Each file 1-60 seconds, max 10 MB.
-  - 25 MB total per request.
-  - English only.
 </Accordion>
 
 ---
@@ -135,11 +123,7 @@ Returns `200 OK` with the new voice on success.
 
 ---
 
-## Adding more samples later
-
-After the clone is created, V1 voices accept additional training samples via [Add Voice Sample](/api-v1/post/voices-samples) (up to 5 total). V2 and V3 voices are single-sample by design.
-
-Use [List Voice Samples](/api-v1/get/voices-id-samples) to inspect the samples currently attached to a voice.
+V2 and V3 voices are single-sample by design. Use [List Voice Samples](/api-v1/get/voices-id-samples) to inspect the source sample attached to a voice.
 
 ---
 
