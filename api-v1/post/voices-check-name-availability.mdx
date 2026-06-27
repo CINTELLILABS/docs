@@ -1,0 +1,65 @@
+---
+title: "Check Voice Name Availability"
+api: "POST https://api.bland.ai/v1/voices/check_name_availability"
+description: "Check whether a voice name is available before cloning."
+---
+
+## Overview
+
+Returns whether a proposed voice name is available in your org's library. Use this to validate input before calling [Clone Voice](/api-v1/post/clone), which rejects the request outright if the name is taken.
+
+Names are scoped per org and case-insensitive.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="name" type="string" required>
+  Voice name to check. 1-30 characters.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="result" type="boolean">
+  `true` if the name is available, `false` if it is already in use.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable confirmation.
+</ResponseField>
+
+<ResponseExample>
+```json Available
+{
+  "status": "success",
+  "result": true,
+  "message": "Voice name \"DocTestVoice\" is available"
+}
+```
+
+```json Taken
+{
+  "status": "success",
+  "result": false,
+  "message": "Voice name \"DocTestVoice\" is already in use"
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

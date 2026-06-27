@@ -1,0 +1,83 @@
+---
+title: "Add Library Voice"
+api: "POST https://api.bland.ai/v1/voices/library/add/{id}"
+description: "Add a shared library voice to your org so it can be used in your calls and TTS."
+---
+
+## Overview
+
+Adds a voice from the public Bland voice library to your org's voice list. Once added, the voice can be used like any other voice you own: passed to [Speak](/api-v1/post/speak), configured via [Update Voice Config](/api-v1/patch/voices-id-config), renamed, and so on.
+
+The original library voice is unchanged. The endpoint returns a new voice record that lives in your org and points at the same underlying model.
+
+This call is throttled to 30 add operations per minute per org.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the shared voice to add.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable confirmation.
+</ResponseField>
+
+<ResponseField name="voice" type="object">
+  The newly added voice in your org. See [Get Voice](/api-v1/get/voices-id#response) for the field list. The `id` is unique to your org, the `voice_id` field points at the underlying model.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Voice is in your library",
+  "voice": {
+    "id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+    "name": "StephenD_v1 (published)",
+    "description": null,
+    "public": false,
+    "ratings": 0,
+    "tags": ["Beige Clone V2", "male"],
+    "user_id": "fea2a74f-9bd7-4b5d-a52e-c3c1a3f58bb0",
+    "voice_id": "ff595c98-da38-4617-ada3-df42561a2379",
+    "service": "BTTS_V2",
+    "finetuned": false,
+    "consistency": null,
+    "expressiveness": null,
+    "voice_meta": null,
+    "is_creator_voice": false
+  }
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    { "error": "Rate Limit Exceeded", "message": "Too many library adds, please try again later." }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
