@@ -1,0 +1,89 @@
+---
+title: "Simulate Scenario"
+api: "POST https://api.bland.ai/v1/agent-testing/scenarios/{id}/simulate"
+description: "Generate agent-to-agent simulated conversations for a scenario and score each one with the eval agents attached to the scenario. Returns the simulation run identifiers once scoring is complete."
+---
+
+Use this endpoint to evaluate an agent against a scenario without placing real calls. Bland generates the requested number of simulated conversations between a tester persona and your agent, then scores every conversation with each eval agent attached to the scenario.
+
+Attach the eval agents you want to use for scoring first with [Attach Eval Agent to Scenario](/api-v1/post/agent-testing-scenarios-id-eval-agents).
+
+<Note>
+  This endpoint runs synchronously and only returns after every generated conversation has been scored. For large `simulations_count` values, expect the request to take a while to complete.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID to simulate.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="simulations_count" type="integer">
+  Number of conversations to generate and score. Must be a positive integer. Defaults to `5` and is capped at `50`.
+</ParamField>
+
+<ParamField body="version_number" type="integer">
+  Pathway version to simulate against. Defaults to the current production version.
+</ParamField>
+
+### Response
+
+<ResponseField name="simulation_set_id" type="string">
+  Identifier for the generated simulation set. Use this value as the `id` for [Get Simulation Run Results](/api-v1/get/agent-testing-simulation-runs-id-results).
+</ResponseField>
+
+<ResponseField name="eval_run_id" type="string">
+  Identifier of the eval run that scored the generated conversations.
+</ResponseField>
+
+<ResponseField name="scenario_id" type="string">
+  The scenario that was simulated.
+</ResponseField>
+
+<ResponseField name="run_count" type="integer">
+  Number of conversations that were generated.
+</ResponseField>
+
+<ResponseField name="snapshot_count" type="integer">
+  Number of eval agent snapshots that scored each conversation. Equal to the number of eval agents attached to the scenario at the time of the request.
+</ResponseField>
+
+<ResponseField name="atom_count" type="integer">
+  Total number of scored items (`run_count` × `snapshot_count`).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v1/agent-testing/scenarios/a1b2c3d4-5678-9abc-def0-1234567890ab/simulate \
+  -H "authorization: $BLAND_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "simulations_count": 10
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "simulation_set_id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
+  "eval_run_id": "e5f6a7b8-9abc-def0-1234-567890abcdef",
+  "scenario_id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+  "run_count": 10,
+  "snapshot_count": 2,
+  "atom_count": 20
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
