@@ -179,6 +179,61 @@ With memory enabled on each, the same contact can have one conversation about bo
 
 ---
 
+## Sync contact memory to HubSpot or Salesforce
+
+Once memory is on, you can push each contact's identity, rolling summary, entities (orders, tickets, appointments), and deals or opportunities to a connected CRM. Sync happens automatically after every call or message, and you can also trigger it manually or backfill everything Bland already knows.
+
+Sync is per contact, so all agents and personas that talk to the same person contribute to a single CRM record.
+
+### Connect a CRM
+
+1. Open the **Contacts** page in the Bland dashboard.
+2. Click **Connect CRM**.
+3. Choose **HubSpot** or **Salesforce** and complete the OAuth flow in the popup.
+4. When the connection finishes, Bland shows a preview of what will sync (contacts, notes, entities, deals) and turns on automatic sync.
+
+No tool setup is required — the OAuth connection is all you need.
+
+### Backfill existing contacts
+
+After connecting, click **Sync all** in the connect modal to push everything Bland has already captured. The backfill runs in the background and updates each contact's sync status as it progresses. You can close the modal and check back on the Contacts page.
+
+You can also trigger a backfill programmatically:
+
+```bash
+curl -X POST https://api.bland.ai/v1/contacts/crm-sync/backfill \
+  -H "authorization: YOUR_API_KEY"
+```
+
+### Sync a single contact
+
+Open a contact in the Contacts drawer and click **Sync now** to push the latest memory to every connected CRM immediately. Use this after editing a contact or when you want to confirm the CRM record is current.
+
+The equivalent API call:
+
+```bash
+curl -X POST https://api.bland.ai/v1/contacts/{contact_id}/crm-sync \
+  -H "authorization: YOUR_API_KEY"
+```
+
+### Sync status
+
+Each contact on the Contacts page shows an inline CRM sync badge:
+
+- **Synced** — everything Bland tried to push landed in the CRM.
+- **Partial** — some data pushed, some failed. Open the contact drawer for per-type details.
+- **Failed** — nothing pushed on the last attempt. Check that the CRM connection is still healthy.
+- **Pending** — nothing to push yet, for example a brand-new contact with no memory.
+
+Fetch the same information for a contact via the API:
+
+```bash
+curl https://api.bland.ai/v1/contacts/{contact_id}/crm-sync \
+  -H "authorization: YOUR_API_KEY"
+```
+
+---
+
 ## API and programmatic access
 
 For custom flows or reading and writing memory programmatically:
