@@ -158,3 +158,29 @@ The Evals API is rooted at `/v1/evals`. A typical end-to-end flow:
 </Steps>
 
 To run the same composition repeatedly, save it as a [workbench setup](/api-v1/post/evals-workbench-setups) and pass `workbench_setup_id` plus `workbench_setup_version_id` when creating a run.
+
+---
+
+## Auto-running evals after a call
+
+Instead of submitting eval runs manually, you can attach a workbench setup to a call at creation. When the call completes, Bland automatically runs that workbench against the call.
+
+Pass `post_call_evals` on [`POST /v1/calls`](/api-v1/post/calls) with your `workbench_setup_id`, or pin an exact `workbench_setup_version_id`:
+
+```json
+{
+  "phone_number": "+15551234567",
+  "task": "Confirm the appointment for tomorrow at 10 AM.",
+  "post_call_evals": {
+    "workbench_setup_id": "b7c2e1d4-8f3a-4c9e-9a2b-1e5f6d7c8a9b"
+  }
+}
+```
+
+A few things to know:
+
+- **Recording is required.** Eval judges run against the recording, so calls with `post_call_evals` are recorded automatically. If you explicitly set `record: false`, the request is rejected.
+- **The setup version is pinned at call creation.** Editing the workbench mid-call does not change what gets evaluated, mirroring how manual eval runs pin the version at submission.
+- **The main post-call webhook acknowledges the attachment** with `post_call_evals: { workbench_setup_id, workbench_setup_version_id, status: "pending" }`. Eval scores arrive later on a separate `evals` webhook event when the run finishes.
+- **Auto runs appear alongside manual runs.** Filter for them with `triggered_by=auto` on [`GET /v1/evals/runs`](/api-v1/get/evals-runs).
+- **Strip the field from webhooks** by adding `post_call_evals` to your organization's `webhook_excluded_fields` preference.
