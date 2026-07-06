@@ -445,6 +445,29 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ParamField>
 
+<ParamField body="post_call_evals" type="object">
+  Attach an [evals workbench](/tutorials/evals) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call — no separate eval-run submission needed.
+
+  Provide at least one of:
+
+  - `workbench_setup_id` (string): The workbench setup to attach. Bland pins the setup's current published version at call creation, so editing the workbench mid-call does not change what gets evaluated.
+  - `workbench_setup_version_id` (string): An exact published workbench setup version to pin.
+
+  Attaching evals requires the call to be recorded. If you set `record: false` alongside `post_call_evals`, the request is rejected; otherwise recording is enabled automatically.
+
+  The post-call webhook acknowledges the attachment with `post_call_evals: { workbench_setup_id, workbench_setup_version_id, status: "pending" }`. Eval scores arrive later on a separate `evals` webhook event once the run completes.
+
+  Example:
+
+  ```json
+  {
+    "post_call_evals": {
+      "workbench_setup_id": "b7c2e1d4-8f3a-4c9e-9a2b-1e5f6d7c8a9b"
+    }
+  }
+  ```
+</ParamField>
+
 ### Post Call Parameters
 
 <ParamField body="summary_prompt" type="string">
