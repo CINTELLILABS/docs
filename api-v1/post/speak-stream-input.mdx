@@ -1,0 +1,62 @@
+---
+title: "Stream Speech (WebSocket)"
+api: "WSS https://api.bland.ai/v1/speak/stream-input"
+description: "Bidirectional WebSocket TTS."
+---
+
+## Overview
+
+Stream text deltas in (for example, LLM tokens), get audio chunks back live.
+
+<Note>
+  The WSS endpoint is rolling out. If the upgrade returns 500, the route is not yet enabled for your account. The HTTP fallback is [Stream Speech](/api-v1/post/speak-stream).
+</Note>
+
+---
+
+## Authentication
+
+In order of precedence:
+
+- `?token=<JWT>` query parameter (recommended for browsers). Mint via [Mint Stream Input Token](/api-v1/post/speak-stream-input-token).
+- `Authorization: Bearer <api_key>` header (server-side).
+- `Sec-WebSocket-Protocol: bland.api_key.<key>` subprotocol.
+- `?api_key=<key>` query (deprecated, logged).
+
+---
+
+## Protocol
+
+All messages are JSON.
+
+### Client → Server messages
+
+```
+init   { type, voice_id, output_format?, consistency?,
+         expressiveness?, auto_flush?, auto_flush_char_threshold? }
+speak  { type, text, flush? }
+flush  { type }
+close  { type }
+```
+
+### Server → Client messages
+
+```
+ready  { type, session_id, output_format }
+audio  { type, data (base64), is_final }
+done   { type, session_id, characters_billed, cost_usd, latency_ms }
+error  { type, code, message }
+```
+
+### Limits
+
+```
+Buffer cap:    4000 chars (per accumulation before flush)
+Speak rate:    500 msgs / 10s window
+Idle timeout:  60s (no client messages → close)
+Billing:       once at "done", partial disconnect not charged
+```
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

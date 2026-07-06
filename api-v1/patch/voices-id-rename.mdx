@@ -1,0 +1,74 @@
+---
+title: "Rename Voice"
+api: "PATCH https://api.bland.ai/v1/voices/{id}/rename"
+description: "Change the display name of a cloned voice you own."
+---
+
+## Overview
+
+Renames a voice clone in your library. Only voices owned by your org can be renamed; default and shared-library voices return `403`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice to rename.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="name" type="string" required>
+  New display name. 1-30 characters. Must be unique within your library.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.name" type="string">
+  The updated display name.
+</ResponseField>
+
+<ResponseField name="data.voice_id" type="string">
+  UUID of the renamed voice.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "name": "DocTestRename",
+    "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9"
+  },
+  "errors": null
+}
+```
+
+```json Name Taken
+{
+  "data": null,
+  "errors": [
+    { "error": "Validation Error", "message": "Voice name is already taken" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
