@@ -1,32 +1,38 @@
 ---
 title: "Knowledge base retrieval settings"
-description: "Tune retrieval on CSV knowledge bases by marking columns as Boosted or Ignored from the dashboard."
+description: "Tune how a knowledge base is searched by anchoring retrieval on the fields that matter most for CSV, web, and JSON sources."
 ---
 
 ## Overview
 
-Retrieval settings let you tune how a CSV knowledge base is searched at runtime. For each column in your CSV, you can mark it as **Boosted** (used to anchor retrieval against the user's query) or **Ignored** (dropped before indexing). Use this when some columns in your CSV are strong matching signals (like product names, SKUs, or topics) and others are noisy or unrelated to what users ask about.
+Retrieval settings let you tune how a knowledge base is searched at runtime. Instead of treating every part of a source equally, you tell Bland which fields are strong matching signals (**Boosted**) and which fields should be excluded from indexing (**Ignored**). Use this when the default behavior returns the wrong result for the questions your users actually ask.
 
-This feature is available on CSV knowledge base sources from the dashboard.
+Retrieval settings are available on the dashboard for the following source types:
+
+- **CSV** — mark individual columns as Boosted or Ignored.
+- **Web** — anchor retrieval on the page title and meta description.
+- **JSON** — anchor retrieval on JSON fields, ignore fields, and iterate over items in an array.
 
 ## When to use it
 
 Reach for retrieval settings when:
 
-- A CSV column contains the **values users actually ask about** (product name, customer name, ticket ID, category). Mark it **Boosted** so retrieval ranks rows matching that column higher.
-- A CSV column adds noise that hurts relevance (internal IDs, timestamps, formatting columns, free-form notes that aren't useful for matching). Mark it **Ignored** to keep it out of the indexed body.
-- The default behavior, where every column is treated equally, is returning the wrong rows for your queries.
+- Your source contains **the values users ask about** in a specific field (product name, article title, ticket ID, category). Boosting that field lets retrieval rank matching rows or pages higher.
+- Your source contains **noisy fields** that hurt relevance (internal IDs, timestamps, formatting-only columns, boilerplate). Ignoring them keeps them out of the indexed body.
+- You want retrieval to treat a JSON payload as a **list of individual items** (like articles or products) rather than one large document.
 
-A column can be Boosted or Ignored, but not both at once.
+A field can be Boosted or Ignored, but not both at once.
 
-## Configure retrieval settings
+## CSV sources
+
+For CSV sources, retrieval settings apply per column.
 
 <Steps>
   <Step title="Open the knowledge base">
     Go to **Knowledge Bases** in the [Bland dashboard](https://app.bland.ai) and open a CSV knowledge base.
   </Step>
   <Step title="Open Retrieval Settings">
-    Click **Retrieval Settings** in the toolbar, next to **Replace File**. The button only appears for CSV sources.
+    Click **Retrieval Settings** in the toolbar, next to **Replace File**.
   </Step>
   <Step title="Mark columns as Boosted or Ignored">
     For each column header from your CSV, toggle **Boosted** or **Ignored**. Leave a column unmarked to keep it in the indexed body with normal weighting.
@@ -38,16 +44,58 @@ A column can be Boosted or Ignored, but not both at once.
     Click **Save** to persist the configuration.
   </Step>
   <Step title="Run Replace File to apply">
-    Saving the configuration does **not** automatically reindex your data. To apply the new settings, click **Replace File** and upload the same (or updated) CSV. Indexing runs against the new settings and your knowledge base reflects them once processing finishes.
+    Saving the configuration does **not** automatically reindex your data. To apply the new settings, click **Replace File** and upload the same (or updated) CSV.
+  </Step>
+</Steps>
+
+## Web sources
+
+For web sources, retrieval settings let you anchor retrieval on the page's title and meta description. When enabled, Bland pulls the page title and description (from standard HTML meta tags, Open Graph, or Twitter Card tags — whichever is available) and uses them to rank pages that match the user's query. Pages without a discoverable title or description simply skip the boost.
+
+<Steps>
+  <Step title="Open the web source">
+    Open a web knowledge base and click **Retrieval Settings**.
+  </Step>
+  <Step title="Toggle title and description anchoring">
+    Turn on anchoring to use each page's title and meta description as retrieval signals.
+  </Step>
+  <Step title="Save and resync">
+    Save the configuration, then trigger a resync of the web source so pages are re-crawled with the new settings applied.
+  </Step>
+</Steps>
+
+## JSON sources
+
+For JSON sources, retrieval settings use [JSONPath](https://goessner.net/articles/JsonPath/) expressions to point at fields inside your document.
+
+- **Anchor paths** — up to three JSONPath expressions whose values are used as retrieval anchors (for example, an item's title, category, or tags).
+- **Ignored paths** — up to three JSONPath expressions whose values are dropped before indexing (for example, internal IDs or noisy metadata).
+- **List path** — a JSONPath expression that names the array to iterate over when your payload wraps items in an envelope. Each item in the resolved list becomes its own indexed record, with the anchor fields applied per item.
+
+<Steps>
+  <Step title="Open the JSON source">
+    Open a JSON knowledge base and click **Retrieval Settings**.
+  </Step>
+  <Step title="Set the list path (optional)">
+    If your JSON wraps items in an envelope (for example, `{ "articles": [...] }`), set the list path to the array you want Bland to iterate over, such as `$.articles[*]`. Leave it empty when the document is already a flat array or a single object.
+  </Step>
+  <Step title="Add anchor and ignored paths">
+    Add up to three JSONPath anchor expressions for the fields you want to boost, and up to three ignored expressions for the fields you want to drop.
+  </Step>
+  <Step title="(Optional) Use Suggest">
+    Click **Suggest** to have Bland analyze a sample of your JSON and propose a list path, anchor paths, and ignored paths. Review and adjust the suggestions before saving.
+  </Step>
+  <Step title="Save and resync">
+    Save the configuration, then resync the source so items are re-chunked using the new paths.
   </Step>
 </Steps>
 
 <Info>
-  Closing the modal without saving discards any pending changes. Reopening the modal reloads the last saved configuration.
+  Closing the modal without saving discards any pending changes. Reopening the modal reloads the last saved configuration. Malformed JSONPath expressions are rejected on save.
 </Info>
 
 ## Tips
 
-- Start with one or two strong **Boosted** columns rather than boosting many at once. Over-boosting can crowd out useful context from other columns.
-- Use **Ignored** for columns that are constant, formatting-only, or contain values users never reference (like row numbers or internal flags).
-- After applying new settings with Replace File, test a handful of representative queries in the **Testing** tab to confirm retrieval improved before connecting the knowledge base to production agents.
+- Start with one or two strong anchor fields rather than boosting many at once. Over-boosting can crowd out useful context from other fields.
+- Use Ignored for fields that are constant, formatting-only, or contain values users never reference (like row numbers, timestamps, or internal flags).
+- After saving new settings, re-run the source (Replace File for CSV, resync for web and JSON) to apply them, then test representative queries in the **Testing** tab to confirm retrieval improved before connecting the knowledge base to production agents.
