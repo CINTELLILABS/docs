@@ -1,0 +1,84 @@
+---
+title: "Auth zones"
+description: "Gate parts of your agent behind caller verification with an SMS one-time code."
+---
+
+## Introduction
+
+Auth zones let you require caller verification before your agent runs sensitive parts of a conversation — like sharing account details, taking a payment, or making changes on a customer's behalf. You draw a zone around the nodes you want protected, pick a verification method, and callers can only cross into that zone after they pass the check.
+
+Today, auth zones support **SMS one-time code** verification. The agent texts the caller a short code and asks them to read it back before continuing.
+
+## When to use an auth zone
+
+Use an auth zone whenever a section of your agent's flow should only run for callers you've confirmed the identity of. Common cases:
+
+- Confirming a caller's identity before disclosing account or order details.
+- Requiring verification before scheduling changes, refunds, or transfers of value.
+- Splitting a public self-service flow from an authenticated support flow.
+
+If you only need light gating (for example, "collect the caller's name before proceeding"), a regular scenario or condition is usually enough. Reach for an auth zone when you specifically need proof that the caller controls a known phone number.
+
+## How auth zones work
+
+An auth zone is a container you drop onto the agent canvas. Anything you drag inside the zone is *gated* — the agent can only run those nodes after the caller has cleared the zone's verification flow.
+
+Each zone has:
+
+- **A name** — how the zone shows up in the builder and in logs.
+- **A verification flow** — a small sub-flow that runs the actual check (for example, sending an SMS code and validating the caller's response).
+- **Success and failure routes** — where the conversation goes when verification succeeds versus fails.
+
+While the agent is running, the zone's border shows whether the caller has been verified for that zone yet. Once verified, the agent can enter the gated nodes; if verification fails, the agent follows the failure route instead (typically a transfer to a human).
+
+## Add an auth zone
+
+1. Open your agent in the dashboard and go to the **Configure** tab.
+2. In the canvas toolbar, select **Add node** → **Auth zone**.
+3. Pick a verification method. **SMS code** is currently the available option.
+4. The builder drops a zone onto the canvas with a starter verification flow (start → SMS code → end) already wired up.
+5. Drag any nodes you want protected into the zone. The zone auto-fits around its contents.
+6. Connect the incoming edge from the rest of your agent into the zone. When the agent reaches that edge at runtime, it enters the verification flow first.
+
+To edit the verification flow, click **Edit** on the zone's header pill (or open the zone's inspector and click the flow preview). This dives into the sub-flow builder where you can tune the SMS code node or add a transfer step for failures.
+
+## Configure the SMS code step
+
+Select the SMS code node inside the zone's verification flow to open the inspector. The following settings are available:
+
+| Setting | What it controls |
+|---------|------------------|
+| **Prompt** | How the agent runs the verification step out loud — how it introduces the check and asks the caller to read the code back. |
+| **Code length** | Length of the generated code. Choose **4 digits** or **6 digits**. |
+| **Delivery** | How the code is delivered. Choose **SMS** or **WhatsApp**. |
+| **Expires after** | How long the code stays valid, in seconds. |
+| **Max attempts** | How many times the caller can try to read the code back before verification fails. |
+| **Message template** | The text sent to the caller. Must include the `{{code}}` placeholder where the generated code should appear. |
+
+An example message template:
+
+```text
+Your verification code is {{code}}. It expires in 5 minutes.
+```
+
+## Routing on success or failure
+
+The SMS code node exposes two outgoing routes:
+
+- **Verification successful** — the caller read back a valid code within the allowed attempts and before expiry. The agent proceeds into the gated nodes inside the zone.
+- **Verification failed** — the caller couldn't complete verification (wrong code too many times, code expired, delivery couldn't be completed). The agent follows this route instead.
+
+A common pattern is to wire the failure route to a **Transfer** node so unverified callers are handed off to a human agent rather than dropped.
+
+## Testing your auth zone
+
+Before going live:
+
+- Run a test call and confirm the agent introduces the verification step, that the SMS arrives, and that reading the code back advances the call into the gated nodes.
+- Try a failure path: enter a wrong code the maximum number of times, or let the code expire, and confirm the agent takes the failure route.
+- Check that the gated nodes are only reachable after verification — the zone's border animates once the caller is verified for that zone in the current call.
+
+## Limitations
+
+- SMS code is currently the only available auth method. Additional methods (phone recognition, identity questions, tool-based verification, custom code) are on the roadmap and appear as disabled options in the builder.
+- Auth zones apply per-call: verification state doesn't persist across separate calls from the same caller.
