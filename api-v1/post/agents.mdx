@@ -157,17 +157,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
 </ParamField>
 
-<ParamField body="interruption_threshold" type="number" default={500}>
-  Adjusts how patient the AI is when waiting for the user to finish speaking.
+<ParamField body="resumption_speed" type="number" default={2}>
+  Controls how quickly the agent takes the floor after the caller stops talking. One of three levels:
 
-  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
+  - `1` — **Fast**. The agent responds sooner.
+  - `2` — **Medium** (default). Balanced pacing; reproduces existing behavior.
+  - `3` — **Slow**. The agent waits longer before responding — good for collecting detailed information.
 
-  Recommended range: 50-200
-  - 50: Extremely quick, back and forth conversation
-  - 100: Balanced to respond at a natural pace
-  - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
+  Supersedes the deprecated `interruption_threshold`.
+</ParamField>
 
-  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
+<ParamField body="interruption_threshold" type="number" default={500} deprecated>
+  Deprecated. Use `resumption_speed` instead.
+
+  Adjusts how patient the AI is when waiting for the user to finish speaking. Lower values respond more quickly, higher values wait longer.
+
+  If `resumption_speed` is set, it takes precedence and this value is ignored.
 </ParamField>
 
 <ParamField body="keywords" type="string[]" default="[]">
