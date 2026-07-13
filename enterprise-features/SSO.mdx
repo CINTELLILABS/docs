@@ -620,10 +620,11 @@ Supports both protocols:
     **Cause**: Groups not being sent in token/assertion, or group names don't match expected patterns
 
     **Solution**:
-    - Verify groups claim is configured in your IdP
+    - Verify groups claim is configured in your IdP, and that it is named exactly `groups` (plural)
+    - Confirm the claim carries group **names**, not opaque group IDs or GUIDs
     - Check that the user is a member of the expected groups
     - For OIDC: Ensure the `groups` scope is requested
-    - For Okta: Ensure groups are assigned to the application, not just users
+    - For Okta and Azure AD: Ensure groups are assigned to the application, not just users
     - Use browser DevTools or SAML tracer to inspect the actual groups being sent
     - Users without matching groups default to the `viewer` role
   </Accordion>
@@ -791,14 +792,24 @@ Groups are mapped based on their names. The following patterns are recognized:
        - Type: Security
        - Names: `Bland AI - Static - Admin`, etc.
 
-    2. **Configure Groups Claim:**
-       - App Registration → Token configuration
-       - Add groups claim → Security groups
-       - Select: Group ID
+    2. **Assign the groups to the Bland application:**
+       - Enterprise App → Users and groups
+       - Assign the groups themselves, not just individual users
 
-    3. **Map Group Names (Optional):**
-       - Enterprise App → Single sign-on → Attributes & Claims
-       - Add group claim with transformation to send group names instead of IDs
+    3. **Configure the groups claim:**
+       - Enterprise App → Single sign-on → Attributes & Claims → Add a group claim
+       - Source attribute: **Group display names** (for cloud-only groups) or **sAMAccountName** (for groups synced from on-prem AD)
+       - Under **Advanced options**, set **Customize the name of the group claim** and enter `groups` as the Name, leaving the Namespace empty
+       - Select **Groups assigned to the application**
+
+    <Warning>
+    Two Azure settings are easy to get wrong, and both cause every user to land on the default `viewer` role:
+
+    - **The claim must be named exactly `groups`** (plural). Azure's default group claim name is the full schema URI, and a claim named `group` (singular) will not be read.
+    - **Send group names, not Group IDs.** Azure emits Group IDs as GUIDs (for example `0d7f4e01-4fde-4bef-b748-caf38db99ce1`), which cannot match any of the name patterns above.
+
+    Also prefer **Groups assigned to the application** over **All groups**. Sending your full directory group list means unrelated groups are evaluated for role mapping, which can produce a role you did not intend.
+    </Warning>
   </Accordion>
 
   <Accordion title="Google Workspace Configuration">
