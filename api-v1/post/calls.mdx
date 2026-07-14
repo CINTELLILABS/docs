@@ -487,6 +487,26 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 </ParamField>
 
+<ParamField body="include_post_transfer_transcript" type="boolean" default="false">
+  Opt in to receiving the post-transfer portion of the conversation on the citations webhook. When the call transfers to a human, Bland normally drops the audio after the handoff from the citations transcript because the AI agent is no longer on the line. Set this to `true` to have Bland transcribe the recording after the handoff and deliver it in the citations webhook payload as `post_transfer_transcript`, along with a `transfer_offset_seconds` field marking the transfer boundary. Use this when you run agent-assist, quality monitoring, or downstream analytics on the full conversation.
+
+  The transferred-to human is labeled `representative` in the post-transfer transcript; the caller remains `user`. The existing `corrected_transcript` field is unchanged and still ends at the transfer, so citations and evals continue to score only the AI portion of the call.
+
+  If you need the post-transfer conversation in real time — for agent-assist or live monitoring — pair this opt-in with the [live post-transfer transcript stream](/api-v1/post/calls-id-transcript-stream-token). The stream is best-effort and joins live; the citations webhook remains the complete record.
+
+  Attaching this option requires the call to be recorded. If you set `record: false` alongside `include_post_transfer_transcript: true`, the request is rejected; otherwise recording is enabled automatically.
+
+  Example:
+
+  ```json
+  {
+    "record": true,
+    "include_post_transfer_transcript": true,
+    "webhook_events": ["citations"]
+  }
+  ```
+</ParamField>
+
 ### Post Call Parameters
 
 <ParamField body="summary_prompt" type="string">

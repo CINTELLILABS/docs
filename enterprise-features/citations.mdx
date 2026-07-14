@@ -141,6 +141,17 @@ Delay the main post-call webhook until citations are processed, then receive all
 />
 
 > **Note:** For voice calls, citations are only processed on calls with a status of "completed". Calls that are unanswered, busy, or fail for other reasons will not generate citation data. For SMS conversations, citations are extracted when the conversation ends (via timeout, end-call node, or opt-out).
+
+### Post-Transfer Transcript
+
+For transferred calls, you can opt in to receiving the conversation after the handoff on the citations webhook. Set [`include_post_transfer_transcript: true`](/api-v1/post/calls#param-include-post-transfer-transcript) on the outbound call (or on the inbound number). When the call transfers to a human, the citations webhook payload gains:
+
+- `post_transfer_transcript` — the corrected transcript for the portion of the call after the transfer, with the transferred-to human labeled `representative` and the caller labeled `user`.
+- `transfer_offset_seconds` — the number of seconds from the start of the recording at which the transfer occurred.
+
+The existing `corrected_transcript` field still ends at the transfer boundary, so citation extraction, evals, and enrichment continue to score only the AI portion of the call. Recording is required — requesting the post-transfer transcript without `record` enables recording automatically, and setting `record: false` alongside it returns an error.
+
+If you need the post-transfer conversation as it happens — for agent-assist prompts, live monitoring, or supervisor dashboards — use the [live post-transfer transcript stream](/api-v1/post/calls-id-transcript-stream-token) to open a WebSocket that emits finalized segments in the same shape as the webhook payload.
 ---
 
 Docs for agents: [llms.txt](/llms.txt)
