@@ -10,6 +10,8 @@ Returns a short-lived, ready-to-connect WebSocket URL for the call's [post-trans
 
 The URL is opaque — connect to it exactly as returned. Do not parse it or construct your own.
 
+The URL becomes available when the call is answered (that is when the server handling the call is assigned). Until then this endpoint returns 404 with `NO_ACTIVE_TRANSCRIPT_STREAM`; poll every second or two after placing the call. Once connected, you can hold the socket through the rest of the call — it parks until the transfer starts.
+
 <Note>
   The post-transfer transcript stream is in limited rollout. If this endpoint returns 403 with `FEATURE_NOT_ENABLED`, it is not yet enabled for your organization.
 </Note>
@@ -49,7 +51,7 @@ This endpoint takes no body. POST an empty body or `{}`.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` when the call does not exist or has no active transcript stream (`NO_ACTIVE_TRANSCRIPT_STREAM`: not created with `include_post_transfer_transcript`, or already ended).
+  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` when the call does not exist or has no active transcript stream (`NO_ACTIVE_TRANSCRIPT_STREAM`: not created with `include_post_transfer_transcript`, not yet answered, or already ended).
 </ResponseField>
 
 <RequestExample>
