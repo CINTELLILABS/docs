@@ -1,0 +1,219 @@
+---
+title: "Stream Post-Transfer Transcript"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/transcript-stream/token"
+description: "Mint a short-lived token to stream the live post-transfer transcript over WebSocket."
+---
+
+Mints a short-lived token you exchange for a WebSocket connection that streams the live transcript of a call after it transfers to a human. Use this alongside [`include_post_transfer_transcript`](/api-v1/post/calls#param-include-post-transfer-transcript) when you need the post-transfer conversation in real time — for agent-assist prompts, live monitoring, or supervisor dashboards. For the complete transcript after the call ends, use the citations webhook instead.
+
+## Prerequisites
+
+- The call must have been created with `include_post_transfer_transcript: true` and be recorded.
+- The post-transfer transcript feature must be enabled for your organization. Contact your Bland representative if you receive a `FEATURE_NOT_ENABLED` response.
+- Only the organization that owns the call can mint a token.
+
+## Authentication
+
+<ParamField header="authorization" type="string" required>
+  Your API key.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The unique identifier of the call whose post-transfer transcript you want to stream.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` when the token was issued.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="token" type="string">
+      Short-lived token. Pass it as the `token` query parameter when opening the WebSocket.
+    </ResponseField>
+    <ResponseField name="expires_in_seconds" type="number">
+      Lifetime of the token in seconds. Mint a new token if it expires before you connect.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array" default="null">
+  Array of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/calls/call_123456/transcript-stream/token" \
+  -H "Authorization: YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.bland.ai/v1/calls/call_123456/transcript-stream/token',
+  {
+    method: 'POST',
+    headers: { Authorization: 'YOUR_API_KEY' },
+  },
+);
+
+const { data } = await response.json();
+const socket = new WebSocket(
+  `wss://api.bland.ai/ws/transcript-stream/call_123456?token=${data.token}`,
+);
+```
+
+```python Python
+import requests, websocket, json
+
+resp = requests.post(
+    "https://api.bland.ai/v1/calls/call_123456/transcript-stream/token",
+    headers={"Authorization": "YOUR_API_KEY"},
+)
+token = resp.json()["data"]["token"]
+
+ws = websocket.WebSocket()
+ws.connect(f"wss://api.bland.ai/ws/transcript-stream/call_123456?token={token}")
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success
+{
+  "status": "success",
+  "data": {
+    "token": "eyJ...",
+    "expires_in_seconds": 300
+  },
+  "errors": null
+}
+```
+
+```json Feature Not Enabled
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "FEATURE_NOT_ENABLED",
+      "message": "The post-transfer transcript stream is not enabled for this organization"
+    }
+  ]
+}
+```
+
+```json Call Not Found
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "CALL_NOT_FOUND",
+      "message": "Call not found"
+    }
+  ]
+}
+```
+
+```json Unauthorized
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "UNAUTHORIZED",
+      "message": "You are not authorized to stream this call's transcript"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## WebSocket Connection
+
+Open a WebSocket to `wss://api.bland.ai/ws/transcript-stream/{call_id}?token={token}` using the token from the response.
+
+- **Protocol**: WebSocket (WSS)
+- **Message format**: JSON text frames
+- **History**: The stream joins live — no replay of segments emitted before you connected. You can connect before the transfer starts; the socket is held until the transfer audio arrives.
+- **Segments**: Only finalized segments are emitted. Interim results are not sent.
+
+### Events
+
+Each message is a JSON object with an `event` field.
+
+#### `transcript_segment`
+
+Emitted for every finalized segment of the post-transfer conversation.
+
+```json
+{
+  "event": "transcript_segment",
+  "call_id": "call_123456",
+  "segment": {
+    "start": 42.318,
+    "end": 44.902,
+    "speaker": 2,
+    "speaker_label": "representative",
+    "text": "Thanks for holding — how can I help?",
+    "confidence": 0.91
+  }
+}
+```
+
+The transferred-to human is labeled `representative`; the caller is labeled `user`. Segment shape matches the [`post_transfer_transcript`](/api-v1/post/calls#param-include-post-transfer-transcript) entries on the citations webhook, so you can parse the live stream and the post-call payload with the same code.
+
+#### `stream_end`
+
+Emitted once when the transfer leg ends, followed by a normal WebSocket close.
+
+```json
+{
+  "event": "stream_end",
+  "call_id": "call_123456"
+}
+```
+
+### Example listener
+
+```javascript
+const socket = new WebSocket(
+  `wss://api.bland.ai/ws/transcript-stream/${callId}?token=${token}`,
+);
+
+socket.onmessage = (message) => {
+  const payload = JSON.parse(message.data);
+  if (payload.event === "transcript_segment") {
+    console.log(payload.segment.speaker_label, payload.segment.text);
+  } else if (payload.event === "stream_end") {
+    console.log("Transfer ended");
+  }
+};
+
+socket.onclose = () => console.log("Stream closed");
+```
+
+## Error Codes
+
+| Error Code | Description |
+|------------|-------------|
+| `MISSING_CALL_ID` | Call ID path parameter is required. |
+| `CALL_NOT_FOUND` | Call does not exist. |
+| `UNAUTHORIZED` | The API key does not own this call. |
+| `FEATURE_NOT_ENABLED` | The post-transfer transcript feature is not enabled for your organization. |
+
+## Notes
+
+- The citations webhook remains the complete post-call record. The stream is best-effort and joins live.
+- If no listener is connected during the transfer, the transcript is still delivered on the citations webhook after the call.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
