@@ -16,15 +16,11 @@ The stream is a real-time preview. The durable record is the `post_transfer_tran
 
 ---
 
-## Authentication
+## Connecting
 
-Pass a token minted via [Mint Transcript Stream Token](/api-v1/post/calls-id-transcript-stream-token) as the `token` query parameter:
+Request a connection URL from [Mint Transcript Stream Token](/api-v1/post/calls-id-transcript-stream-token) and connect to it exactly as returned, within 5 minutes. The URL is opaque: it routes the connection to the server handling the call and carries the stream credential. Do not parse or reconstruct it.
 
-```
-wss://api.bland.ai/ws/transcript-stream/{call_id}?token=<token>
-```
-
-Connections without a valid token for the call are closed with code `1008`.
+Connections without a valid credential for the call are closed with code `1008`.
 
 ---
 
@@ -106,10 +102,8 @@ const res = await fetch(
 );
 const { data } = await res.json();
 
-// 2. Connect (safe in a browser — the URL carries only the short-lived token)
-const ws = new WebSocket(
-  `wss://api.bland.ai/ws/transcript-stream/${callId}?token=${data.token}`,
-);
+// 2. Connect (safe in a browser — the URL carries only a short-lived credential)
+const ws = new WebSocket(data.url);
 
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);

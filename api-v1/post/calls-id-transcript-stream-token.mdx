@@ -6,9 +6,9 @@ description: "Mint a short-lived JWT for connecting to a call's live post-transf
 
 ## Overview
 
-Mints a short-lived JWT scoped to one call that can be passed as the `token` query parameter when opening the [Post-Transfer Transcript Stream (WebSocket)](/api-v1/post/calls-id-transcript-stream). Use this from your backend so browser clients never see your long-lived API key.
+Returns a short-lived, ready-to-connect WebSocket URL for the call's [post-transfer transcript stream](/api-v1/post/calls-id-transcript-stream). Use this from your backend so browser clients never see your long-lived API key; the returned URL carries only a 5-minute credential scoped to this one call.
 
-Tokens are valid for 5 minutes and only authorize a stream for the call they were minted for. The call must belong to your organization.
+The URL is opaque — connect to it exactly as returned. Do not parse it or construct your own.
 
 <Note>
   The post-transfer transcript stream is in limited rollout. If this endpoint returns 403 with `FEATURE_NOT_ENABLED`, it is not yet enabled for your organization.
@@ -40,16 +40,16 @@ This endpoint takes no body. POST an empty body or `{}`.
 
 ## Response
 
-<ResponseField name="data.token" type="string">
-  JWT to pass as `?token=<token>` on the WebSocket URL.
+<ResponseField name="data.url" type="string">
+  Opaque WebSocket URL. Connect to it as returned, within 5 minutes.
 </ResponseField>
 
 <ResponseField name="data.expires_in_seconds" type="number">
-  Lifetime of the token. Currently `300` (5 minutes). The TTL gates the connection handshake only; an established stream is not closed when the token expires.
+  Lifetime of the URL's embedded credential. Currently `300` (5 minutes). The TTL gates the connection handshake only; an established stream is not closed when it expires.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success. `401` when the call belongs to a different organization, `404` when the call does not exist, `403` when the feature is not enabled for your organization.
+  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` when the call does not exist or has no active transcript stream (`NO_ACTIVE_TRANSCRIPT_STREAM`: not created with `include_post_transfer_transcript`, or already ended).
 </ResponseField>
 
 <RequestExample>
@@ -63,7 +63,7 @@ curl -X POST "https://api.bland.ai/v1/calls/{call_id}/transcript-stream/token" \
 ```json Response
 {
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "url": "wss://stream.aws.dc8.bland.ai/ws/transcript-stream/eyJhbGciOiJBMjU2R0NNS1ci...?token=eyJhbGciOiJIUzI1NiIs...",
     "expires_in_seconds": 300
   },
   "errors": null
