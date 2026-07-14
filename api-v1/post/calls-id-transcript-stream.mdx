@@ -1,0 +1,127 @@
+---
+title: "Post-Transfer Transcript Stream (WebSocket)"
+api: "WSS https://api.bland.ai/ws/transcript-stream/{call_id}"
+description: "Live transcript of the conversation after a call is transferred to a human."
+---
+
+## Overview
+
+When a call created with `include_post_transfer_transcript: true` is cold-transferred to a human, Bland transcribes the bridged conversation live. Connect to this WebSocket to receive finalized transcript segments as the caller and the transferred-to representative speak.
+
+The stream is a real-time preview. The durable record is the `post_transfer_transcript` property on the [citations webhook](/api-v1/get/citations), which carries the same segment format built from the call recording after the call ends.
+
+<Note>
+  The post-transfer transcript stream is in limited rollout. If the [token mint endpoint](/api-v1/post/calls-id-transcript-stream-token) returns 403, it is not yet enabled for your organization.
+</Note>
+
+---
+
+## Authentication
+
+Pass a token minted via [Mint Transcript Stream Token](/api-v1/post/calls-id-transcript-stream-token) as the `token` query parameter:
+
+```
+wss://api.bland.ai/ws/transcript-stream/{call_id}?token=<token>
+```
+
+Connections without a valid token for the call are closed with code `1008`.
+
+---
+
+## Connection Lifecycle
+
+- **Connect any time after call creation.** A listener that connects before the transfer starts is held and attached automatically when the transferred conversation begins.
+- **Join-live semantics.** A listener that connects mid-transfer receives segments from that moment forward. There is no history replay; use the post-call webhook for the complete transcript.
+- **Multiple listeners are allowed.** Each mints its own token; all receive the same events.
+- **End of stream.** When the transferred conversation ends, the server sends a `stream_end` event and closes the socket with code `1000`.
+
+---
+
+## Events
+
+All messages are JSON text frames.
+
+### `transcript_segment`
+
+One finalized utterance. Segments are settled text — interim results are never sent — so they arrive at natural pause boundaries, not word by word.
+
+```json
+{
+  "event": "transcript_segment",
+  "call_id": "9d404c1b-6a23-4b21-a7f9-64f8456ba0ec",
+  "segment": {
+    "start": 12.4,
+    "end": 15.1,
+    "speaker": 1,
+    "speaker_label": "user",
+    "text": "I was calling about my appointment on Thursday.",
+    "confidence": 0.97
+  }
+}
+```
+
+<ResponseField name="segment.start" type="number">
+  Seconds from the start of the transferred conversation.
+</ResponseField>
+
+<ResponseField name="segment.end" type="number">
+  End of the utterance, in the same clock as `start`.
+</ResponseField>
+
+<ResponseField name="segment.speaker" type="number">
+  `1` for the caller, `2` for the transferred-to human.
+</ResponseField>
+
+<ResponseField name="segment.speaker_label" type="string">
+  `user` for the caller, `representative` for the transferred-to human. Matches the labels in the webhook's `post_transfer_transcript`.
+</ResponseField>
+
+<ResponseField name="segment.text" type="string">
+  The finalized utterance text.
+</ResponseField>
+
+<ResponseField name="segment.confidence" type="number">
+  Transcription confidence between 0 and 1.
+</ResponseField>
+
+Segments from the two speakers can arrive out of chronological order, since each speaker's speech finalizes independently. Order by `start` when rendering.
+
+### `stream_end`
+
+The transferred conversation has ended. No further segments will arrive, and the socket closes with code `1000`.
+
+```json
+{ "event": "stream_end", "call_id": "9d404c1b-6a23-4b21-a7f9-64f8456ba0ec" }
+```
+
+---
+
+## Implementation Example
+
+```javascript
+// 1. Mint a token (server-side)
+const res = await fetch(
+  `https://api.bland.ai/v1/calls/${callId}/transcript-stream/token`,
+  { method: "POST", headers: { authorization: BLAND_API_KEY } },
+);
+const { data } = await res.json();
+
+// 2. Connect (safe in a browser — the URL carries only the short-lived token)
+const ws = new WebSocket(
+  `wss://api.bland.ai/ws/transcript-stream/${callId}?token=${data.token}`,
+);
+
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.event === "transcript_segment") {
+    const s = msg.segment;
+    console.log(`[${s.start}s] ${s.speaker_label}: ${s.text}`);
+  } else if (msg.event === "stream_end") {
+    console.log("Transfer ended");
+  }
+};
+```
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
