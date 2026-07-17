@@ -10,7 +10,7 @@ Two settings control how your agent shares the conversation:
 
 They are independent, and both are optional. An agent with neither set uses the balanced defaults described below.
 
-## How the agent pauses
+## Agent pauses
 
 When a caller makes a sound while the agent is speaking, the agent does not cut off at the first sound. It keeps talking for a brief moment while it works out what the caller is doing, then reacts:
 
@@ -58,7 +58,11 @@ How quickly the agent responds once the caller stops talking. Set with the `resu
 
 - **Send Call API**: pass `interruptibility` and `resumption_speed` in the [`/v1/calls`](/api-v1/post/calls) request body. They apply to the whole call.
 - **Inbound numbers**: the same fields on your inbound number configuration.
-- **Pathways**: per node, in the node inspector under Advanced options. A node's setting takes effect from that node onward, for the rest of the call or until another node changes it. This lets a pathway shift the agent's manner mid-call, for example becoming harder to interrupt while reading a legal disclosure and easier while gathering information.
+- **Pathways**: per node, in the node inspector under Advanced options.
+
+<Warning>
+Node settings are not scoped to the node. A setting takes effect from that node onward and stays in force for the rest of the call, until another node changes it. This is useful for shifting the agent's manner mid-call, for example becoming harder to interrupt while reading a legal disclosure and easier while gathering information. But it also means a node with no setting of its own inherits whatever an earlier node set: if callers are being talked over (or not heard) at one point in a pathway, check the nodes upstream of it, not just the node where it happens.
+</Warning>
 
 ## Choosing values
 
