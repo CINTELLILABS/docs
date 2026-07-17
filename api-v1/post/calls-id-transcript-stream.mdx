@@ -11,14 +11,14 @@ When a call created with `include_post_transfer_transcript: true` is cold-transf
 The stream is a real-time preview. The durable record is the `post_transfer_transcript` property on the [citations webhook](/api-v1/get/citations), which carries the same segment format built from the call recording after the call ends.
 
 <Note>
-  The post-transfer transcript stream is in limited rollout. If the [token mint endpoint](/api-v1/post/calls-id-transcript-stream-token) returns 403, it is not yet enabled for your organization.
+  The post-transfer transcript stream is in limited rollout. If the [Get Transcript Stream URL endpoint](/api-v1/post/calls-id-transcript-stream-token) returns 403, it is not yet enabled for your organization.
 </Note>
 
 ---
 
 ## Connecting
 
-Request a connection URL from [Mint Transcript Stream Token](/api-v1/post/calls-id-transcript-stream-token) and connect to it exactly as returned, within 5 minutes. The URL is opaque: it routes the connection to the server handling the call and carries the stream credential. Do not parse or reconstruct it.
+Request a connection URL from [Get Transcript Stream URL](/api-v1/post/calls-id-transcript-stream-token) and connect to it exactly as returned, within 5 minutes. The URL is opaque: it routes the connection to the server handling the call and carries the stream credential. Do not parse or reconstruct it.
 
 Connections without a valid credential for the call are closed with code `1008`.
 
@@ -26,9 +26,9 @@ Connections without a valid credential for the call are closed with code `1008`.
 
 ## Connection Lifecycle
 
-- **Connect any time after the call is answered.** The connection URL becomes mintable once the call is answered; a listener that connects before the transfer starts is held and attached automatically when the transferred conversation begins.
+- **Connect any time after the call is answered.** The connection URL becomes available once the call is answered; a listener that connects before the transfer starts is held and attached automatically when the transferred conversation begins.
 - **Join-live semantics.** A listener that connects mid-transfer receives segments from that moment forward. There is no history replay; use the post-call webhook for the complete transcript.
-- **Multiple listeners are allowed.** Each mints its own token; all receive the same events.
+- **Multiple listeners are allowed.** Each requests its own connection URL; all receive the same events.
 - **End of stream.** When the transferred conversation ends, the server sends a `stream_end` event and closes the socket with code `1000`.
 
 ---
@@ -95,7 +95,7 @@ The transferred conversation has ended. No further segments will arrive, and the
 ## Implementation Example
 
 ```javascript
-// 1. Mint a token (server-side)
+// 1. Get a connection URL (server-side)
 const res = await fetch(
   `https://api.bland.ai/v1/calls/${callId}/transcript-stream/token`,
   { method: "POST", headers: { authorization: BLAND_API_KEY } },
