@@ -464,6 +464,18 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ParamField>
 
+<ParamField body="include_post_transfer_transcript" type="boolean" default="false">
+  When `true` and the call is cold-transferred to a human, Bland transcribes the conversation after the transfer and delivers it two ways: live over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket while the transferred conversation is happening, and post-call as a `post_transfer_transcript` property (plus `transfer_offset_seconds`) on the `citations` webhook event.
+
+  Requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside this option returns a 400.
+
+  The post-call delivery rides on the citations webhook, so to receive it you also need at least one schema in `citation_schema_ids` and `"citations"` in `webhook_events`.
+
+  <Note>
+    This feature is in limited rollout. If it is not enabled for your organization, the option has no effect.
+  </Note>
+</ParamField>
+
 <ParamField body="post_call_evals" type="object">
   Attach an [evals workbench](/tutorials/evals) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call — no separate eval-run submission needed.
 
