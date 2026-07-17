@@ -1,0 +1,72 @@
+---
+title: "Agent Speech"
+description: "Control how readily your agent pauses for callers and how quickly it responds after they stop talking."
+---
+
+Two settings shape how your agent shares the conversation:
+
+- **Interruptibility** governs what happens while the agent is speaking: how readily it yields when the caller talks over it.
+- **Resumption speed** governs what happens after the caller finishes: how quickly the agent takes its turn.
+
+They are independent, and both are optional. An agent with neither set uses the balanced defaults described below.
+
+## How the agent pauses
+
+When a caller makes a sound while the agent is speaking, the agent does not simply cut off. It keeps talking for a brief moment while it determines what the caller is doing, then reacts to the situation:
+
+| The caller says | What it is | What the agent does |
+| :---- | :---- | :---- |
+| "Uh-huh." | A short acknowledgment | Keeps talking. No pause at all. |
+| "Stop for a second." | A short interruption | Finishes its current word, stops, and responds. |
+| "Wow, that is really, really interesting." | A long acknowledgment | Pauses while the caller speaks, then picks up exactly where it left off. |
+| "Hey, I have a question about that." | A long interruption | Finishes its current word, stops, and responds. |
+
+Two things hold in every case:
+
+- The agent always stops at a word boundary. It never cuts off mid-word.
+- Acknowledgments never derail the agent. Short ones are spoken through; long ones earn a pause and a seamless resume.
+
+What counts as a "short" utterance scales with the interruptibility setting: an easy-to-interrupt agent pauses for shorter caller utterances, while a difficult-to-interrupt agent holds through more.
+
+## Interruptibility
+
+How readily the agent yields the floor when the caller speaks over it. Set with the `interruptibility` field (integer, `0`-`4`, default `2`).
+
+| Setting | API value | Caller experience |
+| :---- | :---- | :---- |
+| Always interrupt | `4` | Any caller speech stops the agent. Nothing is treated as an acknowledgment; every utterance gets a stop and a response. |
+| Easy | `3` | Yields quickly. Only the briefest acknowledgments are spoken through. |
+| Balanced | `2` | Default. Short acknowledgments do not stop the agent; real interruptions do. |
+| Difficult | `1` | Holds the turn longer and treats more caller speech as acknowledgment. Good for noisy lines and chatty listeners. |
+| Block interruptions | `0` | The agent ignores caller speech entirely while talking and always finishes what it is saying. |
+
+## Resumption speed
+
+How quickly the agent responds once the caller stops talking. Set with the `resumption_speed` field (integer, `1`-`3`, default `2`).
+
+| Setting | API value | Caller experience |
+| :---- | :---- | :---- |
+| Fast | `1` | Responds almost as soon as the caller stops. Snappy, suited to quick transactional exchanges. May jump in when a caller pauses mid-thought. |
+| Medium | `2` | Default. Balanced for most conversations. |
+| Slow | `3` | Leaves a deliberate beat before responding. Suited to callers who pause to think mid-answer: the agent does not take a thinking pause as its cue to speak. |
+
+<Note>
+`resumption_speed` supersedes the older `interruption_threshold` field. When both are set, `resumption_speed` wins. Prefer `resumption_speed` for new configurations; `interruption_threshold` remains accepted for backward compatibility.
+</Note>
+
+## Where to set them
+
+- **Send Call API**: pass `interruptibility` and `resumption_speed` in the [`/v1/calls`](/api-v1/post/calls) request body. They apply to the whole call.
+- **Inbound numbers**: the same fields on your inbound number configuration.
+- **Pathways**: per node, in the node inspector under Advanced options. A node's setting takes effect from that node onward, for the rest of the call or until another node changes it. This lets a pathway shift the agent's manner mid-call, for example becoming harder to interrupt while reading a legal disclosure and easier while gathering information.
+
+## Choosing values
+
+| Symptom | Try |
+| :---- | :---- |
+| The agent takes too long to respond | Fast resumption |
+| The agent jumps in while callers are still thinking | Slow resumption |
+| The agent talks over callers who want to say something | Easy interruptibility, or Always interrupt |
+| The agent stops for background noise or brief acknowledgments | Difficult interruptibility, or Block interruptions |
+
+The two combine. A common "let the caller drive" setup is Easy interruptibility with Slow resumption; a common "get through the script" setup is Difficult interruptibility with Fast resumption.
