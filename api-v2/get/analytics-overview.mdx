@@ -1,0 +1,117 @@
+---
+title: "Analytics Overview"
+api: "GET https://api.bland.ai/v2/analytics/overview"
+description: "Retrieve baseline analytics metrics — total calls, total spend, and average call duration — for a date range and the equal-length previous window."
+---
+
+Use this endpoint to get at-a-glance metrics for your organization over a date range. The response includes the metrics for the requested period and the equal-length previous period, so you can compute period-over-period deltas without making a second request.
+
+This endpoint is available to all customers.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="start" type="string" required>
+  Start of the period to report on. Accepts an ISO 8601 date or date-time (for example, `2026-05-03` or `2026-05-03T00:00:00Z`).
+</ParamField>
+
+<ParamField query="end" type="string" required>
+  End of the period to report on. Accepts an ISO 8601 date or date-time. Must be on or after `start`.
+</ParamField>
+
+<ParamField query="skip_cache" type="boolean">
+  Optional. If `true`, bypasses the cached response and recomputes metrics from source. Defaults to `false`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Container for the current and previous period metrics.
+</ResponseField>
+
+<ResponseField name="data.current" type="object">
+  Metrics for the requested period (`start` to `end`).
+</ResponseField>
+
+<ResponseField name="data.current.total_calls" type="number">
+  Total number of calls in the current period.
+</ResponseField>
+
+<ResponseField name="data.current.total_cost" type="number">
+  Total spend (in USD) across calls in the current period.
+</ResponseField>
+
+<ResponseField name="data.current.avg_duration" type="number">
+  Average call length (in minutes) across calls in the current period.
+</ResponseField>
+
+<ResponseField name="data.previous" type="object">
+  Metrics for the equal-length window immediately before the requested period. Use this to calculate period-over-period changes.
+</ResponseField>
+
+<ResponseField name="data.previous.total_calls" type="number">
+  Total number of calls in the previous period.
+</ResponseField>
+
+<ResponseField name="data.previous.total_cost" type="number">
+  Total spend (in USD) across calls in the previous period.
+</ResponseField>
+
+<ResponseField name="data.previous.avg_duration" type="number">
+  Average call length (in minutes) across calls in the previous period.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+### Rate limits
+
+This endpoint is rate-limited per organization. If you exceed the limit you'll receive a `429` response — retry after a short backoff.
+
+### Errors
+
+| Status | Reason |
+| --- | --- |
+| `400` | Missing `start` or `end`, or the provided dates are invalid. |
+| `429` | Too many requests for this organization in the current window. |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v2/analytics/overview?start=2026-05-03&end=2026-06-02" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "current": {
+      "total_calls": 1284,
+      "total_cost": 312.47,
+      "avg_duration": 2.41
+    },
+    "previous": {
+      "total_calls": 1102,
+      "total_cost": 271.18,
+      "avg_duration": 2.37
+    }
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
