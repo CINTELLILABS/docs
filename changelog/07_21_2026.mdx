@@ -5,11 +5,11 @@ description: 'Agent speech timing controls, Scheduling node status routing, and 
 
 ### Agent Speech Timing: Interruptibility & Resumption Speed
 
-Two controls now shape your agent's conversational timing directly: how readily it yields when a caller talks over it, and how quickly it comes back in once the caller stops speaking. Set them per node under Advanced options, on inbound numbers, or in the [Send Call API](https://docs.bland.ai/api-v1/post/calls), and see the [Agent Speech docs](/tutorials/agent-speech) for a full guide.
+Two controls now shape your agent's conversational timing: how readily it yields when a caller talks over it, and how quickly it responds once the caller stops. Set them per node, on inbound numbers, or in the [Send Call API](https://docs.bland.ai/api-v1/post/calls); see the [Agent Speech docs](/tutorials/agent-speech) for a full guide.
 
-- Interruptibility now spans five levels, from "Block interruptions" (the agent ignores caller speech entirely) up to a new "Always interrupt" level where every caller utterance stops the agent. The middle levels are relabeled Easy, Balanced, and Difficult: a less interruptible agent holds its turn longer and treats more caller speech as acknowledgment
-- The new Resumption Speed setting (Slow, Medium, Fast) controls how long the agent waits after the caller finishes before responding: Slow leaves a deliberate pause for reflective callers, Fast comes in almost immediately
-- Node-level settings persist for the rest of the call unless a later node overrides them, and defaults are unchanged, so existing agents behave exactly as before
+- Interruptibility now spans five levels, from "Block interruptions" up to a new "Always interrupt", with the middle levels relabeled Easy, Balanced, and Difficult
+- The new Resumption Speed setting (Slow, Medium, Fast) sets how long the agent waits after the caller finishes before responding
+- Node-level settings persist for the rest of the call unless overridden; defaults are unchanged
 
 <img
   src="../changelog_assets/07_21_2026/agent_speech_timing.png"
@@ -21,19 +21,19 @@ Two controls now shape your agent's conversational timing directly: how readily 
 
 ### Status Code Routing on the Scheduling Node
 
-Scheduling nodes now support the same deterministic "Pathway After API Request Response" routing you already use on Webhook nodes, so what happens after a booking attempt no longer depends on a loop condition guessing at the outcome.
+Scheduling nodes now support the same deterministic "Pathway After API Request Response" routing as Webhook nodes.
 
-- Route to a specific node based on the response status code, or on fields extracted from the response body
-- Unmatched responses keep the caller in the node, so the booking flow continues instead of dead-ending
+- Route to a specific node based on the response status code or extracted response fields
+- Unmatched responses keep the caller in the node, so the booking flow continues
 
 ---
 
 ### Custom API Tools: PUT, PATCH, and DELETE
 
-The Custom API tool builder now supports all five REST verbs instead of just GET and POST, so your tools can update and delete records in external systems, not only read and create them.
+The Custom API tool builder now supports all five REST verbs, so tools can update and delete records in external systems, not just read and create them.
 
-- PUT, PATCH, and DELETE are supported end to end: tool creation, editing, test runs, and cURL import
-- JSON body validation errors now surface before you save instead of failing later on a live call
+- PUT, PATCH, and DELETE work across tool creation, editing, test runs, and cURL import
+- JSON body validation errors surface before you save instead of failing on a live call
 
 <img
   src="../changelog_assets/07_21_2026/REST_verbs.png"
@@ -46,51 +46,51 @@ The Custom API tool builder now supports all five REST verbs instead of just GET
 ### Improvements
 
 **Pathways**
-- Pathway logs now label node tool calls as "Tool Call" with the tool's name instead of a generic "Webhook" entry, and an unmet loop condition shows a neutral "Condition not met" state instead of a red failure
-- Custom tools attached to nodes now speak their configured filler line (like "let me see what openings we have") while the tool runs, instead of leaving the caller in silence
-- Node tools now trigger reliably when the agent refers to a tool without its trailing annotation tag, and tool calls that match no tool on the node are recorded as clear call log errors instead of failing silently
-- Fixed calls restarting at a pathway's start node (re-greeting the caller) after an unanswered warm transfer or a mid-call reconnection
-- Triggered guardrails no longer disappear from past call logs after you promote a new pathway version
+- Pathway logs label node tool calls as "Tool Call" with the tool's name instead of a generic "Webhook" entry, and unmet loop conditions show "Condition not met" instead of a red failure
+- Custom tools on nodes now speak their configured filler line while the tool runs, instead of leaving the caller in silence
+- Node tools trigger reliably when the agent drops a tool's trailing annotation tag, and unmatched tool calls are logged as clear errors instead of failing silently
+- Fixed calls restarting at a pathway's start node after an unanswered warm transfer or mid-call reconnection
+- Triggered guardrails no longer disappear from past call logs after promoting a new pathway version
 - The Reset STT Language node is now available to all organizations
 
 **Evals**
-- Large [eval](https://app.bland.ai/dashboard/evals) runs now complete reliably at any size: judging goes through a durable queue with automatic retry, and verdicts now display for every call in runs larger than 100 calls
-- Configured eval agent names now identify each column in eval reports
+- Large [eval](https://app.bland.ai/dashboard/evals) runs now complete reliably at any size, and verdicts display for every call in runs larger than 100 calls
+- Eval agent names now identify each column in eval reports
 
 **Speech Studio**
-- Meet the Director, an AI dialogue author that creates and edits multi-speaker TTS scripts right in the editor, with expressive performance tags like `[laughs]`, per-speaker voice assignment, and respect for your manual edits between turns
+- Meet the Director, an AI dialogue author for multi-speaker TTS scripts, with performance tags like `[laughs]` and per-speaker voice assignment
 - Fine-tuned custom voices no longer fail on longer generations through the `/speak` endpoint
 
 **Calls**
-- Agent dialogue spoken after a webhook no longer fuses words together in the transcript or drops part of the sentence from the audio
-- Agent responses that mention AI company names are no longer silently rewritten mid-speech
+- Dialogue spoken after a webhook no longer fuses words in the transcript or drops audio mid-sentence
+- Agent responses that mention AI company names are no longer silently rewritten
 
 **Telephony**
-- [Enterprise] Talkdesk and NICE CXone are now supported BYOC SIP providers, so customers on those platforms can connect to Bland via SIP trunking
+- [Enterprise] Talkdesk and NICE CXone are now supported BYOC SIP providers
 
 **Organization & Security**
-- You can now invite teammates to your organization by email address, in addition to phone number. Email invitees receive a sign-up link and join your organization automatically when they sign up with that address
-- [Enterprise] SSO providers can now be edited in place: rotate an expiring client secret or certificate without deleting and recreating the provider. Provider creation for Azure AD, Google, Okta, and Auth0 also works again, with real error messages when configuration fails
-- Billing actions are now correctly restricted to organization admins and owners
+- Invite teammates by email as well as phone; invitees get a sign-up link and join your organization automatically
+- [Enterprise] SSO providers can now be edited in place, so you can rotate an expiring client secret or certificate without recreating the provider. Provider creation for Azure AD, Google, Okta, and Auth0 also works again, with clearer errors
+- Billing actions are now restricted to organization admins and owners
 
 **Billing**
-- The [billing page](https://app.bland.ai/dashboard/pay) got a usability pass: checkout now runs inline with clearer purchase errors, you can manage or cancel an individual phone number subscription directly from the page, and rapid double-clicks can no longer trigger duplicate credit purchases
+- Checkout on the [billing page](https://app.bland.ai/dashboard/pay) now runs inline with clearer purchase errors, you can manage or cancel individual phone number subscriptions directly, and double-clicks can no longer trigger duplicate purchases
 
 **Personas**
-- Personas can now define what happens when a call hits voicemail: hang up, ignore, leave a message, or send an SMS
+- Personas can now define voicemail behavior: hang up, ignore, leave a message, or send an SMS
 
 **Automations**
-- The Send Call action can attach custom metadata to calls, static or mapped from the triggering event. It is included in the post-call webhook for every call status, including no-answer, so you can correlate webhooks back to your own records
+- The Send Call action can attach custom metadata to calls, included in the post-call webhook for every status (including no-answer) so you can correlate webhooks to your records
 
 **Messaging**
-- SMS log exports now include a metadata column so you can link exported conversations back to your own system data
-- SMS status indicators now show a blue "Sending" state and distinguish a neutral "Sent" from carrier-confirmed "Delivered"
+- SMS log exports now include a metadata column
+- SMS status indicators now show "Sending" and distinguish "Sent" from carrier-confirmed "Delivered"
 
 **Agent Testing**
-- Run a scenario N times and see a success rate across iterations, and runs that fail before the first turn now get a "Failed to start" badge
+- Run a scenario N times to see a success rate, and runs that fail before the first turn get a "Failed to start" badge
 
 **Releases**
-- The [Releases page](https://app.bland.ai/dashboard/settings/releases) now works on regional domains, so EU, CA, AU, and Asia customers can pick a target release
+- The [Releases page](https://app.bland.ai/dashboard/settings/releases) now works on regional domains (EU, CA, AU, and Asia)
 
 **Analytics**
-- Call durations now render correctly across board panels and the Avg Duration tile, and charts show the correct dates in all timezones
+- Call durations now render correctly across board panels, and charts show the correct dates in all timezones
