@@ -1,0 +1,102 @@
+---
+title: 'July 21, 2026'
+description: 'Scheduling node status routing, full REST support for Custom API tools, email invites, and a smoother billing experience'
+---
+
+### Status Code Routing on the Scheduling Node
+
+Scheduling nodes now support the same deterministic "Pathway After API Request Response" routing you already use on Webhook nodes, so what happens after a booking attempt no longer depends on a loop condition guessing at the outcome.
+
+- Route to a specific node based on the response status code, or on fields extracted from the response body
+- Unmatched responses keep the caller in the node, so the booking flow continues instead of dead-ending
+
+{/* TODO(media): add screenshot → changelog_assets/07_21_2026/scheduling_routing.jpeg
+    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
+
+---
+
+### Custom API Tools: PUT, PATCH, and DELETE
+
+The Custom API tool builder now supports all five REST verbs instead of just GET and POST, so your tools can update and delete records in external systems, not only read and create them.
+
+- PUT, PATCH, and DELETE are supported end to end: tool creation, editing, test runs, and cURL import
+- JSON body validation errors now surface before you save instead of failing later on a live call
+
+{/* TODO(media): add screenshot → changelog_assets/07_21_2026/custom_api_verbs.jpeg
+    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
+
+---
+
+### Invite Teammates by Email
+
+You can now invite members to your organization by email address, in addition to phone number.
+
+- The invite modal has a phone/email toggle; email invitees receive a sign-up link and are added to your organization automatically when they sign up with that address
+- Pending invites display the invite email, and you can search by it
+
+{/* TODO(media): add screenshot → changelog_assets/07_21_2026/email_invites.jpeg
+    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
+
+---
+
+### A Smoother Billing Experience
+
+The [billing page](https://app.bland.ai/dashboard/pay) got a major usability pass, from checkout through managing your phone number subscriptions.
+
+- Checkout now runs inline with Stripe instead of a separate modal, purchase failures show clear, specific error messages, and your balance updates right after a purchase
+- Manage or cancel an individual phone number subscription directly from the billing page: Manage and Cancel open the Stripe portal already focused on that subscription
+- A low-balance nudge estimates the talk time remaining on your credits, and rapid double-clicks can no longer trigger duplicate credit purchases
+
+{/* TODO(media): add screenshot → changelog_assets/07_21_2026/billing.jpeg
+    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
+
+---
+
+### Improvements
+
+**Pathways**
+- Pathway logs now label node tool calls as "Tool Call" with the tool's name instead of a generic "Webhook" entry, and an unmet loop condition shows a neutral "Condition not met" state instead of a red failure
+- Custom tools attached to nodes now speak their configured filler line (like "let me see what openings we have") while the tool runs, instead of leaving the caller in silence
+- Node tools now trigger reliably when the agent refers to a tool without its trailing annotation tag, and tool calls that match no tool on the node are recorded as clear call log errors instead of failing silently
+- Fixed calls restarting at a pathway's start node (re-greeting the caller) after an unanswered warm transfer or a mid-call reconnection
+- Triggered guardrails no longer disappear from past call logs after you promote a new pathway version
+- The Reset STT Language node is now available to all organizations
+
+**Evals**
+- Large [eval](https://app.bland.ai/dashboard/evals) runs now complete reliably at any size: judging goes through a durable queue with automatic retry, and verdicts now display for every call in runs larger than 100 calls
+- Eval runs judged on Gemini models now bill at the models' actual list pricing; runs on the default judge model were previously billed at roughly 10x their real cost
+- Configured eval agent names now identify each column in eval reports
+
+**Speech Studio**
+- Meet the Director, an AI dialogue author that creates and edits multi-speaker TTS scripts right in the editor, with expressive performance tags like `[laughs]`, per-speaker voice assignment, and respect for your manual edits between turns
+- Fine-tuned custom voices no longer fail on longer generations through the `/speak` endpoint
+
+**Calls**
+- Agent dialogue spoken after a webhook no longer fuses words together in the transcript or drops part of the sentence from the audio
+- Agent responses that mention AI company names are no longer silently rewritten mid-speech
+
+**Telephony**
+- [Enterprise] Talkdesk and NICE CXone are now supported BYOC SIP providers, so customers on those platforms can connect to Bland via SIP trunking
+
+**Organization & Security**
+- [Enterprise] SSO providers can now be edited in place: rotate an expiring client secret or certificate without deleting and recreating the provider. Provider creation for Azure AD, Google, Okta, and Auth0 also works again, with real error messages when configuration fails
+- Billing actions are now correctly restricted to organization admins and owners
+
+**Personas**
+- Personas can now define what happens when a call hits voicemail: hang up, ignore, leave a message, or send an SMS
+
+**Automations**
+- The Send Call action can attach custom metadata to calls, static or mapped from the triggering event. It is included in the post-call webhook for every call status, including no-answer, so you can correlate webhooks back to your own records
+
+**Messaging**
+- SMS log exports now include a metadata column so you can link exported conversations back to your own system data
+- SMS status indicators now show a blue "Sending" state and distinguish a neutral "Sent" from carrier-confirmed "Delivered"
+
+**Agent Testing**
+- Run a scenario N times and see a success rate across iterations, and runs that fail before the first turn now get a "Failed to start" badge
+
+**Releases**
+- The [Releases page](https://app.bland.ai/dashboard/settings/releases) now works on regional domains, so EU, CA, AU, and Asia customers can pick a target release
+
+**Analytics**
+- Call durations now render correctly across board panels and the Avg Duration tile, and charts show the correct dates in all timezones
