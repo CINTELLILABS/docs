@@ -1,0 +1,83 @@
+---
+title: "Agent branches"
+description: "Cut an isolated workspace from your agent's Development version, iterate safely, and merge changes back with guided conflict resolution."
+---
+
+## Introduction
+
+Branches give you a safe place to experiment on an agent without disturbing the shared **Development** version that your teammates and test calls rely on. You cut a branch from the current Development state, save changes to it independently, test-call the branch head directly, and merge it back into Development when you're ready.
+
+If Development moved forward while you were working on your branch, Bland runs a guided merge review: everything that doesn't overlap is auto-merged, and any true conflicts are surfaced field by field so you can choose "keep my branch's value" or "take Development's" with inline diffs — like a friendlier git.
+
+Use branches when you want to:
+
+- Try a risky prompt or pathway change without breaking the Development version teammates are testing against.
+- Prepare a larger set of edits and merge them as a single reviewed change.
+- Iterate in parallel with other people editing the same agent.
+
+## Creating a branch
+
+Open your agent in the builder. To the left of the environment selector at the top of the page, click the branch icon to open the branch menu.
+
+From the branch menu you can:
+
+- **Create branch** — cut a new branch from the current Development version. Pick a short, descriptive name (branch names must be unique per agent while open).
+- **Switch branch** — move to an existing open branch. The builder loads that branch's saved state.
+- **Return to Development** — switch back to the Development version.
+- **Archive** — abandon an open branch you no longer need.
+
+Branches are only available while you're editing the Development version. Production versions are unaffected.
+
+<Tip>
+Switching branches respects unsaved changes: if you have uncommitted edits in the current view, the builder prompts you before moving off it.
+</Tip>
+
+## Working on a branch
+
+Once you're on a branch, the builder behaves exactly like editing Development, with two differences:
+
+- **Saves land on the branch only.** Development stays untouched until you merge.
+- **Test calls run against the branch head.** The **Send call** button in the builder dials your branch's latest saved state, so you can validate changes end to end before merging.
+
+Test calls from a branch use your agent's Development variable values, so behavior stays consistent with how the merged version will run.
+
+## Test-calling a branch from the API
+
+You can target a branch directly from the [Send Call](/api-v1/post/calls) endpoint by setting `agent_version` to `branch:<name>`. This resolves the branch's current head at call time.
+
+```json
+{
+  "phone_number": "+15551234567",
+  "agent_id": "your-agent-id",
+  "agent_version": "branch:experiment-greeting"
+}
+```
+
+Existing selectors — Development, Production, semver, and version labels — are unchanged. Use `branch:<name>` only when you specifically want to place a call against an open branch.
+
+## Merging a branch back into Development
+
+When your branch is ready, open it in the builder and choose **Merge with Development**.
+
+### Fast-forward merge
+
+If Development hasn't moved since you branched, Bland squashes your branch head into a single new Development version and archives the branch. Your changes go live on Development immediately as one clean version.
+
+### Guided merge when Development has advanced
+
+If someone saved to Development while you were working, Bland runs a three-way merge review before landing the change:
+
+1. **Auto-merge** — every non-overlapping change from your branch and from Development is combined automatically. You never have to hand-resolve edits that don't collide.
+2. **Field-level conflicts** — where the same field changed on both sides, Bland surfaces the conflict at the deepest divergent path with inline diffs. For each conflict, choose:
+   - **Keep branch** — take the value from your branch.
+   - **Take Development** — take the value that landed on Development.
+3. **Rebase and merge** — once every conflict is resolved, Bland re-anchors your branch onto the latest Development state and squashes it into a single new Development version.
+
+If Development advances again while you're resolving conflicts, the review refreshes so you're always merging against the current Development head.
+
+## Best practices
+
+- **Keep branches short-lived.** The longer a branch sits open, the more likely Development moves and you'll have to resolve conflicts. Merge or archive branches when you're done.
+- **One branch per idea.** Small, focused branches make merge review fast and reduce the chance of overlapping edits.
+- **Test-call before merging.** Use the branch's Send call to confirm behavior end to end so you don't merge a broken change into Development.
+- **Communicate with teammates.** Branch names are shared per agent — pick names that make it obvious what the branch is for.
