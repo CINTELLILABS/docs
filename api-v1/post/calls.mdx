@@ -68,8 +68,48 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   The version number of the pathway to use for the call. Defaults to the production version.
 </ParamField>
 
+<ParamField body="agent_id" type="string">
+  The ID of an agent to run the call from. When set, Bland compiles the agent's version snapshot server-side and uses it to drive the call, so you don't need to manage a pathway manually.
+
+  Cannot be combined with `pathway_id` or `persona_id`.
+
+  When you use `agent_id`, the `task` parameter is not required, and `tools` are not accepted (the agent's own configuration applies).
+
+  Settings defined on the agent snapshot — including `voice`, `language`, and interruption sensitivity — are applied as defaults. Any of these values you pass explicitly in the request body take precedence.
+
+  Example request body:
+
+  ```json
+  {
+    "phone_number": "+19759347494",
+    "agent_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7"
+  }
+  ```
+</ParamField>
+
+<ParamField body="agent_version" type="number | string">
+  Selects which version of the agent to run. Only used when `agent_id` is set. Defaults to the version pinned to the `production` environment when omitted.
+
+  Accepts:
+
+  - A specific version number (for example, `3`).
+  - `"production"` — the version pinned to the agent's production environment (default).
+  - `"staging"` — the version pinned to the agent's staging environment.
+  - `"latest"` or `"dev"` — the most recently saved version of the agent.
+
+  Example request body:
+
+  ```json
+  {
+    "phone_number": "+19759347494",
+    "agent_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7",
+    "agent_version": "staging"
+  }
+  ```
+</ParamField>
+
 <ParamField body="task" type="string" required>
-  Note: Do not specify if using a pathway.
+  Note: Do not specify if using a pathway or `agent_id`.
 
   Provide instructions, relevant information, and examples of the ideal conversation flow.
 
