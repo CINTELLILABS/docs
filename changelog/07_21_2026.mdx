@@ -1,6 +1,19 @@
 ---
 title: 'July 21, 2026'
-description: 'Scheduling node status routing, full REST support for Custom API tools, email invites, and a smoother billing experience'
+description: 'Agent speech timing controls, Scheduling node status routing, and full REST support for Custom API tools'
+---
+
+### Agent Speech Timing: Interruptibility & Resumption Speed
+
+Two controls now shape your agent's conversational timing directly: how readily it yields when a caller talks over it, and how quickly it comes back in once the caller stops speaking. Set them per node under Advanced options, on inbound numbers, or in the [Send Call API](https://docs.bland.ai/api-v1/post/calls), and see the [Agent Speech docs](/tutorials/agent-speech) for a full guide.
+
+- Interruptibility now spans five levels, from "Block interruptions" (the agent ignores caller speech entirely) up to a new "Always interrupt" level where every caller utterance stops the agent. The middle levels are relabeled Easy, Balanced, and Difficult: a less interruptible agent holds its turn longer and treats more caller speech as acknowledgment
+- The new Resumption Speed setting (Slow, Medium, Fast) controls how long the agent waits after the caller finishes before responding: Slow leaves a deliberate pause for reflective callers, Fast comes in almost immediately
+- Node-level settings persist for the rest of the call unless a later node overrides them, and defaults are unchanged, so existing agents behave exactly as before
+
+{/* TODO(media): add screenshot → changelog_assets/07_21_2026/agent_speech_timing.jpeg
+    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
+
 ---
 
 ### Status Code Routing on the Scheduling Node
@@ -23,31 +36,6 @@ The Custom API tool builder now supports all five REST verbs instead of just GET
 - JSON body validation errors now surface before you save instead of failing later on a live call
 
 {/* TODO(media): add screenshot → changelog_assets/07_21_2026/custom_api_verbs.jpeg
-    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
-
----
-
-### Invite Teammates by Email
-
-You can now invite members to your organization by email address, in addition to phone number.
-
-- The invite modal has a phone/email toggle; email invitees receive a sign-up link and are added to your organization automatically when they sign up with that address
-- Pending invites display the invite email, and you can search by it
-
-{/* TODO(media): add screenshot → changelog_assets/07_21_2026/email_invites.jpeg
-    Slack #product-demos was not accessible this run; check for a Loom before merge. */}
-
----
-
-### A Smoother Billing Experience
-
-The [billing page](https://app.bland.ai/dashboard/pay) got a major usability pass, from checkout through managing your phone number subscriptions.
-
-- Checkout now runs inline with Stripe instead of a separate modal, purchase failures show clear, specific error messages, and your balance updates right after a purchase
-- Manage or cancel an individual phone number subscription directly from the billing page: Manage and Cancel open the Stripe portal already focused on that subscription
-- A low-balance nudge estimates the talk time remaining on your credits, and rapid double-clicks can no longer trigger duplicate credit purchases
-
-{/* TODO(media): add screenshot → changelog_assets/07_21_2026/billing.jpeg
     Slack #product-demos was not accessible this run; check for a Loom before merge. */}
 
 ---
@@ -79,8 +67,12 @@ The [billing page](https://app.bland.ai/dashboard/pay) got a major usability pas
 - [Enterprise] Talkdesk and NICE CXone are now supported BYOC SIP providers, so customers on those platforms can connect to Bland via SIP trunking
 
 **Organization & Security**
+- You can now invite teammates to your organization by email address, in addition to phone number. Email invitees receive a sign-up link and join your organization automatically when they sign up with that address
 - [Enterprise] SSO providers can now be edited in place: rotate an expiring client secret or certificate without deleting and recreating the provider. Provider creation for Azure AD, Google, Okta, and Auth0 also works again, with real error messages when configuration fails
 - Billing actions are now correctly restricted to organization admins and owners
+
+**Billing**
+- The [billing page](https://app.bland.ai/dashboard/pay) got a usability pass: checkout now runs inline with clearer purchase errors, you can manage or cancel an individual phone number subscription directly from the page, and rapid double-clicks can no longer trigger duplicate credit purchases
 
 **Personas**
 - Personas can now define what happens when a call hits voicemail: hang up, ignore, leave a message, or send an SMS
