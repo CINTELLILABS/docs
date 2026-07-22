@@ -609,6 +609,26 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   When the call ends, call information is sent to this webhook URL.
 </ParamField>
 
+<ParamField body="redaction" type="string[]">
+  Enable end-of-call transcript redaction for one or more compliance regimes before any transcript data is written to durable storage (database, Redis, webhooks, exports). Accepts any combination of:
+
+  - `pii` — personally identifiable information (names, emails, phone numbers, addresses)
+  - `phi` — protected health information
+  - `pci` — payment card information
+
+  When enabled, the agent still has access to the raw transcript **during** the call so it can complete its task, but the transcript is buffered in memory and only the redacted version is persisted. Both the agent and user sides of the transcript are redacted together, which gives the model full conversational context and improves accuracy.
+
+  Omit the field or pass an empty array to disable redaction.
+
+  ```json
+  {
+    "phone_number": "+15551234567",
+    "task": "Verify the caller's identity and confirm their appointment.",
+    "redaction": ["pii", "phi"]
+  }
+  ```
+</ParamField>
+
 <ParamField body="webhook_events" type="array">
   Specify which events you want to stream to the webhook, during the call.
 
