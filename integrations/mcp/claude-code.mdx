@@ -1,0 +1,89 @@
+---
+title: "Claude Code"
+description: "Connect Claude Code to your Bland account with one command"
+---
+
+Two ways to connect, depending on how deep you want to go:
+
+- **Just the MCP server**: one command that gives Claude every Bland tool.
+- **The Norm plugin**: the MCP server plus slash commands, specialized agents, and a file-based pathway workspace. This is the full Bland development experience in Claude Code.
+
+## Prerequisites
+
+- [Claude Code](https://code.claude.com) installed
+- Your Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings)
+
+## Option 1: Add the MCP server
+
+```bash
+claude mcp add --transport http bland https://api.bland.ai/v1/mcp \
+  --header "Authorization: Bearer $BLAND_API_KEY"
+```
+
+That's it. Verify the connection:
+
+```bash
+claude mcp list
+```
+
+<Frame>
+  <img src="/images/mcp/claude-mcp-list.png" alt="claude mcp list showing the bland server connected" />
+</Frame>
+
+Inside a session, run `/mcp` to see the server's tools, or just ask:
+
+```
+> list my pathways and tell me which ones have no published version
+> pull the transcript of my last call and explain where the agent went off script
+> create a pathway that qualifies inbound leads and books a demo
+```
+
+<Tip>
+By default `claude mcp add` configures the server for the current project only. Add `--scope user` to make it available in every project.
+</Tip>
+
+## Option 2: Install the Norm plugin
+
+Norm layers a complete pathway-engineering workflow on top of the MCP server: clone a pathway into local files, edit it like code, validate against the real compiler, commit versions, simulate conversations, and converge on a goal with an autonomous test loop.
+
+Inside Claude Code:
+
+```
+/plugin marketplace add CINTELLILABS/bland-plugins
+/plugin install norm@bland
+```
+
+The installer prompts for your API key and stores it securely. Then start with:
+
+```
+/norm:norm build me an agent that confirms dental appointments
+```
+
+Useful commands once you're in:
+
+| Command | What it does |
+| --- | --- |
+| `/norm:list` | List the pathways on your account |
+| `/norm:clone` | Pull a pathway into a local file workspace |
+| `/norm:validate` | Check your edits against the authoritative server compiler |
+| `/norm:test` | Simulate a conversation against your local pathway |
+| `/norm:commit` | Save (and optionally publish) a new version |
+| `/norm:loop` | Autonomous build-test-fix loop until a goal passes |
+| `/norm:smoke` | Self-test your setup end to end |
+
+<Frame>
+  <img src="/images/mcp/mcp-session.png" alt="A Claude Code session using the Bland MCP to list pathways and report which have a published production version" />
+</Frame>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Everything the MCP server can do.
+  </Card>
+  <Card title="Other clients" icon="plug" href="/integrations/mcp/other-clients">
+    Cursor, Codex, VS Code, Windsurf, and raw HTTP.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)

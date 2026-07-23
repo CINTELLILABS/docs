@@ -1,0 +1,81 @@
+---
+title: "Bland MCP Server"
+description: "Connect Claude Code, Cursor, Codex, and any MCP client to your Bland account"
+---
+
+The Bland MCP server lets AI coding agents work with your Bland account through natural language: place and inspect calls, build and validate pathways, manage agents, query analytics, run evals, and search the Bland docs, all without leaving your editor.
+
+It's a remote [Model Context Protocol](https://modelcontextprotocol.io) server hosted by Bland. There's nothing to run locally: point your client at the endpoint, authenticate with your API key, and your agent has the full toolset.
+
+```
+https://api.bland.ai/v1/mcp
+```
+
+## Set up your client
+
+<CardGroup cols={2}>
+  <Card title="Claude Code" icon="terminal" href="/integrations/mcp/claude-code">
+    One command, plus the Norm plugin for the full pathway-building workflow.
+  </Card>
+  <Card title="Cursor" icon="arrow-pointer" href="/integrations/mcp/cursor">
+    One-click install link or a three-line config file.
+  </Card>
+  <Card title="Codex, VS Code, Windsurf &amp; more" icon="plug" href="/integrations/mcp/other-clients">
+    Claude Desktop, OpenAI Codex, VS Code, Windsurf, Gemini CLI, or raw HTTP.
+  </Card>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Every tool the server exposes, grouped by what it does.
+  </Card>
+</CardGroup>
+
+## How it works
+
+- **Transport:** Streamable HTTP (the current MCP standard). The server is stateless, so there are no sessions to manage and any request can hit any node.
+- **Authentication:** your Bland API key in the `Authorization` header (`Bearer org_...`). The key's organization scopes every tool: an agent connected with your key sees only your org's calls, pathways, and agents. Get a key from the [dashboard](https://app.bland.ai/dashboard/settings).
+- **Rate limits:** 120 requests per minute per organization.
+- **Safety:** every tool is annotated read-only or destructive, so well-behaved clients ask before the agent does anything with side effects (like placing a real phone call). Mutating tools additionally require an explicit confirmation argument.
+
+## What your agent can do
+
+| Category | Highlights |
+| --- | --- |
+| **Calls** | Place an outbound call (`create_call`), fetch a call's transcript, recording, and summary (`get_call_log`). |
+| **Pathways** | Compile-check a pathway graph before saving (`validate_pathway`), fetch the authoritative schema (`get_pathway_schema`), and get deep node/edge semantics (`get_pathway_context`). |
+| **Agents** | Full lifecycle for the v2 agents model: create, version, branch, publish to staging, promote to production, manage environment variables. |
+| **Analytics** | Structured call-analytics queries with grouping, filters, and time ranges (`query_analytics`). |
+| **Evals** | List and inspect LLM judges, kick off eval runs over batches of calls. |
+| **Docs** | Search and read docs.bland.ai from inside the session (`search_bland_docs`, `get_bland_doc`). |
+| **Full API reach** | Anything not covered by a dedicated tool: `bland_api_get` for any GET endpoint, `call_bland_api` for any mutating endpoint. |
+
+See the full [tool reference](/integrations/mcp/tools).
+
+The server also ships MCP **prompts**: `build_pathway` and `edit_pathway` appear as slash commands in clients that support them (like Claude Code) and load Bland's pathway-authoring doctrine into the session.
+
+## One endpoint, three MCP surfaces
+
+Bland has three MCP-related surfaces. If you're unsure, use the first one.
+
+| Surface | What it is | When to use it |
+| --- | --- | --- |
+| `https://api.bland.ai/v1/mcp` | **This server.** Remote, account-scoped, full toolset. | Building on Bland with an AI agent. |
+| `bland mcp` ([CLI](/sdks/cli)) | A local stdio server bundled with the Bland CLI. | You already use the CLI and prefer a local process. |
+| `https://docs.bland.ai/mcp` | The docs site's own MCP (search-only, no auth). | You only want documentation search. |
+
+## Security notes
+
+- Treat your API key like a password. Use environment variables or your client's secret storage. Never commit it to a repo.
+- Tools that spend money or touch live traffic (placing calls, publishing agents) are marked destructive and confirmation-gated, but review what your agent proposes before approving.
+- MCP tool results can contain untrusted content (e.g. call transcripts of real conversations). Prompt-injection-aware clients like Claude Code treat tool output as data, but keep it in mind when building your own agent loops.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect Claude Code" icon="terminal" href="/integrations/mcp/claude-code">
+    The fastest path, including the Norm plugin.
+  </Card>
+  <Card title="Send your first call" icon="phone" href="/quickstart">
+    The 5-minute API quickstart.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)
