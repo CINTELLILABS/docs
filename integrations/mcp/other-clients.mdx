@@ -1,0 +1,142 @@
+---
+title: "Other Clients"
+description: "Connect Codex, VS Code, Claude Desktop, Windsurf, Gemini CLI, or any MCP client to Bland"
+---
+
+The Bland MCP server speaks standard streamable HTTP, so any MCP client can connect. You need two things:
+
+- **URL:** `https://api.bland.ai/v1/mcp`
+- **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
+
+Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Configs for the most common clients:
+
+## OpenAI Codex
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.bland]
+url = "https://api.bland.ai/v1/mcp"
+bearer_token_env_var = "BLAND_API_KEY"
+```
+
+Export `BLAND_API_KEY` in your shell profile, then restart Codex. If your Codex version has trouble with HTTP servers, use the stdio bridge below.
+
+## VS Code (Copilot)
+
+<a href="https://vscode.dev/redirect/mcp/install?name=bland&config=%7B%22name%22%3A%20%22bland%22%2C%20%22type%22%3A%20%22http%22%2C%20%22url%22%3A%20%22https%3A//api.bland.ai/v1/mcp%22%2C%20%22headers%22%3A%20%7B%22Authorization%22%3A%20%22Bearer%20%24%7Binput%3Abland-api-key%7D%22%7D%7D">Install in VS Code</a>, or add to `.vscode/mcp.json`:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "bland-api-key",
+      "description": "Bland API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "bland": {
+      "type": "http",
+      "url": "https://api.bland.ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:bland-api-key}"
+      }
+    }
+  }
+}
+```
+
+VS Code prompts for the key on first use and stores it securely. It never lands in the config file.
+
+## Claude Desktop
+
+Claude Desktop's custom connectors expect OAuth, so use the stdio bridge with your API key instead. Add to `claude_desktop_config.json` (**Settings → Developer → Edit Config**):
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "https://api.bland.ai/v1/mcp",
+        "--header", "Authorization: Bearer ${BLAND_API_KEY}"
+      ],
+      "env": { "BLAND_API_KEY": "org_your_key_here" }
+    }
+  }
+}
+```
+
+Requires Node.js 18+. Restart Claude Desktop after saving.
+
+## Windsurf
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "serverUrl": "https://api.bland.ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_BLAND_API_KEY"
+      }
+    }
+  }
+}
+```
+
+## Gemini CLI
+
+Add to `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "httpUrl": "https://api.bland.ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_BLAND_API_KEY"
+      }
+    }
+  }
+}
+```
+
+## Any client / custom agents
+
+For clients not listed here (or your own agent loop), either:
+
+**Native HTTP**: configure a streamable-HTTP MCP server with the URL and header above.
+
+**Stdio bridge**: if the client only supports stdio servers, `mcp-remote` bridges any of them to the Bland endpoint:
+
+```bash
+npx -y mcp-remote https://api.bland.ai/v1/mcp \
+  --header "Authorization: Bearer $BLAND_API_KEY"
+```
+
+**Raw JSON-RPC**: the endpoint is plain HTTP POST, so you can drive it directly:
+
+```bash
+curl -X POST https://api.bland.ai/v1/mcp \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Everything the MCP server can do.
+  </Card>
+  <Card title="MCP overview" icon="circle-info" href="/integrations/mcp/overview">
+    Auth, rate limits, and how the server works.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)
