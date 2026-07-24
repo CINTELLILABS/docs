@@ -5,33 +5,66 @@ description: "Connect Bland to your own Twilio account"
 
 ## Overview
 
-Users can connect their own Twilio account to Bland. Easily bring over your existing phone numbers, integrations, and more.
+Users can connect their own Twilio account to Bland, easily bring over your existing phone numbers to use within the platform.
 
 Pre-requisites:
 
-- Your own Twilio account
-
-## Import guide 
+- Your own Twilio accountImport guide
 
 ### Step 1: Get your Twilio credentials
 
 1. Log in to your [Twilio Console](https://console.twilio.com/).
-2. Copy your Account SID (starts with "AC", 34 characters) and Auth Token (32 characters). 
-3. Make sure the phone number(s) you want to use are active in that Twilio account. 
+2. Copy your Account SID (starts with "AC", 34 characters) and Auth Token (32 characters).
+3. Make sure the phone number(s) you want to use are active in that Twilio account.
 
 ### Step 2: Generate an Encrypted Key in Bland
 
-1. In the [Bland Dashboard](https://app.bland.ai/dashboard), go to Add-ons → BYOT and generate a new key using your Twilio Account SID and Auth Token. 
-2. Save the `encrypted_key`immediately as it is only shown once. If you lose it, you'll need to generate a new one. 
+1. In the [Bland Dashboard](https://app.bland.ai/dashboard), go to Add-ons → BYOT and generate a new key using your Twilio Account SID and Auth Token.
+2. Save the`encrypted_key`immediately as it is only shown once. If you lose it, you'll need to generate a new one.
 
 ### Step 3: Import your Twilio numbers
 
+You can import your Twilio numbers in two different ways: through the dashboard UI, or via API.
+
+**UI**
+
 1. After the key is generated, your Twilio numbers will appear under **Add-ons → BYOT.**
-2. Select the number(s) you want to import and complete the import. 
+2. Select the number (s) you want to import and complete the import.
+
+**API**
+
+You can also generate your`encrypted_key`directly via API using the [Create Encrypted Key endpoint](https://docs.bland.ai/api-v1/post/accounts):
+
+Required body params:
+
+- `account_sid` - Your Twilio Account SID
+- `auth token`- Your Twilio Auth Token
+
+Required header:
+
+- `authorization` - Your Bland API key
+
+For example:
+
+```bash
+curl --request POST \
+  --url https://api.bland.ai/v1/accounts \
+  --header 'Content-Type: application/json' \
+  --header 'authorization: <authorization>' \
+  --data '
+{
+  "account_sid": "<string>",
+  "auth_token": "<string>"
+}
+```
+
+**Note:**
+
+To disable an`encrypted_key`, use the [Delete Encrypted Key](https://docs.bland.ai/api-v1/post/accounts-delete) endpoint.
 
 ### **Step 4: Use your imported number**
 
-For outbound calls, include `encrypted_key`in the body in addition to the `Authorization` header) of your [send call API requests](https://docs.bland.ai/api-v1/post/calls#param-encrypted-key), and set to your imported Twilio number. 
+For outbound calls, include`encrypted_key`in the header (in addition to the `Authorization` header) of your [send call API requests](https://docs.bland.ai/api-v1/post/calls#param-encrypted-key), and set to your imported Twilio number (s) as the `from` number.
 
 For example:
 
@@ -47,11 +80,15 @@ curl --location 'https://api.bland.ai/v1/calls' \
 }
 ```
 
-If is `from`omitted, Bland will automatically select one of the imported numbers from that Twilio account. 
+If`encrypted_key`is included but`from` is omitted, Bland will automatically select one of the imported numbers from that Twilio account, if one exists.
 
-Also, make sure \[COUNTRY\] is enabled in your Twilio-Geo Permissions. 
+## **Geo-Permissions**
 
-**Note:** 
+International calling permissions for imported numbers are inherited from the Twilio account they came from. Make sure the destination country is enabled in your Twilio account's Geo Permissions before placing outbound calls there.
+
+[https://console.twilio.com/?frameUrl=/console/voice/calls/geo-permissions/low-risk](https://console.twilio.com/?frameUrl=/console/voice/calls/geo-permissions/low-risk) [https://console.twilio.com/?frameUrl=/console/voice/calls/geo-permissions/high-risk](https://console.twilio.com/?frameUrl=/console/voice/calls/geo-permissions/high-risk)
+
+**Note:**
 
 Any future updates to imported BYOT numbers **MUST** include the`encrypted_key`, or the request may fail.
 
