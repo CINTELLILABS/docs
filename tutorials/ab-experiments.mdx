@@ -1,0 +1,72 @@
+---
+title: "A/B experiments"
+description: "Route a slice of an agent's production traffic to a challenger version, compare results call for call, then stop or promote when you're ready."
+---
+
+A/B experiments let you test a new version of an agent against the version currently serving production. You pick a challenger, route a percentage of live traffic to it, and watch calls accumulate against the baseline. When you've seen enough, you stop the experiment and either keep the baseline or promote the challenger.
+
+Start experiments from an agent's **Experiments** tab in the [dashboard](https://app.bland.ai).
+
+## How experiments work
+
+Each experiment has three moving parts:
+
+1. **A baseline**: the agent version currently pinned to production. Every experiment compares against production, so an agent needs a promoted production version before you can start one.
+2. **A challenger**: any other published or named version of the same agent. This is the version under test.
+3. **Routing conditions**: the share of production traffic that gets sent to the challenger, plus optional guardrails like a call quota, a date range, and the hours of the day the experiment is allowed to run.
+
+Only one experiment can run per agent at a time. While it's live, incoming calls that match the routing conditions are handed to the challenger version; everything else stays on production.
+
+## Start an experiment
+
+From the **Experiments** tab, select **New experiment** and fill in the dialog:
+
+- **Version to test**: the challenger. Defaults to whatever your staging environment points at, but you can pick any published or named version other than production.
+- **Traffic percentage**: the share of production traffic to route to the challenger. Start small if you're testing a risky change.
+- **Call quota** *(optional)*: cap the experiment at N connected variant calls. Once the challenger has taken that many calls, the experiment ends automatically.
+- **Date range** *(optional)*: bound the experiment to a start and end date. Leave either side blank for an open-ended bound.
+- **Run hours** *(optional)*: only route traffic during specific hours, and optionally only on specific weekdays. Useful for keeping experiments off weekends or overnight shifts.
+
+You need a version pinned to production before you can create an experiment. If nothing is pinned, the dashboard tells you to promote a baseline first.
+
+## Watch a running experiment
+
+The active experiment card shows the current state at a glance:
+
+- The challenger version and the baseline environment it's testing against.
+- The traffic percentage in effect.
+- **Connected variant calls**: the running count of calls that actually connected to the challenger. This is the number your quota is measured against — calls that never connect don't count.
+- Any quota, date range, or run-hours conditions you set.
+
+Only calls that connect count toward the quota, so you always know how many real conversations the challenger has handled.
+
+## Edit a running experiment
+
+You can adjust a live experiment without stopping it. Open the active experiment and change any of:
+
+- Traffic percentage.
+- Call quota.
+- Date range.
+- Run hours.
+
+The **version under test is locked** once an experiment starts — switching challengers means stopping this experiment and starting a new one. Edits only apply to fields you actually change, so schedules created through the API that the dashboard form can't represent (like per-day run windows or one-sided date bounds) stay intact when you save.
+
+## Stop an experiment
+
+Select **Stop** on the active experiment to end it immediately. The experiment moves to history with a reason of "stopped manually." Traffic returns to 100% production on the next call.
+
+Experiments can also end on their own when:
+
+- The call quota is reached.
+- The end date passes.
+- You promote the challenger to production (which ends the experiment because there's no longer a challenger to test).
+
+## History
+
+Completed experiments land in the **History** list under the active experiment. Each entry shows the challenger, the baseline, the traffic percentage, how many variant calls connected, the dates it ran, and how it ended (manually stopped, quota met, expired, or promoted).
+
+Use history to keep a record of what you tested and why — you can look back at an old experiment before shipping a similar change.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
