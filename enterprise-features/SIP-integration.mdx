@@ -258,6 +258,41 @@ Open a trunk's **Calls** tab and select a call to see the full **SIP trace** —
 
 The trace shows the INVITE / 100 Trying / 180 Ringing / 200 OK / ACK flow with full headers and SDP, including transfers and new legs — copy or export it for debugging. Call logs auto-refresh and include direction, status, SIP response code, duration, and timestamps.
 
+### Direct carrier egress (BYOC)
+
+By default, outbound calls placed through Bland are routed via Bland's upstream carrier. If you have your own SIP carrier — such as **Bandwidth**, **Telnyx**, or any provider that supports standard SIP digest authentication — you can bridge outbound calls **directly** to that carrier from Bland's SIP edge instead.
+
+To enable direct carrier egress on a trunk, set your carrier credentials in the outbound `options` when creating or updating it:
+
+- `sip_username` — the SIP username your carrier expects
+- `sip_password` — the SIP password your carrier expects
+- `sip_realm` *(optional)* — pin the digest realm. Leave unset to accept whatever realm the carrier returns in its `401` / `407` challenge (the common case).
+
+Once these are set, outbound calls placed on numbers attached to that trunk are bridged straight to your carrier and Bland answers the carrier's digest challenge natively — no Twilio hairpin.
+
+```json Example (attach with direct carrier credentials)
+{
+  "phone_numbers": ["+14150000000"],
+  "directions": [
+    {
+      "type": "outbound",
+      "sip_endpoint": "sip:your-carrier.example.com",
+      "options": {
+        "transport": "tls",
+        "secure_media": true,
+        "sip_username": "your-carrier-username",
+        "sip_password": "your-carrier-password",
+        "sip_realm": "your-carrier.example.com"
+      }
+    }
+  ],
+  "service": "sip",
+  "trunk_id": "<trunk-id>"
+}
+```
+
+Direct egress is available for outbound (`outbound` or `both`) trunks. Inbound routing is unchanged.
+
 ### Advanced configuration
 
 From a number's configuration you can also manage:
