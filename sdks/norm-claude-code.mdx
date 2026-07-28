@@ -1,0 +1,134 @@
+---
+title: "Norm for Claude Code"
+description: "Install the Norm plugin for Claude Code to build, test, and ship Bland voice agents from your terminal."
+---
+
+Norm runs inside [Claude Code](https://claude.com/claude-code) as a plugin. Describe what you want in plain English, and Norm builds, tests, and publishes Bland voice agents without leaving your terminal. The plugin connects to your account through the [Bland MCP server](/sdks/mcp) and adds `/norm` commands for the full agent lifecycle.
+
+Norm is also built into the Bland dashboard. See [Norm](/tutorials/norm) for the in-app version.
+
+## Prerequisites
+
+- [Claude Code](https://claude.com/claude-code) (CLI or desktop app)
+- A Bland API key from the [dashboard](https://app.bland.ai)
+
+## Install
+
+<Steps>
+  <Step title="Add the marketplace and install the plugin">
+    Inside a Claude Code session, run:
+
+    ```text
+    /plugin marketplace add CINTELLILABS/bland-plugins
+    /plugin install norm@bland
+    ```
+
+    The installer prompts for your Bland API key. The key is masked on entry, stored encrypted in your OS keychain, and used only to authenticate the MCP connection. It never appears in files or chat.
+
+    You can also install from your terminal:
+
+    ```bash
+    claude plugin marketplace add CINTELLILABS/bland-plugins
+    claude plugin install norm@bland --config bland_api_key=YOUR_KEY
+    ```
+  </Step>
+  <Step title="Desktop app only: enter your key">
+    Installing from the desktop app's plugin browser does not prompt for configuration. Enter your key in-session with:
+
+    ```text
+    /plugin configure norm@bland
+    ```
+  </Step>
+  <Step title="Restart and verify">
+    Restart your session so the MCP client connects, then check the connection:
+
+    ```text
+    /norm:status
+    ```
+
+    For a full self-test of the connection, config, and every read surface, run `/norm:smoke`.
+  </Step>
+</Steps>
+
+<Warning>
+  Never paste your API key into the chat. The interactive prompt and the `--config` flag keep it out of the model context and in your OS keychain. To rotate the key later, run `/plugin configure norm@bland`.
+</Warning>
+
+## The flow
+
+From first prompt to production:
+
+1. **Build it.** `/norm:norm build me a booking flow that collects name, callback number, and a time, then confirms it back`. Norm designs the pathway, validates it with the real compiler, and saves it.
+2. **Give it tools.** `/norm:tools build a tool that checks availability in our booking API`. Norm builds the tool, test-runs it against the real endpoint, and attaches it to the node that needs it.
+3. **Prove it works.** `/norm:loop <pathway_id> --goal 'caller books an appointment and gets it confirmed back'`. Norm simulates the customer, grades every outcome with evidence, fixes what fails, and repeats until the call passes.
+4. **Define what to measure.** `/norm:analytics define an outcome schema: booked yes/no, appointment time, reason if not booked`. Verified on real calls before you trust it.
+5. **Score every call.** `/norm:evals build a scorecard for this pathway and attach it to calls`. Every production call auto-scores after it ends.
+6. **Watch it.** `/norm:analytics build me an ops dashboard`. A live board in the Bland UI: volume, completion, outcomes, score trends.
+7. **Iterate from reality.** `/norm:review <call_id>` shows the exact turn a call broke. `/norm:loop <pathway_id> --from-call <call_id>` fixes the flow against that real call.
+
+## Edit an existing pathway
+
+Norm turns a pathway into local files you can read and edit: prompts as Markdown, configuration as YAML.
+
+```text
+/norm:list                    # find the pathway id
+/norm:clone <pathway_id>      # pull it into a local workspace
+# edit the pathway/ files, or tell Norm what to change
+/norm:validate                # structural pre-check
+/norm:test                    # simulated conversation, no real dial
+/norm:commit                  # save as a new version on the server
+```
+
+Committing saves a new working version. Production is unchanged until you publish.
+
+## Command reference
+
+| Command | What it does |
+|---------|--------------|
+| `/norm:norm` | Build, edit, test, and publish agents end to end. The main entry point. |
+| `/norm:list` | List the pathways on your account. |
+| `/norm:clone` | Pull a pathway into a local file workspace, or scaffold a new one with `new`. |
+| `/norm:validate` | Validate the local workspace with the server compiler. |
+| `/norm:test` | Run a simulated conversation against the local pathway, or test a single node. |
+| `/norm:commit` | Save the workspace back to the server as a new version. |
+| `/norm:loop` | Convergence loop: simulate, grade outcomes, fix, and repeat until the goal passes. |
+| `/norm:status` | Show workspace state: active pathway, local changes, drift from the server. |
+| `/norm:tools` | Build and test custom REST tools and the secrets they reference. |
+| `/norm:evals` | Build judges and scorecards, run evals, and check pass rates. |
+| `/norm:analytics` | Query call analytics, define outcome schemas, and build dashboards. |
+| `/norm:review` | Fetch and debug a real call with evidence from its logs. |
+| `/norm:persona` | Manage voices, call configuration, and persona-to-pathway routing. |
+| `/norm:knowledge` | Build knowledge bases the agent can cite mid-call. |
+| `/norm:automations` | Build event-driven triggers and pipelines that place calls. |
+| `/norm:triage` | File and track issues found in your agents. |
+| `/norm:api` | Call any Bland REST endpoint directly, guided by the docs. |
+| `/norm:debug` | Systematic root-cause debugging for anything misbehaving. |
+| `/norm:config` | Show or switch the API URL the plugin points at. |
+| `/norm:smoke` | Self-test the install: MCP connection, config, and read surfaces. |
+
+## Safety
+
+- Reads are free. Anything that mutates state, costs money, or dials a phone asks for confirmation first.
+- Norm never invents numbers or verdicts. Every claim is backed by a query, a read-back, or a transcript quote.
+- Your API key stays in the OS keychain and flows only to the MCP connection.
+
+<Info>
+  Advanced: `/norm:config` can point the plugin at a non-production API URL, for example a staging server. The MCP transport requires `https`, so expose local servers through a tunnel.
+</Info>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Bland MCP Server" icon="server" href="/sdks/mcp">
+    The hosted MCP endpoint behind the plugin. Connect any MCP client directly.
+  </Card>
+  <Card title="Norm" icon="message" href="/tutorials/norm">
+    The in-app version of Norm in the Bland dashboard.
+  </Card>
+  <Card title="Conversational Pathways" icon="diagram-project" href="/tutorials/pathways">
+    The flow graph Norm builds and edits.
+  </Card>
+  <Card title="Tools" icon="screwdriver-wrench" href="/tutorials/tools/overview">
+    The tool library Norm authors and attaches to nodes.
+  </Card>
+</CardGroup>
