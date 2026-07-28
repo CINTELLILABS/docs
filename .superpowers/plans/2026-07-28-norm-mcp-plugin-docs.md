@@ -105,7 +105,7 @@ Norm turns a pathway into local files you can read and edit: prompts as Markdown
 /norm:commit                  # save as a new version on the server
 ```
 
-Committing saves a new working version. Production is unchanged until you publish.
+Committing saves a new working version. Production is unchanged until you publish. Ask Norm to publish when you want the new version on live traffic.
 
 ## Command reference
 
@@ -158,6 +158,10 @@ Committing saves a new working version. Production is unchanged until you publis
     The tool library Norm authors and attaches to nodes.
   </Card>
 </CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
 ````
 
 - [ ] **Step 2: Style check**
@@ -255,6 +259,10 @@ Call the `get_bland_mcp_setup` tool after connecting to see auth state and the f
     The REST API the MCP passthrough tools call.
   </Card>
 </CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
 ````
 
 - [ ] **Step 2: Style check**
@@ -277,6 +285,7 @@ git commit -m "Add Bland MCP server docs page"
 - Modify: `docs.json` (SDKs & Tools group, around line 75)
 - Modify: `tutorials/norm.mdx` (Where to find Norm CardGroup, lines 31-41)
 - Modify: `llms.txt` (SDKs & Tools section, after line 67)
+- Modify: `sdks/cli.mdx` (MCP Server section, lines 248-250)
 
 - [ ] **Step 1: Add pages to docs.json**
 
@@ -358,10 +367,32 @@ In `llms.txt`, directly after the Web Agent SDK bullet (line 67), add:
 
 (These match each page's frontmatter title and description exactly.)
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Disambiguate the CLI's local MCP server in sdks/cli.mdx**
+
+The CLI page documents a different, local MCP server (`bland mcp`). Cross-reference the hosted server so the "SDKs & Tools" group does not offer two unexplained ways to connect. In `sdks/cli.mdx`, replace:
+
+```mdx
+## MCP Server
+
+The CLI includes an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server, which lets AI coding tools like Claude Code and Cursor interact with your Bland account through natural language.
+```
+
+with:
+
+```mdx
+## MCP Server
+
+The CLI includes a local [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server, which lets AI coding tools like Claude Code and Cursor interact with your Bland account through natural language.
+
+<Info>
+  This runs the CLI's own MCP server on your machine. Bland also hosts a remote MCP server that needs no local install. See [Bland MCP Server](/sdks/mcp), or install the [Norm plugin](/sdks/norm-claude-code) for the full Claude Code experience.
+</Info>
+```
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add docs.json tutorials/norm.mdx llms.txt
+git add docs.json tutorials/norm.mdx llms.txt sdks/cli.mdx
 git commit -m "Wire Norm plugin and MCP server pages into nav, Norm tutorial, and llms.txt"
 ```
 
@@ -391,7 +422,18 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3333/sdks/mcp
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3333/tutorials/norm
 ```
 
-Expected: `200` for all three, and no MDX parse errors in the dev server output. Stop the server afterwards.
+Expected: `200` for all three, and no MDX parse errors in the dev server output.
+
+A 200 alone does not prove the MDX parsed (both new pages nest fenced code inside JSX components, a classic MDX trap). Assert on content too:
+
+```bash
+curl -s http://localhost:3333/sdks/norm-claude-code | grep -c "<pre"
+curl -s http://localhost:3333/sdks/norm-claude-code | grep -c '```'
+curl -s http://localhost:3333/sdks/mcp | grep -c "<pre"
+curl -s http://localhost:3333/sdks/mcp | grep -c '```'
+```
+
+Expected: `<pre` count of 5 or more for norm-claude-code and 3 or more for mcp; backtick-fence count `0` for both (no leaked fences). Stop the server afterwards.
 
 Note: port 3333 avoids the local Bland API server that may occupy port 3000.
 
