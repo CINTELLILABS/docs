@@ -1,0 +1,75 @@
+---
+title: "Bland MCP Server"
+description: "Connect Claude Code, Cursor, or any MCP client to Bland's hosted MCP server to build and manage voice agents."
+---
+
+Bland hosts a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that gives AI agents direct access to your Bland account: pathways, calls, analytics, and documentation search.
+
+| | |
+|---|---|
+| **Endpoint** | `https://api.bland.ai/v1/mcp` |
+| **Transport** | HTTP. `https` is required. |
+| **Auth** | Your Bland API key in the `Authorization` header. |
+
+```text
+Authorization: Bearer YOUR_BLAND_API_KEY
+```
+
+The header is also accepted without the `Bearer` prefix. Get your API key from the [dashboard](https://app.bland.ai).
+
+## Connect from Claude Code
+
+The recommended path is the [Norm plugin](/sdks/norm-claude-code). It configures this connection for you, stores your key in the OS keychain, and adds `/norm` commands for the full agent lifecycle.
+
+To connect directly without the plugin:
+
+```bash
+claude mcp add --transport http bland https://api.bland.ai/v1/mcp --header "Authorization: Bearer YOUR_KEY"
+```
+
+## Connect from other MCP clients
+
+Any client that supports HTTP MCP servers can connect. The configuration file location varies by client (for example `.cursor/mcp.json` for Cursor), but the shape is the same:
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "url": "https://api.bland.ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_BLAND_API_KEY"
+      }
+    }
+  }
+}
+```
+
+<Warning>
+  Your API key grants full access to your Bland account. Store it in your client's secret manager where one is available, and never commit configuration files that contain it.
+</Warning>
+
+## What the server exposes
+
+The tool surface covers the Bland platform in a few categories:
+
+- **Documentation search.** Search and read these docs so your agent answers from the source.
+- **Read tools.** Pathway structure and validation, call logs, and analytics queries.
+- **API passthrough.** Generic read and write access to the [Bland REST API](/api-v1/get/calls) for everything else.
+- **High-impact actions.** Tools that place calls, run evals, or change state carry explicit confirmation guidance, so well-behaved agents ask before acting.
+
+Call the `get_bland_mcp_setup` tool after connecting to see auth state and the full list of exposed tools for your account.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Norm for Claude Code" icon="terminal" href="/sdks/norm-claude-code">
+    The packaged Claude Code experience built on this server.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-v1/post/calls">
+    The REST API the MCP passthrough tools call.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
