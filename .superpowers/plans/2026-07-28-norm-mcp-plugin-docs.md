@@ -198,7 +198,7 @@ Bland hosts a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) se
 | | |
 |---|---|
 | **Endpoint** | `https://api.bland.ai/v1/mcp` |
-| **Transport** | HTTP. `https` is required. |
+| **Transport** | HTTP |
 | **Auth** | Your Bland API key in the `Authorization` header. |
 
 ```text
@@ -247,7 +247,7 @@ The tool surface covers the Bland platform in a few categories:
 - **API passthrough.** Generic read and write access to the [Bland REST API](/api-v1/get/calls) for everything else.
 - **High-impact actions.** Tools that place calls, run evals, or change state carry explicit confirmation guidance, so well-behaved agents ask before acting.
 
-Call the `get_bland_mcp_setup` tool after connecting to see auth state and the full list of exposed tools for your account.
+Call the `get_bland_mcp_setup` tool after connecting to confirm the server is reachable. Your client's MCP tool list shows the full surface available to your account.
 
 ## Related
 
@@ -389,6 +389,8 @@ The CLI includes a local [MCP (Model Context Protocol)](https://modelcontextprot
 </Info>
 ```
 
+Also in the same section's JSON config example (around line 266), rename the local server key from `"bland":` to `"bland-cli":` so a user who follows both this page and `/sdks/mcp` does not have the second config silently overwrite the first (both examples otherwise register under the name `bland`).
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -439,8 +441,7 @@ Note: port 3333 avoids the local Bland API server that may occupy port 3000.
 
 - [ ] **Step 4: Accessibility check**
 
-Run: `mint a11y`
-Expected: no new issues on the two new pages or `tutorials/norm`. Fix any that appear (alt text, contrast).
+`mint a11y` does not exist in the installed mint CLI (4.2.132 supports: dev, openapi-check, broken-links, rename, update, upgrade, migrate-mdx, version). Skip the command. Manual check instead: the touched pages add no images (so no alt-text obligations) and use standard Mintlify components only. Note the skip in the final report.
 
 - [ ] **Step 5: Commit any fixes**
 
