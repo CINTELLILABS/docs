@@ -29,7 +29,7 @@ title: "Norm for Claude Code"
 description: "Install the Norm plugin for Claude Code to build, test, and ship Bland voice agents from your terminal."
 ---
 
-Norm runs inside [Claude Code](https://claude.com/claude-code) as a plugin. Describe what you want in plain English, and Norm builds, tests, and publishes Bland voice agents without leaving your terminal. The plugin connects to your account through the [Bland MCP server](/sdks/mcp) and adds `/norm` commands for the full agent lifecycle.
+Norm runs inside [Claude Code](https://claude.com/claude-code) as a plugin. Describe what you want in plain English, and Norm builds, tests, and publishes Bland voice agents without leaving your terminal. The plugin connects to your account through the [Bland MCP server](/sdks/mcp) and adds `/norm:*` commands for the full agent lifecycle.
 
 Norm is also built into the Bland dashboard. See [Norm](/tutorials/norm) for the in-app version.
 
@@ -77,7 +77,7 @@ Norm is also built into the Bland dashboard. See [Norm](/tutorials/norm) for the
 </Steps>
 
 <Warning>
-  Never paste your API key into the chat. The interactive prompt and the `--config` flag keep it out of the model context and in your OS keychain. To rotate the key later, run `/plugin configure norm@bland`.
+  Never paste your API key into the chat. The interactive prompt and the `--config` flag keep it out of the model context and in your OS keychain. If the plugin is already installed, `claude plugin install --config` is a no-op. Run `/plugin configure norm@bland` to set, fix, or rotate the key.
 </Warning>
 
 ## The flow
@@ -209,7 +209,7 @@ The header is also accepted without the `Bearer` prefix. Get your API key from t
 
 ## Connect from Claude Code
 
-The recommended path is the [Norm plugin](/sdks/norm-claude-code). It configures this connection for you, stores your key in the OS keychain, and adds `/norm` commands for the full agent lifecycle.
+The recommended path is the [Norm plugin](/sdks/norm-claude-code). It configures this connection for you, stores your key in the OS keychain, and adds `/norm:*` commands for the full agent lifecycle.
 
 To connect directly without the plugin:
 
@@ -219,7 +219,7 @@ claude mcp add --transport http bland https://api.bland.ai/v1/mcp --header "Auth
 
 ## Connect from other MCP clients
 
-Any client that supports HTTP MCP servers can connect. The configuration file location varies by client (for example `.cursor/mcp.json` for Cursor), but the shape is the same:
+Any client that supports HTTP MCP servers can connect over HTTPS. The configuration file location varies by client (for example `.cursor/mcp.json` for Cursor), but the shape is the same:
 
 ```json
 {
@@ -244,7 +244,7 @@ The tool surface covers the Bland platform in a few categories:
 
 - **Documentation search.** Search and read these docs so your agent answers from the source.
 - **Read tools.** Pathway structure and validation, call logs, and analytics queries.
-- **API passthrough.** Generic read and write access to the [Bland REST API](/api-v1/get/calls) for everything else.
+- **API passthrough.** Generic read and write access to the [Bland REST API](/api-v1/post/calls) for everything else.
 - **High-impact actions.** Tools that place calls, run evals, or change state carry explicit confirmation guidance, so well-behaved agents ask before acting.
 
 Call the `get_bland_mcp_setup` tool after connecting to confirm the server is reachable. Your client's MCP tool list shows the full surface available to your account.
@@ -254,6 +254,12 @@ Call the `get_bland_mcp_setup` tool after connecting to confirm the server is re
 <CardGroup cols={2}>
   <Card title="Norm for Claude Code" icon="terminal" href="/sdks/norm-claude-code">
     The packaged Claude Code experience built on this server.
+  </Card>
+  <Card title="Conversational Pathways" icon="diagram-project" href="/tutorials/pathways">
+    The conversation flow graph these tools build and manage.
+  </Card>
+  <Card title="Norm" icon="message" href="/tutorials/norm">
+    The in-app assistant in the Bland dashboard.
   </Card>
   <Card title="API Reference" icon="code" href="/api-v1/post/calls">
     The REST API the MCP passthrough tools call.
