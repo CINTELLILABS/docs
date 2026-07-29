@@ -16,10 +16,23 @@ Compared to the v1 [Speak](/api-v1/post/speak) family of endpoints, `/v2/tts` co
 - **Predictable metadata headers.** Model, voice, sample rate, cost, and latency are all returned in response headers.
 
 <Note>
-  Requires a `BTTS_V2` or `BTTS_V3` voice. Legacy `BTTS` (V1) voices are not supported on `/v2/tts` — use [Speak](/api-v1/post/speak) for those.
+  Use a **`BTTS_V3` or newer** voice. `expressiveness` and `stability` are calibrated for
+  `BTTS_V3`, and it is the model the default 48 kHz output rate matches natively.
+  `BTTS_V2` voices synthesize too, but support is limited: the controls are not tuned for
+  them. Legacy `BTTS` (V1) voices are not supported at all. Read `x-model` to see which
+  model a voice resolved to.
 </Note>
 
-The v1 speak endpoints remain available and unchanged; `/v2/tts` is additive.
+<Warning>
+  **Migrating from v1?** `container: "raw"` returns **bare audio frames**. The v1 speak
+  endpoints return `pcm_<rate>` as *WAV-encapsulated* PCM, so v1 clients commonly skip a
+  44-byte RIFF header before playback. Carrying that logic over to `/v2/tts` removes 44
+  bytes of real audio. Drop the header handling, or request `container: "wav"` if you
+  want a RIFF file.
+</Warning>
+
+The v1 speak endpoints are **deprecated** in favor of `/v2/tts`. They remain available and
+unchanged for now; new integrations should use `/v2/tts`.
 
 ## Pricing
 
@@ -32,7 +45,9 @@ Text-to-speech pricing scales with plan:
 | Scale | $0.02 per 200 characters |
 | Enterprise | $0.02 per 400 characters |
 
-Some public-library voices carry an additional per-character creator fee. The exact charge for a request is returned in the `x-cost` response header. Only successfully delivered audio is billed — a failed synthesis, or a client disconnect before any bytes are written, is not charged.
+Some public-library voices carry an additional per-character creator fee. The exact charge for a request is returned in the `x-cost` response header.
+
+Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If the connection drops **mid-stream**, you are charged for the characters whose audio already reached you — not the full request, and not nothing.
 
 ---
 
@@ -54,10 +69,6 @@ Some public-library voices carry an additional per-character creator fee. The ex
 
 <ParamField body="voice" type="string" required>
   The UUID of the Bland TTS voice to use. Names are not accepted — retrieve a voice UUID from [List Voices](/api-v1/get/voices).
-</ParamField>
-
-<ParamField body="language" type="string">
-  Language code for synthesis. Defaults to the voice's primary language. Available languages depend on the voice's underlying model (V2 and V3 voices support 17+ languages).
 </ParamField>
 
 <ParamField body="audio" type="object">
@@ -153,7 +164,7 @@ Common error codes:
 | `unsupported_encoding` | 400 | `audio.encoding` is not one of the allowed values. |
 | `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the chosen encoding. |
 | `unsupported_container` | 400 | `audio.container` is not `raw` or `wav`. |
-| `unsupported_voice` | 400 | Voice exists but is not a BTTS V2/V3 voice. |
+| `unsupported_voice` | 400 | Voice exists but is not a `BTTS_V2` or `BTTS_V3` voice. |
 | `voice_not_found` | 404 | Voice UUID does not exist or is not accessible to the caller. |
 | `synthesis_failed` | 500 | Synthesis failed before or during streaming. |
 
@@ -165,8 +176,8 @@ Common error codes:
 
 ```bash cURL
 curl -X POST "https://api.bland.ai/v2/tts" \
-  -H "authorization: $BLAND_API_KEY" \
-  -H "content-type: application/json" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "text": "Welcome to Bland.",
     "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa"
@@ -178,8 +189,8 @@ curl -X POST "https://api.bland.ai/v2/tts" \
 
 ```bash cURL
 curl -X POST "https://api.bland.ai/v2/tts" \
-  -H "authorization: $BLAND_API_KEY" \
-  -H "content-type: application/json" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "text": "Please hold while we connect your call.",
     "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
@@ -192,8 +203,8 @@ curl -X POST "https://api.bland.ai/v2/tts" \
 
 ```bash cURL
 curl -X POST "https://api.bland.ai/v2/tts" \
-  -H "authorization: $BLAND_API_KEY" \
-  -H "content-type: application/json" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "text": "Hello world.",
     "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
