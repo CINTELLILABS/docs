@@ -6,7 +6,7 @@ description: "Streaming-native text-to-speech with a normalized audio format and
 
 ## Overview
 
-Synthesizes text into audio and streams the result back as a chunked HTTP response. The response is always `Transfer-Encoding: chunked` — clients that want a "buffered" response simply read to end-of-file.
+Synthesizes text into audio and streams the result back as the audio renders. There is no separate buffered mode — clients that want the whole file simply read to end-of-file.
 
 It replaces the v1 [Speak](/api-v1/post/speak) endpoints with one request shape:
 
@@ -92,6 +92,8 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 
       - `raw` — bare audio frames (default). Best for streaming and voice agents.
       - `wav` — a single RIFF/WAVE file with a correct-length header. Buffered end-to-end before the first byte is written (a valid RIFF header requires the final size), so use this for downloads, not low-latency streams.
+
+      Trying the endpoint by hand? Use `wav` — `raw` returns bare samples that most players cannot open.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -171,6 +173,21 @@ Common error codes:
 
 ## Examples
 
+### Downloadable WAV file
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello world.",
+    "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
+    "audio": { "encoding": "pcm_s16le", "sample_rate": 24000, "container": "wav" },
+    "controls": { "expressiveness": 0.7, "stability": 0.5 }
+  }' \
+  --output hello.wav
+```
+
 ### Default (48 kHz PCM, raw)
 
 ```bash cURL
@@ -196,21 +213,6 @@ curl -X POST "https://api.bland.ai/v2/tts" \
     "audio": { "encoding": "mulaw", "sample_rate": 8000 }
   }' \
   --output prompt.ulaw
-```
-
-### Downloadable WAV file
-
-```bash cURL
-curl -X POST "https://api.bland.ai/v2/tts" \
-  -H "Authorization: Bearer $BLAND_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Hello world.",
-    "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
-    "audio": { "encoding": "pcm_s16le", "sample_rate": 24000, "container": "wav" },
-    "controls": { "expressiveness": 0.7, "stability": 0.5 }
-  }' \
-  --output hello.wav
 ```
 
 <ResponseExample>
