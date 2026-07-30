@@ -1,0 +1,101 @@
+---
+title: "Replace Knowledge Base File"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/replace"
+description: "Upload a new file to replace the current source of a FILE knowledge base."
+---
+
+## Overview
+
+Uploads a new source file into an existing `FILE`-type knowledge base and creates a new version. The `knowledge_base_id` stays the same, so anything referencing the KB keeps working. Older versions stay retrievable via [List Versions](/api-v1/get/knowledge-id-versions) and [Restore Version](/api-v1/post/knowledge-id-versions-version-id-restore). For `TEXT` KBs use [Update Content](/api-v1/post/knowledge-id-content); for `WEB_SCRAPE` use [Replace URLs](/api-v1/post/knowledge-id-replace-urls).
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `multipart/form-data`.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base to replace.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="file" type="file" required>
+  A single file part. Maximum size 20MB. The filename and MIME type are read from the multipart part.
+</ParamField>
+
+## Concurrency
+
+The endpoint refuses a second Replace File call while the previous re-embedding is still running, returning `409` with the message `"Source is still indexing the previous Replace File. Wait until it completes."`. Poll [Get Knowledge Base](/api-v1/get/knowledge-id) until `status` returns to `"COMPLETED"` before issuing the next replacement.
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Fields">
+    <ResponseField name="success" type="boolean">
+      `true` on success.
+    </ResponseField>
+    <ResponseField name="version_id" type="string">
+      The id of the newly created version. This becomes the KB's current version.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Human-readable confirmation, for example `"File replaced successfully. Re-embedding in progress."`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "success": true,
+    "version_id": "f86d29be-c0e2-49c0-bc0a-f0a0d8998e75",
+    "message": "File replaced successfully. Re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json No File
+{
+  "data": null,
+  "errors": [
+    { "error": "NO_FILE", "message": "No file uploaded" }
+  ]
+}
+```
+
+```json Wrong KB Type
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "KB not found or type not supported for replacement" }
+  ]
+}
+```
+
+```json Still Indexing
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Source is still indexing the previous Replace File. Wait until it completes." }
+  ]
+}
+```
+
+</ResponseExample>
+
+<div style={{ marginTop: '2.5rem', marginBottom: '2.5rem', fontSize: '0.9em', opacity: 0.75 }}>
+  Docs for agents: <a href="/llms.txt">llms.txt</a>
+</div>

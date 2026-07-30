@@ -1,0 +1,106 @@
+---
+title: "Update Knowledge Base Content"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/content"
+description: "Replace the text content of a knowledge base and create a new version."
+---
+
+## Overview
+
+Replaces the textual content of a knowledge base in place. The `knowledge_base_id` doesn't change, so agents, pathways, and personas referencing the KB keep working. Each call creates a new version; older versions stay retrievable via [List Versions](/api-v1/get/knowledge-id-versions) and [Restore Version](/api-v1/post/knowledge-id-versions-version-id-restore).
+
+For binary uploads (a new PDF or DOCX), use [Replace File](/api-v1/post/knowledge-id-replace). For URL lists on a `WEB_SCRAPE` KB, use [Replace URLs](/api-v1/post/knowledge-id-replace-urls).
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base to update.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="content" type="string" required>
+  The new content. Non-empty string, maximum 10MB. Interpretation depends on the KB type.
+
+  <Accordion title="By KB type">
+    - **`TEXT`**: plain-text body.
+    - **`FILE`** (PDF or DOCX): new markdown that the agent will read. The original PDF or DOCX source is retained for display via [Get Content](/api-v1/get/knowledge-id-content).
+    - **`FILE`** (CSV, TXT, or other text formats): new file body in its original format.
+    - **`WEB_SCRAPE`**: accepted, but prefer [Replace URLs](/api-v1/post/knowledge-id-replace-urls) to change what gets scraped.
+  </Accordion>
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Fields">
+    <ResponseField name="success" type="boolean">
+      `true` on success.
+    </ResponseField>
+    <ResponseField name="version_id" type="string">
+      The id of the newly created version. This becomes the KB's current version.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Human-readable confirmation, for example `"Content updated successfully. Re-embedding in progress."`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "success": true,
+    "version_id": "e4896c91-7b42-48bd-bfa6-b14b3bb7cb56",
+    "message": "Content updated successfully. Re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json Invalid Content
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "content must be a non-empty string" }
+  ]
+}
+```
+
+```json Content Too Large
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Content exceeds 10MB limit" }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Knowledge base not found" }
+  ]
+}
+```
+
+</ResponseExample>
+
+<div style={{ marginTop: '2.5rem', marginBottom: '2.5rem', fontSize: '0.9em', opacity: 0.75 }}>
+  Docs for agents: <a href="/llms.txt">llms.txt</a>
+</div>

@@ -1,0 +1,90 @@
+---
+title: "Get Knowledge Base Version"
+api: "GET https://api.bland.ai/v1/knowledge/{knowledge_base_id}/versions/{version_id}"
+description: "Fetch a presigned URL to a specific version's content."
+---
+
+## Overview
+
+Returns a presigned URL to a specific version's editable content, along with its metadata.
+
+Use [Get Content](/api-v1/get/knowledge-id-content) if you also need the original source file (raw PDF or DOCX) alongside the editable content.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The version to fetch. List available versions with [List Versions](/api-v1/get/knowledge-id-versions).
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Fields">
+    <ResponseField name="content_url" type="string">
+      Presigned URL to the version's editable content, valid for 30 minutes. For `PDF` and `DOCX` versions this points to the extracted markdown; for other formats it points to the source file directly.
+    </ResponseField>
+    <ResponseField name="version" type="object">
+      Metadata for the requested version.
+      <Expandable title="Version fields">
+        <ResponseField name="id" type="string">
+          Version id, matches the `version_id` path parameter.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          ISO timestamp of when the version was created.
+        </ResponseField>
+        <ResponseField name="file_name" type="string">
+          Filename of the returned file.
+        </ResponseField>
+        <ResponseField name="file_size" type="number">
+          Size in bytes.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "content_url": "https://bland-files-global.s3.us-west-2.amazonaws.com/.../content?X-Amz-...",
+    "version": {
+      "id": "66120b27-a481-4f83-9d05-772097fa9e98",
+      "created_at": "2026-07-28T14:03:11.240Z",
+      "file_name": "patient-corpus.md",
+      "file_size": 47108
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Version not found" }
+  ]
+}
+```
+
+</ResponseExample>
+
+<div style={{ marginTop: '2.5rem', marginBottom: '2.5rem', fontSize: '0.9em', opacity: 0.75 }}>
+  Docs for agents: <a href="/llms.txt">llms.txt</a>
+</div>

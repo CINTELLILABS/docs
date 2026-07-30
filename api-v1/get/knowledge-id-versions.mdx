@@ -1,0 +1,99 @@
+---
+title: "List Knowledge Base Versions"
+api: "GET https://api.bland.ai/v1/knowledge/{knowledge_base_id}/versions"
+description: "List every version of a knowledge base."
+---
+
+## Overview
+
+Returns every version that has ever been created for a knowledge base, plus the id of the current version. Useful for auditing changes, showing history in a UI, or picking a target for [Restore Version](/api-v1/post/knowledge-id-versions-version-id-restore).
+
+Each version is created automatically when you call [Update Content](/api-v1/post/knowledge-id-content), [Replace File](/api-v1/post/knowledge-id-replace), [Replace URLs](/api-v1/post/knowledge-id-replace-urls), or [Restore Version](/api-v1/post/knowledge-id-versions-version-id-restore).
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Fields">
+    <ResponseField name="versions" type="array">
+      All versions of the knowledge base, newest first.
+      <Expandable title="Version fields">
+        <ResponseField name="id" type="string">
+          Unique identifier for the version.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          ISO timestamp of when the version was created.
+        </ResponseField>
+        <ResponseField name="is_current" type="boolean">
+          `true` if this is the KB's current version.
+        </ResponseField>
+        <ResponseField name="file_name" type="string">
+          Filename of the version's source. Absent for `WEB_SCRAPE`.
+        </ResponseField>
+        <ResponseField name="file_size" type="number">
+          Size in bytes. Absent for `WEB_SCRAPE`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="current_version_id" type="string | null">
+      The id of the current version, or `null` if the KB has no versions yet.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "versions": [
+      {
+        "id": "dffc76b8-f357-45a0-ad7a-0fdae9616622",
+        "created_at": "2026-07-29T21:17:28.896Z",
+        "is_current": true,
+        "file_name": "patient-corpus.md",
+        "file_size": 48213
+      },
+      {
+        "id": "03423283-76d3-4a49-97ed-049f4f089c9d",
+        "created_at": "2026-07-28T14:03:11.240Z",
+        "is_current": false,
+        "file_name": "patient-corpus.md",
+        "file_size": 47108
+      }
+    ],
+    "current_version_id": "dffc76b8-f357-45a0-ad7a-0fdae9616622"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Knowledge base not found" }
+  ]
+}
+```
+
+</ResponseExample>
+
+<div style={{ marginTop: '2.5rem', marginBottom: '2.5rem', fontSize: '0.9em', opacity: 0.75 }}>
+  Docs for agents: <a href="/llms.txt">llms.txt</a>
+</div>

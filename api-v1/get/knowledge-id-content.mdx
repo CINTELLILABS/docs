@@ -1,0 +1,120 @@
+---
+title: "Get Knowledge Base Content"
+api: "GET https://api.bland.ai/v1/knowledge/{knowledge_base_id}/content"
+description: "Fetch a presigned URL to the current or a specific version's content."
+---
+
+## Overview
+
+Returns a short-lived presigned URL you can download to inspect what a knowledge base version contains. Defaults to the current version; pass `version_id` to fetch an earlier one from [List Versions](/api-v1/get/knowledge-id-versions).
+
+Response shape varies by KB `type`. See the field descriptions and the example variants below.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="version_id" type="string">
+  A specific version to fetch. Defaults to the current version.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Content fields">
+    <ResponseField name="content_url" type="string">
+      Presigned URL to the version's content, valid for 30 minutes. For `PDF` and `DOCX` this points to the extracted markdown; for `TEXT`, `CSV`, and other text formats it points to the source file. Empty string for `WEB_SCRAPE` (URLs live in `source_urls` instead).
+    </ResponseField>
+    <ResponseField name="source_url" type="string">
+      Presigned URL to the original file for display, valid for 30 minutes. Present only for `PDF` and `DOCX` sources.
+    </ResponseField>
+    <ResponseField name="version_id" type="string">
+      The version this response describes.
+    </ResponseField>
+    <ResponseField name="file_name" type="string">
+      Filename of the version's source. Absent for `WEB_SCRAPE`.
+    </ResponseField>
+    <ResponseField name="file_size" type="number">
+      Size in bytes. Absent for `WEB_SCRAPE`.
+    </ResponseField>
+    <ResponseField name="file_type" type="string">
+      MIME type of the returned content. Absent for `WEB_SCRAPE`.
+    </ResponseField>
+    <ResponseField name="is_current" type="boolean">
+      `true` when the returned version is the KB's current version.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Knowledge base type: `"FILE"`, `"TEXT"`, or `"WEB_SCRAPE"`.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Knowledge base name.
+    </ResponseField>
+    <ResponseField name="source_urls" type="string[]">
+      Present only for `WEB_SCRAPE`. The URLs backing this version.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "content_url": "https://bland-files-global.s3.us-west-2.amazonaws.com/.../content?X-Amz-...",
+    "version_id": "e6591d44-9318-4b7d-957f-4b27e707238c",
+    "file_name": "patient-corpus.md",
+    "file_size": 48213,
+    "file_type": "text/markdown",
+    "is_current": true,
+    "type": "FILE",
+    "name": "Patient Corpus"
+  },
+  "errors": null
+}
+```
+
+```json Response (WEB_SCRAPE)
+{
+  "data": {
+    "source_urls": [
+      "https://example.com/pricing",
+      "https://example.com/faq"
+    ],
+    "version_id": "ba388d34-ea4b-4526-99fd-4aea80e17177",
+    "is_current": true,
+    "type": "WEB_SCRAPE",
+    "name": "Marketing Site",
+    "content_url": ""
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Knowledge base not found" }
+  ]
+}
+```
+
+</ResponseExample>
+
+<div style={{ marginTop: '2.5rem', marginBottom: '2.5rem', fontSize: '0.9em', opacity: 0.75 }}>
+  Docs for agents: <a href="/llms.txt">llms.txt</a>
+</div>
