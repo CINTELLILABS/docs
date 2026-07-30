@@ -1,14 +1,14 @@
 ---
 title: "Live Speech (WebSocket)"
 api: "WSS https://api.bland.ai/v2/tts/live"
-description: "Stream text in incrementally and receive audio frames as they render — ideal for LLM token feeds and voice agents."
+description: "Send text as it is produced and get audio frames back."
 ---
 
 ## Overview
 
-`/v2/tts/live` is a WebSocket endpoint for **incremental text input**: push text as your LLM produces it and receive audio frames as they render. It shares the request shape, controls, and metadata semantics of the HTTP [Synthesize Speech](/api-v2/post/tts) endpoint, so switching between the two is a transport swap, not a schema swap.
+Send text as your LLM produces it and get audio frames back as they render, over one WebSocket connection.
 
-Use this endpoint when you want the lowest possible time-to-first-audio for a stream of text you do not have all at once — for example, feeding LLM tokens straight into TTS. If you already have the full text, use [Synthesize Speech](/api-v2/post/tts) instead.
+Use this when you do not have the full text up front. If you do, use [Synthesize Speech](/api-v2/post/tts) — same voices, same controls.
 
 <Warning>
   This endpoint is **not yet enabled on the public API**. A connection to
@@ -17,9 +17,8 @@ Use this endpoint when you want the lowest possible time-to-first-audio for a st
 </Warning>
 
 <Note>
-  Use a **`BTTS_V3` or newer** voice — `expressiveness` and `stability` are calibrated for
-  `BTTS_V3`. `BTTS_V2` voices synthesize, but support is limited: the controls are not
-  tuned for them.
+  Use a **`BTTS_V3` or newer** voice. `expressiveness` and `stability` are calibrated for
+  it. `BTTS_V2` voices synthesize, but the controls are not tuned for them.
 </Note>
 
 ---
@@ -37,7 +36,7 @@ Credentials are checked in this order:
 
 ## Protocol
 
-Control frames are JSON text. Audio frames from the server are raw **binary** WebSocket messages — the client distinguishes by frame type rather than by an envelope. There is no `container` on the live path; live streams emit bare `encoding` frames.
+Control frames are JSON text. Audio frames are **binary**, so tell them apart by WebSocket frame type. There is no `container` here — you always get bare frames in the encoding you asked for.
 
 ### Client → Server messages
 
@@ -51,8 +50,8 @@ close  { type: "close" }
 ```
 
 - `init` is required as the first message. `voice` is a UUID (names are rejected).
-  - `audio.encoding` defaults to `pcm_s16le`; `mulaw` is 8 kHz-only telephony.
-  - `audio.sample_rate` defaults to `48000` for PCM (BTTS V3's native rate — the default path does not resample). Allowed PCM rates: `8000`, `16000`, `24000`, `44100`, `48000`.
+  - `audio.encoding` defaults to `pcm_s16le`. `mulaw` is 8 kHz only, for telephony.
+  - `audio.sample_rate` defaults to `48000`, the rate BTTS V3 renders natively. Allowed: `8000`, `16000`, `24000`, `44100`, `48000`.
   - `controls.expressiveness` and `controls.stability` are optional `0.0`–`1.0`.
   - `auto_flush` (default `true`) triggers synthesis on sentence boundaries or when the buffer reaches `auto_flush_char_threshold`.
 - `speak` appends text. Setting `flush: true` renders the buffer immediately.
@@ -71,7 +70,7 @@ error  { type: "error", code, message }
 ### Limits and guardrails
 
 ```
-Buffer cap:    4000 chars (per accumulation before flush)
+Buffer cap:    4000 chars before a flush
 Speak rate:    500 messages / 10s window
 Idle timeout:  60s (no client messages → close)
 Slow consumer: session is closed if the client falls behind the audio stream
@@ -87,7 +86,7 @@ Billing:       once, on close or disconnect — never per flush
 | `already_initialized` | `init` was sent more than once. |
 | `invalid_request` | A field is missing or has the wrong shape. |
 | `voice_not_found` | Voice UUID does not exist or is not accessible. |
-| `unsupported_voice` | Voice is not a BTTS V2/V3 voice. |
+| `unsupported_voice` | Voice is not a `BTTS_V2` or `BTTS_V3` voice. |
 | `unsupported_encoding` | `audio.encoding` is not allowed. |
 | `unsupported_sample_rate` | `audio.sample_rate` is not allowed for the encoding. |
 | `buffer_overflow` | Un-flushed text would exceed the buffer cap. |

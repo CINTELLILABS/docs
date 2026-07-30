@@ -1,37 +1,27 @@
 ---
 title: "Synthesize Speech"
 api: "POST https://api.bland.ai/v2/tts"
-description: "Streaming-native text-to-speech with a normalized audio format and model-agnostic controls."
+description: "Generate speech audio from text."
 ---
 
 ## Overview
 
-Synthesizes text into audio and streams the result back as the audio renders. There is no separate buffered mode — clients that want the whole file simply read to end-of-file.
+Turns text into speech and streams the audio back as it renders.
 
-It replaces the v1 [Speak](/api-v1/post/speak) endpoints with one request shape:
-
-- **Split audio format.** Codec, sample rate, and container are three separate fields instead of one overloaded `output_format` string. The server produces exactly what you ask for.
-- **Model-agnostic controls.** `expressiveness` and `stability` are normalized `0.0`–`1.0` intent values that map to each model's native parameters server-side. You do not change your request when a voice moves to a newer BTTS model.
-- **UUID-only voice selection.** `voice` accepts a UUID only. Names are ambiguous (there are two public "Willow" voices) and are rejected with a `400`.
-- **Predictable metadata headers.** Model, voice, sample rate, cost, and latency are all returned in response headers.
+`text` and `voice` are the only required fields. You get 48 kHz PCM frames by default — ready to play or forward straight to a client. Set `audio.container` to `wav` for a file you can download and open.
 
 <Note>
   Use a **`BTTS_V3` or newer** voice. `expressiveness` and `stability` are calibrated for
-  `BTTS_V3`, and it is the model the default 48 kHz output rate matches natively.
-  `BTTS_V2` voices synthesize too, but support is limited: the controls are not tuned for
-  them. Legacy `BTTS` (V1) voices are not supported at all. Read `x-model` to see which
-  model a voice resolved to.
+  it, and 48 kHz is the rate it renders natively. `BTTS_V2` voices synthesize, but the
+  controls are not tuned for them. Read `x-model` to see which model a voice resolved to.
 </Note>
 
 <Warning>
-  **Migrating from v1?** `container: "raw"` returns **bare audio frames**. The v1 speak
-  endpoints return `pcm_<rate>` as *WAV-encapsulated* PCM, so v1 clients commonly skip a
-  44-byte RIFF header before playback. Carrying that logic over to `/v2/tts` removes 44
-  bytes of real audio. Drop the header handling, or request `container: "wav"` if you
-  want a RIFF file.
+  **Coming from `/v1/speak`?** `container: "raw"` returns bare audio frames. The v1
+  endpoints wrapped `pcm_<rate>` in a WAV header, so v1 clients usually skip 44 bytes
+  before playback — doing that here removes 44 bytes of real audio. Drop the header
+  handling, or ask for `container: "wav"`.
 </Warning>
-
-The v1 speak endpoints are **deprecated** in favor of `/v2/tts`.
 
 ## Pricing
 
@@ -44,7 +34,7 @@ Text-to-speech pricing scales with plan:
 | Scale | $0.02 per 200 characters |
 | Enterprise | $0.02 per 400 characters |
 
-Some public-library voices carry an additional per-character creator fee. The exact charge for a request is returned in the `x-cost` response header.
+Some public-library voices carry an additional per-character creator fee. The exact charge for a request comes back in the `x-cost` header.
 
 Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If the connection drops **mid-stream**, you are charged for the characters whose audio already reached you.
 
@@ -53,7 +43,7 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key.
 </ParamField>
 
 ---
@@ -61,53 +51,53 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 ## Body Parameters
 
 <ParamField body="text" type="string" required>
-  The text to synthesize. Maximum 5,000 characters per request.
+  The text to speak. Maximum 5,000 characters.
 
-  Supports pause markers in the form `<|N|>` where N is a duration between 0.1 and 10.0 seconds, for example: `"Welcome to Bland. <|0.8|> How can I help?"`
+  Insert a pause with `<|N|>`, where N is 0.1 to 10.0 seconds: `"Welcome to Bland. <|0.8|> How can I help?"`
 </ParamField>
 
 <ParamField body="voice" type="string" required>
-  The UUID of the Bland TTS voice to use. Names are not accepted — retrieve a voice UUID from [List Voices](/api-v1/get/voices).
+  Voice UUID. Names are not accepted — get a UUID from [List Voices](/api-v1/get/voices).
 </ParamField>
 
 <ParamField body="audio" type="object">
-  Output audio format. All fields are optional.
+  Output format. All fields optional.
 
   <Expandable title="audio fields">
     <ParamField body="encoding" type="string" default="pcm_s16le">
       Audio codec.
 
-      - `pcm_s16le` — 16-bit signed little-endian PCM (default).
-      - `mulaw` — 8-bit μ-law, 8 kHz only (telephony).
+      - `pcm_s16le` — 16-bit signed little-endian PCM.
+      - `mulaw` — 8-bit μ-law, 8 kHz only. For telephony.
     </ParamField>
 
     <ParamField body="sample_rate" type="number" default="48000">
-      Output sample rate in Hz. One of `8000`, `16000`, `24000`, `44100`, `48000`.
+      Output sample rate in Hz: `8000`, `16000`, `24000`, `44100`, or `48000`.
 
-      The default (`48000`) matches BTTS V3's native render rate, so the default path is fastest and does not resample. When `encoding` is `mulaw`, `sample_rate` is fixed at `8000` — any other value returns a `400`.
+      48 kHz is what `BTTS_V3` renders natively, so it is the fastest path. With `mulaw`, the rate is fixed at `8000` and any other value returns a `400`.
     </ParamField>
 
     <ParamField body="container" type="string" default="raw">
-      Byte framing.
+      How the bytes are framed.
 
-      - `raw` — bare audio frames (default). Best for streaming and voice agents.
-      - `wav` — a single RIFF/WAVE file with a correct-length header. Buffered end-to-end before the first byte is written (a valid RIFF header requires the final size), so use this for downloads, not low-latency streams.
+      - `raw` — bare audio frames. For streaming and voice agents.
+      - `wav` — one RIFF/WAVE file with a correct-length header. The full render is buffered before the first byte goes out, since a valid header needs the final size. For downloads.
 
-      Trying the endpoint by hand? Use `wav` — `raw` returns bare samples that most players cannot open.
+      Trying the endpoint by hand? Use `wav`. `raw` returns bare samples that most players cannot open.
     </ParamField>
   </Expandable>
 </ParamField>
 
 <ParamField body="controls" type="object">
-  Voice controls. All fields are optional, all normalized to `0.0`–`1.0`, and all model-version-independent — the server maps each value to the resolved model's native parameters.
+  How the voice performs. Both optional, both `0.0`–`1.0`.
 
   <Expandable title="controls fields">
     <ParamField body="expressiveness" type="number">
-      Range `0.0`–`1.0`. Lower values produce flatter, more monotone delivery; higher values produce more varied intonation.
+      Higher is more varied intonation; lower is flatter and more monotone.
     </ParamField>
 
     <ParamField body="stability" type="number">
-      Range `0.0`–`1.0`. Lower values are more creative and varied between renders; higher values are more consistent.
+      Higher is more consistent between renders; lower is more creative and varied.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -116,57 +106,55 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 
 ## Response
 
-Returns chunked audio in the requested `encoding` and `container`.
+Audio in the encoding and container you asked for.
 
 - `raw` + `pcm_s16le` → `Content-Type: audio/pcm`
 - `raw` + `mulaw` → `Content-Type: audio/basic`
 - `wav` (any encoding) → `Content-Type: audio/wav`
 
-Metadata is delivered in response headers, available with the first byte.
+These headers arrive with the first byte.
 
 <ResponseField name="x-request-id" type="string">
-  Unique identifier for this synthesis request. Include in support tickets.
+  Unique ID for this request. Include it in support tickets.
 </ResponseField>
 
 <ResponseField name="x-model" type="string">
-  The model that produced the audio (for example `btts-3`, `btts-2`). The model is determined by the resolved voice; you do not select it directly.
+  The model that produced the audio, for example `btts-3`. Set by the voice you chose.
 </ResponseField>
 
 <ResponseField name="x-voice-id" type="string">
-  The voice UUID used for synthesis.
+  The voice UUID used.
 </ResponseField>
 
 <ResponseField name="x-sample-rate" type="string">
-  Effective output sample rate in Hz.
+  Output sample rate in Hz.
 </ResponseField>
 
 <ResponseField name="x-cost" type="string">
-  Cost in USD for the synthesis, matching what was billed.
+  Cost in USD, matching what was billed.
 </ResponseField>
 
 <ResponseField name="x-latency" type="string">
-  For `raw`: time in milliseconds from request to first audio byte. For `wav`: total render time before the first byte is written.
+  Milliseconds to the first audio byte. For `wav`, the full render time.
 </ResponseField>
 
-### Error envelope
+### Errors
 
-Errors return a stable JSON envelope with a machine-readable code:
+Every error returns the same shape, with a stable machine-readable code:
 
 ```json
 { "error": { "code": "voice_not_found", "message": "Voice … was not found or is not accessible." } }
 ```
 
-Common error codes:
-
 | Code | HTTP | Meaning |
 |---|---|---|
 | `invalid_request` | 400 | A required field is missing or has the wrong shape. |
 | `text_too_long` | 400 | `text` exceeds 5,000 characters. |
-| `unsupported_encoding` | 400 | `audio.encoding` is not one of the allowed values. |
-| `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the chosen encoding. |
+| `unsupported_encoding` | 400 | `audio.encoding` is not an allowed value. |
+| `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the encoding. |
 | `unsupported_container` | 400 | `audio.container` is not `raw` or `wav`. |
-| `unsupported_voice` | 400 | Voice exists but is not a `BTTS_V2` or `BTTS_V3` voice. |
-| `voice_not_found` | 404 | Voice UUID does not exist or is not accessible to the caller. |
+| `unsupported_voice` | 400 | The voice exists but is not a `BTTS_V2` or `BTTS_V3` voice. |
+| `voice_not_found` | 404 | The voice UUID does not exist, or you cannot access it. |
 | `synthesis_failed` | 500 | Synthesis failed before or during streaming. |
 
 ---
@@ -217,9 +205,8 @@ curl -X POST "https://api.bland.ai/v2/tts" \
 
 <ResponseExample>
 ```http Response headers
-HTTP/1.1 200 OK
+HTTP/2 200
 content-type: audio/pcm
-transfer-encoding: chunked
 x-request-id: 5f9c…-…-…
 x-model: btts-3
 x-voice-id: f04af0e5-1a80-48a9-b02d-52f30d417cfa

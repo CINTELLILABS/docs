@@ -1,21 +1,21 @@
 ---
 title: "List TTS Models"
 api: "GET https://api.bland.ai/v2/tts/models"
-description: "Discover the audio encodings, sample rates, containers, and controls supported by each TTS model."
+description: "List what each TTS model supports."
 ---
 
 ## Overview
 
-Returns a capabilities manifest for every model reachable through [Synthesize Speech](/api-v2/post/tts) and [Live Speech](/api-v2/post/tts-live). Use this to render pickers, validate a request before you send it, or check that your integration is still in sync when a new model ships.
+Lists the encodings, sample rates, containers, and controls each model supports. Use it to build a picker, validate a request before sending it, or check what a new model added.
 
-The model chosen for a given synthesis is determined by the voice you pass, not by a separate parameter. Read the resolved model back from the `x-model` response header on `/v2/tts` or the `ready` message on `/v2/tts/live`.
+You do not choose a model — the voice you pass decides it. It comes back in the `x-model` header on [Synthesize Speech](/api-v2/post/tts).
 
-Fetch a single model's manifest by ID with `GET /v2/tts/models/:id`.
+For one model, use `GET /v2/tts/models/:id`.
 
 <Note>
-  Prefer **`btts-3` or newer**. `expressiveness` and `stability` are calibrated for
-  `btts-3`, and its native render rate is the `48000` default. `btts-2` is listed because
-  it still synthesizes, but support is limited: the controls are not tuned for it.
+  Prefer **`btts-3` or newer**. `expressiveness` and `stability` are calibrated for it,
+  and 48 kHz is the rate it renders natively. `btts-2` is listed because it still
+  synthesizes, but the controls are not tuned for it.
 </Note>
 
 ---
@@ -23,7 +23,7 @@ Fetch a single model's manifest by ID with `GET /v2/tts/models/:id`.
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key.
 </ParamField>
 
 ---
@@ -35,7 +35,7 @@ Fetch a single model's manifest by ID with `GET /v2/tts/models/:id`.
 
   <Expandable title="Model fields">
     <ResponseField name="id" type="string">
-      Model identifier (for example `btts-3`, `btts-2`). Matches the value returned in the `x-model` header from [Synthesize Speech](/api-v2/post/tts).
+      Model identifier, for example `btts-3`. Same value as the `x-model` header.
     </ResponseField>
 
     <ResponseField name="encodings" type="string[]">
