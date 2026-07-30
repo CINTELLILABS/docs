@@ -8,7 +8,7 @@ description: "Streaming-native text-to-speech with a normalized audio format and
 
 Synthesizes text into audio and streams the result back as a chunked HTTP response. The response is always `Transfer-Encoding: chunked` — clients that want a "buffered" response simply read to end-of-file.
 
-Compared to the v1 [Speak](/api-v1/post/speak) family of endpoints, `/v2/tts` consolidates the four v1 transports (`/v1/speak`, `/v1/speak` with `stream: true`, `/v1/speak/stream`, and `/v1/speak/stream-input`) behind a single request shape:
+It replaces the v1 [Speak](/api-v1/post/speak) endpoints with one request shape:
 
 - **Split audio format.** Codec, sample rate, and container are three separate fields instead of one overloaded `output_format` string. The server produces exactly what you ask for.
 - **Model-agnostic controls.** `expressiveness` and `stability` are normalized `0.0`–`1.0` intent values that map to each model's native parameters server-side. You do not change your request when a voice moves to a newer BTTS model.
@@ -31,8 +31,7 @@ Compared to the v1 [Speak](/api-v1/post/speak) family of endpoints, `/v2/tts` co
   want a RIFF file.
 </Warning>
 
-The v1 speak endpoints are **deprecated** in favor of `/v2/tts`. They remain available and
-unchanged for now; new integrations should use `/v2/tts`.
+The v1 speak endpoints are **deprecated** in favor of `/v2/tts`.
 
 ## Pricing
 
@@ -47,7 +46,7 @@ Text-to-speech pricing scales with plan:
 
 Some public-library voices carry an additional per-character creator fee. The exact charge for a request is returned in the `x-cost` response header.
 
-Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If the connection drops **mid-stream**, you are charged for the characters whose audio already reached you — not the full request, and not nothing.
+Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If the connection drops **mid-stream**, you are charged for the characters whose audio already reached you.
 
 ---
 
@@ -192,7 +191,7 @@ curl -X POST "https://api.bland.ai/v2/tts" \
   -H "Authorization: Bearer $BLAND_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Please hold while we connect your call.",
+    "text": "Your appointment is confirmed for Tuesday at 3 PM.",
     "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
     "audio": { "encoding": "mulaw", "sample_rate": 8000 }
   }' \
