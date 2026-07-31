@@ -1,0 +1,107 @@
+---
+title: "Tool Reference"
+description: "Every tool exposed by the Bland MCP server"
+---
+
+The Bland MCP server currently exposes **39 tools** plus 3 prompts. All of them are scoped to the organization that owns the API key used to connect.
+
+**Access** describes each tool's annotation: **Read** tools never change anything and clients can call them freely; **Write** and **Destructive** tools have side effects (Destructive ones spend money, touch live traffic, or delete things) and are confirmation-gated: the tool asks for an explicit confirmation argument before executing.
+
+### Calls
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `create_call` | Destructive | Place an outbound call to a phone number, optionally with a task or pathway. |
+| `get_call_log` | Read | Fetch a single call: its transcript, recording, summary, and metadata. |
+
+### Pathways
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `validate_pathway` | Read | The authoritative Bland pathway compiler. Pass the raw graph you're about to commit and get structural and runtime-contract errors before saving. |
+| `get_pathway_schema` | Read | The authoritative allowed shape and enums for a structured pathway surface. |
+| `get_pathway_context` | Read | Deep per-node and per-edge execution semantics, the same summaries Bland's server-side pathway agent uses. |
+
+<Tip>
+For the full pathway build-test-commit workflow (local file workspace, simulation, autonomous convergence loop), use the [Norm plugin for Claude Code](/integrations/mcp/claude-code#option-2-install-the-norm-plugin).
+</Tip>
+
+### Agents
+
+Full lifecycle for the v2 agents model: versioned, branched, and promoted through dev → staging → production environments.
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `create_agent` | Write | Create a new agent plus its dev/staging/production environments. |
+| `list_agents` | Read | List the organization's agents, most recently updated first. |
+| `get_agent` | Read | Fetch one agent by id, including which version each environment is pinned to. |
+| `rename_agent` | Write | Rename an agent. |
+| `delete_agent` | Destructive | Soft-delete an agent. |
+| `save_agent_version` | Write | Save an agent's config as an immutable version snapshot. |
+| `list_agent_versions` | Read | List an agent's saved version history (metadata only), newest first. |
+| `get_latest_agent_version` | Read | Fetch the latest saved version including its full config snapshot. |
+| `get_agent_version` | Read | Fetch a specific published version by semver, including its full snapshot. |
+| `list_agent_environments` | Read | List dev/staging/production environments and the semver each is pinned to. |
+| `publish_agent` | Destructive | Save a snapshot as a new version, mint the next semver, and pin staging to it. |
+| `promote_agent` | Destructive | Pin production to whatever staging currently points at. |
+| `list_agent_variables` | Read | List an environment's variables for an agent. |
+| `set_agent_variable` | Destructive | Create or update one environment variable (supports secrets). |
+| `delete_agent_variable` | Destructive | Delete one environment variable. |
+| `list_agent_branches` | Read | List an agent's open branches (isolated dev workspaces). |
+| `create_agent_branch` | Write | Branch off the agent's current dev head. |
+| `delete_agent_branch` | Destructive | Abandon an open branch (soft delete; its versions stay). |
+| `rebase_preview_agent_branch` | Read | Dry-run a branch merge: three-way diff reporting what auto-merges and what conflicts. |
+| `rebase_agent_branch` | Destructive | Rebase a branch onto the dev head with per-conflict resolutions. |
+| `merge_agent_branch` | Destructive | Merge an open branch into dev (fast-forward only) and archive the branch. |
+
+### Analytics
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `query_analytics` | Read | Structured call-analytics queries (metrics, filters, dimensions, and time ranges) returning aggregated results. |
+
+### Evals
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `list_eval_agents` | Read | List the organization's eval agents (LLM judges) with their latest-run summaries. |
+| `get_eval_agent` | Read | Fetch one eval agent: criterion prompt, scoring levels, targets, weight, modality. |
+| `get_eval_run` | Read | Fetch one eval run and its per-atom verdicts. |
+| `create_eval_run` | Destructive | Enqueue scoring of a batch of calls against eval agents or a saved workbench setup. |
+
+### Documentation
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `search_bland_docs` | Read | Search docs.bland.ai; returns matching pages with title, URL, and description. |
+| `get_bland_doc` | Read | Fetch the full markdown of one docs page (e.g. `api-v1/post/calls`). |
+| `search_bland` | Read | Search the Bland knowledge base for guides, code examples, and API references. |
+| `query_docs_filesystem_bland` | Read | Read-only shell-like queries over a virtual filesystem of all docs pages and OpenAPI specs. |
+| `submit_feedback` | Read | Report a documentation problem to the docs team. |
+
+### API passthrough
+
+For anything without a dedicated tool, the passthrough pair gives agents the entire [Bland REST API](/api-v1/post/calls):
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `bland_api_get` | Read | GET any Bland API endpoint with the caller's key (e.g. `/v1/calls` with query params). |
+| `call_bland_api` | Destructive | Call any mutating Bland endpoint (POST/PUT/PATCH/DELETE). Confirmation-gated. |
+
+### Setup
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `get_bland_mcp_setup` | Read | Returns connection guidance for the Bland MCP server. |
+
+## Prompts
+
+Clients that support MCP prompts (Claude Code surfaces them as slash commands) also get:
+
+| Prompt | What it does |
+| --- | --- |
+| `bland_pathways` | Loads Bland's pathway node/edge doctrine into the session. |
+| `build_pathway` | Guided create → validate → test → publish workflow for a new pathway (takes a `goal`). |
+| `edit_pathway` | Guided safe-edit workflow for an existing pathway (takes `pathway_id` and `change`). |
+
+Docs for agents: [llms.txt](/llms.txt)
