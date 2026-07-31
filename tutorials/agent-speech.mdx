@@ -1,14 +1,14 @@
 ---
 title: "Agent Speech"
-description: "Control how readily your agent pauses for callers and how quickly it responds after they stop talking."
+description: "Control how readily your agent pauses for callers and when it responds after they stop talking."
 ---
 
-Two settings control how your agent shares the conversation:
+Two settings shape how your agent shares the conversation:
 
 - **Interruptibility** governs what happens while the agent is speaking: how readily it yields when the caller talks over it.
-- **Resumption speed** governs what happens after the caller finishes: how quickly the agent takes its turn.
+- **Interruption threshold** governs what happens after the caller finishes: how long the agent waits before taking its turn.
 
-They are independent, and both are optional. An agent with neither set uses the balanced defaults described below.
+Both are optional. An agent with neither set uses the balanced defaults described below.
 
 ## Agent pauses
 
@@ -40,23 +40,19 @@ How readily the agent yields the floor when the caller speaks over it. Set with 
 | Difficult | `1` | Holds the turn longer and treats more caller speech as acknowledgment. Good for noisy lines and chatty listeners. |
 | Block interruptions | `0` | The agent ignores caller speech entirely while talking and always finishes what it is saying. |
 
-## Resumption speed
+## Interruption threshold
 
-How quickly the agent responds once the caller stops talking. Set with the `resumption_speed` field (integer, `1`-`3`, default `2`).
+How long the agent waits after the caller stops speaking before responding, in milliseconds. Set with the `interruption_threshold` field (default `500`).
 
-| Setting | API value | Caller experience |
-| :---- | :---- | :---- |
-| Fast | `1` | Responds almost as soon as the caller stops. Snappy, suited to quick transactional exchanges. May jump in when a caller pauses mid-thought. |
-| Medium | `2` | Default. Balanced for most conversations. |
-| Slow | `3` | Leaves a deliberate beat before responding. Suited to callers who pause to think mid-answer: the agent does not take a thinking pause as its cue to speak. |
+Lower values make the agent respond sooner; higher values leave more room for the caller to continue. Raise it for callers who pause to think mid-answer, so the agent does not treat a thinking pause as its cue to speak. Lower it for quick transactional exchanges where snappier turn-taking feels better.
 
 <Note>
-`resumption_speed` supersedes the older `interruption_threshold` field. When both are set, `resumption_speed` wins. Prefer `resumption_speed` for new configurations; `interruption_threshold` remains accepted for backward compatibility.
+`resumption_speed` (the older `1`-`3` level control) has been removed. Requests that still include it are accepted but ignored, and every call uses the balanced default behavior. Use `interruption_threshold` to tune when the agent takes its turn.
 </Note>
 
 ## Where to set them
 
-- **Send Call API**: pass `interruptibility` and `resumption_speed` in the [`/v1/calls`](/api-v1/post/calls) request body. They apply to the whole call.
+- **Send Call API**: pass `interruptibility` and `interruption_threshold` in the [`/v1/calls`](/api-v1/post/calls) request body. They apply to the whole call.
 - **Inbound numbers**: the same fields on your inbound number configuration.
 - **Pathways**: per node, in the node inspector under Advanced options.
 
@@ -68,9 +64,9 @@ A node's setting stays in force for the rest of the call, not just that node, un
 
 | Symptom | Try |
 | :---- | :---- |
-| The agent takes too long to respond | Fast resumption |
-| The agent jumps in while callers are still thinking | Slow resumption |
+| The agent takes too long to respond | Lower `interruption_threshold` |
+| The agent jumps in while callers are still thinking | Raise `interruption_threshold` |
 | The agent talks over callers who want to say something | Easy interruptibility, or Always interrupt |
 | The agent stops for background noise or brief acknowledgments | Difficult interruptibility, or Block interruptions |
 
-The two combine. A common "let the caller drive" setup is Easy interruptibility with Slow resumption; a common "get through the script" setup is Difficult interruptibility with Fast resumption.
+The two combine. A common "let the caller drive" setup is Easy interruptibility with a higher `interruption_threshold`; a common "get through the script" setup is Difficult interruptibility with a lower `interruption_threshold`.
