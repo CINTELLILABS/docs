@@ -1,0 +1,56 @@
+---
+title: "Speech Limits"
+description: "Concurrency, voice clone, and professional clone limits for Bland Speech — what they are, how the $5 unlock works, and how to raise them."
+---
+
+Bland Speech is pay-as-you-go: generation is billed per character against your wallet balance, and there are no subscription tiers. Limits are per organization and are unlocked by funding your wallet.
+
+## Default limits
+
+| Limit | Before your first top-up | After a one-time $5 top-up |
+| --- | --- | --- |
+| Concurrent generations | 1 | 5 |
+| Instant voice clones | 0 | 10 |
+| Live professional clones | 0 | 1 |
+
+The unlock is **cumulative and permanent**: once your total wallet deposits reach $5, the higher limits apply for the life of the organization — they are not tied to your current balance. The starting credit new accounts receive does not count toward the $5.
+
+## Instant voice clones
+
+Instant clone limits are counted **per organization, in aggregate across all voice model generations**. If your limit is 10, that is 10 cloned voices total — not 10 per model version.
+
+The limit applies when creating a new clone; existing voices are never affected by a limit change. Limits are raisable — see [Raising your limits](#raising-your-limits).
+
+## Concurrency and the 429 response
+
+Your concurrency limit is the number of speech generations you may have **in flight at the same moment**, across every speech surface: `POST /v1/speak`, `POST /v1/speak/stream`, `POST /v1/voices/{id}/speak`, streaming input over WebSocket, and shared audio links (which count against the link owner's organization).
+
+When you exceed it, the API responds `429` with:
+
+```json
+{
+  "error": "concurrency_limit_reached",
+  "limit": 5,
+  "message": "You're at 5 concurrent generations. Email tts@bland.ai to raise your limit.",
+  "docs": "https://docs.bland.ai/speech/limits"
+}
+```
+
+**This is not ordinary rate limiting.** A rate limit meters requests per unit of time; the concurrency limit only counts generations that are still running. A slot frees the moment one of your generations finishes, so the correct client behavior is:
+
+- Wait the number of **seconds** given in the `Retry-After` header (it is seconds, not milliseconds), then retry.
+- Or simply await one of your in-flight generations before submitting the next.
+
+Avoid tight retry loops — they cannot make a slot free faster, and the wait is typically only a few seconds.
+
+## Professional clones
+
+Professional (studio-trained) voices follow a **draft / live** model:
+
+- You may hold **unlimited drafts**. Drafts can be trained and previewed in the studio, but cannot be downloaded, used through the API, or used in calls.
+- You may promote up to your live limit (default **1** after the $5 unlock). Only live voices are usable everywhere.
+- Training a professional voice requires a funded organization (the $5 unlock) and passing Bland's **consent and rights review** for the voice being cloned.
+
+## Raising your limits
+
+Email [tts@bland.ai](mailto:tts@bland.ai) with your organization ID, the limit you're hitting (instant clones, live professional clones, or concurrency), and a sentence about your use case. Raises are applied directly to your organization — no plan change required.
