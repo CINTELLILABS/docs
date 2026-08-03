@@ -1,0 +1,118 @@
+---
+title: "Get Pathway Call Events"
+api: "GET https://api.bland.ai/v1/pathway_calls/{call_id}"
+description: "Retrieve the pathway event timeline for a call — transcripts, node transitions, webhooks, tools, variable extraction, and every other side effect."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The unique identifier of the call whose pathway events you want to retrieve.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="v" type="string" required>
+  Set to `2` to receive the pathway events format documented here. Omitting it returns the deprecated legacy log format, which is being phased out — always pass `v=2`.
+</ParamField>
+
+### Response
+
+The response is a JSON array of event objects, one per event in the call, ordered by `sequence`. See [Pathway Call Events](/tutorials/pathway-call-events) for the full catalog of event types and per-type payload shapes.
+
+<ResponseField name="conversation_id" type="string">
+  The call id. All events for one call share it.
+</ResponseField>
+
+<ResponseField name="sequence" type="number">
+  The ordering key within the call. Always sort by `sequence`, not `created_at`. Gaps are normal and do not indicate missing data.
+</ResponseField>
+
+<ResponseField name="event_type" type="string">
+  What happened. Either a standalone event (`conversation.init`, `node.transition`, `transcript.user`, `transcript.assistant`, `node.tag`, `interrupt.early`, `interrupt.late`, `button.press`, `llm.action`) or an operation event of the form `operation.phase`, where the operation is one of `webhook`, `tool`, `kb`, `sms`, `scheduling`, `loop_condition`, `var_extraction`, `custom_code`, `transfer_pathway`, `transfer_call`, `unit_test` and the phase is `invoke`, `result`, `error`, or `warning` (plus `webhook.mapping` for variable-mapping outcomes).
+</ResponseField>
+
+<ResponseField name="node_id" type="string | null">
+  The pathway node that was active when the event fired. `null` before the first node is entered.
+</ResponseField>
+
+<ResponseField name="operation_id" type="number | null">
+  Correlation key for multi-event operations: a `result`, `error`, `warning`, or `mapping` event carries the `sequence` of the `invoke` event it belongs to. `null` when there's nothing to correlate.
+</ResponseField>
+
+<ResponseField name="payload" type="object | null">
+  Event-type-specific data. Payload shapes for every event type are documented in [Pathway Call Events](/tutorials/pathway-call-events).
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of the event. Use for timing display; use `sequence` for ordering.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url 'https://api.bland.ai/v1/pathway_calls/d2b58344-7fd1-4787-9bf9-1c23e82fd8ff?v=2' \
+  --header 'authorization: YOUR_API_KEY'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+[
+  {
+    "conversation_id": "d2b58344-7fd1-4787-9bf9-1c23e82fd8ff",
+    "sequence": 0,
+    "event_type": "conversation.init",
+    "node_id": null,
+    "operation_id": null,
+    "payload": {
+      "pathway_id": "pw_123",
+      "start_node_id": "node_start",
+      "version": "12",
+      "initial_variables": { "customer_name": "Ada" }
+    },
+    "created_at": "2026-08-03T17:04:01.120Z"
+  },
+  {
+    "conversation_id": "d2b58344-7fd1-4787-9bf9-1c23e82fd8ff",
+    "sequence": 6,
+    "event_type": "webhook.invoke",
+    "node_id": "node_order_lookup",
+    "operation_id": null,
+    "payload": {
+      "url": "https://api.example.com/orders/lookup",
+      "method": "POST",
+      "tool_name": "Lookup Order",
+      "response_mappings": [
+        { "name": "order_status", "path": "$.status" }
+      ]
+    },
+    "created_at": "2026-08-03T17:04:09.100Z"
+  },
+  {
+    "conversation_id": "d2b58344-7fd1-4787-9bf9-1c23e82fd8ff",
+    "sequence": 7,
+    "event_type": "webhook.result",
+    "node_id": "node_order_lookup",
+    "operation_id": 6,
+    "payload": {
+      "url": "https://api.example.com/orders/lookup",
+      "status": 200,
+      "body": { "status": "shipped" },
+      "duration_ms": 412
+    },
+    "created_at": "2026-08-03T17:04:09.520Z"
+  }
+]
+```
+
+</ResponseExample>
