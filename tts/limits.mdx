@@ -1,0 +1,96 @@
+---
+title: "Speech limits"
+description: "How instant voice clones, professional clones, and concurrent generations are metered on your Bland Speech account."
+---
+
+Bland Speech limits are tracked per organization as account-level entitlements. There are no subscription tiers for Speech — you start with a small allowance, and a one-time $5 wallet top-up permanently unlocks the paid allowance.
+
+## What gets metered
+
+Three things count against your organization's Speech entitlements:
+
+<CardGroup cols={3}>
+  <Card title="Instant voice clones" icon="microphone">
+    Voices you create with [Clone Voice](/api-v1/post/clone). Counted once per voice, in aggregate — not once per model generation.
+  </Card>
+  <Card title="Professional clones" icon="waveform-lines">
+    Live, higher-fidelity trained voices. Counted separately from instant clones.
+  </Card>
+  <Card title="Concurrent generations" icon="bolt">
+    Speech requests in flight at the same time across your organization.
+  </Card>
+</CardGroup>
+
+Speech usage itself is pay-as-you-go and is drawn from your wallet balance — these entitlements only govern how many voices you can hold and how many requests can run at once.
+
+## Before your first top-up
+
+Every new organization starts with:
+
+- **1 instant voice clone** you can create right away.
+- **1 concurrent generation** slot.
+- **0 professional clones.**
+
+You can synthesize speech at any time using your starting wallet balance. The limits above only cap how many custom voices you keep on your account and how many generations run in parallel.
+
+## Unlocking the paid allowance
+
+Adding **$5 or more** to your wallet permanently unlocks the paid Speech allowance for your organization. This is a one-time hurdle:
+
+- The unlock is sticky. Later spend-downs, refunds, or plan changes do not revert it.
+- The one-time top-up covers Speech across your whole organization, not per user.
+- Once unlocked, your entitlements are raised — never lowered — by future plan purchases or admin adjustments.
+
+<Tip>
+  The $5 top-up itself becomes wallet credit you can spend on Speech generations. It is not a separate fee.
+</Tip>
+
+### From the dashboard
+
+If your organization is still on the starter allowance, you'll see a **Launch special** card on the TTS account page and an **Unlock for $5** prompt when you try to create a second instant clone or a professional clone. Both open the credit purchase modal with $5 preselected. After the payment settles, the unlock can take up to about a minute to propagate.
+
+## Professional voices: draft and live
+
+Professional (studio) clones are trained on your reference audio for higher fidelity than an instant clone. Every trained voice ships as a **draft**:
+
+- **Draft** voices can be previewed inside the Speech dashboard.
+- **Draft** voices are refused for API synthesis, phone calls, and downloads.
+- **Live** voices are usable everywhere an instant clone is.
+
+Promote a voice to live from the voice library row menu once you're happy with it. You can also return a live voice to draft to take it out of production without deleting it. Draft voices show an amber **Draft** badge everywhere they appear and are unselectable in call-path voice pickers — send call, batches, inbound, the web widget, and Live Translate — so you can't accidentally assign one to a call. To hear a draft before promoting, use the preview control in the voice library.
+
+Promoting counts against your professional clone allowance. If you're already at the live cap, promoting offers to **swap** — demote a currently live voice, then promote the new one in the same confirmed step. If neither promoting nor swapping fits, use **Request a raise** (see below).
+
+### Failed training jobs
+
+If a professional training job fails, it stays visible on the **My voices** tab with the reason and a **Retry** action that reopens your reference audio in the builder. You can dismiss the notice once you've addressed it.
+
+## Aggregate voice counting
+
+Your instant voice clone allowance counts each voice **once**, no matter how many underlying model generations it uses. If your allowance is 10, you can hold up to 10 instant-clone voices on your organization at a time.
+
+Only clones made with the current generation of the model count against this limit. Voices you cloned with earlier generations of the model don't take up a slot.
+
+Deleting a voice you no longer need frees a slot for a new clone.
+
+## Errors you might see
+
+When you exceed your allowance, the API responds with a limit error. For example, [Clone Voice](/api-v1/post/clone) returns:
+
+```json Voice limit reached
+{
+  "status": 400,
+  "data": null,
+  "errors": [
+    { "error": "Limit Exceeded", "message": "You have reached the maximum number of voices for your plan." }
+  ]
+}
+```
+
+Concurrent generation limits surface as a `429 Too Many Requests` response with a `Retry-After` header. Wait for an in-flight request to finish, then retry.
+
+## Raising your limits
+
+- **Top up your wallet** with $5 or more to unlock the paid allowance.
+- **Delete unused voices** to free instant clone slots.
+- **Request a raise** from any limit denial in the dashboard — the clone type chooser, the unlock card at the instant-clone cap, and the swap-at-cap dialog all include a **Request a raise** button. Pick which limit to raise (instant clones or professional clones), the amount you need, and a short description of your use case. Requests are reviewed by hand; you'll hear back by email. Concurrency raises aren't part of this intake — email [tts@bland.ai](mailto:tts@bland.ai) for those.
