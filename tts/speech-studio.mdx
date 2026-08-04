@@ -1,0 +1,110 @@
+---
+title: "Speech Studio"
+description: "Write, direct, and synthesize speech in the dashboard with the Norm director, performance tags, and a live editor."
+---
+
+Speech Studio is the dashboard surface for producing Bland Speech audio without writing code. You describe what you want the voice to say — and how it should sound — and the studio drives synthesis through the same [`POST /v2/tts`](/api-v2/post/tts) endpoint you'd call from the API.
+
+Open it at [app.bland.ai/dashboard/tts/studio](https://app.bland.ai/dashboard/tts/studio).
+
+## What's in the studio
+
+<CardGroup cols={2}>
+  <Card title="Script editor" icon="pen-to-square">
+    A live transcript editor with per-turn voice assignment, inline performance tags, and multi-take generation.
+  </Card>
+  <Card title="Norm director" icon="wand-magic-sparkles">
+    A chat panel that writes and edits your script for you. Describe the delivery in plain language and Norm updates the editor in real time.
+  </Card>
+  <Card title="Voice picker" icon="microphone">
+    Pin featured voices, search your cloned voices, filter by version, and preview any voice with a reactive orb.
+  </Card>
+  <Card title="Session history" icon="clock-rotate-left">
+    Every session is saved with its script and past takes. Reload the page and you land back in the session you were in.
+  </Card>
+</CardGroup>
+
+---
+
+## Write a script
+
+The editor is a single transcript field. Type what you want spoken, and press **Generate** (or `Cmd`/`Ctrl` + `Enter`) to synthesize.
+
+Pick a voice from the top **Voice** picker before generating. Every new turn defaults to a featured voice so you can generate immediately without configuring anything.
+
+### Performance tags
+
+Wrap performance cues in square brackets to shape how a line is delivered:
+
+```text
+[warm] Hey — good to hear from you.
+[sighs] I know. [pause] Let me look at that for you.
+```
+
+Type `[` in the editor to open an autocomplete list of supported tags. Use arrow keys and `Enter` to insert one. Tags behave as a single atomic block — a single backspace deletes the whole tag, and arrow keys step over it.
+
+You can also open the **Effects** panel to browse tags and click any one to drop it in at the cursor.
+
+### Multiple turns
+
+Add turns for a back-and-forth read. Each turn gets its own voice picker, so you can alternate speakers within a single script. Unassigned turns fill in with a stable default voice so you can keep writing.
+
+### Takes
+
+Choose **1x**, **2x**, or **3x** in the transport bar to generate that many takes from the same script in one run. Each take gets its own waveform; select a take to scope playback, timestamp, and download to just that one.
+
+---
+
+## Direct with Norm
+
+Norm is the studio's built-in director. Open the side panel and use the **Chat** tab to describe what you want, and Norm writes or edits the script in the editor while it streams.
+
+Norm is a single-speaker director — it works on the currently selected voice from the top voice picker.
+
+Use Norm to:
+
+- Draft a script from a brief ("30-second warm voicemail asking them to call back")
+- Rewrite a line to hit a specific tone ("make the middle beat slower and a little tired")
+- Add or remove performance tags across the script
+- Iterate turn-by-turn without leaving the editor
+
+Norm streams updates live, so you'll see the transcript rewrite as it works.
+
+<Tip>
+  Norm and the editor stay in sync. Anything you type by hand carries through the next Norm turn, and anything Norm writes you can edit directly.
+</Tip>
+
+---
+
+## Sessions and history
+
+Every studio session is persisted locally with its script, voice assignments, and finished takes. Switch to the **History** tab in the side panel to jump between sessions or start a new one with the **+** button in the header.
+
+- Sessions are titled from the first line of the script until you rename one.
+- Reloading the page returns you to the session you were last in.
+- Past takes replay from cached audio; sessions whose audio was evicted show a **Transcript-only** tag and can be regenerated on demand.
+
+---
+
+## Pricing
+
+Speech Studio bills against pay-as-you-go TTS credits. See the current per-character rate and refill options under **Credits** in the TTS sidebar, or in [Billing & Plans](/platform/billing).
+
+---
+
+## Do the same thing from the API
+
+Everything in the studio is powered by the public TTS API. To reproduce a studio generation programmatically:
+
+```bash
+curl -X POST https://api.bland.ai/v2/tts \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "text": "[warm] Hey — good to hear from you. [pause] Let me pull that up.",
+    "voice": "maya"
+  }' \
+  --output line.wav
+```
+
+See [Synthesize Speech](/api-v2/post/tts) for the full request shape, and [List Voices](/api-v1/get/voices) to find a voice ID.
