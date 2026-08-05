@@ -1,0 +1,114 @@
+---
+title: "Replace Knowledge Base URLs"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/replace_urls"
+description: "Replace the list of URLs backing a WEB_SCRAPE knowledge base."
+---
+
+## Overview
+
+Updates the URL list on a `WEB_SCRAPE`-type knowledge base and creates a new version. The `knowledge_base_id` stays the same, so anything referencing the KB keeps working. Older URL sets stay retrievable via [List Versions](/api-v1/get/knowledge-id-versions) and [Restore Version](/api-v1/post/knowledge-id-versions-version-id-restore). For `FILE` KBs use [Replace File](/api-v1/post/knowledge-id-replace); for `TEXT` use [Update Content](/api-v1/post/knowledge-id-content).
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base to replace.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="urls" type="string[]" required>
+  Non-empty array of absolute URLs to scrape. Each URL is parsed with `new URL(...)` and rejected if invalid. Maximum 100 URLs for standard accounts, 2000 for enterprise accounts.
+</ParamField>
+
+## Concurrency
+
+If the KB is still indexing the previous replacement, the request returns `409` with the message `"Source is still indexing the previous Replace URLs. Wait until it completes."`. Poll [Get Knowledge Base](/api-v1/get/knowledge-id) until `status` returns to `"COMPLETED"` before retrying.
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Fields">
+    <ResponseField name="success" type="boolean">
+      `true` on success.
+    </ResponseField>
+    <ResponseField name="version_id" type="string">
+      The id of the newly created version. This becomes the KB's current version.
+    </ResponseField>
+    <ResponseField name="urls_count" type="number">
+      Number of URLs accepted for this version.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Human-readable confirmation, for example `"URLs replaced successfully. Re-scraping and re-embedding in progress."`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "success": true,
+    "version_id": "5e69308a-31f3-4f94-bde6-db6602e57be0",
+    "urls_count": 3,
+    "message": "URLs replaced successfully. Re-scraping and re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json Empty URLs
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "urls must be a non-empty array" }
+  ]
+}
+```
+
+```json Invalid URL
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Invalid URL: not-a-url" }
+  ]
+}
+```
+
+```json Too Many URLs
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Maximum 100 URLs allowed" }
+  ]
+}
+```
+
+```json Wrong KB Type
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Knowledge base not found or not a web scraping type" }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
