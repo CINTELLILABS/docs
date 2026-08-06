@@ -247,6 +247,38 @@ description: "Update your inbound agent's settings, prompt and other details."
   Set to `null` or an empty string to remove the configured fallback.
 </ParamField>
 
+<ParamField body="memory_id" type="string">
+  Attach a [memory store](/api-v1/post/memory-create) to the inbound agent so calls to this number share context across sessions. Pass the `memory_id` returned by [Create Memory](/api-v1/post/memory-create). Set to `null` or an empty string to detach.
+</ParamField>
+
+<ParamField body="pronunciation_guide" type="array">
+  Array of objects that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
+
+  ```json
+  [
+    {
+      "word": "example",
+      "pronunciation": "ex-am-ple",
+      "case_sensitive": false,
+      "spaced": false
+    },
+    {
+      "word": "API",
+      "pronunciation": "A P I",
+      "case_sensitive": true,
+      "spaced": true
+    }
+  ]
+  ```
+
+  <Accordion title="Object Parameters">
+    - `word`: the word you want to guide the LLM on how to pronounce
+    - `pronunciation`: how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
+    - `case_sensitive`: whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+    - `spaced`: whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
+  </Accordion>
+</ParamField>
+
 <ParamField body="transfer_list" type="object">
   Give your agent the ability to transfer calls to a set of phone numbers.
 
