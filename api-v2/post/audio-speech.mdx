@@ -1,0 +1,171 @@
+---
+title: "Speech (OpenAI-compatible)"
+api: "POST https://api.bland.ai/v2/audio/speech"
+description: "Bland's voices behind OpenAI's text-to-speech API."
+---
+
+## Overview
+
+This endpoint implements OpenAI's `/audio/speech` contract. If you already call OpenAI for text-to-speech — directly, through an OpenAI SDK, or through a router like LiteLLM — point the base URL at Bland and change the key. Nothing else in your code changes.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["BLAND_API_KEY"],
+    base_url="https://api.bland.ai/v2",
+)
+
+client.audio.speech.create(
+    model="btts-3",
+    voice="nova",
+    input="Hello from Bland.",
+).stream_to_file("hello.mp3")
+```
+
+Building something new? Use [Synthesize Speech](/api-v2/post/tts) instead — it exposes the sample rates, telephony encodings, and voice controls this contract has no field for.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  `Bearer <your API key>`. OpenAI SDKs send this for you.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="model" type="string" required>
+  `btts-3` or `btts-2`.
+
+  OpenAI's own model ids (`tts-1`, `gpt-4o-mini-tts`, …) are **not** accepted — you would be billed for a model you did not ask for. Unknown ids return a `400` listing the valid ones.
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  The text to speak. Maximum 4,096 characters, matching OpenAI's limit.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Either an **OpenAI voice name**, which maps to the closest Bland voice, or any **Bland voice UUID** for the full catalog.
+
+  | OpenAI name | Bland voice |
+  |---|---|
+  | `alloy`, `ash`, `coral`, `fable` | River |
+  | `amber`, `august`, `lily`, `nova`, `shimmer` | Karen |
+  | `ballad`, `blue`, `echo`, `onyx`, `sage`, `verse` | Matthew |
+
+  Names are case-insensitive. An unrecognized name returns a `400`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  `mp3`, `opus`, `aac`, `flac`, `wav`, or `pcm` — all six OpenAI defines.
+
+  `pcm` is raw 24 kHz signed 16-bit little-endian mono, as OpenAI specifies. Everything else is encoded from a 48 kHz render.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Accepted only at `1.0`. Bland has no speed control, and quietly ignoring `speed: 2.0` would return audio that is wrong in a way you would not notice until a user did, so any other value returns a `400`.
+</ParamField>
+
+<ParamField body="stream_format" type="string" default="audio">
+  Only `audio`. Server-sent events are not supported; `sse` returns a `400`.
+</ParamField>
+
+`instructions` is accepted and ignored — it is a `gpt-4o-mini-tts` field with no equivalent here.
+
+---
+
+## Response
+
+The audio bytes, with `Content-Type` matching `response_format` (`audio/mpeg`, `audio/ogg`, `audio/aac`, `audio/flac`, `audio/wav`, `audio/pcm`).
+
+### Errors
+
+Errors use OpenAI's envelope, so existing error handling keeps working:
+
+```json
+{
+  "error": {
+    "message": "The model 'tts-1' does not exist. Supported models: btts-3, btts-2.",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found"
+  }
+}
+```
+
+| Condition | HTTP |
+|---|---|
+| Missing or malformed field, unknown `voice`, `speed` other than 1.0, `stream_format: sse` | 400 |
+| Unknown `model` | 400 (`model_not_found`) |
+| Out of credits | 402 |
+| Professional voice still in draft | 403 |
+| Voice UUID not found or not accessible | 404 |
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/audio/speech" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "btts-3",
+    "input": "Hello from Bland.",
+    "voice": "nova",
+    "response_format": "mp3"
+  }' \
+  --output hello.mp3
+```
+
+```python OpenAI SDK
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["BLAND_API_KEY"],
+    base_url="https://api.bland.ai/v2",
+)
+
+with client.audio.speech.with_streaming_response.create(
+    model="btts-3",
+    voice="nova",
+    input="Hello from Bland.",
+) as response:
+    response.stream_to_file("hello.mp3")
+```
+
+```python LiteLLM
+import litellm
+
+litellm.speech(
+    model="openai/btts-3",
+    voice="nova",
+    input="Hello from Bland.",
+    api_base="https://api.bland.ai/v2",
+    api_key=os.environ["BLAND_API_KEY"],
+)
+```
+
+```typescript Node
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.BLAND_API_KEY,
+  baseURL: "https://api.bland.ai/v2",
+});
+
+const speech = await client.audio.speech.create({
+  model: "btts-3",
+  voice: "nova",
+  input: "Hello from Bland.",
+});
+```
+</CodeGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

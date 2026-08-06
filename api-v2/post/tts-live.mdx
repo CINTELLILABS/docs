@@ -10,12 +10,6 @@ Send text as your LLM produces it and get audio frames back as they render, over
 
 Use this when you do not have the full text up front. If you do, use [Synthesize Speech](/api-v2/post/tts) — same voices, same controls.
 
-<Warning>
-  This endpoint is **not yet enabled on the public API**. A connection to
-  `wss://api.bland.ai/v2/tts/live` currently fails the WebSocket handshake. Use
-  [Synthesize Speech](/api-v2/post/tts) until this page drops the notice.
-</Warning>
-
 <Note>
   Use a **`BTTS_V3` or newer** voice. `expressiveness` and `stability` are calibrated for
   it. `BTTS_V2` voices synthesize, but the controls are not tuned for them.
@@ -87,6 +81,8 @@ Billing:       once, on close or disconnect — never per flush
 | `invalid_request` | A field is missing or has the wrong shape. |
 | `voice_not_found` | Voice UUID does not exist or is not accessible. |
 | `unsupported_voice` | Voice is not a `BTTS_V2` or `BTTS_V3` voice. |
+| `voice_not_live` | The professional voice is still a draft. Promote it to live first. |
+| `insufficient_credits` | The account is out of credits. |
 | `unsupported_encoding` | `audio.encoding` is not allowed. |
 | `unsupported_sample_rate` | `audio.sample_rate` is not allowed for the encoding. |
 | `buffer_overflow` | Un-flushed text would exceed the buffer cap. |
@@ -109,7 +105,7 @@ const ws = new WebSocket("wss://api.bland.ai/v2/tts/live", {
 ws.on("open", () => {
   ws.send(JSON.stringify({
     type: "init",
-    voice: "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
+    voice: "29158307-9893-4149-8a75-bc9ce313d64e",
     audio: { encoding: "pcm_s16le", sample_rate: 48000 },
     controls: { expressiveness: 0.6, stability: 0.5 },
   }));

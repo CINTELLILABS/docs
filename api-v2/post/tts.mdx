@@ -147,6 +147,8 @@ Every error returns the same shape, with a stable machine-readable code:
 | `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the encoding. |
 | `unsupported_container` | 400 | `audio.container` is not `raw` or `wav`. |
 | `unsupported_voice` | 400 | The voice exists but is not a `BTTS_V2` or `BTTS_V3` voice. |
+| `insufficient_credits` | 402 | The account is out of credits. |
+| `voice_not_live` | 403 | The professional voice is still a draft. Promote it to live first. |
 | `voice_not_found` | 404 | The voice UUID does not exist, or you cannot access it. |
 | `synthesis_failed` | 500 | Synthesis failed before or during streaming. |
 
@@ -162,7 +164,7 @@ curl -X POST "https://api.bland.ai/v2/tts" \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Hello world.",
-    "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
     "audio": { "encoding": "pcm_s16le", "sample_rate": 24000, "container": "wav" },
     "controls": { "expressiveness": 0.7, "stability": 0.5 }
   }' \
@@ -177,7 +179,7 @@ curl -X POST "https://api.bland.ai/v2/tts" \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Welcome to Bland.",
-    "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa"
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e"
   }' \
   --output out.pcm
 ```
@@ -190,7 +192,7 @@ curl -X POST "https://api.bland.ai/v2/tts" \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Your appointment is confirmed for Tuesday at 3 PM.",
-    "voice": "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
     "audio": { "encoding": "mulaw", "sample_rate": 8000 }
   }' \
   --output prompt.ulaw
@@ -202,7 +204,7 @@ HTTP/2 200
 content-type: audio/pcm
 x-request-id: 5f9c…-…-…
 x-model: btts-3
-x-voice-id: f04af0e5-1a80-48a9-b02d-52f30d417cfa
+x-voice-id: 29158307-9893-4149-8a75-bc9ce313d64e
 x-sample-rate: 48000
 x-cost: 0.000340
 x-latency: 312
