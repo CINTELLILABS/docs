@@ -1,0 +1,137 @@
+---
+title: "Writing for Speech"
+description: "Control pacing, emphasis, numbers, and delivery with text and the two performance controls."
+---
+
+The model reads your text as a performer would, not as a parser. Punctuation, spacing, and
+capitalization all change the audio. This page covers what actually moves the output.
+
+## The two controls
+
+Both are optional, both range from `0.0` to `1.0`, and both are calibrated for `BTTS_V3`.
+Leave them unset to get Bland's defaults, which suit most conversational copy.
+
+<ParamField body="expressiveness" type="number">
+  How much intonation varies. Higher is livelier and more dynamic; lower is flatter and more
+  even. Raise it for marketing reads and characterful agents; lower it for disclosures,
+  confirmations, and anything where a performance would be distracting.
+</ParamField>
+
+<ParamField body="stability" type="number">
+  How much the same input varies between renders. Higher repeats itself closely; lower takes
+  more interpretive latitude. Raise it when you cache audio or A/B test copy and need the
+  only variable to be the text.
+</ParamField>
+
+```json
+{ "controls": { "expressiveness": 0.8, "stability": 0.4 } }
+```
+
+They pull against each other. High expressiveness with high stability gives you the same
+animated read every time; high expressiveness with low stability gives you a different
+animated read every time.
+
+<Note>
+  `BTTS_V2` voices synthesize, but these controls are not tuned for them. Read the `x-model`
+  response header to see which model a voice resolved to.
+</Note>
+
+## Pauses
+
+Insert a pause with `<|N|>`, where `N` is `0.1` to `10.0` seconds:
+
+```text
+Welcome to Bland. <|0.8|> How can I help?
+```
+
+A marker also splits the line into two segments, and that boundary costs a breath, so the
+audio grows by more than `N`. Budget roughly a second on top of what you ask for. Beyond
+that the relationship is one to one: raising a marker from `1.0` to `2.0` adds a second.
+
+Stay inside the range. A marker above `10.0` fails the whole request rather than being
+clamped.
+
+Reach for markers instead of runs of dashes or ellipses when you want time. Punctuation moves
+emphasis and delivery along with pacing; a marker only moves the clock.
+
+## Punctuation
+
+| You write | You get |
+| --- | --- |
+| `.` `,` `!` | Natural sentence rhythm and breath |
+| `…` | A longer, weightier pause than a comma |
+| `CAPITALS` | Emphasis on that word |
+| `-` dashes | Breaks, sometimes read as a stutter |
+
+Always end a sentence with terminal punctuation. An unterminated final clause can lose its
+last word, most visibly with numbers.
+
+## Numbers
+
+Long digit strings are where synthesis most often goes wrong. Three rules cover it:
+
+- Keep a run to roughly six characters or fewer.
+- Break longer runs with a pause marker.
+- End the sentence with a period.
+
+```text
+Your code is one two three <|0.5|> four five six.
+```
+
+Spelling a number as words gives you exact control over how it is read. `1500` may come out
+as "fifteen hundred" or "one thousand five hundred"; `one thousand five hundred` cannot.
+
+## Spacing
+
+The model reads text token by token, so spacing carries meaning:
+
+```text
+Hello <vocal burst> world.     ← correct
+Hello<vocal burst>world.       ← runs together
+```
+
+Hyphenated and concatenated constructions reduce accuracy. Prefer `from the same array` over
+`from-the-same-array`.
+
+Chinese and Japanese are segmented automatically. Do not add spacing by hand.
+
+## What is normalized for you
+
+These are handled already. Rewriting them yourself usually makes the result worse:
+
+- Emails: `john@gmail.com` reads as "john at gmail dot com"
+- URLs: `www.google.com` reads as "www dot google dot com"
+- Smart quotes are converted to straight quotes
+- Repeated punctuation is collapsed: `Hello!!!` reads as `Hello!`
+- Missing spaces after a period are inserted: `End.Start` reads as `End. Start`
+
+## Streaming text
+
+On [`WSS /v2/tts/ws`](/api-v2/post/tts-ws), send LLM tokens exactly as the model produces
+them, including their leading spaces and punctuation. Each `speak.text` is appended verbatim,
+and Bland picks the synthesis boundaries itself.
+
+Do not re-wrap tokens into sentences before sending. Buffering on the client to hand over
+"clean" sentences adds latency to every turn and takes context away from the boundary
+detection.
+
+It also costs you the early audio outright. Release is driven by text continuing to arrive,
+so a turn delivered as one large `speak` returns nothing until `end_of_turn`, even when that
+one message holds several complete sentences. The same words sent as deltas start playing
+about a second in.
+
+<Warning>
+  Pause markers and punctuation work the same over the WebSocket, but a marker split across
+  two `speak` messages still works because the text is concatenated before it is read. Splitting
+  `<|0.5|>` across turns does not, because a turn is synthesized on its own.
+</Warning>
+
+## Checking your copy
+
+[Speech Studio](/tts/speech-studio) renders a line immediately with the same models the API
+uses, which makes it the fastest way to compare two phrasings or two control settings before
+putting either in code.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

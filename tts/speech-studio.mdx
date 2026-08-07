@@ -3,7 +3,7 @@ title: "Speech Studio"
 description: "Write, direct, and synthesize speech in the dashboard with the Norm director, performance tags, and a live editor."
 ---
 
-Speech Studio is the dashboard surface for producing Bland Speech audio without writing code. You describe what you want the voice to say — and how it should sound — and the studio drives synthesis through the same [`POST /v2/tts`](/api-v2/post/tts) endpoint you'd call from the API.
+Speech Studio produces Bland Speech audio without code. You describe what you want the voice to say and how it should sound. The studio sends each complete script through the same [`POST /v2/tts`](/api-v2/post/tts) endpoint you can call directly.
 
 Open it at [app.bland.ai/dashboard/tts/studio](https://app.bland.ai/dashboard/tts/studio).
 
@@ -37,11 +37,11 @@ Pick a voice from the top **Voice** picker before generating. Every new turn def
 Wrap performance cues in square brackets to shape how a line is delivered:
 
 ```text
-[warm] Hey — good to hear from you.
+[warm] Hey, good to hear from you.
 [sighs] I know. [pause] Let me look at that for you.
 ```
 
-Type `[` in the editor to open an autocomplete list of supported tags. Use arrow keys and `Enter` to insert one. Tags behave as a single atomic block — a single backspace deletes the whole tag, and arrow keys step over it.
+Type `[` in the editor to open an autocomplete list of supported tags. Use arrow keys and `Enter` to insert one. Tags behave as a single atomic block: one backspace deletes the whole tag, and arrow keys step over it.
 
 You can also open the **Effects** panel to browse tags and click any one to drop it in at the cursor.
 
@@ -59,7 +59,7 @@ Choose **1x**, **2x**, or **3x** in the transport bar to generate that many take
 
 Norm is the studio's built-in director. Open the side panel and use the **Chat** tab to describe what you want, and Norm writes or edits the script in the editor while it streams.
 
-Norm is a single-speaker director — it works on the currently selected voice from the top voice picker.
+Norm is a single-speaker director. It works on the currently selected voice from the top voice picker.
 
 Use Norm to:
 
@@ -101,10 +101,11 @@ curl -X POST https://api.bland.ai/v2/tts \
   -H "authorization: YOUR_API_KEY" \
   -H "content-type: application/json" \
   -d '{
-    "text": "[warm] Hey — good to hear from you. [pause] Let me pull that up.",
-    "voice": "maya"
+    "text": "[warm] Hey, good to hear from you. [pause] Let me pull that up.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "container": "wav" }
   }' \
   --output line.wav
 ```
 
-See [Synthesize Speech](/api-v2/post/tts) for the full request shape, and [List Voices](/api-v1/get/voices) to find a voice ID.
+See [Synthesize Speech (HTTP)](/api-v2/post/tts) for the full request shape, and [List Voices](/api-v1/get/voices) to find a voice ID. For token-level input and conversational interruptions, use [Realtime Speech (WebSocket)](/api-v2/post/tts-ws).

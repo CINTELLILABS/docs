@@ -1,0 +1,55 @@
+---
+title: "Migrate from PlayHT"
+description: "Replace PlayHT WebSocket authentication and request-level synthesis with Bland realtime turns."
+---
+
+PlayHT requires an HTTP authentication request to obtain generated, model-specific WebSocket URLs, then accepts one TTS command per generation. Bland uses a stable WebSocket URL and authenticates the upgrade directly.
+
+Start with the [Realtime TTS Quickstart](/tts/realtime-quickstart).
+
+## Connection changes
+
+| PlayHT | Bland |
+| --- | --- |
+| `POST /api/v4/websocket-auth` with API key and user ID | Connect directly to `wss://api.bland.ai/v2/tts/ws` |
+| Generated URL from `websocket_urls` | Stable WebSocket URL |
+| PlayHT API key plus user ID | Bland API key in `Authorization: Bearer ...` |
+| Voice and output settings in each TTS command | Voice and output settings once in `init` |
+
+## Request mapping
+
+PlayHT accepts a complete `text` value for one request and returns `start`, binary audio, and `end`. Bland can begin from partial input:
+
+```js
+const turnId = crypto.randomUUID();
+
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: turnId,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: turnId }));
+```
+
+Map PlayHT `start` and `end` handling to Bland `utterance_start` and `utterance_end`. Binary audio remains binary, but configure its format during `init`:
+
+```json
+{
+  "type": "init",
+  "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+  "audio": { "encoding": "pcm_s16le", "sample_rate": 48000 }
+}
+```
+
+Bland realtime output supports raw PCM or 8 kHz mu-law. Use [Synthesize Speech (HTTP)](/api-v2/post/tts) if your current PlayHT integration needs a complete WAV file. MP3, OGG, FLAC, speed, seed, and PlayHT engine settings do not map directly to the Bland realtime protocol.
+
+See the [PlayHT WebSocket reference](https://docs.play.ht/reference/playht-tts-websocket-api) and [Bland WebSocket reference](/api-v2/post/tts-ws).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

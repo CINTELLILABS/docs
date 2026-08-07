@@ -1,0 +1,197 @@
+---
+title: "Speech (OpenAI-compatible)"
+api: "POST https://api.bland.ai/v2/audio/speech"
+description: "Use Bland voices through the OpenAI text-to-speech request and error shapes."
+---
+
+## Overview
+
+This endpoint implements OpenAI's `/audio/speech` contract. If you already use an OpenAI SDK or a compatible router such as LiteLLM, change the base URL, API key, and model to route speech through Bland.
+
+```python
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["BLAND_API_KEY"],
+    base_url="https://api.bland.ai/v2",
+)
+
+with client.audio.speech.with_streaming_response.create(
+    model="btts-3",
+    voice="coral",
+    input="Hello from Bland.",
+) as response:
+    response.stream_to_file(Path("hello.mp3"))
+```
+
+For LLM tokens, interruptions, and the lowest conversational latency, use [Realtime Speech (WebSocket)](/api-v2/post/tts-ws). For a complete input string with Bland-specific audio controls, use [Synthesize Speech (HTTP)](/api-v2/post/tts).
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  `Bearer <your API key>`. OpenAI SDKs send this from their `api_key` or `apiKey` configuration.
+</ParamField>
+
+## Body parameters
+
+<ParamField body="model" type="string" required>
+  `btts-3` or `btts-2`.
+
+  OpenAI model IDs such as `tts-1` and `gpt-4o-mini-tts` are not aliased. Unknown IDs return `400` with code `model_not_found`.
+
+  The model must match the selected Bland voice. A mismatch returns `400` with code `model_voice_mismatch`.
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  Non-empty text to speak. Maximum 4,096 characters.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  A recognized OpenAI voice name, mapped to a Bland core voice, or a Bland voice UUID for the full catalog.
+
+  | OpenAI name | Bland voice |
+  | --- | --- |
+  | `alloy`, `ash`, `coral`, `fable` | River |
+  | `amber`, `august`, `lily`, `nova`, `shimmer` | Karen |
+  | `ballad`, `blue`, `echo`, `onyx`, `sage`, `verse` | Matthew |
+
+  Names are case-insensitive. An unrecognized name returns `400`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  `mp3`, `opus`, `aac`, `flac`, `wav`, or `pcm`.
+
+  `pcm` is raw 24 kHz signed 16-bit little-endian mono audio. The other formats use a 48 kHz render and include their normal file or stream framing.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Only `1.0` is accepted. Other values return `400` because Bland does not currently expose speed control on this endpoint.
+</ParamField>
+
+<ParamField body="stream_format" type="string" default="audio">
+  Only `audio` is supported. `sse` returns `400`.
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  Accepted and ignored. This OpenAI field has no Bland equivalent.
+</ParamField>
+
+## Response
+
+The response body contains audio bytes. `Content-Type` matches the requested format:
+
+| `response_format` | `Content-Type` |
+| --- | --- |
+| `mp3` | `audio/mpeg` |
+| `opus` | `audio/ogg` |
+| `aac` | `audio/aac` |
+| `flac` | `audio/flac` |
+| `wav` | `audio/wav` |
+| `pcm` | `audio/pcm` |
+
+MP3, Opus, AAC, FLAC, and raw PCM can begin streaming before synthesis completes. WAV is buffered until its final RIFF header length is known.
+
+<ResponseField name="x-request-id" type="string">
+  Unique request ID. Include it in support requests.
+</ResponseField>
+
+## Errors
+
+Errors use OpenAI's envelope so SDK error handling remains readable:
+
+```json
+{
+  "error": {
+    "message": "The model 'tts-1' does not exist. Supported models: btts-3, btts-2.",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found"
+  }
+}
+```
+
+| Condition | HTTP | Code |
+| --- | --- | --- |
+| Missing or malformed field | 400 | `null` |
+| Unknown model | 400 | `model_not_found` |
+| Model does not match the selected voice | 400 | `model_voice_mismatch` |
+| Unsupported voice type | 400 | `null` |
+| Out of credits | 402 | `insufficient_quota` |
+| Professional voice is still a draft | 403 | `voice_not_live` |
+| Voice UUID is not found or accessible | 404 | `voice_not_found` |
+| Synthesis fails before audio begins | 500 | `synthesis_failed` |
+
+## Examples
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/audio/speech" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "btts-3",
+    "input": "Hello from Bland.",
+    "voice": "coral",
+    "response_format": "mp3"
+  }' \
+  --output hello.mp3
+```
+
+```python OpenAI SDK
+import os
+from pathlib import Path
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["BLAND_API_KEY"],
+    base_url="https://api.bland.ai/v2",
+)
+
+with client.audio.speech.with_streaming_response.create(
+    model="btts-3",
+    voice="coral",
+    input="Hello from Bland.",
+) as response:
+    response.stream_to_file(Path("hello.mp3"))
+```
+
+```python LiteLLM
+import os
+
+import litellm
+
+litellm.speech(
+    model="openai/btts-3",
+    voice="coral",
+    input="Hello from Bland.",
+    api_base="https://api.bland.ai/v2",
+    api_key=os.environ["BLAND_API_KEY"],
+)
+```
+
+```js Node.js
+import fs from "node:fs/promises";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.BLAND_API_KEY,
+  baseURL: "https://api.bland.ai/v2",
+});
+
+const response = await client.audio.speech.create({
+  model: "btts-3",
+  voice: "coral",
+  input: "Hello from Bland.",
+});
+
+await fs.writeFile("hello.mp3", Buffer.from(await response.arrayBuffer()));
+```
+</CodeGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
