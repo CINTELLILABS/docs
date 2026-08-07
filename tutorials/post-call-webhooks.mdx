@@ -504,6 +504,8 @@ Calls created with [`include_post_transfer_transcript: true`](/api-v1/post/calls
 - `transfer_offset_seconds` — seconds from the start of the call to the transfer.
 - `post_transfer_transcript` — the conversation after the transfer, as speaker-attributed segments. The transferred-to human is `speaker: 2` / `"representative"`; the caller is `speaker: 1` / `"user"`. Timestamps are seconds from the start of the transferred conversation. The `corrected_transcript` continues to contain only the pre-transfer portion of the call.
 
+The `citations` event is used as the delivery channel regardless of contents. You receive it once `include_post_transfer_transcript` is on, even if you have no citation schemas configured and `"citations"` is not in `webhook_events`. When only the transcript applies, the event carries just `post_transfer_transcript` and `transfer_offset_seconds` and no `citations` array. Branch on which properties are present rather than on `event_type`.
+
 ```json
 {
   "transfer_offset_seconds": 9.573,
