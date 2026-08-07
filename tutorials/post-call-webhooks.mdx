@@ -152,7 +152,7 @@ This is the immediate webhook sent right after a call completes:
   },
   "answered_by": "human",
   "record": true,
-  "recording_url": "https://api.twilio.com/2010-04-01/Accounts/ACexample123/Recordings/REexample456",
+  "recording_url": "https://api.bland.ai/v1/recordings/12345678-1234-1234-1234-123456789012",
   "metadata": {
     "campaign_type": "test_calls",
     "environment": "production",
@@ -193,7 +193,7 @@ This is the immediate webhook sent right after a call completes:
     "Intro Node",
     "Call Completion"
   ],
-  "recording_expiration": "2030-10-15T17:20:55.779Z",
+  "recording_expiration": "2025-10-12T20:39:03.168Z",
   "status": "completed",
   "pathway_id": "b71c4c5c-33e3-496b-a5f4-91b7e8e6a931",
   "is_proxy_agent_call": false,
@@ -249,6 +249,21 @@ This is the immediate webhook sent right after a call completes:
 ```
 
 </Accordion>
+
+#### Recording fields
+
+Two fields in the payload relate to the call recording, and both are only present when `record` was
+set to `true`.
+
+| Field                  | Description                                                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recording_url`        | Where to fetch the audio. Whether it plays without credentials depends on your organization's recording access setting. New organizations require an API key or a signed-in session. |
+| `recording_expiration` | When unauthenticated playback stops, as an ISO 8601 timestamp. Absent when your organization has no expiration configured. The recording is not deleted at this time; only unauthenticated access stops. |
+
+<Info>
+  If you store `recording_url` and fetch it later from a backend service, send your API key with the
+  request. Do not assume the link plays anonymously. See [Call Recordings](/platform/call-recordings).
+</Info>
 
 ### Delayed Webhook with Citations and Corrected Transcript
 
@@ -364,7 +379,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
   "call_ended_by": "USER",
   "error_message": "Account not allowed to call +12345678901",
   "local_dialing": false,
-  "recording_url": "https://akalocaldev.internal.bland.ai/v1/recordings/8a9620f6-d634-4b92-8d75-93280a894a71:24847607-ce61-4488-be8f-8e63d548b13e",
+  "recording_url": "https://api.bland.ai/v1/recordings/8a9620f6-d634-4b92-8d75-93280a894a71",
   "transferred_at": "2025-10-16T17:10:28.301Z",
   "transferred_to": "+12345678901",
   "disposition_tag": "COMPLETED_ACTION",
@@ -384,7 +399,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
     ],
     "state": "MERGED"
   },
-  "recording_expiration": "2025-10-19T18:22:36.641+00:00",
+  "recording_expiration": "2025-10-19T18:22:31.000Z",
   "pre_transfer_duration": 0.3955,
   "post_transfer_duration": 0.571166666666667,
   "concatenated_transcript": "assistant: Hey, this is Jean from Nutriva Health. Could you confirm your name for me? \n user: Yeah. My name is James. \n assistant: Hey James, great to meet you! I just wanted to confirm that you’ll be able to attend your upcoming appointment tomorrow at ten A M? \n user: Yeah. I will be able to. Goodbye. \n ",
