@@ -1,0 +1,201 @@
+---
+title: "Incremental Speech (WebSocket)"
+api: "WSS https://api.bland.ai/v2/tts/ws"
+description: "Stream text in as your LLM produces it and get audio frames back before the turn is finished."
+---
+
+## Overview
+
+`/v2/tts/ws` is an incremental text-in, audio-out WebSocket built for voice agents that stream LLM output. Send text token by token as it is generated and audio frames start coming back before the full response is written.
+
+Use this when your agent produces a turn incrementally and you want audio to start playing while the tail is still being generated, with immediate cancellation and barge-in.
+
+- If you have the full text up front, use [Synthesize Speech](/api-v2/post/tts).
+- If you have streaming text but don't need per-turn barge-in, [Live Speech](/api-v2/post/tts-live) still works.
+
+`/v2/tts/live` is unchanged and keeps its own contract.
+
+<Note>
+  Use a **`BTTS_V3` or newer** voice. Voices from earlier model generations may synthesize, but the controls are not tuned for them.
+</Note>
+
+---
+
+## When to use this endpoint
+
+Reach for `/v2/tts/ws` when all of the following apply:
+
+- Your text source produces a turn a token at a time and you want audio to start before it finishes.
+- The user can barge in on the current turn, and interrupted audio must stop immediately.
+- You want one long-lived connection per agent session rather than a fresh WebSocket per sentence.
+
+If any of those don't apply, the simpler endpoints are a better fit.
+
+---
+
+## Authentication
+
+Credentials are checked in this order:
+
+- `?token=<JWT>` query parameter (recommended for browsers). Mint via [Mint Stream Input Token](/api-v1/post/speak-stream-input-token).
+- `Authorization: Bearer <api_key>` header (or bare `Authorization: <api_key>`).
+- `Sec-WebSocket-Protocol: bland.api_key.<key>` subprotocol.
+- `?api_key=<key>` query (deprecated, logged).
+
+---
+
+## Protocol
+
+Control frames are JSON text. Audio frames are **binary**, so tell them apart by WebSocket frame type. Audio is bare samples in the encoding you asked for, with no envelope.
+
+Concatenating a context's binary frames in receive order yields exactly its audio.
+
+### Contexts and turns
+
+A `context_id` identifies one utterance in progress. **Each connection has one active context at a time.** Sending a `speak` with a new `context_id` preempts whatever is running: the previous turn's synthesis is aborted, its buffered text is discarded, and the new turn starts. This is the barge-in signal — no explicit teardown message is required.
+
+Exactly one `utterance_end` is emitted for every context, whatever happens to it, so a client can safely tear down its audio context on that message.
+
+### Client → Server messages
+
+```
+init          { type: "init", voice, audio?: { encoding?, sample_rate? },
+                controls?: { expressiveness?, stability? } }
+speak         { type: "speak", context_id, text }
+end_of_turn   { type: "end_of_turn", context_id }
+cancel        { type: "cancel", context_id }
+close         { type: "close" }
+```
+
+- `init` is required as the first message. `voice` is a UUID (names are rejected). The voice is fixed for the lifetime of the connection.
+  - `audio.encoding` defaults to `pcm_s16le`. `mulaw` is 8 kHz only, for telephony.
+  - `audio.sample_rate` defaults to `48000`, which BTTS V3 renders natively. Allowed: `8000`, `16000`, `24000`, `44100`, `48000`.
+  - `controls.expressiveness` and `controls.stability` are optional `0.0`–`1.0`.
+- `speak` appends text to the given `context_id`. Any size is valid — a single character from an LLM token stream works. If `context_id` is not the currently active one, it preempts it and becomes the new turn.
+- `end_of_turn` tells the server no more text is coming for that turn. The remaining buffered text is spoken, then `utterance_end` is emitted.
+- `cancel` aborts the active turn with no replacement text. Same effect as preemption, without a new context.
+- `close` cancels the active turn, settles usage, and closes the socket.
+
+The server decides speech boundaries as text arrives; you don't need to send sentence-ending punctuation to trigger synthesis, and you don't need a separate `flush`.
+
+### Server → Client messages
+
+```
+ready              { type: "ready", session_id, encoding, sample_rate }
+utterance_start    { type: "utterance_start", context_id }
+<binary audio frame>
+utterance_end      { type: "utterance_end", context_id, reason, frames, duration_ms }
+error              { type: "error", code, message, context_id? }
+done               { type: "done", session_id }
+```
+
+`utterance_end.reason` is one of:
+
+| `reason` | Meaning |
+|---|---|
+| `complete` | `end_of_turn` was reached and the turn finished speaking. |
+| `preempted` | A different `context_id` arrived and took over. |
+| `cancelled` | An explicit `cancel` stopped this turn. |
+| `failed` | Synthesis errored. A matching `error` message carries the detail. |
+
+### Limits and guardrails
+
+```
+Turn cap:      4000 received characters per turn
+Idle timeout:  session closes if the client stops sending
+Slow consumer: session is closed if the client falls behind the audio stream
+```
+
+Concurrency admission is per connection and counts against your organization's speech concurrency limit. See [Speech Limits](/speech/limits).
+
+### Error codes
+
+| Code | Meaning |
+|---|---|
+| `invalid_message` | Frame is not valid JSON or is not a known message type. |
+| `init_required` | A non-`close` message arrived before `init`. |
+| `already_initialized` | `init` was sent more than once. |
+| `invalid_request` | A field is missing or has the wrong shape. |
+| `voice_not_found` | Voice UUID does not exist or is not accessible. |
+| `unsupported_voice` | Voice is not usable with this endpoint. |
+| `voice_not_live` | Voice is a draft and cannot be used. |
+| `unsupported_encoding` | `audio.encoding` is not allowed. |
+| `unsupported_sample_rate` | `audio.sample_rate` is not allowed for the encoding. |
+| `context_overflow` | Turn exceeded the 4,000-character cap. |
+| `insufficient_credits` | Wallet cannot cover the next turn's estimated cost. |
+| `rate_limited` | Too many messages in the rolling window. |
+| `idle_timeout` | Session exceeded the idle timeout. |
+| `slow_consumer` | Client is not reading audio fast enough. |
+| `synthesis_failed` | Synthesis failed for a turn. |
+
+Errors scoped to one turn include `context_id`. Errors that end the whole session close the socket after the message.
+
+---
+
+## Billing
+
+- Each turn is admitted against your wallet balance before synthesis starts.
+- A chunk becomes billable the moment its **first audio frame is delivered** to your client. Chunks that never deliver a frame are not charged.
+- User cancellation and preemption do not erase already-delivered audio: chunks that reached the client are still charged.
+- Settlement is asynchronous per turn and does not block the next turn. The socket close waits for all outstanding accounting to finish before emitting `done`.
+
+Character attribution to individual audio frames is approximate — the underlying provider does not expose a per-character mapping, so a chunk is attributed its full input length once delivery starts.
+
+---
+
+## Example
+
+```js Node (ws)
+import WebSocket from "ws";
+
+const ws = new WebSocket("wss://api.bland.ai/v2/tts/ws", {
+  headers: { Authorization: `Bearer ${process.env.BLAND_API_KEY}` },
+});
+
+const send = (msg) => ws.send(JSON.stringify(msg));
+
+ws.on("open", () => {
+  send({
+    type: "init",
+    voice: "f04af0e5-1a80-48a9-b02d-52f30d417cfa",
+    audio: { encoding: "pcm_s16le", sample_rate: 48000 },
+  });
+});
+
+ws.on("message", (data, isBinary) => {
+  if (isBinary) {
+    // Play or forward the raw audio frame.
+    return;
+  }
+
+  const msg = JSON.parse(data.toString());
+  switch (msg.type) {
+    case "ready": {
+      // Stream a turn as an LLM would, token by token.
+      const text = "The weather in Paris is sunny today and stays warm through the evening.";
+      for (const token of text.match(/.{1,6}/g)) {
+        send({ type: "speak", context_id: "turn-1", text: token });
+      }
+      send({ type: "end_of_turn", context_id: "turn-1" });
+      return;
+    }
+    case "utterance_end":
+      if (msg.reason === "complete") send({ type: "close" });
+      return;
+    case "error":
+      console.error(msg.code, msg.message);
+      return;
+  }
+});
+```
+
+To barge in on a turn already in flight, send a `speak` with a new `context_id`. The server aborts the previous turn's synthesis, emits `utterance_end` with `reason: "preempted"`, and starts the new one:
+
+```js Barge-in
+send({ type: "speak", context_id: "turn-2", text: "Actually, let me check tomorrow's forecast instead." });
+send({ type: "end_of_turn", context_id: "turn-2" });
+```
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
