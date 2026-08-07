@@ -1,0 +1,282 @@
+---
+title: "Realtime Speech (WebSocket)"
+description: "Stream LLM text into one realtime session and receive speech as binary audio frames."
+---
+
+## Overview
+
+```text
+wss://api.bland.ai/v2/tts/ws
+```
+
+Use this endpoint when text arrives incrementally, such as tokens from an LLM. Keep one WebSocket open for the conversation. Bland buffers incoming text, finds useful speech boundaries, and starts returning audio before the turn is complete.
+
+The connection supports one active turn at a time. A new `context_id` immediately preempts the active turn, which makes interruption and barge-in a normal part of the protocol.
+
+<CardGroup cols={2}>
+  <Card title="Run the quickstart" icon="bolt" href="/tts/realtime-quickstart">
+    Stream a turn token by token and save the returned audio.
+  </Card>
+  <Card title="Understand turns and preemption" icon="diagram-project" href="/tts/realtime-concepts">
+    Learn how buffering, playback, cancellation, and billing work.
+  </Card>
+</CardGroup>
+
+<Note>
+  Use a `BTTS_V3` voice for the native 48 kHz path and its calibrated performance controls. `BTTS_V2` voices also synthesize.
+</Note>
+
+If you already have the complete text and want a file response, use [Synthesize Speech (HTTP)](/api-v2/post/tts). Existing OpenAI SDK integrations can use [Speech (OpenAI-compatible)](/api-v2/post/audio-speech).
+
+## Authentication
+
+Credentials are checked in this order:
+
+1. `?token=<JWT>` for browser clients. Mint it from your backend with [Mint Stream Input Token](/api-v1/post/speak-stream-input-token).
+2. `Authorization: Bearer <api_key>` for server-side clients. A bare `Authorization: <api_key>` value is also accepted.
+3. `Sec-WebSocket-Protocol: bland.api_key.<key>`.
+4. `?api_key=<key>`, which is deprecated because URLs can enter logs.
+
+<Warning>
+  Never put a long-lived API key in browser code. Mint a short-lived stream token on your backend and connect with `?token=`.
+</Warning>
+
+A request with no credentials is rejected before the WebSocket opens. Server-side clients receive HTTP `401` with code `AUTH_REQUIRED`. Browsers only report that the connection failed because the browser WebSocket API does not expose upgrade response bodies.
+
+An invalid or expired credential is rejected after the upgrade with an `AUTH_FAILED` control frame and close code `4001`.
+
+## Framing
+
+- Client and server control messages are JSON text frames.
+- Audio is sent as raw binary WebSocket frames, without JSON, base64, or a container header.
+- Every binary frame after `utterance_start` and before its matching `utterance_end` belongs to that turn.
+
+Use the WebSocket library's binary indicator to distinguish audio from control messages. Do not try to parse a binary audio frame as JSON.
+
+## Client messages
+
+### `init`
+
+Send `init` once as the first message. Wait for `ready` before sending text.
+
+```json
+{
+  "type": "init",
+  "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+  "audio": {
+    "encoding": "pcm_s16le",
+    "sample_rate": 48000
+  },
+  "controls": {
+    "expressiveness": 0.6,
+    "stability": 0.5
+  }
+}
+```
+
+<ParamField body="type" type="string" required>
+  Must be `init`.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Bland voice UUID. Get one from [List Voices](/api-v1/get/voices). The voice is fixed for the life of the connection, so open another connection to change voices.
+</ParamField>
+
+<ParamField body="audio" type="object">
+  Requested raw audio format.
+
+  <Expandable title="audio fields">
+    <ParamField body="encoding" type="string" default="pcm_s16le">
+      `pcm_s16le` for signed 16-bit little-endian PCM, or `mulaw` for G.711 mu-law telephony audio.
+    </ParamField>
+
+    <ParamField body="sample_rate" type="number" default="48000">
+      For PCM: `8000`, `16000`, `24000`, `44100`, or `48000`. Mu-law is fixed at `8000`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="controls" type="object">
+  Optional performance controls. Both values must be between `0.0` and `1.0`.
+
+  <Expandable title="controls fields">
+    <ParamField body="expressiveness" type="number">
+      Higher values create more varied intonation. Lower values are flatter.
+    </ParamField>
+
+    <ParamField body="stability" type="number">
+      Higher values make repeated renders more consistent. Lower values allow more variation.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### `speak`
+
+Append a text delta to a turn. Send each LLM token or any larger fragment as soon as it is available. Do not resend the full accumulated response.
+
+```json
+{ "type": "speak", "context_id": "turn-42", "text": "Hello" }
+```
+
+```json
+{ "type": "speak", "context_id": "turn-42", "text": ", how can I help?" }
+```
+
+<ParamField body="context_id" type="string" required>
+  Your unique ID for this turn. Reuse it for every text delta in the same turn. Sending `speak` with a different ID preempts the active turn before starting the new one.
+</ParamField>
+
+<ParamField body="text" type="string" required>
+  The next text delta. A single character is valid. One turn may contain at most 4,000 characters in total.
+</ParamField>
+
+### `end_of_turn`
+
+Tell Bland that no more text will arrive for the turn. Bland flushes the remaining buffered text, finishes its audio, and sends `utterance_end` with reason `complete`.
+
+```json
+{ "type": "end_of_turn", "context_id": "turn-42" }
+```
+
+Always send this after the LLM finishes normally. Wait for that turn's `utterance_end` before sending `close`.
+
+### `cancel`
+
+Stop the active turn without starting a replacement. Buffered text is discarded and the server sends `utterance_end` with reason `cancelled`.
+
+```json
+{ "type": "cancel", "context_id": "turn-42" }
+```
+
+Use `cancel` when a user interrupts and replacement text is not ready. If you already have replacement text, send `speak` with a new `context_id`; the new turn preempts the old one automatically.
+
+### `close`
+
+End the session, settle outstanding usage, receive `done`, and close the WebSocket normally.
+
+```json
+{ "type": "close" }
+```
+
+<Warning>
+  `close` does not flush an unfinished turn. It ends that turn as `cancelled`. To finish speaking, send `end_of_turn`, wait for `utterance_end`, then send `close`.
+</Warning>
+
+## Server messages
+
+### `ready`
+
+The voice, connection, and billing admission are ready. You can now send text.
+
+```json
+{
+  "type": "ready",
+  "session_id": "2B17uYlR6p48uPpN",
+  "encoding": "pcm_s16le",
+  "sample_rate": 48000
+}
+```
+
+### `utterance_start`
+
+Sent as soon as the first `speak` message for an admitted turn is accepted. It arrives before any audio and before `utterance_end`, including when the turn is cancelled before producing audio.
+
+```json
+{ "type": "utterance_start", "context_id": "turn-42" }
+```
+
+### Binary audio
+
+Each binary frame contains raw mono audio in the encoding and sample rate negotiated by `ready`. Frame sizes are not fixed. Concatenate or enqueue the frames in arrival order.
+
+The server may produce audio faster than it plays. Your application must use a playback queue or forward frames to a media transport that provides one. See [Buffering audio for playback](/tts/realtime-concepts#buffering-audio-for-playback).
+
+### `utterance_end`
+
+Exactly one terminal message is sent for each started turn.
+
+```json
+{
+  "type": "utterance_end",
+  "context_id": "turn-42",
+  "reason": "complete",
+  "frames": 18,
+  "duration_ms": 842
+}
+```
+
+<ResponseField name="reason" type="string">
+  `complete`, `preempted`, `cancelled`, or `failed`.
+</ResponseField>
+
+<ResponseField name="frames" type="number">
+  Number of binary audio frames delivered for the turn. It can be `0`.
+</ResponseField>
+
+<ResponseField name="duration_ms" type="number">
+  Elapsed wall-clock time from starting the turn to ending it. This is not the audio playback duration.
+</ResponseField>
+
+### `error`
+
+```json
+{
+  "type": "error",
+  "code": "insufficient_credits",
+  "message": "Your account is out of credits.",
+  "context_id": "turn-43"
+}
+```
+
+`context_id` is present when the error belongs to one turn. Some message errors leave the session open. Session-level protocol, idle, and slow-consumer errors close it.
+
+### `done`
+
+The session has settled and is about to close normally.
+
+```json
+{ "type": "done", "session_id": "2B17uYlR6p48uPpN" }
+```
+
+## Error codes
+
+| Code | Scope | Meaning |
+| --- | --- | --- |
+| `AUTH_REQUIRED` | HTTP upgrade | No credential was supplied. The server returns HTTP `401` without opening a WebSocket. |
+| `AUTH_FAILED` | Connection | The supplied credential is invalid or expired. |
+| `INSUFFICIENT_CREDITS` | Connection | The wallet gate rejected the connection before initialization. |
+| `USER_BANNED` | Connection | The authenticated user is banned. |
+| `ORG_DELETED` | Connection | The authenticated organization no longer exists or is deleted. |
+| `ORG_SUSPENDED` | Connection | The authenticated organization is suspended. |
+| `ORG_STRIPE_OVERDUE` | Connection | The authenticated organization has overdue invoices. |
+| `STATE_LOOKUP_FAILED` | Connection | Bland could not safely verify account state. |
+| `invalid_message` | Message or session | A frame is not valid JSON, has an unknown type, or has an invalid field. |
+| `init_required` | Session | A message other than `close` arrived before `init`. |
+| `already_initialized` | Session | `init` was sent more than once. |
+| `invalid_request` | Message or session | A field is invalid for the current state. |
+| `voice_not_found` | Session | The voice does not exist or is not accessible. |
+| `unsupported_voice` | Session | The voice is not a `BTTS_V2` or `BTTS_V3` voice. |
+| `voice_not_live` | Session | A professional voice is still a draft. Promote it to live first. |
+| `unsupported_encoding` | Session | The requested encoding is not supported. |
+| `unsupported_sample_rate` | Session | The sample rate is invalid for the encoding. |
+| `context_overflow` | Turn | One turn exceeded 4,000 characters. |
+| `insufficient_credits` | Turn | The current turn was refused because the account is out of credits. |
+| `rate_limited` | Session | The organization has no available speech concurrency slot. |
+| `idle_timeout` | Session | No client message arrived for 60 seconds. |
+| `slow_consumer` | Session | The client did not read audio fast enough. |
+| `synthesis_failed` | Turn or session | The voice session or turn could not synthesize. |
+
+## Billing and concurrency
+
+- The connection occupies one speech concurrency slot from successful `init` until it closes, including gaps between turns.
+- The wallet is checked again before every turn.
+- Each turn is settled separately and has the current minimum charge of $0.001 when it delivers billable audio.
+- A synthesized text chunk becomes billable when the server accepts its first audio frame for delivery. Preemption or cancellation does not charge text that remained buffered or produced no audio.
+- Character attribution is estimated at synthesized-chunk granularity. Bland cannot map individual audio frames back to exact source characters.
+- Public creator voices may add their published per-character creator fee.
+
+See [Realtime TTS concepts](/tts/realtime-concepts#billing-on-interrupted-turns), [Speech Limits](/speech/limits), and [Synthesize Speech (HTTP)](/api-v2/post/tts#pricing) for more detail.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

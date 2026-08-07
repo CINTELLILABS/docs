@@ -26,7 +26,6 @@ Bland holds SOC 2 Type II, HIPAA, GDPR, and PCI DSS certifications. Self-hosted 
 - [Webhooks](https://docs.bland.ai/tutorials/webhooks.md): Configure outbound API requests inside pathways using the webhook node to retrieve data or trigger workflows during live calls.
 - [Tools](https://docs.bland.ai/tutorials/tools/overview.md): Give your AI agent the ability to take actions during live calls by connecting to external APIs and services.
 - [Secrets](https://docs.bland.ai/tutorials/secrets.md): Securely store and reference API keys and credentials in your workflows without hardcoding them.
-- [BTTS v2 Voice Cloning](https://docs.bland.ai/tutorials/btts.md): Create, configure, and optimize voice clones for your AI agents.
 - [Norm](https://docs.bland.ai/tutorials/norm.md): Bland's AI assistant for building, editing, testing, and debugging voice agents from a prompt.
 
 ## MCP & AI Agents
@@ -71,7 +70,6 @@ Bland holds SOC 2 Type II, HIPAA, GDPR, and PCI DSS certifications. Self-hosted 
 ## SDKs & Tools
 
 - [Command Line Interface](https://docs.bland.ai/sdks/cli.md): Manage your Bland account from the terminal: make calls, build and test pathways, configure phone numbers, and more.
-- [Bland TTS](https://docs.bland.ai/sdks/bland-tts.md): A focused TTS and voice toolkit: CLI, Node library, and MCP server in one lightweight package.
 - [Dev Terminal](https://docs.bland.ai/sdks/dev-terminal.md): An interactive AI-powered REPL for building, testing, and deploying phone agents without leaving your terminal.
 - [Web Agent SDK](https://docs.bland.ai/sdks/web-agent-sdk.md): Embed a Bland voice agent into any web application with secure, token-based authentication.
 
@@ -116,8 +114,26 @@ Bland holds SOC 2 Type II, HIPAA, GDPR, and PCI DSS certifications. Self-hosted 
 
 ## Bland Speech
 
-- [Welcome to Bland Speech](https://docs.bland.ai/tts/welcome.md): Humanlike text-to-speech built for real conversations. Product overview and where to start.
-- [Speech Limits](https://docs.bland.ai/speech/limits.md): Concurrency, voice clone, and professional clone limits for Bland Speech, plus the one-time $5 unlock and how to raise limits.
+- [Welcome to Bland Speech](https://docs.bland.ai/tts/welcome.md): Humanlike text-to-speech built for realtime conversations and streaming LLM output.
+- [Realtime TTS Quickstart](https://docs.bland.ai/tts/realtime-quickstart.md): Stream LLM-style text into one WebSocket turn and save the returned PCM audio as a WAV file.
+- [Speech Quickstart](https://docs.bland.ai/tts/quickstart.md): Turn a string into an audio file with one request, then move to streaming.
+- [Choosing a Voice](https://docs.bland.ai/tts/voices.md): Pick a built-in voice, clone your own, and set its defaults.
+- [Writing for Speech](https://docs.bland.ai/tts/writing-for-speech.md): Control pacing, emphasis, numbers, and delivery with text and the two performance controls.
+- [Bland TTS](https://docs.bland.ai/sdks/bland-tts.md): A focused TTS and voice toolkit for Bland AI: CLI, Node library, and MCP server in one lightweight package.
+- [Realtime TTS Concepts](https://docs.bland.ai/tts/realtime-concepts.md): Understand server-side text buffering, turns, preemption, cancellation, playback queues, and billing.
+- [Speech Limits](https://docs.bland.ai/speech/limits.md): Concurrency, voice clone, and professional clone limits for Bland Speech: what they are, how the $5 unlock works, and how to raise them.
+- [Speech Studio](https://docs.bland.ai/tts/speech-studio.md): Write, direct, and synthesize speech in the dashboard with the Norm director, performance tags, and a live editor.
+
+### Migrate to Bland Speech
+
+- [Migrate to Bland Speech](https://docs.bland.ai/tts/migrate.md): Move an existing TTS integration to Bland's realtime WebSocket, HTTP, or OpenAI-compatible endpoint.
+- [Migrate from ElevenLabs](https://docs.bland.ai/tts/migrations/elevenlabs.md): Move an ElevenLabs streaming TTS client to Bland's realtime WebSocket.
+- [Migrate from Cartesia](https://docs.bland.ai/tts/migrations/cartesia.md): Map Cartesia WebSocket contexts and continuations to Bland turns and preemption.
+- [Migrate from Deepgram](https://docs.bland.ai/tts/migrations/deepgram.md): Move Deepgram's streaming Speak protocol to Bland realtime turns.
+- [Migrate from PlayHT](https://docs.bland.ai/tts/migrations/playht.md): Replace PlayHT WebSocket authentication and request-level synthesis with Bland realtime turns.
+- [Migrate from Resemble AI](https://docs.bland.ai/tts/migrations/resemble.md): Move Resemble WebSocket synthesis to Bland's incremental text and turn protocol.
+- [Migrate from Google Cloud TTS](https://docs.bland.ai/tts/migrations/google-cloud.md): Replace Google Cloud bidirectional speech synthesis with Bland's realtime WebSocket.
+- [Migrate from Amazon Polly](https://docs.bland.ai/tts/migrations/amazon-polly.md): Move Amazon Polly synthesis to Bland HTTP or stream LLM tokens through Bland realtime TTS.
 
 ## API Reference: Voices & Text to Speech
 
@@ -136,13 +152,13 @@ Generate speech from text, manage Bland TTS voices, and clone custom voices. The
 
 ### Speech Generation
 
-- [Speak](https://docs.bland.ai/api-v1/post/speak.md): Generate speech audio from text using a Bland TTS voice.
+- [Realtime Speech (WebSocket)](https://docs.bland.ai/api-v2/post/tts-ws.md): Stream LLM text into one realtime session and receive speech as binary audio frames.
+- [Synthesize Speech (HTTP)](https://docs.bland.ai/api-v2/post/tts.md): Generate speech from a complete input string over HTTP.
+- [Speech (OpenAI-compatible)](https://docs.bland.ai/api-v2/post/audio-speech.md): Use Bland voices through the OpenAI text-to-speech request and error shapes.
 
 ### Streaming
 
-- [Stream Speech](https://docs.bland.ai/api-v1/post/speak-stream.md): Generate speech with chunked transfer for lowest time-to-first-byte.
 - [Mint Stream Input Token](https://docs.bland.ai/api-v1/post/speak-stream-input-token.md): Short-lived JWT for browser clients to open the streaming WebSocket.
-- [Stream Speech (WebSocket)](https://docs.bland.ai/api-v1/post/speak-stream-input.md): Bidirectional WebSocket for incremental text-in / audio-out streaming.
 
 ### Discovery
 
@@ -161,6 +177,7 @@ Generate speech from text, manage Bland TTS voices, and clone custom voices. The
 
 ### Models
 
+- [List TTS Models](https://docs.bland.ai/api-v2/get/tts-models.md): List what each TTS model supports.
 - [List TTS Models](https://docs.bland.ai/api-v1/get/models.md): List the available Bland TTS models and their capabilities.
 
 ### Samples

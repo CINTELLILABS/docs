@@ -1,0 +1,301 @@
+---
+title: "Realtime TTS Quickstart"
+description: "Stream LLM-style text into one WebSocket turn and save the returned PCM audio as a WAV file."
+---
+
+This quickstart opens one [`/v2/tts/ws`](/api-v2/post/tts-ws) session, sends text in token-sized deltas, and writes the returned binary audio to `speech.wav`.
+
+## Prerequisites
+
+- Node.js 18 or newer
+- A Bland API key
+- A `BTTS_V2` or `BTTS_V3` voice UUID from [List Voices](/api-v1/get/voices)
+
+## 1. Create the project
+
+```bash
+mkdir bland-realtime-tts
+cd bland-realtime-tts
+npm init -y
+npm install ws@8.21.0
+```
+
+## 2. Save the script
+
+Create `realtime-tts.mjs`:
+
+```js
+import crypto from "node:crypto";
+import { constants } from "node:fs";
+import fs from "node:fs/promises";
+import { performance } from "node:perf_hooks";
+import process from "node:process";
+
+const API_KEY = process.env.BLAND_API_KEY;
+const VOICE_ID = process.env.BLAND_VOICE_ID;
+const OUTPUT_PATH = new URL("./speech.wav", import.meta.url);
+const SAMPLE_RATE = 48000;
+const TURN_ID = crypto.randomUUID();
+const TEXT =
+  "The weather is clear today, and it should stay warm through the evening.";
+
+const preflightErrors = [];
+const nodeMajor = Number(process.versions.node.split(".")[0]);
+if (nodeMajor < 18) {
+  preflightErrors.push(
+    `Node.js 18 or newer is required; observed ${process.versions.node}.`,
+  );
+}
+if (!API_KEY) preflightErrors.push("BLAND_API_KEY is not set.");
+if (API_KEY && /[\r\n]/.test(API_KEY)) {
+  preflightErrors.push("BLAND_API_KEY contains a newline and cannot be used in an HTTP header.");
+}
+if (API_KEY && API_KEY !== API_KEY.trim()) {
+  preflightErrors.push("BLAND_API_KEY has leading or trailing whitespace. Copy it again.");
+}
+if (!VOICE_ID) preflightErrors.push("BLAND_VOICE_ID is not set.");
+if (
+  VOICE_ID &&
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(VOICE_ID)
+) {
+  preflightErrors.push(`BLAND_VOICE_ID is not a UUID: ${VOICE_ID}`);
+}
+
+let WebSocket;
+await Promise.all([
+  import("ws")
+    .then((module) => {
+      WebSocket = module.default;
+    })
+    .catch(() => {
+      preflightErrors.push(
+        "The ws@8.21.0 dependency is missing. Install it with: npm install ws@8.21.0",
+      );
+    }),
+  fs.access(new URL(".", OUTPUT_PATH), constants.W_OK).catch((error) => {
+    preflightErrors.push(
+      `Cannot write beside the script at ${OUTPUT_PATH.pathname}: ${error.message}`,
+    );
+  }),
+  fs.access(OUTPUT_PATH)
+    .then(() => {
+      preflightErrors.push(
+        `Output already exists at ${OUTPUT_PATH.pathname}. Preserve it with: mv speech.wav speech.previous.wav`,
+      );
+    })
+    .catch((error) => {
+      if (error.code !== "ENOENT") {
+        preflightErrors.push(
+          `Cannot inspect ${OUTPUT_PATH.pathname}: ${error.message}`,
+        );
+      }
+    }),
+]);
+
+if (preflightErrors.length > 0) {
+  console.error(preflightErrors.join("\n"));
+  console.error(
+    'Set both variables, then confirm without printing them: test -n "$BLAND_API_KEY" && test -n "$BLAND_VOICE_ID" && echo "credentials configured"',
+  );
+  process.exit(1);
+}
+
+const ws = new WebSocket("wss://api.bland.ai/v2/tts/ws", {
+  headers: { Authorization: `Bearer ${API_KEY}` },
+});
+
+const audioFrames = [];
+let turnStartedAt;
+let firstAudioAt;
+let receivedDone = false;
+let failed = false;
+
+const sessionTimeout = setTimeout(() => {
+  failed = true;
+  console.error(
+    "Timed out after 30 seconds waiting for the session to finish. Confirm network access and API credentials, then rerun the script.",
+  );
+  ws.terminate();
+}, 30_000);
+
+ws.on("open", () => {
+  ws.send(
+    JSON.stringify({
+      type: "init",
+      voice: VOICE_ID,
+      audio: { encoding: "pcm_s16le", sample_rate: SAMPLE_RATE },
+    }),
+  );
+});
+
+ws.on("message", (data, isBinary) => {
+  if (isBinary) {
+    if (turnStartedAt === undefined) {
+      failed = true;
+      console.error("Received audio before the session was ready.");
+      ws.terminate();
+      return;
+    }
+    firstAudioAt ??= performance.now();
+    audioFrames.push(Buffer.from(data));
+    return;
+  }
+
+  let message;
+  try {
+    message = JSON.parse(data.toString());
+  } catch (error) {
+    failed = true;
+    console.error(`Received an invalid JSON control frame: ${error.message}`);
+    ws.terminate();
+    return;
+  }
+
+  if (message.type === "ready") {
+    if (
+      message.encoding !== "pcm_s16le" ||
+      message.sample_rate !== SAMPLE_RATE
+    ) {
+      failed = true;
+      console.error(
+        `Bland acknowledged an unexpected format: ${message.encoding} at ${message.sample_rate} Hz`,
+      );
+      ws.send(JSON.stringify({ type: "close" }));
+      return;
+    }
+    turnStartedAt = performance.now();
+    for (const token of TEXT.match(/\S+\s*/g) ?? []) {
+      ws.send(
+        JSON.stringify({
+          type: "speak",
+          context_id: TURN_ID,
+          text: token,
+        }),
+      );
+    }
+    ws.send(JSON.stringify({ type: "end_of_turn", context_id: TURN_ID }));
+    return;
+  }
+
+  if (
+    message.type === "utterance_end" &&
+    message.context_id === TURN_ID
+  ) {
+    if (message.reason !== "complete") {
+      failed = true;
+      console.error(`Turn ended with reason: ${message.reason}`);
+    }
+    ws.send(JSON.stringify({ type: "close" }));
+    return;
+  }
+
+  if (message.type === "error") {
+    failed = true;
+    console.error(`Bland error [${message.code}]: ${message.message}`);
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "close" }));
+    }
+    return;
+  }
+
+  if (message.type === "done") receivedDone = true;
+});
+
+ws.on("close", async (code, reason) => {
+  clearTimeout(sessionTimeout);
+
+  if (failed || code !== 1000 || !receivedDone || audioFrames.length === 0) {
+    if (!failed) {
+      console.error(
+        `Session closed before completion: code=${code}, reason=${reason.toString() || "none"}`,
+      );
+    }
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const pcm = Buffer.concat(audioFrames);
+    await fs.writeFile(OUTPUT_PATH, wav(pcm, SAMPLE_RATE), { flag: "wx" });
+
+    const firstAudioMs = Math.round(firstAudioAt - turnStartedAt);
+    console.log(`First audio: ${firstAudioMs} ms`);
+    console.log(`Wrote ${pcm.length} PCM bytes to ${OUTPUT_PATH.pathname}`);
+  } catch (error) {
+    console.error(
+      `Failed to write ${OUTPUT_PATH.pathname}: ${error.message}. Confirm with: test -w \"$(dirname \"${OUTPUT_PATH.pathname}\")\" && test ! -e \"${OUTPUT_PATH.pathname}\"`,
+    );
+    process.exitCode = 1;
+  }
+});
+
+ws.on("error", (error) => {
+  failed = true;
+  console.error(`WebSocket error: ${error.message}`);
+});
+
+process.once("SIGINT", () => {
+  clearTimeout(sessionTimeout);
+  failed = true;
+  console.error("Interrupted. Closing the WebSocket without writing partial audio.");
+  ws.terminate();
+  process.exitCode = 130;
+});
+
+function wav(pcm, sampleRate) {
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write("WAVEfmt ", 8);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+```
+
+## 3. Run it
+
+```bash
+export BLAND_API_KEY="your-api-key"
+export BLAND_VOICE_ID="29158307-9893-4149-8a75-bc9ce313d64e"
+node realtime-tts.mjs
+```
+
+The script waits for `ready`, streams token-sized text deltas under one `context_id`, sends `end_of_turn`, and closes only after `utterance_end`. That ordering prevents the final buffered words from being cancelled.
+
+## Connect an actual LLM stream
+
+Replace the loop over `TEXT` with your model's async token stream:
+
+```js
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: TURN_ID,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: TURN_ID }));
+```
+
+Send the tokens exactly as produced, including their spaces and punctuation. Bland handles input buffering and speech boundaries.
+
+## Next steps
+
+- Read [Realtime TTS concepts](/tts/realtime-concepts) before adding playback or interruptions.
+- Use [short-lived tokens](/api-v1/post/speak-stream-input-token) instead of API keys in a browser.
+- See the complete [`/v2/tts/ws` reference](/api-v2/post/tts-ws) for formats, messages, errors, and limits.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

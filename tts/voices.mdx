@@ -1,0 +1,94 @@
+---
+title: "Choosing a Voice"
+description: "Pick a built-in voice, clone your own, and set its defaults."
+---
+
+Every synthesis request names a voice by UUID. The voice determines which model runs, so it
+is the first thing to settle.
+
+## Built-in voices
+
+Three voices are available to every organization and are a reasonable default for most
+applications:
+
+| Voice | UUID | Character |
+| --- | --- | --- |
+| Karen | `29158307-9893-4149-8a75-bc9ce313d64e` | Mature female, General American, nasal and deadpan, moderate pace. Suits support lines and IVR prompts. |
+| Matthew | `1d4dc605-071b-4eee-81b3-099b2894d0d1` | Mature male, General American. |
+| River | `2f29fdbb-c55e-4add-9c7c-93437ebf379d` | Light and playful, moderate pace. Suits podcasts and advertisements. |
+
+## Listing everything available to you
+
+[List Voices](/api-v1/get/voices) returns the built-ins, anything you have cloned, and
+anything added from the public library:
+
+```bash
+curl "https://api.bland.ai/v1/voices" -H "Authorization: Bearer $BLAND_API_KEY"
+```
+
+The native [`/v2/tts`](/api-v2/post/tts) and [`/v2/tts/ws`](/api-v2/post/tts-ws) surfaces
+require a UUID. Two voices can share a display name, so resolving one would mean guessing
+which you meant. The [OpenAI-compatible endpoint](/api-v2/post/audio-speech) also accepts its
+documented OpenAI voice aliases.
+
+## Prefer a BTTS_V3 voice
+
+`BTTS_V3` is the current generation: highest fidelity, and the `expressiveness` and
+`stability` controls are calibrated for it. It renders natively at 48 kHz, so requesting
+48 kHz avoids a resample.
+
+`BTTS_V2` voices still synthesize. The controls are not tuned for them and will have less
+predictable effects. The `x-model` response header tells you which model a voice resolved to.
+
+## Cloning a voice
+
+A clone needs one clean sample of about ten seconds. Quality of the sample sets the ceiling
+on quality of the voice, so it is worth trimming properly:
+
+- One speaker, clearly enunciated
+- No background noise, music, or reverb
+- At least 100 ms of silence at each end, so nothing is clipped mid-word
+- Emotional variety in the delivery, which yields a more expressive clone
+
+Both engines are single-sample by design and cover 17+ languages. `BTTS_V3` is the default
+and what you want unless you have a specific reason to pin the previous generation.
+
+Clone from the dashboard at
+[Voices → Studio](https://app.bland.ai/dashboard/voices?tab=studio), or programmatically with
+[Clone Voice](/api-v1/post/clone). A cloned voice is private to your organization and usable
+immediately.
+
+<Tip>
+  If a clone sounds broken when it code-switches or speaks a language absent from the sample,
+  the sample is the problem, not the settings. Clone again from a recording that contains the
+  languages you need.
+</Tip>
+
+## Per-voice defaults
+
+Each voice carries its own default delivery settings, editable in Studio or through
+[Update Voice Config](/api-v1/patch/voices-id-config). Anything you send in a request's
+`controls` object overrides them for that request only.
+
+Set the defaults on the voice when every use should sound the same. Override per request when
+one flow needs a different read, such as a warm greeting and a flat account-balance readout from the
+same voice, for example. See [Writing for speech](/tts/writing-for-speech) for what the
+controls do.
+
+## The voice is fixed for a WebSocket session
+
+On [`WSS /v2/tts/ws`](/api-v2/post/tts-ws), the voice is set by `init` and holds for the life
+of the connection. That is what lets one warm synthesis session serve every turn. To change
+voices, open another connection.
+
+## Public library voices
+
+[Shared voices](/api-v1/get/voices-shared) are published by other creators. Add one to your
+library with [Add Library Voice](/api-v1/post/voices-library-add-id) before using it.
+
+Some carry a per-character creator fee on top of the standard rate. The exact charge for a
+request comes back in the `x-cost` header.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

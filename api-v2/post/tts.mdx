@@ -1,17 +1,19 @@
 ---
-title: "Synthesize Speech"
+title: "Synthesize Speech (HTTP)"
 api: "POST https://api.bland.ai/v2/tts"
-description: "Generate speech audio from text."
+description: "Generate speech from a complete input string over HTTP."
 ---
 
 ## Overview
 
-Turns text into speech and streams the audio back as it renders.
+Use this endpoint when the complete text is available before synthesis begins. It returns a streaming raw response or a complete WAV file in one HTTP request.
 
-`text` and `voice` are the only required fields. You get 48 kHz PCM frames by default — ready to play or forward straight to a client. Set `audio.container` to `wav` for a file you can download and open.
+For LLM tokens, multiple conversational turns, and interruption support, use [Realtime Speech (WebSocket)](/api-v2/post/tts-ws). It is the primary endpoint for realtime TTS.
+
+`text` and `voice` are the only required fields. You get 48 kHz PCM frames by default, ready to play or forward to a client. Set `audio.container` to `wav` for a file you can download and open.
 
 <Note>
-  Use a **`BTTS_V3` or newer** voice. `expressiveness` and `stability` are calibrated for
+  Use a **`BTTS_V3`** voice. `expressiveness` and `stability` are calibrated for
   it, and 48 kHz is the rate it renders natively. `BTTS_V2` voices synthesize, but the
   controls are not tuned for them. Read `x-model` to see which model a voice resolved to.
 </Note>
@@ -19,7 +21,7 @@ Turns text into speech and streams the audio back as it renders.
 <Warning>
   **Coming from `/v1/speak`?** `container: "raw"` returns bare audio frames. The v1
   endpoints wrapped `pcm_<rate>` in a WAV header, so v1 clients usually skip 44 bytes
-  before playback — doing that here removes 44 bytes of real audio. Drop the header
+  before playback. Doing that here removes 44 bytes of real audio. Drop the header
   handling, or ask for `container: "wav"`.
 </Warning>
 
@@ -27,9 +29,9 @@ Turns text into speech and streams the audio back as it renders.
 
 Text-to-speech is currently billed at **\$0.015 per 1,000 characters**, the same rate on every plan. This is a limited-time launch offer, discounted from the standard \$0.04 per 1,000 characters. Each request carries a minimum charge of \$0.001, so very short generations bill at the minimum rather than the per-character rate.
 
-Some public-library voices carry an additional per-character creator fee. The exact charge for a request comes back in the `x-cost` header.
+Some public-library voices carry an additional per-character creator fee. For a completed response, the charge comes back in the `x-cost` header. An interrupted raw stream can bill less because delivery accounting happens after that header is sent.
 
-Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If the connection drops **mid-stream**, you are charged for the characters whose audio already reached you.
+Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If a raw response is interrupted mid-stream, billing estimates the delivered characters at synthesized-chunk granularity. Individual audio bytes cannot be mapped to exact source characters.
 
 ---
 
@@ -46,11 +48,11 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 <ParamField body="text" type="string" required>
   The text to speak. Maximum 5,000 characters.
 
-  Insert a pause with `<|N|>`, where N is 0.1 to 10.0 seconds: `"Welcome to Bland. <|0.8|> How can I help?"`
+  Insert a pause with `<|N|>`, where N is a positive number of seconds: `"Welcome to Bland. <|0.8|> How can I help?"`
 </ParamField>
 
 <ParamField body="voice" type="string" required>
-  Voice UUID. Names are not accepted — get a UUID from [List Voices](/api-v1/get/voices).
+  Voice UUID. Names are not accepted. Get a UUID from [List Voices](/api-v1/get/voices).
 </ParamField>
 
 <ParamField body="audio" type="object">
@@ -60,8 +62,8 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
     <ParamField body="encoding" type="string" default="pcm_s16le">
       Audio codec.
 
-      - `pcm_s16le` — 16-bit signed little-endian PCM.
-      - `mulaw` — 8-bit μ-law, 8 kHz only. For telephony.
+      - `pcm_s16le`: 16-bit signed little-endian PCM.
+      - `mulaw`: 8-bit mu-law, 8 kHz only. For telephony.
     </ParamField>
 
     <ParamField body="sample_rate" type="number" default="48000">
@@ -73,8 +75,8 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
     <ParamField body="container" type="string" default="raw">
       How the bytes are framed.
 
-      - `raw` — bare audio frames. For streaming and voice agents.
-      - `wav` — one RIFF/WAVE file with a correct-length header. The full render is buffered before the first byte goes out, since a valid header needs the final size. For downloads.
+      - `raw`: bare audio frames. For streaming and voice agents.
+      - `wav`: one RIFF/WAVE file with a correct-length header. The full render is buffered before the first byte goes out, since a valid header needs the final size. For downloads.
 
       Trying the endpoint by hand? Use `wav`. `raw` returns bare samples that most players cannot open.
     </ParamField>
@@ -82,7 +84,7 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 </ParamField>
 
 <ParamField body="controls" type="object">
-  How the voice performs. Both optional, both `0.0`–`1.0`.
+  How the voice performs. Both are optional and range from `0.0` to `1.0`.
 
   <Expandable title="controls fields">
     <ParamField body="expressiveness" type="number">
@@ -124,7 +126,7 @@ These headers arrive with the first byte.
 </ResponseField>
 
 <ResponseField name="x-cost" type="string">
-  Cost in USD, matching what was billed.
+  Full-response cost in USD. It matches the final charge when the response completes; an interrupted raw stream may have a lower delivery-based charge.
 </ResponseField>
 
 <ResponseField name="x-latency" type="string">
@@ -206,7 +208,7 @@ x-request-id: 5f9c…-…-…
 x-model: btts-3
 x-voice-id: 29158307-9893-4149-8a75-bc9ce313d64e
 x-sample-rate: 48000
-x-cost: 0.000340
+x-cost: 0.001000
 x-latency: 312
 
 <audio bytes>

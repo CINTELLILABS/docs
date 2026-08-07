@@ -23,11 +23,13 @@ Instant clone limits are counted per organization against your **current-generat
 
 The limit applies when creating a new clone; existing voices are never affected by a limit change. Limits are raisable; see [Raising your limits](#raising-your-limits).
 
-## Concurrency and the 429 response
+## Concurrency responses
 
-Your concurrency limit is the number of speech generations you may have **in flight at the same moment**, across every speech surface, including `POST /v2/tts`, the `/v1/speak` family, streaming input over WebSocket, and shared audio links (which count against the link owner's organization).
+Your concurrency limit is the number of speech generations you may have **in flight at the same moment**, across every speech surface, including `WSS /v2/tts/ws`, `POST /v2/tts`, `POST /v2/audio/speech`, the `/v1/speak` family, and shared audio links (which count against the link owner's organization).
 
-When you exceed it, the API responds `429` with:
+A successfully initialized `/v2/tts/ws` connection occupies one slot until the socket closes, including time between turns. Close idle conversation sockets promptly. The endpoint keeps its synthesis connection warm for low latency, so it reserves capacity for the full session.
+
+HTTP speech endpoints respond `429` when no slot is available:
 
 ```json
 {
@@ -38,10 +40,13 @@ When you exceed it, the API responds `429` with:
 }
 ```
 
-**This is not ordinary rate limiting.** A rate limit meters requests per unit of time; the concurrency limit only counts generations that are still running. A slot frees the moment one of your generations finishes, so the correct client behavior is:
+`/v2/tts/ws` reports the same condition during `init` with a `rate_limited` error frame, then closes without sending `ready`.
 
-- Wait the number of **seconds** given in the `Retry-After` header (it is seconds, not milliseconds), then retry.
-- Or simply await one of your in-flight generations before submitting the next.
+**This is not ordinary rate limiting.** A rate limit meters requests per unit of time; the concurrency limit counts reserved speech capacity. An HTTP slot frees when its request finishes. A `/v2/tts/ws` slot remains reserved until that socket closes. The correct client behavior is:
+
+- For HTTP, wait the number of **seconds** in the `Retry-After` header, then retry.
+- For WebSocket sessions, wait before opening a replacement connection.
+- If the cap remains full, wait for an HTTP request to finish or close an idle WebSocket before retrying.
 
 Avoid tight retry loops. They cannot make a slot free faster, and the wait is typically only a few seconds.
 
