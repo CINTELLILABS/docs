@@ -454,12 +454,10 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ParamField>
 
-<ParamField body="include_post_transfer_transcript" type="boolean" default="false">
-  When `true` and the call is cold-transferred to a human, Bland transcribes the conversation after the transfer and delivers it two ways: live over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket while the transferred conversation is happening, and post-call as a `post_transfer_transcript` property (plus `transfer_offset_seconds`) on the `citations` webhook event.
+<ParamField body="stream_post_transfer_transcript" type="boolean" default="false">
+  When `true` and the call is transferred to a human, Bland transcribes the conversation after the transfer live and streams it over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket while the transferred conversation is happening. Works for both cold and warm transfers.
 
-  Requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside this option returns a 400.
-
-  The post-call delivery rides on the citations webhook, so to receive it you also need at least one schema in `citation_schema_ids` and `"citations"` in `webhook_events`.
+  This option controls the live stream only. To receive the post-transfer transcript in the post-call webhook, subscribe with `"post_transfer_transcript"` in `webhook_events`. The two are independent: you can use either one or both.
 
   <Note>
     This feature is in limited rollout. If it is not enabled for your organization, the option has no effect.
@@ -619,6 +617,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   - `tool`
   - `dynamic_data`
   - `citations` (Required for any citation webhooks)
+  - `evals` (Eval scores from an attached [evals workbench](/tutorials/evals), sent as a separate webhook when the run completes)
+  - `post_transfer_transcript` (Adds the post-transfer conversation to the post-call webhook when the call is transferred to a human; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). Requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside this subscription returns a 400.)
 
   Example payloads:
 
