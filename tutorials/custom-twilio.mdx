@@ -82,6 +82,18 @@ curl --location 'https://api.bland.ai/v1/calls' \
 
 If`encrypted_key`is included but`from` is omitted, Bland will automatically select one of the imported numbers from that Twilio account, if one exists.
 
+## Inbound caller allowlist (Doorman)
+
+Some inbound callers withhold their caller ID, which carriers deliver as placeholders like `ANONYMOUS`, `RESTRICTED`, `BLOCKED`, `UNKNOWN`, `UNAVAILABLE`, `PRIVATE`, and `NO CALLER ID`. Because these placeholders look like invalid or out-of-country numbers, they can be rejected by country-based checks or platform block lists before reaching your agent.
+
+The Doorman policy lets you decide, per organization, which of those masked variants are allowed and which E.164 prefixes (for example, `+1` or `+1619`) bypass country-based restrictions. All seven masked variants are allowed by default, so no calls you receive today will start being rejected.
+
+Manage the policy with the [Doorman API](/api-v1/get/doorman) or from the BYOT settings in the dashboard. Notes:
+
+- Blocking a masked variant rejects those calls deterministically before they reach an agent.
+- Allowed prefixes bypass country restrictions only; they do not bypass your org's block rules.
+- Use [Test Doorman Decision](/api-v1/post/doorman-knock) to preview what the policy would do with a specific caller value.
+
 ## **Geo-Permissions**
 
 International calling permissions for imported numbers are inherited from the Twilio account they came from. Make sure the destination country is enabled in your Twilio account's Geo Permissions before placing outbound calls there.

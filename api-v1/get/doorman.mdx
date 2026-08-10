@@ -1,0 +1,66 @@
+---
+title: "Get Doorman Policy"
+api: "GET https://api.bland.ai/v1/doorman"
+description: "Retrieve the org's inbound caller allowlist for masked caller IDs and E.164 prefixes."
+---
+
+<Info>
+  **Doorman** – Controls which inbound callers reach your agents when your own Twilio numbers (BYOT) receive calls from withheld caller IDs (Anonymous, Restricted, Blocked, Unknown, Unavailable, Private, No Caller ID), or from callers whose country would otherwise be rejected.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.masked_callers" type="string[]">
+  The masked caller variants currently allowed. All seven variants are allowed by default.
+</ResponseField>
+
+<ResponseField name="data.prefixes" type="string[]">
+  E.164 prefixes (for example, `+1` or `+1619`) that bypass country-based restrictions.
+</ResponseField>
+
+<ResponseField name="data.available_masked_callers" type="array">
+  The full catalog of masked caller variants (`key`, `label`, `number`) you can toggle.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "masked_callers": [
+      "anonymous",
+      "restricted",
+      "blocked",
+      "unknown",
+      "unavailable",
+      "private",
+      "no_caller_id"
+    ],
+    "prefixes": ["+1"],
+    "available_masked_callers": [
+      { "key": "anonymous", "label": "Anonymous", "number": "+266696687" },
+      { "key": "restricted", "label": "Restricted", "number": "+7378742833" },
+      { "key": "blocked", "label": "Blocked", "number": "+2562533" },
+      { "key": "unknown", "label": "Unknown", "number": "+8656696" },
+      { "key": "unavailable", "label": "Unavailable", "number": "+86282452253" },
+      { "key": "private", "label": "Private", "number": "+7748283" },
+      { "key": "no_caller_id", "label": "No Caller ID", "number": "+6622553743" }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,66 @@
+---
+title: "Test Doorman Decision"
+api: "POST https://api.bland.ai/v1/doorman/knock"
+description: "Ask what the Doorman policy would do with a given caller value."
+---
+
+<Info>
+  Use this endpoint to test how a caller value would be evaluated against your current allowlist. The decision reflects only the Doorman policy layer; your organization's block rules and system-level checks are evaluated separately at call time.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="from" type="string" required>
+  The caller value to evaluate. This can be an E.164 phone number, a masked placeholder number (for example, `+266696687`), or a literal string like `anonymous`. Maximum 128 characters.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/doorman/knock \
+  --header 'authorization: YOUR_BLAND_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{ "from": "+266696687" }'
+```
+</RequestExample>
+
+### Response
+
+<ResponseField name="data.masked_caller" type="string|null">
+  The masked variant key the caller was classified as, or `null` if it did not match a masked placeholder.
+</ResponseField>
+
+<ResponseField name="data.matched_prefix" type="string|null">
+  The longest allowed prefix that matched the caller, or `null` if no prefix matched.
+</ResponseField>
+
+<ResponseField name="data.doorman" type="string">
+  The policy decision: `allows`, `rejects`, or `neutral`. `neutral` means the Doorman policy does not itself decide this call; the block lists and country gate still apply.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "masked_caller": "anonymous",
+    "matched_prefix": null,
+    "doorman": "allows"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
