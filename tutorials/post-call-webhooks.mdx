@@ -499,10 +499,12 @@ For detailed configuration options and troubleshooting, see the complete [Citati
   The post-transfer transcript is in limited rollout. If it is not enabled for your organization, these properties are absent.
 </Note>
 
-Calls created with [`include_post_transfer_transcript: true`](/api-v1/post/calls#param-include-post-transfer-transcript) that were cold-transferred to a human carry two additional properties on the `citations` event (in both the standalone and delayed delivery modes):
+To receive the post-transfer transcript, subscribe by including `"post_transfer_transcript"` in the call's `webhook_events`. No citation schema is needed. Subscribing requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside the subscription returns a 400. Both cold and warm transfers are covered.
 
-- `transfer_offset_seconds` — seconds from the start of the call to the transfer.
-- `post_transfer_transcript` — the conversation after the transfer, as speaker-attributed segments. The transferred-to human is `speaker: 2` / `"representative"`; the caller is `speaker: 1` / `"user"`. Timestamps are seconds from the start of the transferred conversation. The `corrected_transcript` continues to contain only the pre-transfer portion of the call.
+Subscribed calls that were transferred to a human carry two additional properties on the post-processing webhook (in both the standalone and delayed delivery modes):
+
+- `transfer_offset_seconds`: seconds from the start of the call to the transfer.
+- `post_transfer_transcript`: the conversation after the transfer, as speaker-attributed segments. The transferred-to human is `speaker: 2` / `"representative"`; the caller is `speaker: 1` / `"user"`. Timestamps are seconds from the start of the transferred conversation. The `corrected_transcript` continues to contain only the pre-transfer portion of the call.
 
 ```json
 {
@@ -528,7 +530,18 @@ Calls created with [`include_post_transfer_transcript: true`](/api-v1/post/calls
 }
 ```
 
-The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket.
+For subscribed calls, the post-processing webhook also labels what it contains. When the payload carries exactly one enrichment, `event_type` names it (for example `"post_transfer_transcript"` or `"citations"`). When it carries more than one, `event_type` is `"multiple"` and a `contents` array lists what is present, in a fixed order:
+
+```json
+{
+  "event_type": "multiple",
+  "contents": ["citations", "post_transfer_transcript"]
+}
+```
+
+`contents` can list `citations`, `corrected_transcript`, `dispositions`, `post_transfer_transcript`, and `live_translation_transcript`. Calls without the `post_transfer_transcript` subscription are unaffected: their payloads are unchanged.
+
+The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. The live stream is enabled separately with [`stream_post_transfer_transcript: true`](/api-v1/post/calls#param-stream-post-transfer-transcript); it does not require the webhook subscription, and the webhook subscription does not require the stream.
 
 ---
 
