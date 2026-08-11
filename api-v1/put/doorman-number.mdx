@@ -1,0 +1,57 @@
+---
+title: "Update Number Override"
+api: "PUT https://api.bland.ai/v1/doorman/numbers/{number}"
+description: "Set or replace the Doorman per-number override for one inbound number."
+---
+
+<Info>
+  Requires an org owner or admin. A field present on the override replaces the org policy for this number; a field left out inherits from the org. An override can be more or less permissive than the org — for example, a hotline can block all masked callers while the rest of the org allows them. Send an empty object (`{}`) to clear all overrides on this number.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="number" type="string" required>
+  The E.164 inbound number, URL-encoded (for example, `%2B14155551234` for `+14155551234`). Must belong to your organization.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="masked_callers" type="string[]" required={false}>
+  Overrides the org's allowed masked variants for this number. Include only the variants you want to allow; an empty array blocks all masked callers on this number. Omit the field to inherit from the org. Valid keys: `anonymous`, `restricted`, `blocked`, `unknown`, `unavailable`, `private`, `no_caller_id`.
+</ParamField>
+
+<ParamField body="prefixes" type="string[]" required={false}>
+  Overrides the org's allowed E.164 prefixes for this number. Each prefix must start with `+` followed by 1–15 digits with no leading zero (for example, `+1`, `+1619`). Maximum 100. Omit the field to inherit from the org.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl --request PUT \
+  --url https://api.bland.ai/v1/doorman/numbers/%2B14155551234 \
+  --header 'authorization: YOUR_BLAND_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "masked_callers": []
+  }'
+```
+</RequestExample>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The number's updated `phone_number`, `override`, `inherits`, `effective`, and `available_masked_callers`.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects. Returns a validation error for unknown fields, and `NUMBER_NOT_FOUND` (404) when the number does not belong to your organization.
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
