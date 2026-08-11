@@ -1,0 +1,51 @@
+---
+title: "Get Number Override"
+api: "GET https://api.bland.ai/v1/doorman/numbers/{number}"
+description: "Get the Doorman override, inheritance, and effective policy for a specific inbound number."
+---
+
+<Info>
+  Returns the stored override for a number, which org fields it inherits, and the effective policy that inbound calls to this number are evaluated against.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="number" type="string" required>
+  The E.164 inbound number, URL-encoded (for example, `%2B14155551234` for `+14155551234`). Must belong to your organization.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.phone_number" type="string">
+  The E.164 inbound number.
+</ResponseField>
+
+<ResponseField name="data.override" type="object">
+  The stored override. Empty when no fields are overridden. Possible fields are `masked_callers` and `prefixes`.
+</ResponseField>
+
+<ResponseField name="data.inherits" type="object">
+  Which fields inherit from the org policy. Each key (`masked_callers`, `prefixes`) is `true` when the number inherits and `false` when it overrides.
+</ResponseField>
+
+<ResponseField name="data.effective" type="object">
+  The effective policy for this number: the org policy with the override applied field-by-field.
+</ResponseField>
+
+<ResponseField name="data.available_masked_callers" type="array">
+  The full catalog of masked caller variants.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects. Returns `NUMBER_NOT_FOUND` (404) when the number does not belong to your organization.
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
