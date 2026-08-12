@@ -6,6 +6,20 @@ description: "Creates a new knowledge base from direct text input."
 
 Create a knowledge base by providing text content directly in the request. This is ideal for when you have structured text content that you want to make searchable for your AI agents.
 
+This endpoint returns a `data.id` UUID. Plug that UUID into any of the surfaces below to make the knowledge base available on a call. The same UUID can be attached to as many places as you want; the relationship is many-to-many.
+
+### Where can a knowledge base be attached?
+
+| Surface | How to attach | Notes |
+| --- | --- | --- |
+| **Web Agent** (browser SDK) | [`POST /v1/agents`](/api-v1/post/agents) or [`POST /v1/agents/{id}`](/api-v1/post/agents-id), `tools: ["<kb_uuid>"]` | The `tools` array accepts knowledge base UUIDs and tool IDs interchangeably. |
+| **Inbound phone number** | [`POST /v1/personas`](/api-v1/post/personas) or [`PATCH /v1/personas/{id}`](/api-v1/patch/personas-id), `kb_ids: ["<kb_uuid>"]`, then [attach the number](/api-v1/post/personas-id-inbound-attach) | Updates land on the draft; [promote](/api-v1/post/personas-id-versions-promote) before the change is live. |
+| **SMS / iMessage** | Same as inbound phone: set `kb_ids` on the persona, then attach the SMS-capable number | Channel capability follows the number's own configuration. |
+| **Pathway node** | Configure the knowledge base on the node in the pathway builder | See [Pathways](/tutorials/pathways). Nodes hold their own KB list. |
+| **Outbound call** | [`POST /v1/calls`](/api-v1/post/calls), `tools: ["<kb_uuid>"]` | Same array as Web Agents. If `persona_id` is set, the persona's `kb_ids` apply and `tools` adds to them. |
+
+Legacy `KB-` prefixed vector store IDs are no longer issued. Existing `KB-` IDs still resolve, but new knowledge bases use UUIDs.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
