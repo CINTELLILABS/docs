@@ -568,6 +568,36 @@ Supports both protocols:
 
 ---
 
+## Editing an existing provider
+
+You can update an SSO provider's configuration without deleting and recreating the connection. This is the recommended path for routine maintenance such as rotating an expiring OIDC client secret or a SAML signing certificate.
+
+<Steps>
+  <Step title="Open your provider">
+    Go to **Settings → SSO**, select the provider you want to update, and choose **Edit**. Non-secret fields (endpoints, client ID, scopes, SAML entry point, audience, and certificate) are prefilled from the stored configuration.
+  </Step>
+
+  <Step title="Update only the fields you need">
+    Change just the values you want to rotate or correct — for example, paste a new **Client Secret** or a new **X.509 Certificate**. Fields you leave unchanged keep their stored values.
+
+    <Note>
+    Leaving the **Client Secret** field blank keeps the current secret in place, so you can rotate other settings without having to re-enter it.
+    </Note>
+  </Step>
+
+  <Step title="Save and test">
+    Save your changes, then use the **Test** button to confirm the updated configuration works before rolling users over.
+  </Step>
+</Steps>
+
+<Warning>
+You cannot switch a provider between OIDC and SAML. To change protocol, create a new provider for the same domain, verify it with a test user, then delete the old one.
+</Warning>
+
+Secrets and private keys are never displayed after they are saved. If you lose track of a value, generate a new one in your IdP and paste it into the edit form.
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
@@ -971,10 +1001,12 @@ Contact hello@bland.ai for custom role mapping configuration.
   
   <Accordion title="How do I handle certificate expiration?">
     For SAML:
-    1. Get new certificate from IdP
-    2. Update in Bland before old expires
-    3. Test with Test button
-    4. No downtime if done before expiration
+    1. Get a new certificate from your IdP
+    2. Open the provider in **Settings → SSO** and choose **Edit**
+    3. Paste the new certificate and save
+    4. Confirm with the Test button
+
+    No downtime if done before expiration. See [Editing an existing provider](#editing-an-existing-provider) for details.
   </Accordion>
   
   <Accordion title="What data is shared between IdP and Bland?">
