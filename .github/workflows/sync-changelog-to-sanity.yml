@@ -1,0 +1,90 @@
+name: Sync changelog to Sanity
+
+# Mirrors changelog/**.mdx into the marketing site's Sanity CMS whenever a
+# weekly file changes. The marketing-side import script lives in CINTELLILABS/marketing
+# at website/scripts/import-changelog-from-docs.ts and handles MDX parsing, Portable
+# Text conversion, and idempotent create/update against Sanity.
+#
+# Setup (one-time, repo-level secrets):
+#   SANITY_API_TOKEN          editor token on the production dataset
+#   MARKETING_REPO_PAT        fine-grained GitHub PAT with Contents:Read on CINTELLILABS/marketing
+#   SANITY_WEBHOOK_SECRET     same value as the marketing site's env (used to ping /api/revalidate)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'changelog/**'
+  workflow_dispatch: {}
+
+concurrency:
+  group: changelog-sanity-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout docs repo
+        uses: actions/checkout@v4
+        with:
+          path: docs-repo
+
+      - name: Checkout marketing repo (sparse — website/ only)
+        uses: actions/checkout@v4
+        with:
+          repository: CINTELLILABS/marketing
+          token: ${{ secrets.MARKETING_REPO_PAT }}
+          path: marketing
+          sparse-checkout: |
+            website
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: marketing/website/package-lock.json
+
+      - name: Install marketing deps
+        working-directory: marketing/website
+        run: npm ci
+
+      - name: Run import (write + update-existing)
+        working-directory: marketing/website
+        env:
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: tmmoa80b
+          NEXT_PUBLIC_SANITY_DATASET: production
+        run: |
+          ./node_modules/.bin/tsx scripts/import-changelog-from-docs.ts \
+            --docs-path="$GITHUB_WORKSPACE/docs-repo/changelog" \
+            --update-existing \
+            --write
+
+      - name: Attach screenshots
+        working-directory: marketing/website
+        env:
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: tmmoa80b
+          NEXT_PUBLIC_SANITY_DATASET: production
+        run: ./node_modules/.bin/tsx scripts/import-changelog-images.ts --apply
+
+      - name: Trigger marketing ISR revalidation
+        env:
+          SANITY_WEBHOOK_SECRET: ${{ secrets.SANITY_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$SANITY_WEBHOOK_SECRET" ]; then
+            echo "::warning::SANITY_WEBHOOK_SECRET not set; skipping revalidation. New entries will appear within the 1h ISR window."
+            exit 0
+          fi
+          curl -sf -X POST "https://www.bland.ai/api/revalidate" \
+            -H "sanity-webhook-secret: $SANITY_WEBHOOK_SECRET" \
+            -H "content-type: application/json" \
+            -d '{"_type":"changelogEntry"}' \
+            && echo "Revalidation triggered." \
+            || echo "::warning::Revalidation request failed; entries will still appear within the 1h ISR window."
