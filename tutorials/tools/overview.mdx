@@ -240,6 +240,68 @@ When a tool runs, it returns data you can use in your conversation or pass to ot
 
 ---
 
+## Filling silence during long tool calls
+
+When a tool takes several seconds to respond, the caller can otherwise sit in silence with no way to interrupt. `tool_assist` is an optional per-tool setting that keeps the call feeling natural while the tool runs in the background.
+
+You can combine three behaviors:
+
+- **Nudges** — timed reassurance lines the agent speaks while the tool is still running (for example, "still on it, one moment").
+- **Aside** — lets the caller speak and get a short conversational reply while the tool finishes in the background. The agent wraps up the chat and delivers the tool result once it returns.
+- **Stream updates** — for endpoints that stream a response, partial progress is fed into the agent's context so nudges and asides can reference what's happening ("the system says step 2 of 3 is done").
+
+`tool_assist` is opt-in per tool. When it's not set, the tool keeps the current behavior of playing at most one filler line during execution.
+
+### When to use it
+
+- Reach for **nudges** on tools that regularly take more than a few seconds. Timed reassurance is less jarring than silence.
+- Enable **aside** when callers commonly try to talk mid-wait — for example, adding a detail they forgot or asking a related question — and you want the agent to respond instead of ignoring them.
+- Enable **stream updates** only when your endpoint streams incremental progress. Non-streaming tools don't benefit from it.
+
+### Configuration
+
+`tool_assist` is a field on the tool's configuration inside a pathway node:
+
+```json
+{
+  "tool_assist": {
+    "enabled": true,
+    "nudges": [
+      { "delay_ms": 2000, "text": "Just a moment while I pull that up." },
+      { "delay_ms": 8000, "prompt": "Reassure the caller you're still working on their request." },
+      { "delay_ms": 15000, "text": "Almost done, thanks for your patience." }
+    ],
+    "aside": {
+      "enabled": true,
+      "prompt": "Keep the caller company briefly. Stay on topic and don't promise anything until the result comes back."
+    },
+    "stream_updates": {
+      "enabled": true,
+      "max_updates": 10
+    }
+  }
+}
+```
+
+**Nudges**
+
+Each nudge has a `delay_ms` (measured from when the tool starts) and either:
+
+- `text` — a fixed line the agent speaks verbatim, or
+- `prompt` — a short instruction the agent uses to compose a one-liner in the moment.
+
+If both are set, `text` wins. Nudges are skipped whenever the caller or agent is already speaking, so they never cut anyone off. A nudge that would land after the tool has already returned is dropped.
+
+**Aside**
+
+When `aside.enabled` is `true`, the caller can interrupt during the tool window and the agent responds in a short side conversation, steered by `aside.prompt`. Tools are disabled during the aside so the agent won't start a second tool call. Once the original tool result arrives, the agent finishes the side thread and delivers the result.
+
+**Stream updates**
+
+For streaming endpoints, partial output is added to the agent's context up to `max_updates` chunks (default 10). Nudges and aside replies that come after each chunk can reference the latest progress.
+
+---
+
 ## Monitoring
 
 Tools give you full visibility into what's happening during calls.
