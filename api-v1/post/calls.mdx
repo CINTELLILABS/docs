@@ -986,6 +986,36 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   The batch ID of the call (present only if status is `success`).
 </ResponseField>
 
+<ResponseField name="max_duration_notice" type="object">
+  Present only when Bland shortened the call's `max_duration` before queuing it. Free, unverified accounts on the shared placement group have a shorter maximum call length; when the request exceeds that limit, the call is still accepted and this object tells you what happened so the platform is not silently cutting calls off.
+
+  Contains:
+
+  - `requested_max_duration` (number): the `max_duration` you asked for, in minutes.
+  - `max_duration` (number): the value the call will actually run to, in minutes. Matches the `max_duration` the call was queued with.
+  - `reason` (string): stable machine-readable code. Currently `CALL_UNPAID_MAX_DURATION_CAPPED`.
+  - `message` (string): human-readable explanation naming the action that lifts the limit (buy credits or turn on auto-recharge).
+
+  Buying credits or turning on auto-recharge removes the cap on subsequent calls.
+
+  Example:
+
+  ```json
+  {
+    "status": "success",
+    "message": "Call successfully queued.",
+    "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1",
+    "batch_id": null,
+    "max_duration_notice": {
+      "requested_max_duration": 30,
+      "max_duration": 5,
+      "reason": "CALL_UNPAID_MAX_DURATION_CAPPED",
+      "message": "This call was limited to 5 minutes because the account has not completed a purchase. Buy credits or turn on auto-recharge to lift the limit."
+    }
+  }
+  ```
+</ResponseField>
+
 <ResponseField name="errors" type="array">
   For validation errors, a detailed list of each field with an error and it's error message.
 
