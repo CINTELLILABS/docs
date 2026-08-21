@@ -48,7 +48,7 @@ description: "Create a new batch of calls using direct input."
   \
   **Required keys:**
 
-  - Must include at least one of: `"task"` or `"pathway_id"`. \
+  - Must include at least one of: `"task"`, `"pathway_id"`, or `"agent_id"`. \
     \
     **Forbidden keys:**
   - `"phone_number"` is **not allowed** in the global object.
@@ -61,6 +61,17 @@ description: "Create a new batch of calls using direct input."
     "record": true,
     "start_time": "2026-01-01 12:00:00-05:00" //timezone is optional, defaults to UTC
     // /v1/call properties
+  }
+  ```
+</ParamField>
+
+<ParamField body="global.agent_id" type="string">
+  Optional. UUID of an agent that staffs every call in the batch. The agent supplies voice, model, and behavior; pair it with `global.task` to add per-batch instructions. Requires an organization API key. Cannot be combined with `pathway_id` or `persona_id` in `global`.
+
+  ```json Example
+  "global": {
+    "agent_id": "b1c2d3e4-5678-90ab-cdef-1234567890ab",
+    "task": "Confirm the customer's appointment for tomorrow at 2pm."
   }
   ```
 </ParamField>
@@ -99,6 +110,17 @@ description: "Create a new batch of calls using direct input."
 ```
 
 </ResponseExample>
+
+### Errors
+
+When `global.agent_id` is present, requests are rejected up front with a 400 and one of the following error codes if the agent staffing check fails:
+
+| Code | Meaning |
+|------|---------|
+| `AGENT_ID_INVALID` | `agent_id` is not a valid UUID. |
+| `AGENT_PARAM_CONFLICT` | `agent_id` was sent alongside `pathway_id` or `persona_id`. |
+| `AGENT_ORG_REQUIRED` | The request is not authenticated with an organization API key. |
+| `AGENT_NOT_FOUND` | No active agent with that ID belongs to your organization. |
 
 ### Status webhook
 
