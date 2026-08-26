@@ -1,0 +1,69 @@
+---
+title: "Speech Limits"
+description: "Concurrency, voice clone, and professional clone limits for Bland Speech: what they are, how the $5 unlock works, and how to raise them."
+---
+
+Bland Speech is pay-as-you-go: generation is billed per character against your wallet balance, and there are no subscription tiers. Limits are per organization and are unlocked by funding your wallet.
+
+## Default limits
+
+| Limit | Before your first top-up | After a one-time \$5 top-up |
+| --- | --- | --- |
+| Concurrent generations | 1 | 5 |
+| Instant voice clones | 1 | 10 |
+| Live professional clones | 0 | 1 |
+
+The unlock is **cumulative**: once your total wallet deposits reach \$5, the higher limits apply. They are not tied to your current balance, so spending your wallet down doesn't lower them. The starting credit new accounts receive does not count toward the \$5.
+
+## Instant voice clones
+
+Every organization can create **one** instant clone before its first top-up, so you can try cloning before funding your wallet; the one-time \$5 top-up raises the limit to 10.
+
+Instant clone limits are counted per organization against your **current-generation (V3) voices**. Voice clones created with earlier model generations don't count against the limit. If your limit is 10, that's 10 active V3 clones, and deleting one frees the slot.
+
+The limit applies when creating a new clone; existing voices are never affected by a limit change. Limits are raisable; see [Raising your limits](#raising-your-limits).
+
+## Concurrency responses
+
+Your concurrency limit is the number of speech generations you may have **in flight at the same moment**, across every speech surface, including `WSS /v2/tts/ws`, `POST /v2/tts`, `POST /v2/audio/speech`, the `/v1/speak` family, and shared audio links (which count against the link owner's organization).
+
+A successfully initialized `/v2/tts/ws` connection occupies one slot until the socket closes, including time between turns. Close idle conversation sockets promptly. The endpoint keeps its synthesis connection warm for low latency, so it reserves capacity for the full session.
+
+HTTP speech endpoints respond `429` when no slot is available:
+
+```json
+{
+  "error": "concurrency_limit_reached",
+  "limit": 5,
+  "message": "You're at 5 concurrent generations. Email tts@bland.ai to raise your limit.",
+  "docs": "https://docs.bland.ai/speech/limits"
+}
+```
+
+`/v2/tts/ws` reports the same condition during `init` with a `rate_limited` error frame, then closes without sending `ready`.
+
+**This is not ordinary rate limiting.** A rate limit meters requests per unit of time; the concurrency limit counts reserved speech capacity. An HTTP slot frees when its request finishes. A `/v2/tts/ws` slot remains reserved until that socket closes. The correct client behavior is:
+
+- For HTTP, wait the number of **seconds** in the `Retry-After` header, then retry.
+- For WebSocket sessions, wait before opening a replacement connection.
+- If the cap remains full, wait for an HTTP request to finish or close an idle WebSocket before retrying.
+
+Avoid tight retry loops. They cannot make a slot free faster, and the wait is typically only a few seconds.
+
+## Professional clones
+
+Professional (studio-trained) voices follow a **draft / live** model:
+
+- You may hold **unlimited drafts**. Drafts can be trained and previewed in the studio, but cannot be downloaded, used through the API, or used in calls.
+- You may promote up to your live limit (default **1** after the \$5 unlock). Only live voices are usable everywhere.
+- Training a professional voice requires a funded organization (the \$5 unlock) and passing Bland's **consent and rights review** for the voice being cloned.
+
+## Raising your limits
+
+If you haven't made your first top-up yet, the \$5 unlock *is* the raise. It takes you to 10 instant clones, 1 live professional clone, and 5 concurrent generations.
+
+To go beyond the unlocked limits: for **instant clones** and **live professional clones**, use the **Request a raise** option in the studio (on the billing page when you're at your limit, or in the clone dialog); requests are reviewed by hand and answered by email. For **concurrency**, email [tts@bland.ai](mailto:tts@bland.ai) with your organization ID and expected volume, and those are sized case by case. Raises are applied directly to your organization, no plan change required.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

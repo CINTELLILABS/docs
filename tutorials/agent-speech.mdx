@@ -1,0 +1,68 @@
+---
+title: "Agent Speech"
+description: "Control how readily your agent pauses for callers and how quickly it responds after they stop talking."
+---
+
+Two behaviors control how your agent shares the conversation:
+
+- **Interruptibility** governs what happens while the agent is speaking: how readily it yields when the caller talks over it. This is a setting you choose.
+- **Resumption** governs what happens after the caller finishes: how quickly the agent takes its turn. This is adaptive: the agent measures each caller's pace and matches it automatically. There is nothing to configure.
+
+## Agent pauses
+
+When a caller makes a sound while the agent is speaking, the agent does not cut off at the first sound. It keeps talking for a brief moment while it works out what the caller is doing, then reacts:
+
+| The caller says | What it is | What the agent does |
+| :---- | :---- | :---- |
+| "Uh-huh." | A short acknowledgment | Keeps talking. No pause at all. |
+| "Stop for a second." | A short interruption | Finishes its current word, stops, and responds. |
+| "Wow, that is really, really interesting." | A long acknowledgment | Pauses while the caller speaks, then picks up exactly where it left off. |
+| "Hey, I have a question about that." | A long interruption | Finishes its current word, stops, and responds. |
+
+Two things hold in every case:
+
+- The agent always stops at a word boundary. It never cuts off mid-word.
+- Acknowledgments never derail the agent. Short ones are spoken through; long ones get a pause, and the agent picks up where it stopped.
+
+What counts as a "short" utterance scales with the interruptibility setting: an easy-to-interrupt agent pauses for shorter caller utterances, while a difficult-to-interrupt agent holds through more.
+
+## Interruptibility
+
+How readily the agent yields the floor when the caller speaks over it. Set with the `interruptibility` field (integer, `0`-`4`, default `2`).
+
+| Setting | API value | Caller experience |
+| :---- | :---- | :---- |
+| Always interrupt | `4` | Any caller speech stops the agent. Nothing is treated as an acknowledgment; every utterance gets a stop and a response. |
+| Easy | `3` | Yields quickly. Only the briefest acknowledgments are spoken through. |
+| Balanced | `2` | Default. Short acknowledgments do not stop the agent; real interruptions do. |
+| Difficult | `1` | Holds the turn longer and treats more caller speech as acknowledgment. Good for noisy lines and chatty listeners. |
+| Block interruptions | `0` | The agent ignores caller speech entirely while talking and always finishes what it is saying. |
+
+## Adaptive resumption
+
+<Note>
+Adaptive resumption is rolling out and may not yet be active in your environment.
+</Note>
+
+How quickly the agent responds once the caller stops talking is measured per caller, per call. The agent tracks the caller's own rhythm — how long their speech runs and how long their mid-thought pauses last — and adjusts how long it waits before taking its turn:
+
+- A caller who speaks quickly, without hesitating, gets near-instant responses.
+- A caller who speaks deliberately, pausing mid-sentence to think or to read out a number, gets an agent that waits out those pauses instead of jumping in, up to about two and a half seconds.
+- A caller who changes pace mid-call is matched within about fifteen seconds.
+
+The adaptation runs continuously in both directions: slowing down earns patience, and speeding back up restores snappy responses.
+
+## Where to set interruptibility
+
+- **Send Call API**: pass `interruptibility` in the [`/v1/calls`](/api-v1/post/calls) request body. It applies to the whole call.
+- **Inbound numbers**: the same field on your inbound number configuration.
+- **Pathways**: per node, in the node inspector under Advanced options. A node's setting applies only while that node is active; other nodes use the agent's own setting.
+
+## Choosing values
+
+| Symptom | Try |
+| :---- | :---- |
+| The agent talks over callers who want to say something | Easy interruptibility, or Always interrupt |
+| The agent stops for background noise or brief acknowledgments | Difficult interruptibility, or Block interruptions |
+
+Response timing needs no tuning: an agent that seems to jump in on a hesitant caller will settle within a few turns as the measurement catches up to the caller's pace.

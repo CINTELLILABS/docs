@@ -247,6 +247,38 @@ description: "Update your inbound agent's settings, prompt and other details."
   Set to `null` or an empty string to remove the configured fallback.
 </ParamField>
 
+<ParamField body="memory_id" type="string">
+  Attach a [memory store](/api-v1/post/memory-create) to the inbound agent so calls to this number share context across sessions. Pass the `memory_id` returned by [Create Memory](/api-v1/post/memory-create). Set to `null` or an empty string to detach.
+</ParamField>
+
+<ParamField body="pronunciation_guide" type="array">
+  Array of objects that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
+
+  ```json
+  [
+    {
+      "word": "example",
+      "pronunciation": "ex-am-ple",
+      "case_sensitive": false,
+      "spaced": false
+    },
+    {
+      "word": "API",
+      "pronunciation": "A P I",
+      "case_sensitive": true,
+      "spaced": true
+    }
+  ]
+  ```
+
+  <Accordion title="Object Parameters">
+    - `word`: the word you want to guide the LLM on how to pronounce
+    - `pronunciation`: how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
+    - `case_sensitive`: whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+    - `spaced`: whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
+  </Accordion>
+</ParamField>
+
 <ParamField body="transfer_list" type="object">
   Give your agent the ability to transfer calls to a set of phone numbers.
 
@@ -527,36 +559,6 @@ Example payloads:
 
 </ParamField>
 
-<ParamField body="analysis_schema" type="object">
-  Define a JSON schema for how you want to get information about the call - information like email addresses, names, appointment times or any other type of custom data.
-
-  In the webhook response or whenever you retrieve call data later, you'll get the data you defined back under `analysis`.
-
-  For example, if you wanted to retrieve this information from the call:
-
-  ```json
-  "analysis_schema": {
-    "email_address": "email",
-    "first_name": "string",
-    "last_name": "string",
-    "wants_to_book_appointment": "boolean",
-    "appointment_time": "YYYY-MM-DD HH:MM:SS"
-  }
-  ```
-
-  You would get it filled out like this in your webhook once the call completes:
-
-  ```json
-  "analysis": {
-    "email_address": "johndoe@gmail.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "wants_to_book_appointment": true,
-    "appointment_time": "2024-01-01 12:00:00"
-  }
-  ```
-</ParamField>
-
 <ParamField body="metadata" type="object">
   Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls.
 </ParamField>
@@ -566,11 +568,6 @@ Example payloads:
 
   For example: `"Summarize the call in French instead of English."`
 </ParamField>
-
-<ParamField body="analysis_prompt" type="string">
-  Guides the output and provides additional instructions and clarifications for the `analysis_schema`.
-</ParamField>
-
 
 <ParamField body="record" type="boolean" default="false">
   To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  

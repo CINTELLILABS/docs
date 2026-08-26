@@ -231,6 +231,15 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
 </ParamField>
 
+<ParamField body="interruptibility" default="2" type="integer">
+  Controls how readily the AI stops speaking when the caller talks over it. A higher value yields more easily; a lower value holds the turn through more of the caller's speech.
+
+  - `0`: Block. The AI ignores interruptions and finishes speaking (same as `block_interruptions: true`).
+  - `1`: Difficult. Harder to interrupt.
+  - `2`: Balanced (default).
+  - `3`: Easy. The AI stops quickly when the caller begins speaking.
+</ParamField>
+
 ### Dispatch Parameters
 
 <ParamField body="from" type="string">
@@ -445,6 +454,39 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ParamField>
 
+<ParamField body="stream_post_transfer_transcript" type="boolean" default="false">
+  When `true` and the call is transferred to a human, Bland transcribes the conversation after the transfer live and streams it over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket while the transferred conversation is happening. Works for both cold and warm transfers.
+
+  This option controls the live stream only. To receive the post-transfer transcript in the post-call webhook, subscribe with `"post_transfer_transcript"` in `webhook_events`. The two are independent: you can use either one or both.
+
+  <Note>
+    This feature is in limited rollout. If it is not enabled for your organization, the option has no effect.
+  </Note>
+</ParamField>
+
+<ParamField body="post_call_evals" type="object">
+  Attach an [evals workbench](/tutorials/evals) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call — no separate eval-run submission needed.
+
+  Provide at least one of:
+
+  - `workbench_setup_id` (string): The workbench setup to attach. Bland pins the setup's current published version at call creation, so editing the workbench mid-call does not change what gets evaluated.
+  - `workbench_setup_version_id` (string): An exact published workbench setup version to pin.
+
+  Attaching evals requires the call to be recorded. If you set `record: false` alongside `post_call_evals`, the request is rejected; otherwise recording is enabled automatically.
+
+  The post-call webhook acknowledges the attachment with `post_call_evals: { workbench_setup_id, workbench_setup_version_id, status: "pending" }`. Eval scores arrive later on a separate `evals` webhook event once the run completes.
+
+  Example:
+
+  ```json
+  {
+    "post_call_evals": {
+      "workbench_setup_id": "b7c2e1d4-8f3a-4c9e-9a2b-1e5f6d7c8a9b"
+    }
+  }
+  ```
+</ParamField>
+
 ### Post Call Parameters
 
 <ParamField body="summary_prompt" type="string">
@@ -575,6 +617,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   - `tool`
   - `dynamic_data`
   - `citations` (Required for any citation webhooks)
+  - `evals` (Eval scores from an attached [evals workbench](/tutorials/evals), sent as a separate webhook when the run completes)
+  - `post_transfer_transcript` (Adds the post-transfer conversation to the post-call webhook when the call is transferred to a human; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). Requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside this subscription returns a 400. In limited rollout: if not enabled for your organization, the subscription has no effect.)
 
   Example payloads:
 
@@ -1450,16 +1494,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     {
       "status": "error",
       "message": "metadata must be an object."
-    }
-    ```
-  </ResponseField>
-  <ResponseField name="400 - Analysis Schema Validation" type="object">
-    Analysis schema must be an object.
-
-    ```json
-    {
-      "status": "error",
-      "message": "analysis_schema must be an object."
     }
     ```
   </ResponseField>

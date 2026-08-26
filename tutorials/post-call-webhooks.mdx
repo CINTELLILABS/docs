@@ -197,6 +197,7 @@ This is the immediate webhook sent right after a call completes:
   "status": "completed",
   "pathway_id": "b71c4c5c-33e3-496b-a5f4-91b7e8e6a931",
   "is_proxy_agent_call": false,
+  "is_canary": false,
   "citation_schema_ids": [],
   "warm_transfer_call": {
     "proxy_agent_calls": [
@@ -372,6 +373,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
     "b0477cba-1c97-4105-8ac9-46cb8eae5cf1"
   ],
   "is_proxy_agent_call": false,
+  "is_canary": false,
   "warm_transfer_call": {
     "proxy_agent_calls": [
       {
@@ -490,6 +492,56 @@ For detailed configuration options and troubleshooting, see the complete [Citati
 **Configuration Note:** When you enable citation extraction, you can choose to delay the post-call webhook until citations are processed and include citation data in a single webhook. When disabled, the post-call webhook fires immediately, and citations are sent via a separate webhook.
 
 **Important:** Both the dashboard "Delay post call webhook" toggle AND the `webhook_events` configuration must be properly set for delays to work.
+
+### Post-Transfer Transcript
+
+<Note>
+  The post-transfer transcript is in limited rollout. If it is not enabled for your organization, these properties are absent.
+</Note>
+
+To receive the post-transfer transcript, subscribe by including `"post_transfer_transcript"` in the call's `webhook_events`. No citation schema is needed. Subscribing requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside the subscription returns a 400. Both cold and warm transfers are covered.
+
+Subscribed calls that were transferred to a human carry two additional properties on the post-processing webhook (in both the standalone and delayed delivery modes):
+
+- `transfer_offset_seconds`: seconds from the start of the call to the transfer.
+- `post_transfer_transcript`: the conversation after the transfer, as speaker-attributed segments. The transferred-to human is `speaker: 2` / `"representative"`; the caller is `speaker: 1` / `"user"`. Timestamps are seconds from the start of the transferred conversation. The `corrected_transcript` continues to contain only the pre-transfer portion of the call.
+
+```json
+{
+  "transfer_offset_seconds": 9.573,
+  "post_transfer_transcript": [
+    {
+      "start": 9.544,
+      "end": 17.804,
+      "speaker": 2,
+      "speaker_label": "representative",
+      "text": "Hi, this is Sam with support. How can I help you today?",
+      "confidence": 0.7
+    },
+    {
+      "start": 18.912,
+      "end": 21.952,
+      "speaker": 1,
+      "speaker_label": "user",
+      "text": "I was calling about my appointment on Thursday.",
+      "confidence": 0.49
+    }
+  ]
+}
+```
+
+For subscribed calls, the post-processing webhook also labels what it contains. When the payload carries exactly one enrichment, `event_type` names it (for example `"post_transfer_transcript"` or `"citations"`). When it carries more than one, `event_type` is `"multiple"` and a `contents` array lists what is present, in a fixed order:
+
+```json
+{
+  "event_type": "multiple",
+  "contents": ["citations", "post_transfer_transcript"]
+}
+```
+
+`contents` can list `citations`, `corrected_transcript`, `dispositions`, `post_transfer_transcript`, and `live_translation_transcript`. Calls without the `post_transfer_transcript` subscription are unaffected: their payloads are unchanged.
+
+The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. The live stream is enabled separately with [`stream_post_transfer_transcript: true`](/api-v1/post/calls#param-stream-post-transfer-transcript); it does not require the webhook subscription, and the webhook subscription does not require the stream.
 
 ---
 

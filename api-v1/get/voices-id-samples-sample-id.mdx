@@ -1,0 +1,102 @@
+---
+title: "Get Voice Sample"
+api: "GET https://api.bland.ai/v1/voices/{id}/samples/{sample_id}"
+description: "Download a single training sample as audio or JSON metadata."
+---
+
+## Overview
+
+Returns a single training sample for a voice you own. By default the response is the raw WAV audio. Pass `?format=json` to get the metadata plus base64-encoded audio instead.
+
+Only voices owned by your org return samples. Default voices and shared-library voices return `400 VOICE_SAMPLE_ERROR`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the parent voice.
+</ParamField>
+
+<ParamField path="sample_id" type="string" required>
+  UUID of the sample to fetch.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="format" type="string" default="audio">
+  Response format. `audio` returns the raw WAV binary, `json` returns sample metadata with base64-encoded audio under `data`.
+</ParamField>
+
+---
+
+## Response
+
+With `format=audio` (default), returns the WAV binary with:
+
+- `Content-Type: audio/wav`
+- `Content-Disposition: attachment; filename="sample-<id>.wav"`
+
+With `format=json`, returns sample metadata.
+
+<ResponseField name="sample" type="object">
+  Only present in JSON mode.
+
+  <Expandable title="Sample fields">
+    <ResponseField name="id" type="string" />
+    <ResponseField name="voice_id" type="string" />
+    <ResponseField name="transcription" type="string | null" />
+    <ResponseField name="duration_seconds" type="number" />
+    <ResponseField name="audio_data" type="string">
+      Base64-encoded WAV audio.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```http Audio Response
+HTTP/1.1 200 OK
+Content-Type: audio/wav
+Content-Length: 245318
+Content-Disposition: attachment; filename="sample-d15b199a.wav"
+
+<WAV binary>
+```
+
+```json JSON Response
+{
+  "sample": {
+    "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
+    "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+    "transcription": "Hello and welcome to Bland.",
+    "duration_seconds": 11.4,
+    "audio_data": "<base64 WAV>",
+    "created_at": "2026-06-22T21:34:31.347Z"
+  }
+}
+```
+
+```json Audio Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "AUDIO_NOT_FOUND", "message": "No audio data found for this sample" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

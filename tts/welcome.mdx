@@ -1,0 +1,73 @@
+---
+title: "Welcome to Bland Speech"
+description: "Humanlike text-to-speech built for realtime conversations and streaming LLM output."
+---
+
+Bland Speech is text-to-speech built for live conversation. It handles partial LLM output, pauses, names, numbers, emotion, and mid-sentence changes while returning audio with low latency.
+
+New here? [One curl command](/tts/quickstart) gets you an audio file, and the quickstart ends by pointing you at the right endpoint for what you are building.
+
+## Start with realtime TTS
+
+[`WSS /v2/tts/ws`](/api-v2/post/tts-ws) is the primary TTS endpoint for new conversational applications. Send LLM tokens as they arrive. Bland buffers them into useful speech segments, keeps the voice session warm across turns, and supports interruption by replacing or cancelling the active turn.
+
+<CardGroup cols={2}>
+  <Card title="Realtime quickstart" icon="bolt" href="/tts/realtime-quickstart">
+    Stream text token by token and receive binary audio before the turn finishes.
+  </Card>
+  <Card title="Realtime concepts" icon="diagram-project" href="/tts/realtime-concepts">
+    Understand buffering, turns, preemption, cancellation, playback, and billing.
+  </Card>
+  <Card title="WebSocket reference" icon="code" href="/api-v2/post/tts-ws">
+    Review every client message, server event, audio format, limit, and error.
+  </Card>
+  <Card title="Migration guides" icon="arrow-right-arrow-left" href="/tts/migrate">
+    Move from ElevenLabs, Cartesia, Deepgram, PlayHT, Resemble, Google, or Polly.
+  </Card>
+</CardGroup>
+
+## Other ways to generate speech
+
+<CardGroup cols={2}>
+  <Card title="Synthesize Speech (HTTP)" icon="file-audio" href="/api-v2/post/tts">
+    Send one complete input string and receive raw streaming audio or a WAV file.
+  </Card>
+  <Card title="OpenAI-compatible speech" icon="arrows-rotate" href="/api-v2/post/audio-speech">
+    Keep an OpenAI SDK and change its base URL, key, and model.
+  </Card>
+  <Card title="Speech Studio" icon="pen-to-square" href="/tts/speech-studio">
+    Write, direct, and synthesize speech from the dashboard.
+  </Card>
+  <Card title="Clone a voice" icon="microphone" href="/tts/voices#cloning-a-voice">
+    Create a Bland voice from a short reference recording.
+  </Card>
+</CardGroup>
+
+## Get the delivery right
+
+<CardGroup cols={2}>
+  <Card title="Choosing a voice" icon="user-group" href="/tts/voices">
+    Built-in voices, cloning, and the defaults each voice carries.
+  </Card>
+  <Card title="Writing for speech" icon="pen-nib" href="/tts/writing-for-speech">
+    Pauses, numbers, punctuation, and the expressiveness and stability controls.
+  </Card>
+</CardGroup>
+
+For the fastest path, choose a `BTTS_V3` voice and request 48 kHz PCM. The model renders at that rate natively, so no sample-rate conversion is required.
+
+## Browser clients
+
+Do not expose a Bland API key in browser code. Your backend should [mint a five-minute stream token](/api-v1/post/speak-stream-input-token), then the browser can connect to:
+
+```text
+wss://api.bland.ai/v2/tts/ws?token=<short-lived-token>
+```
+
+## Limits and pricing
+
+Speech is billed per character, with delivery-aware settlement. A realtime connection holds one concurrency slot until it closes. Review [Speech Limits](/speech/limits) and the [WebSocket billing rules](/api-v2/post/tts-ws#billing-and-concurrency) before sizing a production integration.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

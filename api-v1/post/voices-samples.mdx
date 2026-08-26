@@ -1,0 +1,94 @@
+---
+title: "Add Voice Sample"
+api: "POST https://api.bland.ai/v1/voices/samples"
+description: "Append training samples to an existing voice clone you own."
+contentType: "multipart/form-data"
+---
+
+## Overview
+
+Appends one or more audio samples to an existing voice clone, retraining the voice on the expanded sample set.
+
+Sample limits depend on the voice's engine. **BTTS V1** voices accept up to 5 samples total. **BTTS V2** and **BTTS V3** voices are single-sample by design and do not accept additional samples; use [Clone Voice](/api-v1/post/clone) to create a new voice instead.
+
+Sent as `multipart/form-data`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Form Fields
+
+<ParamField body="voice_id" type="string" required>
+  UUID of the voice to add samples to. Must be a voice your org owns.
+</ParamField>
+
+<ParamField body="audio_samples" type="file[]" required>
+  WAV files to append. Each file 1-60 seconds, max 10 MB. The combined sample count after this call cannot exceed 5 for a V1 voice.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="samples" type="array">
+  The samples currently attached to the voice after the update. See [List Voice Samples](/api-v1/get/voices-id-samples#response) for field shape.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "samples": [
+    {
+      "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
+      "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+      "transcription": null,
+      "duration_seconds": 11.4,
+      "created_at": "2026-06-22T21:34:31.347Z"
+    }
+  ]
+}
+```
+
+```json No Files
+{
+  "data": null,
+  "errors": [
+    { "error": "BAD_REQUEST", "message": "No audio files provided" }
+  ]
+}
+```
+
+```json Wrong Engine
+{
+  "data": null,
+  "errors": [
+    { "error": "INTERNAL_SERVER_ERROR", "message": "Adding samples is only supported for BTTS voices" }
+  ]
+}
+```
+
+```json Too Many Samples
+{
+  "data": null,
+  "errors": [
+    { "error": "Validation Error", "message": "Cannot add 2 sample(s). Voice already has 4 samples. Maximum allowed is 5 samples per voice." }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

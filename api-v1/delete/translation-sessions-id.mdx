@@ -1,0 +1,76 @@
+---
+title: "End Translation Session"
+api: "DELETE https://api.bland.ai/v1/translation/sessions/{session_id}"
+description: "Terminate a translation session from the server side"
+---
+
+Ends a translation session. If the WebSocket is connected, it receives a final `session_ended` control message and is closed. Pending sessions (created but never connected) are also cleaned up — useful for releasing a concurrency slot you no longer need.
+
+Terminating an already-ended session is a no-op and returns the session's final state.
+
+## Authentication
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="session_id" type="string" required>
+  The session UUID returned by `POST /v1/translation/sessions`
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="reason" type="string">
+  Optional context (max 200 characters) recorded with the session's `end_reason` as `api_terminated:<reason>`.
+</ParamField>
+
+## Response
+
+Returns the same session object as [Get Translation Session](/api-v1/get/translation-sessions-id), with `status` and `end_reason` reflecting the termination.
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE "https://api.bland.ai/v1/translation/sessions/9592342c-0ed2-4c5e-8ceb-16aa55c804a7" \
+  -H "Authorization: YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    "https://api.bland.ai/v1/translation/sessions/9592342c-0ed2-4c5e-8ceb-16aa55c804a7",
+    headers={"Authorization": "YOUR_API_KEY"},
+)
+print(response.json()["data"]["end_reason"])  # "api_terminated"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Terminated
+{
+  "data": {
+    "session_id": "9592342c-0ed2-4c5e-8ceb-16aa55c804a7",
+    "status": "ENDED",
+    "source_language": "en",
+    "target_language": "es",
+    "voice_id": null,
+    "audio_protocol": "pcm16",
+    "sample_rate": 16000,
+    "max_duration_seconds": 1800,
+    "end_reason": "api_terminated",
+    "session_seconds": null,
+    "billable_minutes": null,
+    "created_at": "2026-06-04T18:05:07.885Z",
+    "started_at": null,
+    "ended_at": "2026-06-04T18:06:08.684Z"
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,81 @@
+---
+title: "Parse SIP Destination"
+api: "POST https://api.bland.ai/v1/sip/parse-destination"
+description: "Parse and validate a raw SIP destination string into its host, port, user, and transport before attaching it to a trunk."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="input" type="string" required>
+  The SIP destination to parse. Accepts flexible formats — a hostname or IP (`sip.provider.com`, `203.0.113.10`), a full SIP URI (`sip:user@host:5061;transport=tls`), or shorthand (`tls://host`, `host:5061`).
+</ParamField>
+
+### Response
+
+<ResponseField name="valid" type="boolean">
+  Whether the input could be parsed into a usable SIP destination.
+</ResponseField>
+
+<ResponseField name="parsed" type="object">
+  The parsed destination when `valid` is `true`, otherwise `null`.
+
+  <Expandable title="parsed">
+    <ResponseField name="host" type="string">
+      The resolved host or IP address.
+    </ResponseField>
+    <ResponseField name="port" type="number">
+      The port, when present in the input.
+    </ResponseField>
+    <ResponseField name="user" type="string">
+      The user part of the SIP URI, when present.
+    </ResponseField>
+    <ResponseField name="transport" type="string">
+      The transport: `"udp"`, `"tcp"`, or `"tls"`, when present.
+    </ResponseField>
+    <ResponseField name="is_private_ip" type="boolean">
+      `true` if the host is a private/non-routable IP address.
+    </ResponseField>
+    <ResponseField name="normalized" type="string">
+      The normalized SIP destination string.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+Use the parsed `host`, `port`, and `transport` to populate the `sip_endpoint` and `options` of a trunk or a [`POST /v1/sip/attach`](/api-v1/post/sip-attach) request.
+
+```json Example Request
+curl -X POST https://api.bland.ai/v1/sip/parse-destination \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "sip:your.provider.com:5061;transport=tls"
+  }'
+```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "valid": true,
+    "parsed": {
+      "host": "your.provider.com",
+      "port": 5061,
+      "transport": "tls",
+      "is_private_ip": false,
+      "normalized": "sip:your.provider.com:5061;transport=tls"
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

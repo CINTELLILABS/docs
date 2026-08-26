@@ -1,0 +1,85 @@
+---
+title: "Update Voice Sample Transcriptions"
+api: "PATCH https://api.bland.ai/v1/voices/{id}/samples"
+description: "Update the transcription text on one or more training samples."
+---
+
+## Overview
+
+Updates the transcribed text for one or more samples on a voice clone you own. Useful when auto-transcription has errors that you want to correct before the voice is used.
+
+The samples themselves and their audio are not modified.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the parent voice.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="samples" type="array" required>
+  Array of sample updates. Each entry must include `id` and `transcription`.
+
+  ```json
+  {
+    "samples": [
+      { "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a", "transcription": "Hello and welcome to Bland." }
+    ]
+  }
+  ```
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="samples" type="array">
+  The updated samples. See [List Voice Samples](/api-v1/get/voices-id-samples#response) for field shape.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "samples": [
+    {
+      "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
+      "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+      "transcription": "Hello and welcome to Bland.",
+      "duration_seconds": 11.4,
+      "created_at": "2026-06-22T21:34:31.347Z"
+    }
+  ]
+}
+```
+
+```json Invalid Request
+{
+  "data": null,
+  "errors": [
+    { "error": "INVALID_REQUEST", "message": "Missing or invalid samples array" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,241 @@
+---
+title: "Create Translation Session"
+api: "POST https://api.bland.ai/v1/translation/sessions"
+description: "Create a real-time translation session and receive a WebSocket URL for streaming audio"
+---
+
+Creates a translation session and returns a single-use WebSocket URL. Stream audio in your source language and receive translated speech back in real time — along with transcript events for every translated utterance.
+
+See the [Live Translation API tutorial](/tutorials/translation) for the full streaming protocol, audio formats, and integration walkthrough.
+
+## Authentication
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. The key must belong to an organization — user-scoped keys without an organization are rejected with `403 TAAS_ORG_REQUIRED`.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="source_language" type="string" required>
+  Language the inbound audio is spoken in. Supported codes: `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `pl`, `sv`, `fi`, `da`, `cs`, `el`, `ro`, `ru`, `tr`, `ar`, `hi`, `id`, `tl`, `zh`, `ja`, `ko`
+</ParamField>
+
+<ParamField body="target_language" type="string" required>
+  Language to translate into. Same supported codes as `source_language`.
+</ParamField>
+
+<ParamField body="voice_id" type="string">
+  UUID of a Bland voice to use for the translated speech. Must belong to your organization. Defaults to a standard voice for the target language.
+</ParamField>
+
+<ParamField body="audio_protocol" type="string" default="pcm16">
+  Wire format for audio on the WebSocket. One of:
+  - `pcm16` — raw PCM-16 little-endian binary frames
+  - `twilio_ulaw` — Twilio Media Streams JSON envelopes carrying 8kHz μ-law audio, for direct interop with Twilio `<Stream>`
+</ParamField>
+
+<ParamField body="sample_rate" type="integer" default="16000">
+  Sample rate of the audio you will send, in Hz. `pcm16` mode only — integer between `8000` and `48000`. `16000` is recommended. Do not set this for `twilio_ulaw` (Twilio audio is always 8kHz).
+</ParamField>
+
+<ParamField body="max_duration_seconds" type="integer" default="1800">
+  Maximum session length in seconds, between `30` and `1800`. The session ends automatically when this limit is reached.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="session_id" type="string">
+      Unique identifier for the session. Use it with the GET and DELETE endpoints.
+    </ResponseField>
+    <ResponseField name="ws_url" type="string">
+      WebSocket URL to connect to. **Treat this as opaque** — connect to it exactly as returned. Do not parse or reconstruct it.
+    </ResponseField>
+    <ResponseField name="token" type="string">
+      Session token. Already embedded in `ws_url`; returned separately for reference.
+    </ResponseField>
+    <ResponseField name="expires_at" type="string">
+      ISO timestamp. Connect to `ws_url` before this time (10 minutes after creation) or the session is abandoned.
+    </ResponseField>
+    <ResponseField name="max_duration_seconds" type="integer">
+      The resolved maximum session length.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array" default="null">
+  Array of error objects if the request failed
+</ResponseField>
+
+<Warning>
+  The `ws_url` is **single-use**: it authenticates exactly one WebSocket connection. If your connection drops, create a new session — reconnecting with the same URL is rejected with close code `4001`.
+</Warning>
+
+## Limits & Billing
+
+- Sessions are billed **per minute** of connected time, rounded up. The per-minute rate depends on your plan.
+- Up to **3 concurrent sessions** per organization (pending sessions count until they expire). Contact us to raise this limit.
+- A daily translation-minutes rate limit applies per organization.
+
+<RequestExample>
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/translation/sessions" \
+  -H "Authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_language": "en",
+    "target_language": "es",
+    "audio_protocol": "pcm16",
+    "sample_rate": 16000
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.bland.ai/v1/translation/sessions", {
+  method: "POST",
+  headers: {
+    "Authorization": "YOUR_API_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    source_language: "en",
+    target_language: "es",
+    audio_protocol: "pcm16",
+    sample_rate: 16000,
+  }),
+});
+
+const { data } = await response.json();
+const ws = new WebSocket(data.ws_url); // connect within 10 minutes
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.bland.ai/v1/translation/sessions",
+    headers={"Authorization": "YOUR_API_KEY"},
+    json={
+        "source_language": "en",
+        "target_language": "es",
+        "audio_protocol": "pcm16",
+        "sample_rate": 16000,
+    },
+)
+data = response.json()["data"]
+print(data["ws_url"])  # connect within 10 minutes
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success
+{
+  "data": {
+    "session_id": "9592342c-0ed2-4c5e-8ceb-16aa55c804a7",
+    "ws_url": "wss://stream-v2.aws.dc8.bland.ai/ws/translate/eyJhbGciOiJBMjU2R0NNS1ciLCJlbmMiOiJBMjU2R0NN...",
+    "token": "fe120676-1b18-4c87-b6fc-c984e719d3bc",
+    "expires_at": "2026-06-04T18:15:07.885Z",
+    "max_duration_seconds": 1800
+  },
+  "errors": null
+}
+```
+
+```json Concurrency Cap
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "CONCURRENCY_CAP_EXCEEDED"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## WebSocket Connection
+
+After creating a session, connect to the returned `ws_url` within 10 minutes:
+
+- **URL**: Use `ws_url` exactly as returned — it is opaque and single-use. Do not parse or reconstruct it.
+- **Protocol**: WebSocket (WSS)
+- **Authentication**: Embedded in the URL — no headers required
+- **Frames**: Binary frames carry audio; text frames carry JSON control events
+
+You can start sending audio immediately on connection open — frames are buffered server-side until the pipeline is ready.
+
+### Audio Format: `pcm16`
+
+| Direction | Format |
+|---|---|
+| Client → Bland | Binary frames of raw PCM-16 little-endian mono audio at your declared `sample_rate` |
+| Bland → Client | Binary frames of raw PCM-16 little-endian mono audio at **16,000 Hz** |
+
+No framing or headers — raw samples only. 20ms chunks (640 bytes at 16kHz) are typical.
+
+### Audio Format: `twilio_ulaw`
+
+All frames are JSON text in [Twilio Media Streams](https://www.twilio.com/docs/voice/media-streams) shape — base64 8kHz μ-law audio in `media.payload`. Send a `start` event first so outbound envelopes echo your `streamSid`:
+
+```json
+{ "event": "start", "start": { "streamSid": "MZ..." } }
+{ "event": "media", "media": { "payload": "<base64 μ-law>" } }
+{ "event": "stop" }
+```
+
+Outbound translated audio arrives as `{"event":"media","streamSid":"<your sid>","media":{"payload":"<base64 8kHz μ-law>"}}`.
+
+### Control Events
+
+JSON text frames from the server, discriminated by `type`:
+
+| Event | When | Key fields |
+|---|---|---|
+| `ready` | Pipeline warmed up; transcripts begin flowing after this | `session_id` |
+| `transcript` | One finalized utterance was translated | `turn_id`, `original`, `translation`, `source_language`, `target_language`, `is_final` |
+| `tts_complete` | All translated audio for a turn has been written to the WebSocket | `turn_id`, `audio_duration_ms` |
+| `session_ended` | Terminal notification — last JSON frame before close | `reason`, `session_seconds`, `end_reason` |
+| `error` | Fatal session failure, followed by `session_ended` and close | `code`, `message`, `fatal` |
+
+```json Example transcript event
+{
+  "type": "transcript",
+  "turn_id": "5862a126-2e88-46b1-bb95-0ed5c57155c1",
+  "original": "Hello. This is a translation test.",
+  "translation": "Hola. Esta es una prueba de traducción.",
+  "source_language": "en",
+  "target_language": "es",
+  "is_final": true
+}
+```
+
+<Note>
+  - `audio_duration_ms` is currently always `0` — a placeholder. Do not rely on it.
+  - A `tts_complete` may be absent for a turn whose speech synthesis failed — don't block on it. The transcript still arrives.
+  - Error codes that can fire: `taas/audio_protocol_mismatch` and `taas/internal_error`, both `fatal: true`.
+  - `session_ended.reason` is one of `client_disconnect`, `max_duration`, `error`, `api_terminated`.
+</Note>
+
+### Close Codes
+
+| Code | Meaning |
+|---|---|
+| `1000` | Normal close after `session_ended` |
+| `1011` | Internal server error |
+| `4001` | Invalid, expired, or already-used session token |
+| `4002` | Session not found |
+| `4003` | Session already ended |
+| `4004` | First frame didn't match the declared `audio_protocol` |
+| `4005` | `max_duration_seconds` reached |
+
+## Notes
+
+- Translated audio can arrive faster than real time — buffer client-side and play at the natural rate
+- Reconnection is not supported; if the WebSocket drops, create a new session
+- The WebSocket closes automatically at `max_duration_seconds`

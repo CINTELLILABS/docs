@@ -1,0 +1,60 @@
+---
+title: "Migrate to Bland Speech"
+description: "Move an existing TTS integration to Bland's realtime WebSocket, HTTP, or OpenAI-compatible endpoint."
+---
+
+Choose the Bland endpoint that matches your application:
+
+| Input shape | Use |
+| --- | --- |
+| LLM tokens or partial text, multi-turn conversation, interruptions | [`WSS /v2/tts/ws`](/api-v2/post/tts-ws) |
+| Existing OpenAI `/audio/speech` client or SDK | [`POST /v2/audio/speech`](/api-v2/post/audio-speech) |
+| Complete text available up front, downloadable or batch audio | [`POST /v2/tts`](/api-v2/post/tts) |
+
+For new conversational applications, start with the [Realtime TTS Quickstart](/tts/realtime-quickstart). It keeps one warm WebSocket open, sends LLM tokens immediately, and lets Bland handle text buffering.
+
+## Provider guides
+
+<CardGroup cols={2}>
+  <Card title="ElevenLabs" icon="arrow-right-arrow-left" href="/tts/migrations/elevenlabs">
+    Replace stream-input messages, base64 audio, and manual flush behavior.
+  </Card>
+  <Card title="Cartesia" icon="arrow-right-arrow-left" href="/tts/migrations/cartesia">
+    Map contexts and continuations to turns, preemption, and cancellation.
+  </Card>
+  <Card title="Deepgram" icon="arrow-right-arrow-left" href="/tts/migrations/deepgram">
+    Map Speak, Flush, Clear, and Close to Bland turn messages.
+  </Card>
+  <Card title="PlayHT" icon="arrow-right-arrow-left" href="/tts/migrations/playht">
+    Replace the generated socket URL and request-level speech commands.
+  </Card>
+  <Card title="Resemble AI" icon="arrow-right-arrow-left" href="/tts/migrations/resemble">
+    Move from request IDs and audio_end to Bland turn boundaries.
+  </Card>
+  <Card title="Google Cloud TTS" icon="arrow-right-arrow-left" href="/tts/migrations/google-cloud">
+    Replace bidirectional gRPC configuration and audio responses.
+  </Card>
+  <Card title="Amazon Polly" icon="arrow-right-arrow-left" href="/tts/migrations/amazon-polly">
+    Move synchronous synthesis or add token-level realtime streaming.
+  </Card>
+</CardGroup>
+
+## Shared migration rules
+
+All realtime migrations have the same core changes:
+
+1. Select a Bland voice UUID from [List Voices](/api-v1/get/voices). Voice IDs are provider-specific and cannot be reused.
+2. Open one socket per conversation and send `init` once.
+3. Wait for `ready` before sending text.
+4. Send only new text deltas under one `context_id` per turn.
+5. Send `end_of_turn` after the LLM completes.
+6. Read binary frames as raw PCM or mu-law audio.
+7. On interruption, send a new context to preempt or send `cancel` without replacement text.
+8. Drop unplayed local audio for preempted or cancelled turns.
+9. Send `close` only after the final turn's `utterance_end`, then wait for `done`.
+
+See [Realtime TTS Concepts](/tts/realtime-concepts) for the state model and playback responsibilities.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

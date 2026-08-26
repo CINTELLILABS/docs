@@ -1,0 +1,85 @@
+---
+title: "List Voice Samples"
+api: "GET https://api.bland.ai/v1/voices/{id}/samples"
+description: "List the training samples attached to a voice clone you own."
+---
+
+## Overview
+
+Returns the training samples used to create a voice clone. Only voices owned by your org return samples; default voices and shared library voices return `400 VOICE_SAMPLES_ERROR` with the message `"Voice is a default voice and not owned by the user."`
+
+Retrievable samples are only present for V1 (`BTTS`) voices. **V2 and V3 voices both return `[]`** even though they were cloned from a sample, because the underlying single source clip is not exposed via this endpoint. Use the source audio of your original clone for those.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="include_audio" type="boolean" default="false">
+  When `true`, includes base64-encoded audio data with each sample. Increases response size significantly. Use [Get Voice Sample](/api-v1/get/voices-id-samples-sample-id) for a single sample with audio instead.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="samples" type="array">
+  Array of training sample records. Empty array for V3 voices.
+
+  <Expandable title="Sample fields">
+    <ResponseField name="id" type="string">
+      UUID of the sample.
+    </ResponseField>
+    <ResponseField name="voice_id" type="string">
+      UUID of the parent voice.
+    </ResponseField>
+    <ResponseField name="transcription" type="string | null">
+      Transcribed text for the sample. `null` if transcription has not been generated yet.
+    </ResponseField>
+    <ResponseField name="duration_seconds" type="number">
+      Length of the sample audio.
+    </ResponseField>
+    <ResponseField name="audio_data" type="string">
+      Base64-encoded audio. Only present when `include_audio=true`.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "samples": []
+}
+```
+
+```json Not Owned
+{
+  "data": null,
+  "errors": [
+    { "error": "VOICE_SAMPLES_ERROR", "message": "Voice is a default voice and not owned by the user." }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

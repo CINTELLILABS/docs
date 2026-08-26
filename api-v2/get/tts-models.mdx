@@ -1,0 +1,105 @@
+---
+title: "List TTS Models"
+api: "GET https://api.bland.ai/v2/tts/models"
+description: "List what each TTS model supports."
+---
+
+## Overview
+
+Lists the encodings, sample rates, containers, and controls each model supports. Use it to build a picker, validate a request before sending it, or check what a new model added.
+
+You do not choose a model — the voice you pass decides it. It comes back in the `x-model` header on [Synthesize Speech](/api-v2/post/tts).
+
+For one model, use `GET /v2/tts/models/:id`.
+
+<Note>
+  Prefer **`btts-3` or newer**. `expressiveness` and `stability` are calibrated for it,
+  and 48 kHz is the rate it renders natively. `btts-2` is listed because it still
+  synthesizes, but the controls are not tuned for it.
+</Note>
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="models" type="array">
+  Array of model manifests.
+
+  <Expandable title="Model fields">
+    <ResponseField name="id" type="string">
+      Model identifier, for example `btts-3`. Same value as the `x-model` header.
+    </ResponseField>
+
+    <ResponseField name="encodings" type="string[]">
+      Supported audio codecs. Pass one as `audio.encoding`.
+    </ResponseField>
+
+    <ResponseField name="sample_rates" type="number[]">
+      Supported PCM sample rates in Hz. `mulaw` is fixed at 8000 regardless of this list.
+    </ResponseField>
+
+    <ResponseField name="containers" type="string[]">
+      Supported byte framings (`raw`, `wav`).
+    </ResponseField>
+
+    <ResponseField name="controls" type="object">
+      Supported voice controls and their allowed ranges. Each entry is an object with `min` and `max`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "models": [
+    {
+      "id": "btts-3",
+      "encodings": ["pcm_s16le", "mulaw"],
+      "sample_rates": [8000, 16000, 24000, 44100, 48000],
+      "containers": ["raw", "wav"],
+      "controls": {
+        "expressiveness": { "min": 0, "max": 1 },
+        "stability": { "min": 0, "max": 1 }
+      }
+    },
+    {
+      "id": "btts-2",
+      "encodings": ["pcm_s16le", "mulaw"],
+      "sample_rates": [8000, 16000, 24000, 44100, 48000],
+      "containers": ["raw", "wav"],
+      "controls": {
+        "expressiveness": { "min": 0, "max": 1 },
+        "stability": { "min": 0, "max": 1 }
+      }
+    }
+  ]
+}
+```
+
+```json Not found (GET /v2/tts/models/:id)
+{
+  "error": {
+    "code": "not_found",
+    "message": "Unknown model: btts-9"
+  }
+}
+```
+</ResponseExample>
+
+### Error codes
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `not_found` | 404 | `GET /v2/tts/models/:id` was called with an unknown model ID. |
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

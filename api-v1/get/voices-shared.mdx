@@ -1,0 +1,121 @@
+---
+title: "List Shared Voices"
+api: "GET https://api.bland.ai/v1/voices/shared"
+description: "Browse the public Bland voice library."
+---
+
+## Overview
+
+Returns the catalog of publicly-shared voices in the Bland library. These are voices that other creators have published for everyone to use; they are not in your org's library until you call [Add Library Voice](/api-v1/post/voices-library-add-id).
+
+Use this endpoint to power voice-picker UIs and discovery flows.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of voices to return.
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Pagination offset.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Free-text search across voice name, description, and tags.
+</ParamField>
+
+<ParamField query="language" type="string">
+  Filter to voices tagged for a specific language (for example `en`, `es`, `ja`).
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="voices" type="array">
+  Array of shared voices.
+
+  <Expandable title="Voice fields">
+    <ResponseField name="id" type="string">
+      UUID of the shared voice. Pass to [Add Library Voice](/api-v1/post/voices-library-add-id) to add it to your org.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name in the public library.
+    </ResponseField>
+    <ResponseField name="description" type="string | null" />
+    <ResponseField name="service" type="string">
+      The voice's underlying TTS service. Examples: `BTTS_V2`, `BTTS_V3`.
+    </ResponseField>
+    <ResponseField name="is_creator_voice" type="boolean">
+      `true` if the voice is part of the creator program. Creator voices may carry a per-character fee in addition to the synthesis cost.
+    </ResponseField>
+    <ResponseField name="ratings" type="number">
+      Total number of ratings the voice has received.
+    </ResponseField>
+    <ResponseField name="rating_count" type="number">
+      Alias of `ratings` returned for backwards compatibility.
+    </ResponseField>
+    <ResponseField name="rating_avg" type="number">
+      Average rating, 0-5.
+    </ResponseField>
+    <ResponseField name="trending_score" type="number">
+      Internal score used to surface trending voices in the dashboard.
+    </ResponseField>
+    <ResponseField name="tags" type="string[]" />
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+    <ResponseField name="public" type="boolean">
+      Always `true` for entries in the shared library.
+    </ResponseField>
+    <ResponseField name="creator_display_name" type="string | null">
+      Name of the creator who published the voice, if applicable.
+    </ResponseField>
+    <ResponseField name="creator_fee_cents_per_1k" type="number | null">
+      Per-character creator fee in cents per 1,000 characters. `null` for non-creator voices.
+    </ResponseField>
+    <ResponseField name="creator_fee_cents_per_10k" type="number | null">
+      Per-character creator fee in cents per 10,000 characters. `null` for non-creator voices.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "voices": [
+    {
+      "id": "e657b253-ca1f-41cc-b25f-7267ae644519",
+      "name": "StephenD",
+      "description": null,
+      "service": "BTTS_V2",
+      "is_creator_voice": false,
+      "ratings": 12,
+      "rating_count": 12,
+      "rating_avg": 4.5,
+      "trending_score": 0,
+      "tags": ["english", "male", "cloned"],
+      "created_at": "2026-04-16T09:14:25.232Z",
+      "public": true,
+      "creator_display_name": null,
+      "creator_fee_cents_per_1k": null,
+      "creator_fee_cents_per_10k": null
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,117 @@
+---
+title: "Get Translation Session"
+api: "GET https://api.bland.ai/v1/translation/sessions/{session_id}"
+description: "Retrieve the status, duration, and billing details of a translation session"
+---
+
+Returns the current state of a translation session — useful for checking whether a session connected, how long it ran, and how many minutes were billed.
+
+## Authentication
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="session_id" type="string" required>
+  The session UUID returned by `POST /v1/translation/sessions`
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="session_id" type="string">
+      Unique identifier for the session
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      One of `PENDING` (created, WebSocket not yet connected), `ACTIVE` (audio flowing), `ENDED`, `FAILED`, `EXPIRED` (hit max duration), `ABANDONED` (never connected before token expiry)
+    </ResponseField>
+    <ResponseField name="source_language" type="string">
+      Source language code
+    </ResponseField>
+    <ResponseField name="target_language" type="string">
+      Target language code
+    </ResponseField>
+    <ResponseField name="voice_id" type="string">
+      Voice used for translated speech, or `null` for the default
+    </ResponseField>
+    <ResponseField name="audio_protocol" type="string">
+      `pcm16` or `twilio_ulaw`
+    </ResponseField>
+    <ResponseField name="sample_rate" type="integer">
+      Inbound sample rate for `pcm16` sessions; `null` for `twilio_ulaw`
+    </ResponseField>
+    <ResponseField name="max_duration_seconds" type="integer">
+      Configured maximum session length
+    </ResponseField>
+    <ResponseField name="end_reason" type="string">
+      Why the session ended: `client_disconnect`, `max_duration`, `error`, or `api_terminated`. `null` while the session is pending or active.
+    </ResponseField>
+    <ResponseField name="session_seconds" type="number">
+      Connected duration in seconds. `null` until the session ends.
+    </ResponseField>
+    <ResponseField name="billable_minutes" type="integer">
+      Billed minutes (`session_seconds` rounded up to the next minute). `null` until the session ends.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO timestamp of session creation
+    </ResponseField>
+    <ResponseField name="started_at" type="string">
+      ISO timestamp of the WebSocket connection, or `null` if it never connected
+    </ResponseField>
+    <ResponseField name="ended_at" type="string">
+      ISO timestamp of session end, or `null` while pending or active
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array" default="null">
+  Array of error objects if the request failed
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl "https://api.bland.ai/v1/translation/sessions/9592342c-0ed2-4c5e-8ceb-16aa55c804a7" \
+  -H "Authorization: YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.bland.ai/v1/translation/sessions/9592342c-0ed2-4c5e-8ceb-16aa55c804a7",
+    headers={"Authorization": "YOUR_API_KEY"},
+)
+print(response.json()["data"]["status"])
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Ended Session
+{
+  "data": {
+    "session_id": "9592342c-0ed2-4c5e-8ceb-16aa55c804a7",
+    "status": "ENDED",
+    "source_language": "en",
+    "target_language": "es",
+    "voice_id": null,
+    "audio_protocol": "pcm16",
+    "sample_rate": 16000,
+    "max_duration_seconds": 1800,
+    "end_reason": "client_disconnect",
+    "session_seconds": 19.712,
+    "billable_minutes": 1,
+    "created_at": "2026-06-04T18:05:07.885Z",
+    "started_at": "2026-06-04T18:05:08.861Z",
+    "ended_at": "2026-06-04T18:05:28.573Z"
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

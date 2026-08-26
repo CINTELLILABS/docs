@@ -1,0 +1,98 @@
+---
+title: "Get Voice Settings"
+api: "GET https://api.bland.ai/v1/voices/{id}/settings"
+description: "Get the current consistency/expressiveness defaults on a voice you own."
+---
+
+## Overview
+
+Returns the current synthesis defaults stored on a voice you own, plus the valid range for each tunable so callers do not have to discover the bounds by trial and error.
+
+Different engines expose different settings:
+
+- **BTTS V1**: `consistency` (0-1 float) and `expressiveness` (0-1 float).
+- **BTTS V2**: `consistency` (0-64 integer, lower is more consistent) and `expressiveness` (0-1 float).
+- **BTTS V3**: a single boolean `boost_language_consistency`.
+
+To update these settings, use [Update Voice Settings](/api-v1/post/voices-id-settings).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice.
+</ParamField>
+
+---
+
+## Response
+
+For V1 and V2 voices:
+
+<ResponseField name="consistency" type="number" />
+<ResponseField name="expressiveness" type="number" />
+<ResponseField name="service" type="string">
+  The engine identifier, e.g. `BTTS_V2`.
+</ResponseField>
+<ResponseField name="limits" type="object">
+  Valid ranges for the tunables.
+
+  <Expandable title="limits fields">
+    <ResponseField name="consistency.min" type="number" />
+    <ResponseField name="consistency.max" type="number">
+      `1` for V1, `64` for V2.
+    </ResponseField>
+    <ResponseField name="expressiveness.min" type="number" />
+    <ResponseField name="expressiveness.max" type="number" />
+  </Expandable>
+</ResponseField>
+
+For V3 voices:
+
+<ResponseField name="boost_language_consistency" type="boolean" />
+<ResponseField name="service" type="string">
+  `BTTS_V3`.
+</ResponseField>
+
+<ResponseExample>
+```json V2 Response
+{
+  "consistency": 8,
+  "expressiveness": 1,
+  "service": "BTTS_V2",
+  "limits": {
+    "consistency": { "min": 0, "max": 64 },
+    "expressiveness": { "min": 0, "max": 1 }
+  }
+}
+```
+
+```json V3 Response
+{
+  "boost_language_consistency": true,
+  "service": "BTTS_V3"
+}
+```
+
+```json Not Owned
+{
+  "data": null,
+  "errors": [
+    { "error": "VOICE_SETTINGS_ERROR", "message": "Voice is a default voice and not owned by the user." }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

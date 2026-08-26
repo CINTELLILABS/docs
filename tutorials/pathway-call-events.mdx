@@ -1,0 +1,431 @@
+---
+title: "Pathway Call Events"
+description: "The event timeline recorded for every pathway call — every event type, field, and payload shape"
+---
+
+## Introduction
+
+Every pathway call produces an ordered timeline of **events**: what the caller and assistant said, how the pathway routed between nodes, and every side effect that ran along the way (webhooks, tools, variable extraction, transfers, SMS, and so on). This page documents that timeline — the fields on every event, every event type you can encounter, and what their payloads look like.
+
+## Fetching the events
+
+Retrieve the event timeline for a call with the [Get Pathway Call Events](/api-v1/get/pathway_calls) endpoint, passing `?v=2` for the events format:
+
+```bash
+curl --request GET \
+  --url 'https://api.bland.ai/v1/pathway_calls/d2b58344-7fd1-4787-9bf9-1c23e82fd8ff?v=2' \
+  --header 'authorization: YOUR_API_KEY'
+```
+
+The response is a JSON array of event objects, ordered by `sequence`.
+
+## The event envelope
+
+Every event in a call's log has the same outer shape:
+
+```json
+{
+  "conversation_id": "d2b58344-7fd1-4787-9bf9-1c23e82fd8ff",
+  "sequence": 6,
+  "event_type": "webhook.invoke",
+  "node_id": "node_order_lookup",
+  "operation_id": null,
+  "payload": { "...": "event-type specific, see below" },
+  "created_at": "2026-08-03T17:04:09.100Z"
+}
+```
+
+| Field | Type | What it means |
+|---|---|---|
+| `conversation_id` | `string` | The call id. All events for one call share it. |
+| `sequence` | `number` | The ordering key within the call. **Always sort by `sequence`, not `created_at`.** Gaps are normal and expected — they don't mean data is missing (some raw events are merged or filtered before you see the log, and sequence numbers are padded when a call resumes on new infrastructure). |
+| `event_type` | `string` | What happened. Either a standalone event (`conversation.init`, `node.transition`, `transcript.user`, …) or an operation event in `operation.phase` form (`webhook.invoke`, `webhook.result`, …). Full catalog below. |
+| `node_id` | `string \| null` | The pathway node that was active when the event fired. `null` for events before the first node is entered. |
+| `operation_id` | `number \| null` | Correlation key for multi-event operations. A `.result`, `.error`, `.warning`, or `webhook.mapping` event carries the `sequence` of the `.invoke` it belongs to, so you can pair them up even when other events interleave. `null` when there's nothing to correlate. |
+| `payload` | `object \| null` | Event-type-specific data, documented per type below. |
+| `created_at` | `string` (ISO 8601) | Wall-clock time. Use for timing and duration display; use `sequence` for ordering. |
+
+## Event catalog
+
+### Conversation & routing events
+
+| `event_type` | When it appears |
+|---|---|
+| `conversation.init` | Once at call start. Records which pathway/version ran and the starting variables. |
+| `node.transition` | Every routing decision: which node was chosen, from where, and what variables changed crossing the edge. |
+| `node.tag` | A tag attached to a node the call passed through. These aggregate into the call's pathway tags. |
+| `transcript.user` | Something the caller said. |
+| `transcript.assistant` | Something the assistant said. |
+| `interrupt.early` / `interrupt.late` | The caller talked over the assistant (early = right as it started speaking, late = mid-utterance). |
+| `button.press` | A keypad (DTMF) press. |
+| `llm.action` | The decision the model made for a generation — e.g. which tool it chose to call. |
+
+### Operation events
+
+Operations are side effects that run during the call. Each one produces an `invoke` event when it starts, and then some combination of:
+
+- `operation.result` — it finished; the payload holds the outcome.
+- `operation.error` — it failed; payload is `{ "message": "...", ...context }`.
+- `operation.warning` — something non-fatal happened (e.g. a retry); same shape as error.
+
+The operations:
+
+| Prefix | What it is |
+|---|---|
+| `webhook` | An HTTP request made by a webhook node **or a node-attached tool** (API, integration, and custom-code tools attached to nodes log here — look for `tool_name` in the payload to tell them apart from plain webhooks). |
+| `webhook.mapping` | A fourth phase unique to webhooks/tools: the per-variable outcome of mapping the response into pathway variables. This answers "did `{{my_var}}` get set, and if not, why not." |
+| `tool` | A tool the LLM chose to call mid-conversation. |
+| `kb` | A knowledge base lookup. |
+| `sms` | An SMS sent during the call. |
+| `scheduling` | A scheduling action (booking, availability check, …). |
+| `loop_condition` | Evaluation of a node's loop/exit condition. |
+| `var_extraction` | Extracting variables from the conversation. |
+| `custom_code` | A custom code snippet execution. |
+| `transfer_pathway` | Handing the call off to another pathway. |
+| `transfer_call` | Transferring the call to a phone number. |
+| `unit_test` | A node unit test evaluated against a live response. |
+
+<Tip>
+**Pairing invokes with results:** the `invoke` event's `sequence` becomes the `operation_id` on its `result` / `error` / `warning` / `mapping` events. Two webhooks can be in flight at once and you can still pair each result with the right request.
+</Tip>
+
+## Conversation & routing payloads
+
+### `conversation.init`
+
+| Field | Type | Notes |
+|---|---|---|
+| `pathway_id` | `string` | Pathway that ran. |
+| `start_node_id` | `string` | Entry node. |
+| `initial_variables` | `object` (optional) | Variables seeded at call start (from the send-call request, batch data, etc.). |
+| `metadata` | `object` (optional) | Request metadata passed in with the call. |
+| `version` | `string` (optional) | Pathway version that ran. |
+| `persona_id` / `persona_version_id` | `string` (optional) | Persona in effect, when the call ran through one. |
+
+### `node.transition`
+
+| Field | Type | Notes |
+|---|---|---|
+| `chosen_node_id` | `string` | Node the call routed to. |
+| `chosen_label` | `string` (optional) | Human-readable label of the chosen edge. |
+| `previous_node_id` | `string` (optional) | Node the call routed from. |
+| `variable_changes` | `object` (optional) | Diff of call variables across the transition: `{ "modified": {...}, "added": {...}, "removed": {...} }`. |
+| `failures` | `string[]` (optional) | Routing problems encountered before the decision settled. |
+| `persona_id` | `string` (optional) | |
+| `external_id` | `string` (optional) | Opaque request id for the routing decision — useful when escalating an issue, since Bland can look up the exact decision internally. |
+
+### `node.tag`
+
+The payload is the tag itself: `{ "name": "...", "color": "#...", ... }`. `name` is always present; `color` and editor metadata may accompany it.
+
+### `transcript.user`
+
+| Field | Type |
+|---|---|
+| `text` | `string` |
+
+### `transcript.assistant`
+
+| Field | Type | Notes |
+|---|---|---|
+| `text` | `string \| null` | What the assistant actually said. If the caller interrupted, this reflects where the audio was cut off. |
+| `generated_response` | `string` (optional) | Present only when what was *generated* differs from what was *spoken* (i.e. the utterance was interrupted). This is the full text the assistant intended to say. |
+| `external_id` | `string` (optional) | Opaque request id tying this utterance to the generation that produced it. |
+
+### `interrupt.early` / `interrupt.late`
+
+| Field | Type | Notes |
+|---|---|---|
+| `message` | `string` | The assistant message that got interrupted. |
+| `user_input` | `string` (optional) | What the caller said over it. |
+
+### `button.press`
+
+| Field | Type |
+|---|---|
+| `button` | `string` |
+
+### `llm.action`
+
+| Field | Type | Notes |
+|---|---|---|
+| `action` | `string` | What the model decided to do; for tool calls, the tool name it selected. |
+| `parse_repair` | `string` (optional) | Present when the model's output was malformed and had to be recovered: `"best_effort"`, `"control_char_escape"`, or `"failed"`. |
+| `output_chars` | `number` (optional) | Size of the raw generation. |
+
+## Operation payloads
+
+### `webhook.invoke`
+
+| Field | Type | Notes |
+|---|---|---|
+| `url` | `string` | Empty string for integration tools — the integration runs the HTTP call itself; check `integration` + `action` instead. |
+| `method` | `string` | |
+| `headers` | `object` (optional) | Sensitive values are redacted. |
+| `body` | any (optional) | Request body after variable interpolation. |
+| `tool_name` | `string` (optional) | Present when this request came from a named node-attached tool rather than a plain webhook node. |
+| `integration` / `action` | `string` (optional) | For integration tools: which integration and action ran. |
+| `timeout_ms` / `max_retries` | `number` (optional) | |
+| `response_mappings` | `array` (optional) | The variable mappings declared on the tool/webhook: `[{ "name": "order_status", "path": "$.status" }, ...]`. What each mapping actually did shows up later on the correlated `webhook.mapping` event. |
+
+### `webhook.result`
+
+| Field | Type | Notes |
+|---|---|---|
+| `url` | `string` | |
+| `status` | `number` | HTTP status code. |
+| `body` | any (optional) | Response body. Very large values are truncated (see [reading notes](#things-to-know-when-reading-a-log)). |
+| `duration_ms` | `number` (optional) | |
+| `retries` | `number` (optional) | Retry attempts consumed before this final response. Absent or `0` means it succeeded first try. Each retry also emits a `webhook.warning`. |
+| `fire_and_forget` | `boolean` (optional) | `true` when the request was dispatched without waiting — no response mapping ran, and the call didn't block on this result. |
+
+### `webhook.mapping`
+
+One event per webhook/tool invocation that has response mappings, correlated to the invoke via `operation_id`. This is the first place to look when a caller asks "why is `{{my_var}}` empty?"
+
+| Field | Type | Notes |
+|---|---|---|
+| `url` / `tool_name` | `string` (optional) | Which request this belongs to. |
+| `mappings` | `array` | One entry per declared mapping — see below. |
+
+Each entry in `mappings`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | `string` | The variable name. |
+| `path` | `string` | The JSON path evaluated against the response. |
+| `outcome` | `string` | `"set"` — value extracted and stored. `"empty"` — the path matched nothing; variable set to null. `"error"` — the path failed to evaluate; variable set to null. `"skipped_invalid"` — the mapping itself was malformed (missing name or path) and was skipped. |
+| `value_preview` | `string` (optional) | Short preview of the extracted value. |
+| `detail` | `string` (optional) | Extra context, e.g. the evaluation error. |
+
+### `tool.invoke`
+
+| Field | Type | Notes |
+|---|---|---|
+| `tool_name` | `string` | The tool's actual name. |
+| `tool_type` | `string` | Kind of tool (API, custom code, …). |
+| `behavior` | `string` | The tool's configured execution behavior. |
+| `snippet_id` | `string` (optional) | For custom-code tools. |
+| `input_variables` | `object` (optional) | The inputs the tool ran with. |
+| `timeout` | `number` (optional) | |
+| `called_as` | `string` (optional) | Present when the model referred to the tool by a slightly different name and it was resolved by fuzzy matching — shows what the model actually asked for. |
+| `tool_source` | `string` (optional) | Where the definition that ran came from: `"referenced:<tool_id>"` (a shared/global tool — future edits to it affect this pathway) or `"inline"` (a frozen copy embedded in the pathway). `"+overrides"` is appended when node-level overrides were applied. |
+
+You may also see `tool`, `type`, and `input_vars` — legacy aliases of `tool_name`, `tool_type`, and `input_variables` kept for older consumers. Same values.
+
+### `tool.result`
+
+| Field | Type | Notes |
+|---|---|---|
+| `tool_name` | `string` | |
+| `result` | any (optional) | Raw tool result. Very large values are truncated. |
+| `output_variables` | `object` (optional) | Variables the tool set. |
+| `duration_ms` | `number` (optional) | |
+| `input_variables` | `object` (optional) | The conversation-derived inputs this run used (echoed here so the timeline is self-contained). |
+| `last_user_message` | `string` (optional) | The caller utterance that triggered this tool call. |
+
+(`output` and `elapsed` are legacy aliases of `output_variables` and `duration_ms`.)
+
+### `kb.invoke` / `kb.result`
+
+| Event | Field | Type |
+|---|---|---|
+| invoke | `query` | `string` (optional) — what was searched |
+| result | `result` | any — the retrieved content (truncated if large) |
+
+### `sms.invoke` / `sms.result`
+
+| Event | Field | Type |
+|---|---|---|
+| invoke | `to`, `from`, `message` | `string` |
+| result | `sid` | `string` — provider message id |
+
+### `scheduling.invoke` / `scheduling.result`
+
+| Event | Field | Type |
+|---|---|---|
+| invoke | `subcategory` | `string` — which scheduling action |
+| invoke | `details` | `object` — action inputs |
+| result | `subcategory` | `string` |
+| result | `outcome` | `object` — action outcome (truncated if large) |
+
+### `loop_condition.invoke` / `loop_condition.result`
+
+| Event | Field | Type | Notes |
+|---|---|---|---|
+| invoke | `type` | `string` (optional) | Kind of condition. |
+| result | `conditions_met` | `boolean \| string` | Whether the node's exit condition passed. |
+| result | `target_node` | `string` (optional) | Where the call routed as a result. |
+| result | `condition_prompt` | `string` (optional) | Snapshot of the condition prompt **as it was during the call** — so the log stays accurate even if the node has been edited since. Present for LLM-evaluated (text) conditions on newer calls only. |
+| result | `external_id` | `string` (optional) | Opaque request id for escalation. |
+
+### `var_extraction.invoke` / `var_extraction.result`
+
+| Event | Field | Type | Notes |
+|---|---|---|---|
+| invoke | `variables_requested` | `string[]` | Which variables extraction attempted. |
+| result | `variables_extracted` | `object` | What it got. A requested variable missing here means extraction found nothing for it. |
+| result | `duration_ms` | `number` (optional) | |
+| result | `external_id` | `string` (optional) | |
+
+### `custom_code.invoke` / `custom_code.result`
+
+| Event | Field | Type |
+|---|---|---|
+| invoke | `code_ref` | `string` (optional) — which snippet ran |
+| result | `success` | `boolean` |
+| result | `variables` | `object` (optional) — variables the code set (truncated if large) |
+
+### `transfer_pathway.invoke` / `transfer_pathway.result`
+
+| Event | Field | Type |
+|---|---|---|
+| invoke | `target_pathway_id` | `string` |
+| invoke | `target_pathway_name` | `string` (optional) |
+| invoke | `source_node_id` | `string` |
+| result | `success` | `boolean` |
+| result | `transferred_at` | `string` (optional) |
+
+### `transfer_call.invoke` / `transfer_call.result`
+
+| Event | Field | Type | Notes |
+|---|---|---|---|
+| invoke | `target_number` | `string` | |
+| invoke | `transfer_type` | `string` (optional) | e.g. warm vs cold. |
+| result | `status` | `"success" \| "failed"` (optional) | The authoritative outcome field. |
+| result | `success` | `boolean` | Older field kept for back-compat; prefer `status` when present. |
+
+### `unit_test.invoke` / `unit_test.result`
+
+| Event | Field | Type |
+|---|---|---|
+| invoke | `test_names` | `string[]` |
+| invoke | `node_prompt`, `assistant_response` | `string` |
+| result | `flag` | `boolean` — whether any test flagged the response |
+| result | `results` | `object` — per-test outcomes |
+
+### `operation.error` / `operation.warning` (all operations)
+
+| Field | Type |
+|---|---|
+| `message` | `string` |
+| …anything else | Extra context specific to the failure (status codes, attempt numbers, …). |
+
+## Things to know when reading a log
+
+- **Sort by `sequence`.** `created_at` timestamps can tie or arrive slightly out of order; `sequence` is the truth.
+- **Sequence gaps are normal.** They do not indicate missing data.
+- **Large values are truncated.** Result-type payloads (webhook/tool/KB/custom-code/scheduling results and mapping previews) cap each top-level value at 64 KiB. A truncated value appears as a string ending in `…`. On some older calls, oversized values were instead replaced with the sentinel string `"[EXCEEDS_MAX_LENGTH]"`; the log service automatically recovers the full data from an older storage path when it can.
+- **Sensitive values are redacted** before storage — you may see redaction placeholders in headers or variable values.
+- **Synthetic triggers are hidden.** Internal markers that drive the conversation engine (call-connected signals, silence timeouts) are stored as user-transcript events but filtered out of the log you see. Events they *caused* — transitions, webhooks, extractions — remain, so you may see activity without a visible caller utterance right before it.
+- **Interrupted speech is visible.** When the caller talks over the assistant, the assistant's `text` shows what was actually spoken, and `generated_response` preserves the full intended sentence. Interrupt events mark where it happened.
+- **`external_id` is your escalation handle.** It's an opaque id — it reveals nothing by itself, but Bland can use it internally to pull up the exact model request behind an utterance, routing decision, or extraction. Include it when filing an issue about "why did the agent say/do this."
+- **Very old calls** predate this event system entirely. Their logs are converted from the legacy format on the fly, so they contain the same event shapes but fewer event types and sparser payloads.
+- **Tags:** a call's pathway tags come from the `node.tag` events (or a post-call aggregate of them). Each tag is `{ name, color? }`.
+
+## Worked example
+
+A short call that routes to an order-lookup node, calls a tool, and reads the result back. Envelope fields abbreviated after the first event.
+
+```json
+[
+  {
+    "conversation_id": "d2b58344-7fd1-4787-9bf9-1c23e82fd8ff",
+    "sequence": 0,
+    "event_type": "conversation.init",
+    "node_id": null,
+    "operation_id": null,
+    "payload": {
+      "pathway_id": "pw_123",
+      "start_node_id": "node_start",
+      "version": "12",
+      "initial_variables": { "customer_name": "Ada" }
+    },
+    "created_at": "2026-08-03T17:04:01.120Z"
+  },
+  {
+    "sequence": 2,
+    "event_type": "transcript.assistant",
+    "node_id": "node_start",
+    "payload": {
+      "text": "Hi Ada, thanks for calling. How can I help?",
+      "external_id": "req_9f8e7d"
+    }
+  },
+  {
+    "sequence": 4,
+    "event_type": "transcript.user",
+    "node_id": "node_start",
+    "payload": { "text": "I'd like to check my order status." }
+  },
+  {
+    "sequence": 5,
+    "event_type": "node.transition",
+    "node_id": "node_start",
+    "payload": {
+      "chosen_node_id": "node_order_lookup",
+      "chosen_label": "Order status",
+      "previous_node_id": "node_start",
+      "variable_changes": {
+        "modified": {},
+        "added": { "intent": "order_status" },
+        "removed": {}
+      },
+      "external_id": "req_a1b2c3"
+    }
+  },
+  {
+    "sequence": 6,
+    "event_type": "webhook.invoke",
+    "node_id": "node_order_lookup",
+    "payload": {
+      "url": "https://api.example.com/orders/lookup",
+      "method": "POST",
+      "body": { "customer": "Ada" },
+      "tool_name": "Lookup Order",
+      "timeout_ms": 10000,
+      "response_mappings": [
+        { "name": "order_status", "path": "$.status" },
+        { "name": "eta", "path": "$.shipping.eta" }
+      ]
+    }
+  },
+  {
+    "sequence": 7,
+    "event_type": "webhook.result",
+    "node_id": "node_order_lookup",
+    "operation_id": 6,
+    "payload": {
+      "url": "https://api.example.com/orders/lookup",
+      "status": 200,
+      "body": { "status": "shipped", "shipping": { "eta": "2026-08-05" } },
+      "duration_ms": 412
+    }
+  },
+  {
+    "sequence": 8,
+    "event_type": "webhook.mapping",
+    "node_id": "node_order_lookup",
+    "operation_id": 6,
+    "payload": {
+      "url": "https://api.example.com/orders/lookup",
+      "tool_name": "Lookup Order",
+      "mappings": [
+        { "name": "order_status", "path": "$.status", "outcome": "set", "value_preview": "shipped" },
+        { "name": "eta", "path": "$.shipping.eta", "outcome": "set", "value_preview": "2026-08-05" }
+      ]
+    }
+  },
+  {
+    "sequence": 10,
+    "event_type": "transcript.assistant",
+    "node_id": "node_order_lookup",
+    "payload": {
+      "text": "Good news — your order shipped and should arrive by August 5th.",
+      "external_id": "req_d4e5f6"
+    }
+  }
+]
+```
+
+Reading it: the `webhook.result` and `webhook.mapping` events both carry `operation_id: 6`, tying them to the `webhook.invoke` at sequence 6. The mapping event confirms both variables populated (`"outcome": "set"`) — if a caller reported `{{eta}}` coming up empty, that entry would instead read `"outcome": "empty"` with the path that failed to match.

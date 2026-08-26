@@ -1,7 +1,7 @@
 ---
 title: "List Citation Schemas"
 api: "GET https://api.bland.ai/v1/citation_schemas/list"
-description: "Retrieve all citation schemas for your organization."
+description: "Retrieve all citation schemas for your organization, including each schema's variables, groupings, and conditions."
 ---
 
 ### Headers
@@ -31,6 +31,10 @@ description: "Retrieve all citation schemas for your organization."
     The description of the citation schema.
   </ResponseField>
 
+  <ResponseField name="schema" type="object">
+    The JSON schema configuration containing variables, groupings, and conditions for citation extraction. Returned inline so you can enumerate fields without a follow-up request per schema.
+  </ResponseField>
+
   <ResponseField name="created_at" type="string">
     The timestamp when the citation schema was created (ISO 8601 format).
   </ResponseField>
@@ -49,12 +53,44 @@ description: "Retrieve all citation schemas for your organization."
       "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
       "name": "Customer Information Extraction",
       "description": "Extracts customer demographics and contact information from call transcripts",
+      "schema": {
+        "variables": [
+          {
+            "name": "Customer Name",
+            "description": "The full name of the customer",
+            "type": "string"
+          },
+          {
+            "name": "Customer Age",
+            "description": "The age of the customer in years",
+            "type": "number"
+          }
+        ],
+        "groupings": [
+          {
+            "name": "Demographics",
+            "variables": ["Customer Name", "Customer Age"]
+          }
+        ],
+        "conditions": []
+      },
       "created_at": "2023-12-15T14:30:00.000Z"
     },
     {
       "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
       "name": "Lead Qualification Schema",
       "description": "Identifies qualified leads and their interest levels",
+      "schema": {
+        "variables": [
+          {
+            "name": "Qualified Lead",
+            "description": "Whether the caller meets qualification criteria",
+            "type": "boolean"
+          }
+        ],
+        "groupings": [],
+        "conditions": []
+      },
       "created_at": "2023-12-10T09:15:30.000Z"
     }
   ],

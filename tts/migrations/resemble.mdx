@@ -1,0 +1,49 @@
+---
+title: "Migrate from Resemble AI"
+description: "Move Resemble WebSocket synthesis to Bland's incremental text and turn protocol."
+---
+
+Resemble sends a complete synthesis request with a `request_id`, then returns audio until `audio_end`. Bland uses a `context_id` for a turn and can accept that turn token by token.
+
+Start with the [Realtime TTS Quickstart](/tts/realtime-quickstart).
+
+## Message mapping
+
+| Resemble WebSocket | Bland `/v2/tts/ws` |
+| --- | --- |
+| `voice_uuid` | `init.voice` |
+| `data` containing complete text or SSML | One or more `speak.text` deltas |
+| `request_id` | `context_id` |
+| `binary_response: true` | Binary audio is always used |
+| `no_audio_header: true` | Realtime audio is always raw, without a WAV header |
+| `audio_end` | `utterance_end` |
+
+```js
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: turnId,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: turnId }));
+```
+
+## Compatibility notes
+
+- A Resemble `project_uuid` has no Bland equivalent.
+- Bland realtime supports PCM16 and 8 kHz mu-law. It does not support PCM24, PCM32, or MP3 on this WebSocket.
+- Bland does not currently return grapheme, phoneme, or word timestamps.
+- Resemble SSML and prompt markup do not map directly. Send plain text and use Bland voice controls where appropriate.
+- A new Bland context preempts the active turn. It does not run multiple request IDs concurrently.
+
+For complete text and a WAV response, use [Synthesize Speech (HTTP)](/api-v2/post/tts). For conversational input, keep one WebSocket open and use a new context for every LLM turn.
+
+See the [Resemble streaming WebSocket reference](https://docs.resemble.ai/voice-generation/text-to-speech/streaming-websocket) and [Bland turn concepts](/tts/realtime-concepts#the-connection-and-turn-model).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

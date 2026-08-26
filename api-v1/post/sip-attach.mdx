@@ -13,11 +13,11 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 ### Body
 
 <ParamField body="phone_number" type="string">
-  A single phone number to configure. Must be in E.164 format (e.g., `+14150000000`). Use either `phone_number` or `phone_numbers`, not both.
+  A single phone number to configure. PSTN numbers are normalized to E.164 (e.g., `+14150000000`); when bound to a trunk (`trunk_id`), non-E.164 SIP identities such as DIDs and extensions are also accepted. Use either `phone_number` or `phone_numbers`, not both.
 </ParamField>
 
 <ParamField body="phone_numbers" type="string[]">
-  An array of phone numbers to configure (up to 100). Must be in E.164 format. Use either `phone_number` or `phone_numbers`, not both.
+  An array of phone numbers or DIDs to configure (up to 100). PSTN numbers are normalized to E.164; trunk-bound numbers also accept DIDs and extensions. Use either `phone_number` or `phone_numbers`, not both.
 </ParamField>
 
 <ParamField body="directions" type="array" required>
@@ -26,6 +26,10 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 
 <ParamField body="service" type="string" required>
   Must be set to `"sip"`.
+</ParamField>
+
+<ParamField body="trunk_id" type="string">
+  Bind the numbers to a reusable trunk. When set, outbound endpoint and authentication are inherited from the trunk (no need to repeat `sip_endpoint`/auth per number), and non-E.164 DIDs and extensions are accepted.
 </ParamField>
 
 #### Inbound Direction Object
@@ -61,7 +65,7 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 </ParamField>
 
 <ParamField body="directions[].sip_endpoint" type="string" required>
-  Your SIP provider's endpoint. Must be a valid SIP URI (e.g., `sip:your.provider.com`).
+  Your SIP provider's endpoint, as a valid SIP URI (e.g., `sip:your.provider.com`). Required for outbound unless the numbers are bound to a `trunk_id`, in which case it is inherited from the trunk.
 </ParamField>
 
 <ParamField body="directions[].headers" type="object">
@@ -149,6 +153,18 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
       }
     ],
     "service": "sip"
+  }'
+```
+
+```json Example Request (Bind to a Trunk)
+curl -X POST https://api.bland.ai/v1/sip/attach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+14155550100", "2001"],
+    "directions": [{ "type": "inbound" }, { "type": "outbound" }],
+    "service": "sip",
+    "trunk_id": "<trunk-id>"
   }'
 ```
 
