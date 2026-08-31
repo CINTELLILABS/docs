@@ -52,7 +52,7 @@ Every event in a call's log has the same outer shape:
 | `event_type` | When it appears |
 |---|---|
 | `conversation.init` | Once at call start. Records which pathway/version ran and the starting variables. |
-| `node.transition` | Every routing decision: which node was chosen, from where, and what variables changed crossing the edge. |
+| `node.transition` | Every routing decision: which node was chosen, from where, which routes were available, and what variables changed crossing the edge. |
 | `node.tag` | A tag attached to a node the call passed through. These aggregate into the call's pathway tags. |
 | `transcript.user` | Something the caller said. |
 | `transcript.assistant` | Something the assistant said. |
@@ -111,8 +111,22 @@ The operations:
 | `previous_node_id` | `string` (optional) | Node the call routed from. |
 | `variable_changes` | `object` (optional) | Diff of call variables across the transition: `{ "modified": {...}, "added": {...}, "removed": {...} }`. |
 | `failures` | `string[]` (optional) | Routing problems encountered before the decision settled. |
+| `available_routes` | `array` (optional) | The routes the agent could have chosen for this transition, snapshotted at decision time. Entry shape below. Absent on older calls — absence means "no data recorded", never "no options". |
+| `routes_truncated` | `boolean` (optional) | `true` when the candidate list was capped (30 max) — a short list should not be read as the full option set. |
+| `chosen_candidate_index` | `number` (optional) | Zero-based index of the chosen route within `available_routes`. Use this rather than matching on label, which stays exact when two edges share a label. |
+| `decision_source` | `string` (optional) | How the decision was made: `"llm"` (the routing model chose), `"deterministic"` (a value-comparison edge matched), `"single_route"` (the node had exactly one outgoing edge), or `"flex_llm"` (the flex router picked the next node). |
 | `persona_id` | `string` (optional) | |
 | `external_id` | `string` (optional) | Opaque request id for the routing decision — useful when escalating an issue, since Bland can look up the exact decision internally. |
+
+Each entry in `available_routes`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `label` | `string` | The edge's authored label. |
+| `condition` | `string` (optional) | The authored condition on the edge, when one exists. |
+| `always_pick` | `boolean` (optional) | The edge was configured to always be picked. |
+| `is_global` | `boolean` (optional) | The edge comes from a global node rather than the current node. |
+| `synthetic_wait` | `boolean` (optional) | Marks the "none of the above" option the runtime adds so the agent can decline every route and keep listening. Choosing it is a wait, not a routing failure. |
 
 ### `node.tag`
 
@@ -152,6 +166,8 @@ The payload is the tag itself: `{ "name": "...", "color": "#...", ... }`. `name`
 | `action` | `string` | What the model decided to do; for tool calls, the tool name it selected. |
 | `parse_repair` | `string` (optional) | Present when the model's output was malformed and had to be recovered: `"best_effort"`, `"control_char_escape"`, or `"failed"`. |
 | `output_chars` | `number` (optional) | Size of the raw generation. |
+| `available_tools` | `array` (optional) | The tools offered for this generation, as `[{ "name": "..." }, ...]`, including built-ins like `Press Button` and `Wait`. Also present when the model chose to speak — declining every tool is itself a decision. Absent on older calls. |
+| `tools_truncated` | `boolean` (optional) | `true` when the tool list was capped (25 max). |
 
 ## Operation payloads
 
@@ -254,9 +270,13 @@ You may also see `tool`, `type`, and `input_vars` — legacy aliases of `tool_na
 | Event | Field | Type | Notes |
 |---|---|---|---|
 | invoke | `type` | `string` (optional) | Kind of condition. |
+| invoke | `candidates` | `array` (optional) | Every deterministic edge weighed for this evaluation, in authored order, as `[{ "target_node": "...", "condition": "..." }, ...]`. Captured before first-match-wins runs, so you can tell an edge that evaluated false from one the match short-circuited past. Absent on older calls. |
+| invoke | `candidates_truncated` | `boolean` (optional) | `true` when the candidate list was capped (30 max). |
 | result | `conditions_met` | `boolean \| string` | Whether the node's exit condition passed. |
 | result | `target_node` | `string` (optional) | Where the call routed as a result. |
 | result | `condition_prompt` | `string` (optional) | Snapshot of the condition prompt **as it was during the call** — so the log stays accurate even if the node has been edited since. Present for LLM-evaluated (text) conditions on newer calls only. |
+| result | `clauses` | `array` (optional) | Per-clause outcome of a structured condition, as `[{ "key": "...", "description": "...", "met": true }, ...]` — shows which clause held the whole condition back. Absent for text (LLM) conditions and on older calls. |
+| result | `clauses_truncated` | `boolean` (optional) | `true` when the clause list was capped (30 max). |
 | result | `external_id` | `string` (optional) | Opaque request id for escalation. |
 
 ### `var_extraction.invoke` / `var_extraction.result`
@@ -320,6 +340,7 @@ You may also see `tool`, `type`, and `input_vars` — legacy aliases of `tool_na
 - **Synthetic triggers are hidden.** Internal markers that drive the conversation engine (call-connected signals, silence timeouts) are stored as user-transcript events but filtered out of the log you see. Events they *caused* — transitions, webhooks, extractions — remain, so you may see activity without a visible caller utterance right before it.
 - **Interrupted speech is visible.** When the caller talks over the assistant, the assistant's `text` shows what was actually spoken, and `generated_response` preserves the full intended sentence. Interrupt events mark where it happened.
 - **`external_id` is your escalation handle.** It's an opaque id — it reveals nothing by itself, but Bland can use it internally to pull up the exact model request behind an utterance, routing decision, or extraction. Include it when filing an issue about "why did the agent say/do this."
+- **Decision alternatives are newer fields.** `available_routes`, `available_tools`, `candidates`, and `clauses` are only recorded on calls placed after the feature shipped. Absence means the data wasn't recorded, never that the agent had no options. When a `*_truncated` flag is `true`, the list was capped and options beyond the cap are not persisted.
 - **Very old calls** predate this event system entirely. Their logs are converted from the legacy format on the fly, so they contain the same event shapes but fewer event types and sparser payloads.
 - **Tags:** a call's pathway tags come from the `node.tag` events (or a post-call aggregate of them). Each tag is `{ name, color? }`.
 
