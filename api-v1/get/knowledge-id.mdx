@@ -60,7 +60,43 @@ Returns detailed information about a specific knowledge base, including its curr
   </ResponseField>
 
   <ResponseField name="data.error_message" type="string">
-    Error message if status is `"FAILED"`.
+    Error message if status is `"FAILED"`. Knowledge bases with status `"FAILED"` are excluded from agent queries.
+  </ResponseField>
+
+  <ResponseField name="data.processing" type="object">
+    Conversion progress for a PDF that is still being processed. Only present while status is `"PROCESSING"` and a conversion is underway. Poll this endpoint to track progress.
+
+    <ResponseField name="data.processing.state" type="string">
+      `"running"` while a worker is converting the document, `"pending"` while the job waits to be picked up.
+    </ResponseField>
+
+    <ResponseField name="data.processing.pages_done" type="number">
+      Number of pages converted so far.
+    </ResponseField>
+
+    <ResponseField name="data.processing.total_pages" type="number">
+      Total pages in the document. `null` until the page count has been read.
+    </ResponseField>
+
+    <ResponseField name="data.processing.percent" type="number">
+      Progress from 0 to 100. `null` until the page count is known.
+    </ResponseField>
+
+    <ResponseField name="data.processing.eta_seconds" type="number">
+      Estimated seconds until conversion finishes. `null` until enough pages have been converted to estimate a rate.
+    </ResponseField>
+
+    <ResponseField name="data.processing.attempts" type="number">
+      Number of conversion attempts started, including the current one.
+    </ResponseField>
+
+    <ResponseField name="data.processing.max_attempts" type="number">
+      Maximum conversion attempts before the knowledge base is marked `"FAILED"`.
+    </ResponseField>
+
+    <ResponseField name="data.processing.last_error" type="string">
+      Error from the most recent failed attempt, if any. `null` when no attempt has failed.
+    </ResponseField>
   </ResponseField>
 
   <ResponseField name="data.file" type="object">
@@ -108,6 +144,36 @@ curl -X GET https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
     "file": {
       "file_name": "company_faqs.pdf",
       "file_size": 2048576,
+      "file_type": "application/pdf"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Processing Response
+{
+  "data": {
+    "id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T",
+    "name": "Evidence of Coverage",
+    "description": "Plan coverage details",
+    "status": "PROCESSING",
+    "type": "FILE",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:31:00Z",
+    "processing": {
+      "state": "running",
+      "pages_done": 45,
+      "total_pages": 208,
+      "percent": 22,
+      "eta_seconds": 620,
+      "attempts": 1,
+      "max_attempts": 3,
+      "last_error": null
+    },
+    "file": {
+      "file_name": "evidence_of_coverage.pdf",
+      "file_size": 8388608,
       "file_type": "application/pdf"
     }
   },
