@@ -32,9 +32,18 @@ When you add a Custom Code Node to your pathway, you'll see a comprehensive inte
 />
 
 ### Reference Variables
-The first section allows you to define variables to be used wihtin your custom code execution. These variables can be of two types:
-- **Static Variables**: Constants that are definied in this section, and will be the same throughout all your calls.
+The first section allows you to define variables to be used within your custom code execution. These variables can be of two types:
+- **Static Variables**: Constants that are defined in this section, and will be the same throughout all your calls.
 - **Dynamic Variables**: Variables that are defined based on variables extracted previously in the pathway.
+
+#### Picking pathway variables
+The Value field suggests the variables your pathway produces, so you don't have to hand-type `{{variable_name}}` references. Suggestions are grouped by the node that produces them and include built-in call variables such as `{{from}}`, `{{to}}`, and `{{call_id}}`. Selecting a suggestion inserts the `{{variable_name}}` reference and fills in a matching code-side name for you.
+
+Only variables from nodes that can run before the custom code node appear in the list. The field still accepts free text, so you can type a literal value or reference a variable the picker can't know ahead of time, such as a value passed in `request_data` when the call starts.
+
+<Warning>
+A `{{variable_name}}` reference that doesn't resolve during a call is passed to your code as the literal string, not as null. Picking from the suggestions instead of hand-typing avoids typos that silently pass truthiness checks in your code.
+</Warning>
 
 Below is an example of both:
 <img
@@ -96,6 +105,8 @@ The Custom Code Node includes a robust testing environment:
 - **Test Mode**: Set mock values for testing your code logic
 **Mock Test Variables**: In test mode, you can provide sample data to test your code:
 **Run Test Button**: Execute your code with the mock data to see returned variables immediately
+
+Mock values are sent to your code literally, with no variable lookup. A mistyped `{{variable_name}}` reference that fails on a live call can still pass in test mode.
 
 ### Response Handling
 The response from your custom code becomes available as variables in subsequent pathway nodes. Your code must return a JSON response using `Response.json()`.
