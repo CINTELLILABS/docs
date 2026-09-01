@@ -53,9 +53,9 @@ This endpoint takes no body. POST an empty body or `{}`.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` with `CALL_NOT_FOUND` when the call does not exist, `409` with `NOT_TRANSFERRED` when the call has not been transferred yet, `409` with `CALL_ENDED` when the call has already completed and was never stopped.
+  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` with `CALL_NOT_FOUND` when the call does not exist, `409` with `NOT_TRANSFERRED` when the call has not been transferred yet, `409` with `CALL_ENDED` when the call has already completed and was never stopped, `501` with `NOT_SUPPORTED` when the call runs on a media path whose recording cannot be stopped mid-call (nothing is recorded in that case).
 
-  `502` with `RECORDING_STOP_FAILED` when the stop was recorded and the transcript capture ended, but the call recording could not be confirmed stopped. The response carries a top-level `capture_stopped_at`. Retry the request: it is idempotent, returns the same timestamp, and re-attempts the recording stop until it succeeds.
+  `502` with `RECORDING_STOP_FAILED` when the stop was recorded but some part of it could not be confirmed, most often the call recording. The response carries a top-level `capture_stopped_at`. Retry the request: it is idempotent, returns the same timestamp, and re-applies every part that is not yet confirmed until the whole stop succeeds.
 </ResponseField>
 
 <RequestExample>
