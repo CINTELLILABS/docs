@@ -1,0 +1,81 @@
+---
+title: "Stop Capture"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/capture/stop"
+description: "Stop recording and transcript capture for the rest of a call."
+---
+
+## Overview
+
+Stops the call recording and all transcript capture from this moment on, for a call that has been transferred to a human. Use it when the conversation is about to move somewhere that must not be captured, for example when the representative is about to transfer the caller to a billing line that has not consented to recording.
+
+The stop applies to everything Bland captures after the transfer:
+
+- The call recording (every leg, including warm-transfer legs).
+- The [post-transfer transcript stream](/api-v1/post/calls-id-transcript-stream). Listeners receive `stream_end` and the socket closes.
+- The `post_transfer_transcript` property on the [post-call webhook](/tutorials/post-call-webhooks#post-transfer-transcript), which ends at the stop.
+
+It is accepted only after the transfer has completed: for a cold transfer, once the call has been handed off; for a warm transfer, once the caller and the human have been merged. Before that it returns `409` with `NOT_TRANSFERRED`; the portion of the call handled by the Bland agent is controlled by the pathway node privacy settings instead.
+
+The stop is one-way and idempotent. There is no re-enable. Calling it again returns the original timestamp.
+
+<Note>
+  Capture control is in limited rollout with the post-transfer transcript. If this endpoint returns 403 with `FEATURE_NOT_ENABLED`, it is not yet enabled for your organization.
+</Note>
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The call to stop capturing. Must belong to your organization.
+</ParamField>
+
+---
+
+## Body Parameters
+
+This endpoint takes no body. POST an empty body or `{}`.
+
+---
+
+## Response
+
+<ResponseField name="data.capture_stopped_at" type="string">
+  ISO 8601 timestamp of the stop. A `200` means everything stopped: the recording on every leg, the live stream, and the post-call transcript. The same value is delivered as `capture_stopped_at` on the post-call webhook next to `post_transfer_transcript`, so a consumer can tell a deliberate stop from a call that ended.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` with `CALL_NOT_FOUND` when the call does not exist, `409` with `NOT_TRANSFERRED` when the call has not been transferred yet, `409` with `CALL_ENDED` when the call has already completed and was never stopped.
+
+  `502` with `RECORDING_STOP_FAILED` when the stop was recorded and the transcript capture ended, but the call recording could not be confirmed stopped. The response carries a top-level `capture_stopped_at`. Retry the request: it is idempotent, returns the same timestamp, and re-attempts the recording stop until it succeeds.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/calls/{call_id}/capture/stop" \
+  -H "authorization: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "capture_stopped_at": "2026-09-01T18:42:07.311Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
