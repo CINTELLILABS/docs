@@ -268,13 +268,19 @@ You may also see `tool`, `type`, and `input_vars` — legacy aliases of `tool_na
 | result | `duration_ms` | `number` (optional) | |
 | result | `external_id` | `string` (optional) | |
 
-### `custom_code.invoke` / `custom_code.result`
+### `custom_code.invoke` / `custom_code.result` / `custom_code.error`
 
 | Event | Field | Type |
 |---|---|---|
 | invoke | `code_ref` | `string` (optional) — which snippet ran |
 | result | `success` | `boolean` |
 | result | `variables` | `object` (optional) — variables the code set (truncated if large) |
+| error | `message` | `string` — the runtime error message from your code (bounded) |
+| error | `code` | `string` — stable failure code, e.g. `SNIPPET_TIMEOUT` or `SNIPPET_ERROR` |
+| error | `duration_ms` | `number` — how long the code ran |
+| error | `timeout_ms` | `number` — the wall-clock limit that applied to the run |
+
+On redaction-protected calls, `message` is withheld because your code controls its content. `code`, `duration_ms`, and `timeout_ms` carry no conversation content and survive redaction, so a failure still reads as a diagnosis. Structured error fields are present on newer calls only.
 
 ### `transfer_pathway.invoke` / `transfer_pathway.result`
 
