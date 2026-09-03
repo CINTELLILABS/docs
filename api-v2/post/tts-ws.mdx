@@ -63,6 +63,7 @@ Send `init` once as the first message. Wait for `ready` before sending text.
 {
   "type": "init",
   "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+  "language": "en",
   "audio": {
     "encoding": "pcm_s16le",
     "sample_rate": 48000
@@ -70,7 +71,8 @@ Send `init` once as the first message. Wait for `ready` before sending text.
   "controls": {
     "expressiveness": 0.6,
     "stability": 0.5
-  }
+  },
+  "max_buffer_delay_ms": 150
 }
 ```
 
@@ -80,6 +82,14 @@ Send `init` once as the first message. Wait for `ready` before sending text.
 
 <ParamField body="voice" type="string" required>
   Bland voice UUID. Get one from [List Voices](/api-v1/get/voices). The voice is fixed for the life of the connection, so open another connection to change voices.
+</ParamField>
+
+<ParamField body="language" type="string">
+  BCP 47 tag for the text this session will speak, such as `en`, `pt-BR`, or `ja`. The primary subtag must appear in the voice's model `languages` list from [List TTS Models](/api-v2/get/tts-models); otherwise the session closes with `unsupported_language`. The model detects the language from the text itself, so this is a declaration that guards against speaking the wrong language, not a pronunciation switch. Cantonese is served as a Chinese dialect mode: send `zh` with text written in Cantonese vocabulary.
+</ParamField>
+
+<ParamField body="max_buffer_delay_ms" type="number" default="150">
+  How long a partial sentence may wait after the last `speak` before it is spoken anyway, in milliseconds. Integer from `0` to `2000`; `0` turns the timer off. Bland normally holds text until a sentence boundary. If your LLM opens with a short phrase such as "Sure." and then pauses to think, the timer speaks that phrase instead of leaving silence. The timer never cuts into a sentence that is still rendering and never speaks text that ends mid-word. Use [`flush`](#flush) to speak buffered text immediately without waiting.
 </ParamField>
 
 <ParamField body="audio" type="object">
@@ -140,6 +150,16 @@ Tell Bland that no more text will arrive for the turn. Bland flushes the remaini
 
 Always send this after the LLM finishes normally. Wait for that turn's `utterance_end` before sending `close`.
 
+### `flush`
+
+Speak whatever the turn has buffered right now and keep the turn open. Use it when your application knows the LLM has paused, for example around a tool call, and you do not want to wait for `max_buffer_delay_ms`.
+
+```json
+{ "type": "flush", "context_id": "turn-42" }
+```
+
+Unlike the idle timer, `flush` does not wait for a word boundary: you are asserting the buffered text is speakable. `flush` for a context that is not active, or that already received `end_of_turn`, is ignored.
+
 ### `cancel`
 
 Stop the active turn without starting a replacement. Buffered text is discarded and the server sends `utterance_end` with reason `cancelled`.
@@ -173,9 +193,12 @@ The voice, connection, and billing admission are ready. You can now send text.
   "type": "ready",
   "session_id": "2B17uYlR6p48uPpN",
   "encoding": "pcm_s16le",
-  "sample_rate": 48000
+  "sample_rate": 48000,
+  "max_buffer_delay_ms": 150
 }
 ```
+
+`max_buffer_delay_ms` echoes the idle-flush delay in force for the session, so a client that omitted it on `init` can see the default it received.
 
 ### `utterance_start`
 
@@ -259,6 +282,7 @@ The session has settled and is about to close normally.
 | `voice_not_live` | Session | A professional voice is still a draft. Promote it to live first. |
 | `unsupported_encoding` | Session | The requested encoding is not supported. |
 | `unsupported_sample_rate` | Session | The sample rate is invalid for the encoding. |
+| `unsupported_language` | Session | The `language` primary subtag is not in the voice's model `languages` list. The message names the supported tags. |
 | `context_overflow` | Turn | One turn exceeded 4,000 characters. |
 | `insufficient_credits` | Turn | The current turn was refused because the account is out of credits. |
 | `rate_limited` | Session | The organization has no available speech concurrency slot. |
