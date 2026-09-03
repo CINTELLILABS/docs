@@ -29,9 +29,19 @@ Pass `channel: "sms"` (the default) when calling [Send SMS](/api-v1/post/sms-sen
 
 When the recipient supports a richer channel and your number is configured for it, Bland upgrades to RCS or iMessage automatically. See [RCS](/tutorials/messaging/rcs) and [iMessage](/tutorials/messaging/imessage) for what those channels add.
 
+## Handing a conversation to a human
+
+A messaging thread can be taken over by a person at any point, the way a call can be transferred. The agent stops replying, every inbound message is still relayed to your webhook, and the rep answers from the same number so the customer sees one continuous conversation.
+
+Two ways to start it:
+
+- **In the pathway**: add a **Transfer to Human** node. Its dialogue prompt is the agent's last message ("Looping in a broker now"); after it sends, the thread is handed off. Optionally set a reason and a number to notify.
+- **From your platform**: call [Hand Off Conversation to a Human](/api-v1/post/sms-conversations-handoff) whenever your own logic decides.
+
+Then your rep sends with [Send Message on Conversation](/api-v1/post/sms-conversations-messages) (attributed as `HUMAN` in the transcript), and you [resume](/api-v1/post/sms-conversations-resume) the agent when the human is done, optionally at a specific node. The `human_handoff` and `human_handoff_ended` [status webhooks](/tutorials/post-call-webhooks#sms-webhooks) bracket the takeover. The SMS inbox in the dashboard offers the same controls (Take over, reply as a human, Return to agent).
+
 ## Coming up
 
-- A **Transfer Chat** node for messaging, replacing **Transfer Call** so you can transfer a messaging conversation to a human agent.
 - A2P campaign setup directly inside Bland.
 
 ## Related
