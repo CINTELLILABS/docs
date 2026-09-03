@@ -1,0 +1,113 @@
+---
+title: "Bland integration"
+description: "Attach built-in call actions like Query Knowledge Base, Transfer Call, and End Call as tools on any node."
+---
+
+## Overview
+
+The **Bland** integration exposes built-in call actions as configurable tools. These are the same actions pathway nodes perform natively, now available anywhere you can add a tool — pathway nodes, personas, and web agents.
+
+Use the Bland integration when you want the agent to decide when to search a knowledge base, transfer a call, or end a call, rather than routing to a dedicated node.
+
+The Bland integration is preconnected. There's no OAuth or API key to set up.
+
+---
+
+## Available actions
+
+| Action | What it does |
+|--------|--------------|
+| **Query Knowledge Base** | Search one of your knowledge bases mid-call and use the results in the conversation. |
+| **Transfer Call** | Transfer the call to a phone number. Supports cold transfer, warm transfer, Twilio TwiML app routing, post-connect extension dialing, and SIP REFER. |
+| **Transfer Pathway** | Move the conversation to another pathway. Choose the target pathway, version, and start node. |
+| **End Call** | End the current call. |
+| **Press Button** | Send DTMF tones (0-9, `*`, `#`, with pauses) to navigate IVRs or enter extensions. |
+
+Knowledge base and pathway pickers in the tool builder are auto-populated from your organization.
+
+---
+
+## Create a Bland tool
+
+1. Go to the [Tools Hub](https://app.bland.ai/dashboard/tools).
+2. Open the **Integrations** tab.
+3. Select **Bland**, then choose an action (for example, **Query Knowledge Base**).
+4. Configure the action fields. For KB and pathway actions, pick the target from the dropdown.
+5. Write a **prompt** that tells the agent when to use the tool.
+6. Click **Create Tool**.
+
+Add the tool to a persona or to a Custom Tool node in a pathway. See [Tools overview](/tutorials/tools/overview) for parameter modes, response variables, and response routing.
+
+---
+
+## Query Knowledge Base
+
+Search a knowledge base and return relevant content to the agent for use in the ongoing conversation. This uses the same engine as the pathway Knowledge Base node, including the same truncation limits on returned content.
+
+**Fields:**
+
+- **Knowledge base** — pick from your organization's knowledge bases.
+- **Query** — the question or search string to run. Set this to Agent Mode so the agent forms the query from what the caller said.
+
+Query Knowledge Base works on live calls and off-call (for example, from the tool test runner).
+
+---
+
+## Transfer Call
+
+Transfer the caller to a phone number using the same mechanics as the Transfer Call pathway node.
+
+**Modes:**
+
+- **Cold transfer** — dial and hand off. Supports comma-separated fallback numbers, `{{variable}}` placeholders, post-connect extension dialing, and SIP REFER.
+- **Warm transfer** — brief a human agent before merging the caller in.
+- **Twilio TwiML app** — route the transfer through a Twilio TwiML Application instead of dialing directly.
+
+Deep phone-number validation, geographic and billing gates, and KYC checks run at transfer time — the same checks the Transfer Call node performs. For warm-transfer configuration details, see [Warm transfer](/tutorials/warm-transfer).
+
+Transfer Call only executes on a live call. Off-call, the action validates the configuration and returns an error without dialing.
+
+---
+
+## Transfer Pathway
+
+Switch the active pathway on the current call. Pick the target pathway from the dropdown, then choose a version and start node.
+
+Pathway ownership is verified before the switch — you can only transfer to pathways your organization owns.
+
+Transfer Pathway only executes on a live call.
+
+---
+
+## End Call
+
+End the current call. Add this tool when you want the agent to hang up under specific conditions instead of routing to an End Call node.
+
+End Call only executes on a live call.
+
+---
+
+## Press Button
+
+Send DTMF tones on the active call. Useful for navigating IVR menus or entering extensions after a transfer.
+
+**Field:**
+
+- **Buttons** — the DTMF sequence to press. Accepts digits `0-9`, `*`, and `#`. Include `w` characters to add short pauses between presses.
+
+Press Button only executes on a live call.
+
+---
+
+## When to use a tool vs. a node
+
+Bland tools and pathway nodes call the same underlying logic. Choose based on who decides:
+
+- **Node** — you decide. The action fires when the pathway reaches the node.
+- **Tool** — the agent decides. The action fires when the conversation matches the tool's prompt.
+
+Use a tool when the timing depends on the conversation. Use a node when the timing is deterministic.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
