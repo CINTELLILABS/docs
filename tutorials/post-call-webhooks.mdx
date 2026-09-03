@@ -555,7 +555,7 @@ Every time a message is sent or received, a webhook fires with the message detai
 
 - `conversation_id`, `phone_number`, `agent_number`, `channel` (`"sms"`, `"rcs"`, or `"whatsapp"`)
 - `pathway_id`, `pathway_version`
-- `message`, `sender` (`"USER"` or `"AGENT"`)
+- `message`, `sender` (`"USER"`, `"AGENT"`, or `"HUMAN"` for a rep replying during a [human handoff](/api-v1/post/sms-conversations-handoff))
 - `chat_history` — the full conversation so far
 - `variables` — pathway variables collected during the conversation
 - `metadata` — custom metadata passed when the conversation was created
@@ -565,7 +565,7 @@ Every time a message is sent or received, a webhook fires with the message detai
 
 When a conversation ends (via timeout, end-call node, or opt-out), a status webhook fires with the complete conversation context. In addition to the fields above, the status payload includes:
 
-- `status` — `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"read"`, or `"link_clicked"`
+- `status` — `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"human_handoff"`, `"human_handoff_ended"`, `"read"`, or `"link_clicked"`
 - `message_count` — total messages in the conversation
 - `concatenated_transcript` — the full conversation as a single string
 - `summary` — AI-generated summary (when a summary prompt is configured)
@@ -573,6 +573,8 @@ When a conversation ends (via timeout, end-call node, or opt-out), a status webh
 - `dispositions` — outcome run results (when outcomes are configured)
 
 SMS also supports `read` and `link_clicked` status events for RCS and WhatsApp channels, which fire when a recipient reads a message or taps an action button link.
+
+`human_handoff` fires once when a human takes over a thread (via the API or the **Transfer to Human** pathway node) and `human_handoff_ended` when the agent gets it back. While a handoff is active, message webhooks keep firing for every inbound message, `metadata.human_handoff` carries the reason, source, and any metadata passed at handoff, and no per-message status webhooks are sent.
 
 ### Configuring SMS Webhooks
 
