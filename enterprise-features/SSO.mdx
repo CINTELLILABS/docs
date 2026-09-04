@@ -19,11 +19,26 @@ Once connected, users from your domain can log in with **Sign in with SSO**, and
 
 Before configuring SSO, ensure you have:
 
-- Admin access to your Bland organization
+- An **enterprise** Bland organization (SSO is available on enterprise plans only)
+- An **owner** or **admin** role in that organization — only owners and admins can add or update SSO providers
 - Admin access to your identity provider (IdP)
-- Your organization's verified email domain (e.g., `company.com`)
+- Your organization's email domain (e.g., `company.com`)
 - For SAML: Understanding of X.509 certificates and metadata
 - For OIDC: Ability to create OAuth 2.0 applications
+
+### Domain requirements
+
+When you register a provider, Bland validates the email domain you claim:
+
+- Enter a single domain, such as `company.com`. URLs, comma-separated lists, and bare TLDs are rejected. Domains are stored lowercased.
+- Shared mailbox domains (for example `gmail.com` or disposable email domains) cannot be used. Use a domain your organization owns.
+- Each domain can be claimed by only one organization. This includes subdomains: if another organization has claimed `company.com`, you cannot claim `company.com` or `sub.company.com`.
+
+A registration or domain update that fails these checks is refused with a clear error message. See the [error code reference](#appendix-error-code-reference) below.
+
+<Note>
+Your own organization can register multiple providers on the same domain (for example, OIDC and SAML side by side). If your domain is already claimed by another organization, contact support@bland.ai.
+</Note>
 
 ---
 
@@ -903,7 +918,7 @@ Contact support@bland.ai for custom role mapping configuration.
 <Note>
 - Users signing in via SSO still need to verify their phone number during first-time setup (unless "Skip phone verification" is enabled)
 - SSO users are automatically added to your organization with the `viewer` role by default (role can be upgraded via group mapping)
-- Each email domain can only be configured for one organization
+- Each email domain (including its subdomains) can only be configured for one organization
 - Existing users are automatically converted to SSO on first SSO login
 </Note>
 
@@ -935,8 +950,8 @@ Contact support@bland.ai for custom role mapping configuration.
     - Different domains
     - Different protocols (OIDC and SAML)
     - Different identity providers
-    
-    Each domain can only be assigned to one provider.
+
+    Each domain belongs to a single organization. Your organization can run more than one provider on the same domain (for example, OIDC and SAML side by side).
   </Accordion>
   
   <Accordion title="What happens to existing users?">
@@ -1020,7 +1035,13 @@ When contacting support, provide:
 | Error Code | Meaning | Solution |
 |------------|---------|----------|
 | `INVALID_ISSUER` | Issuer URL format invalid | Check URL format, remove trailing slash |
-| `DOMAIN_CONFLICT` | Domain already used | Contact support to transfer domain |
+| `SSO_ORGANIZATION_REQUIRED` | No organization specified during registration | Select your organization and try again |
+| `SSO_ENTERPRISE_REQUIRED` | Organization is not on an enterprise plan | Contact your Bland account team to enable SSO |
+| `SSO_ORG_ADMIN_REQUIRED` | Caller is not an owner or admin | Ask an organization owner or admin to manage SSO providers |
+| `SSO_DOMAIN_INVALID` | Domain is not a single valid hostname | Enter one domain, such as `example.com` |
+| `SSO_DOMAIN_NOT_ALLOWED` | Domain is a shared mailbox domain | Use a domain your organization owns |
+| `SSO_DOMAIN_CLAIMED` | Domain already claimed by another organization | Contact support@bland.ai to transfer domain ownership |
+| `SSO_PROVIDER_CONFLICT` | Multiple organizations have verified providers for the domain | Contact support@bland.ai |
 | `SSO_PROVIDER_NOT_FOUND` | Provider doesn't exist | Verify provider ID is correct |
 | `SIGNATURE_VALIDATION_FAILED` | SAML signature invalid | Update certificate from IdP |
 | `INVALID_CLIENT_CREDENTIALS` | OIDC auth failed | Check client ID/secret |
