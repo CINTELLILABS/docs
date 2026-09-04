@@ -4,10 +4,12 @@ api: "GET https://api.bland.ai/v1/recordings/{call_id}"
 description: "Retrieve an audio stream for a call recording."
 ---
 
+Whether this endpoint requires credentials depends on your organization's recording access setting. New organizations require an API key or a signed-in dashboard session on every request; organizations that allow unauthenticated access serve the recording to anyone with the link. See [Call Recordings](/platform/call-recordings).
+
 ### Headers
 
-<ParamField header="authorization" type="string" required={true}>
-  Your API key for authentication.
+<ParamField header="authorization" type="string" required={false}>
+  Your API key. Required unless your organization allows unauthenticated access to recordings.
 </ParamField>
 
 <ParamField header="content-type" type="string" required={false}>
@@ -34,6 +36,8 @@ description: "Retrieve an audio stream for a call recording."
 
 <ResponseField name="errors" type="null|array">
   `null` on success, or an array of error objects if access fails.
+
+  A `401` with `AUTHORIZATION_REQUIRED` means the recording requires authentication and none was presented. Retry with your API key.
 </ResponseField>
 
 <ResponseExample>
@@ -44,6 +48,18 @@ description: "Retrieve an audio stream for a call recording."
     {
       "error": "CALL_RECORDING_NOT_FOUND",
       "message": "Call recording not found"
+    }
+  ]
+}
+```
+
+```json Response (authentication required)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AUTHORIZATION_REQUIRED",
+      "message": "Authorization required"
     }
   ]
 }

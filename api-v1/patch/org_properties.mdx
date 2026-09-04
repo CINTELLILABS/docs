@@ -23,8 +23,8 @@ description: "Modify specific properties of an organization."
   <br/><br/>**Valid keys:**  
   - `"org_display_name"` (string) - The display name of the organization. Must be between **1 and 30 characters**.  
   - `"preferences"` (object) - Preference settings for the organization:  
-    - `"use_bland_url"` (boolean) - Whether the organization prefers to use the Bland URL.  
-    - `"recording_lifespan_days"` (integer) - The lifespan of recordings in days. Must be between **1 and 1825** (inclusive) or `-1` to disable retention.  
+    - `"use_bland_url"` (boolean) - Whether `recording_url` is returned as a Bland link rather than a direct link to the host storing the audio. Only affects recordings stored outside Bland (your own Twilio account or S3 bucket).  
+    - `"recording_lifespan_days"` (integer) - How long a recording link plays without authentication. `0` requires authentication on every request, and is the default for new organizations. `1` to `1825` (inclusive) allows unauthenticated playback for that many days after the call, then requires authentication. `-1` never requires authentication and never expires. See [Call Recordings](/platform/call-recordings).  
 </ParamField>  
 
 ### Response
@@ -94,7 +94,11 @@ description: "Modify specific properties of an organization."
 </ResponseField>  
 
 <ResponseField name="data.preferences.use_bland_url" type="boolean">  
-  Whether the organization prefers to use the Bland URL.  
+  Whether `recording_url` is returned as a Bland link rather than a direct link to the host storing the audio.  
+</ResponseField>  
+
+<ResponseField name="data.preferences.recording_lifespan_days" type="integer">  
+  How long a recording link plays without authentication. `0` always requires authentication, `1` to `1825` allows unauthenticated playback for that many days after the call, and `-1` never requires authentication.  
 </ResponseField>  
 
 <ResponseField name="errors" type="null">  
@@ -121,7 +125,8 @@ description: "Modify specific properties of an organization."
     "org_type": "normal",
     "entitlements": [],
     "preferences": {
-      "use_bland_url": false
+      "use_bland_url": true,
+      "recording_lifespan_days": 0
     }
   },
   "errors": null

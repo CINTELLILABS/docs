@@ -1,0 +1,146 @@
+---
+title: "Call Recordings"
+description: "Where call recordings are stored, who can play them, and how to control access."
+---
+
+## Overview
+
+When you set `record` to `true` on a call, Bland stores the audio and returns a link to it as
+`recording_url` on the call object and in your post-call webhook.
+
+That link points at Bland, not at the underlying storage:
+
+```
+https://api.bland.ai/v1/recordings/{call_id}
+```
+
+Whether the link plays for anyone who has it, or only for an authenticated caller, is controlled by
+one organization-level setting. **New organizations require authentication by default.**
+
+---
+
+## Recording access
+
+Access is governed by `recording_lifespan_days` in your organization's `preferences`. It takes one
+of three kinds of value.
+
+| Value          | Behavior                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| `0`            | Authentication is always required. **Default for new organizations.**                        |
+| `1` to `1825`  | The link plays for anyone for that many days after the call, then requires authentication.    |
+| `-1`           | The link never requires authentication and never expires.                                     |
+
+You can change this in the dashboard under **Settings → General → Recording preferences**, or
+through [`PATCH /v1/orgs/{org_id}/properties`](/api-v1/patch/org_properties).
+
+<Info>
+  Organizations created before this default changed keep whatever behavior they had. If
+  `recording_lifespan_days` has never been set on your organization, recordings do not require
+  authentication. Set it explicitly to `0` to require authentication.
+</Info>
+
+### What "requires authentication" means
+
+Requests to a gated recording must present one of:
+
+- **An API key** for the organization that owns the call, as `authorization: <your-api-key>`.
+- **A signed-in dashboard session.** This is what the call detail page uses, so playback and
+  download in the dashboard keep working regardless of this setting.
+
+A request without either receives `401`:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AUTHORIZATION_REQUIRED",
+      "message": "Authorization required"
+    }
+  ]
+}
+```
+
+This is an access check, not encryption of the recording itself. Bland verifies the caller and then
+streams the audio; the setting controls who Bland will stream it to.
+
+<Warning>
+  Setting `-1`, or leaving the value unset, means anyone holding a recording link can play it
+  indefinitely. Recording links are long and unguessable, but they are not access-controlled: once
+  a link is shared, forwarded, or written to a log, it stays playable. This includes people who
+  have left your organization.
+</Warning>
+
+### Fetching a recording
+
+```bash
+curl "https://api.bland.ai/v1/recordings/{call_id}" \
+  -H "authorization: <your-api-key>" \
+  --output recording.wav
+```
+
+Pass `content-type: audio/mpeg` for MP3 instead of the default WAV, and `?RequestedChannels=2` for
+a stereo recording with the agent and the caller on separate channels. See
+[Get Call Recording](/api-v1/get/calls-id-recording).
+
+---
+
+## Bland recording URLs
+
+The `use_bland_url` preference controls whether `recording_url` is a Bland link or a direct link to
+whatever stores the audio.
+
+This setting only affects recordings stored **outside** Bland: in your own Twilio account
+([BYOT](/tutorials/custom-twilio)) or your own S3 bucket. Calls recorded on Bland's Twilio account
+always return a Bland link, and those provider URLs are never exposed.
+
+<Warning>
+  Access control can only be enforced on Bland links. If you turn `use_bland_url` off, recordings
+  in your own Twilio account or S3 bucket are handed out as direct provider links. Bland never sees
+  a request for them, so `recording_lifespan_days` does not apply. Anyone with one of those URLs
+  can play the recording.
+</Warning>
+
+---
+
+## Expiration on the call object
+
+When a call finishes, Bland stamps `recording_expiration` on the call record and includes it in the
+post-call webhook. It is an ISO 8601 timestamp marking when the link stops playing without
+authentication.
+
+- With `recording_lifespan_days` set to a number of days, this is the call's start time plus that
+  many days.
+- With `0`, the link requires authentication immediately and `recording_expiration` is not
+  meaningful.
+- With `-1` or unset, no expiration applies.
+
+After that timestamp, the recording is not deleted. It still plays for an authenticated caller.
+Only unauthenticated access stops.
+
+---
+
+## Controlling what gets recorded
+
+Access control decides who can play a recording. These settings decide whether one is made at all.
+
+| Setting                        | Effect                                                                                                      |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `record` on the call           | Records the call. Off by default. See [`POST /v1/calls`](/api-v1/post/calls).                                 |
+| `record_bland_call_only`       | Stops recording when a call is transferred or handed off to a person, so only the agent portion is captured.  |
+| Node-level recording disable   | Turns off recording and transcript logging for a single pathway node, for collecting card or account numbers. |
+
+For consent and disclosure requirements, see the `tcpa:recording_disclosure`
+[guard rail](/tutorials/guard-rails).
+
+---
+
+## Live audio
+
+Recording access is separate from live listening. Streaming a call while it is still in progress is
+controlled by the `live_listen_enabled` preference and always requires authentication. See
+[Listen to a Call](/api-v1/post/calls-id-listen).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
