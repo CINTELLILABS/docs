@@ -371,6 +371,7 @@ description: "Update your inbound agent's settings, prompt and other details."
   - `tool`
   - `dynamic_data`
   - `citations` (Sent separately, Enterprise only)
+  - `post_transfer_transcript` (Adds the post-transfer conversation to the post-call webhook when a call to this number is transferred to a human; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). Requires `record: true` on the number. In limited rollout: if not enabled for your organization, the subscription has no effect.)
 
 Example payloads:
   <CodeGroup>
@@ -571,6 +572,24 @@ Example payloads:
 
 <ParamField body="record" type="boolean" default="false">
   To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
+</ParamField>
+
+<ParamField body="stream_post_transfer_transcript" type="boolean" default="false">
+  When `true`, calls to this number that are transferred to a human get a live transcript of the conversation after the transfer, streamed over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. This is the inbound equivalent of the [`stream_post_transfer_transcript`](/api-v1/post/calls#param-stream-post-transfer-transcript) option on Send Call.
+
+  Requirements and behavior:
+
+  - The number must have `record: true`.
+  - The value must be a boolean (or the strings `"true"` / `"false"`). Anything else returns a 400.
+  - Changing the setting affects new calls only, not calls already in progress.
+  - The live stream is not available on calls with redaction enabled. The [Get Transcript Stream URL](/api-v1/post/calls-id-transcript-stream-token) endpoint returns 404 with `REDACTION_ENABLED` for those calls; the post-call webhook still carries the transfer transcript, redacted like the rest of the call.
+  - Do not enable SIP REFER transfers on the pathway. A REFER transfer leaves Bland's media path, so there is nothing to capture.
+
+  This option controls the live stream only. To receive the post-transfer transcript in the post-call webhook, set `webhook` and subscribe with `"post_transfer_transcript"` in `webhook_events`. The two are independent: you can use either one or both.
+
+  <Note>
+    This feature is in limited rollout. If it is not enabled for your organization, the option has no effect.
+  </Note>
 </ParamField>
 
 <ParamField body="citation_schema_ids" type="string[]">
