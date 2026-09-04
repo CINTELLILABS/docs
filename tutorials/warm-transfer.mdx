@@ -38,7 +38,7 @@ Understanding the warm transfer flow helps you configure it effectively:
 6. **Professional Handoff**: AI announces the introduction and steps back from the conversation
 7. **Pure Human Conversation**: Customer and agent continue without AI involvement
 
-If the agent doesn't answer or is unavailable, the system will fall back to voicemail handling.
+If the agent doesn't answer or is unavailable, the system can [retry the agent](#11-transfer-retry) before falling back to voicemail handling.
 
 ## Configuration Interface
 
@@ -242,6 +242,39 @@ Perfect! I now have one of our specialists joining the call. They've been briefe
 
 ---
 
+### 11. Transfer Retry
+
+**What it does**: Automatically redials the human agent when an attempt fails, while the customer stays on hold.
+
+**Why it matters**: Agents often miss the first call because they're on another line or away from their phone. A quick redial connects transfers that would otherwise fail after a single attempt.
+
+**How it works**: When an attempt ends with an outcome you've opted into, the system waits for your configured delay and dials the same agent again. The customer keeps hearing hold music between attempts, and each redial uses the same caller ID as the first attempt. Retries stop when an attempt connects, the retry limit is reached, or the hold timeout expires. The [hold timeout](#9-hold-timeout) is the total budget for the transfer, so it caps time across all attempts. Once attempts are exhausted, the transfer falls back to your [voicemail handling](#10-voicemail-message-configuration).
+
+**Configuration**:
+- **Default**: Disabled (one attempt per number)
+- **Max retries**: 0 to 4 additional dials after the first attempt
+- **Retry delay**: 0 to 60 seconds between attempts
+- **Retry on**: Any combination of voicemail, no answer, busy, or carrier failure
+- **Allow pathway retry**: Lets a Retry Transfer node in the proxy agent's pathway request a redial
+
+<Note>
+An agent who answers and hangs up without merging is never automatically retried, since the system can't tell a call screener from an agent who declined the transfer. Use the Retry Transfer node to handle screeners.
+</Note>
+
+#### Retry Transfer node
+
+If your proxy agent runs a pathway, you can add a **Retry Transfer** node to it. When the pathway reaches this node, the agent speaks the node's dialogue, ends the current attempt, and requests a redial from the parent transfer.
+
+**When to use it**: Route to a Retry Transfer node when the proxy agent reaches a call screener, receptionist, or automated attendant instead of the intended agent. Since these calls count as answered, they won't trigger an automatic retry on their own.
+
+**Requirements**:
+- **Allow pathway retry** must be enabled in the Transfer Call node's retry settings
+- The retry limit must not be exhausted
+
+If either condition isn't met, or the node is used outside a warm transfer proxy pathway, it behaves like an End Call node.
+
+---
+
 ## Testing Your Configuration
 
 Every warm transfer configuration includes a built-in testing panel where you can send a real proxy agent call to verify your settings work correctly.
@@ -335,7 +368,7 @@ The overall `warm_transfer_call.state` represents the final outcome of the entir
 
 ### Individual Proxy Call States
 
-Each attempt to reach an agent has its own state in the `proxy_agent_calls` array. These provide detailed insight into individual agent connection attempts.
+Each attempt to reach an agent has its own state in the `proxy_agent_calls` array. These provide detailed insight into individual agent connection attempts. When [transfer retry](#11-transfer-retry) is enabled, each redial appears as its own entry in the array.
 
 | State | Description | Typical Cause |
 |-------|-------------|---------------|
