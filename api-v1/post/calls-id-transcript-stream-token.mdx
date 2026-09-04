@@ -29,7 +29,7 @@ The URL becomes available when the call is answered (that is when the server han
 ## Path Parameters
 
 <ParamField path="call_id" type="string" required>
-  The call whose post-transfer transcript you want to stream. Outbound calls must have been created with `stream_post_transfer_transcript: true`; inbound calls must have arrived on a number with [`stream_post_transfer_transcript: true`](/api-v1/post/inbound-number-update#param-stream-post-transfer-transcript) set.
+  The call whose post-transfer transcript you want to stream. The call must have been created with `stream_post_transfer_transcript: true`.
 </ParamField>
 
 ---
@@ -51,7 +51,7 @@ This endpoint takes no body. POST an empty body or `{}`.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` with `REDACTION_ENABLED` when the call has redaction enabled (the live stream serves raw text, so redacted calls get the post-call transcript only, redacted), `404` with `CALL_NOT_FOUND` when the call does not exist or has no active transcript stream (not opted in, not yet answered, or already ended).
+  `null` on success. `401` when the call belongs to a different organization, `403` when the feature is not enabled for your organization, `404` with `CALL_NOT_FOUND` when the call does not exist or has no active transcript stream (not created with `stream_post_transfer_transcript`, not yet answered, or already ended).
 </ResponseField>
 
 <RequestExample>

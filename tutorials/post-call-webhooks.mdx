@@ -501,8 +501,6 @@ For detailed configuration options and troubleshooting, see the complete [Citati
 
 To receive the post-transfer transcript, subscribe by including `"post_transfer_transcript"` in the call's `webhook_events`. No citation schema is needed. Subscribing requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside the subscription returns a 400. Both cold and warm transfers are covered.
 
-For inbound calls, subscribe on the number instead: set `webhook`, include `"post_transfer_transcript"` in `webhook_events`, and set `record: true` with [Update Inbound Number Details](/api-v1/post/inbound-number-update).
-
 Subscribed calls that were transferred to a human carry two additional properties on the post-processing webhook (in both the standalone and delayed delivery modes):
 
 - `transfer_offset_seconds`: seconds from the start of the call to the transfer.
@@ -543,7 +541,7 @@ For subscribed calls, the post-processing webhook also labels what it contains. 
 
 `contents` can list `citations`, `corrected_transcript`, `dispositions`, `post_transfer_transcript`, and `live_translation_transcript`. Calls without the `post_transfer_transcript` subscription are unaffected: their payloads are unchanged.
 
-The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. The live stream is enabled separately: with [`stream_post_transfer_transcript: true`](/api-v1/post/calls#param-stream-post-transfer-transcript) on Send Call for outbound calls, or with [`stream_post_transfer_transcript: true`](/api-v1/post/inbound-number-update#param-stream-post-transfer-transcript) on the number for inbound calls. It does not require the webhook subscription, and the webhook subscription does not require the stream. On calls with redaction enabled, only the webhook transcript is available, redacted; the live stream is refused.
+The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. The live stream is enabled separately with [`stream_post_transfer_transcript: true`](/api-v1/post/calls#param-stream-post-transfer-transcript); it does not require the webhook subscription, and the webhook subscription does not require the stream.
 
 ---
 
