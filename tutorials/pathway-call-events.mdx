@@ -159,9 +159,9 @@ The payload is the tag itself: `{ "name": "...", "color": "#...", ... }`. `name`
 
 | Field | Type | Notes |
 |---|---|---|
-| `url` | `string` | Empty string for integration tools — the integration runs the HTTP call itself; check `integration` + `action` instead. |
+| `url` | `string` | The full request URL, including its path and query parameters. Query parameter values that look like credentials (API keys, tokens, signatures) are withheld. Empty string for integration tools — the integration runs the HTTP call itself; check `integration` + `action` instead. |
 | `method` | `string` | |
-| `headers` | `object` (optional) | Sensitive values are redacted. |
+| `headers` | `object` (optional) | The request headers you configured. Credential headers (authorization, API keys, tokens, signatures, cookies) are withheld. |
 | `body` | any (optional) | Request body after variable interpolation. |
 | `tool_name` | `string` (optional) | Present when this request came from a named node-attached tool rather than a plain webhook node. |
 | `integration` / `action` | `string` (optional) | For integration tools: which integration and action ran. |
@@ -322,7 +322,7 @@ On redaction-protected calls, `message` is withheld because your code controls i
 - **Sort by `sequence`.** `created_at` timestamps can tie or arrive slightly out of order; `sequence` is the truth.
 - **Sequence gaps are normal.** They do not indicate missing data.
 - **Large values are truncated.** Result-type payloads (webhook/tool/KB/custom-code/scheduling results and mapping previews) cap each top-level value at 64 KiB. A truncated value appears as a string ending in `…`. On some older calls, oversized values were instead replaced with the sentinel string `"[EXCEEDS_MAX_LENGTH]"`; the log service automatically recovers the full data from an older storage path when it can.
-- **Sensitive values are redacted** before storage — you may see redaction placeholders in headers or variable values.
+- **Credential values are withheld.** Webhook events keep the full request URL (with query parameters) and your configured headers for debugging, but values that look like credentials — API keys, tokens, signatures — are replaced with a placeholder. This applies retroactively, so already-stored events also serve their query parameters with credential values masked. You may see similar placeholders in variable values.
 - **Synthetic triggers are hidden.** Internal markers that drive the conversation engine (call-connected signals, silence timeouts) are stored as user-transcript events but filtered out of the log you see. Events they *caused* — transitions, webhooks, extractions — remain, so you may see activity without a visible caller utterance right before it.
 - **Interrupted speech is visible.** When the caller talks over the assistant, the assistant's `text` shows what was actually spoken, and `generated_response` preserves the full intended sentence. Interrupt events mark where it happened.
 - **`external_id` is your escalation handle.** It's an opaque id — it reveals nothing by itself, but Bland can use it internally to pull up the exact model request behind an utterance, routing decision, or extraction. Include it when filing an issue about "why did the agent say/do this."
