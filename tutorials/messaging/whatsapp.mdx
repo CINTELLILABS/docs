@@ -1,0 +1,56 @@
+---
+title: "WhatsApp"
+description: "Configure WhatsApp messaging in Bland: enable the channel for an agent, set a webhook URL and reply timeout, and manage the saved configuration."
+---
+
+# WhatsApp
+
+WhatsApp lets your agent hold conversations with customers on the world's most widely used messaging app. It runs on the same pathways, personas, memory, and analytics as your other messaging channels. This page covers what is specific to WhatsApp. For everything channel-agnostic (pathways, conversation lifecycle, outcomes, the API surface), see [Overview](/tutorials/messaging/overview).
+
+<Info>
+  **Enterprise feature** — WhatsApp is available to Enterprise organizations with WhatsApp enabled. Contact your Account Executive or [reach out to sales](https://www.bland.ai/book-a-demo) to get set up. Organizations without WhatsApp enabled do not see it as a selectable messaging channel.
+</Info>
+
+## Set up WhatsApp in the dashboard
+
+You configure WhatsApp per number from the agent's Messages channel page.
+
+1. Open your agent and go to its **Channels** page, then open **Messages**.
+2. Attach a phone number to the agent if you haven't already.
+3. Select **WhatsApp** as the messaging channel. The channel card shows **Setup required** until it's configured.
+4. Select **Set up WhatsApp** and fill in the form:
+   - **Webhook URL** (optional). Bland POSTs each agent reply and the final conversation status to this URL.
+   - **Reply timeout (seconds)** (optional). How long the agent waits for a reply before the conversation ends. Must be at least 30 seconds.
+5. Select **Enable WhatsApp** to save.
+
+Once saved, the channel card shows **Active** and stays active across reloads. Select **Manage WhatsApp** to reopen the form with your saved values and edit them.
+
+## Configure via the API
+
+The dashboard form writes the same per-number configuration you can manage with the [Messaging API](/api-v1/post/sms-number-update). Pass `channel: "whatsapp"` when updating the number:
+
+```bash
+curl -X POST "https://api.bland.ai/v1/sms/number/update" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+15551234567",
+    "channel": "whatsapp",
+    "webhook": "https://example.com/whatsapp",
+    "time_out": 45
+  }'
+```
+
+To read the saved configuration back, call [List SMS numbers](/api-v1/get/sms-numbers) with `?channel=whatsapp`. A number appears in the response once its WhatsApp configuration exists.
+
+## Related
+
+- [Overview](/tutorials/messaging/overview) (channel-agnostic concepts and API)
+- [SMS](/tutorials/messaging/sms) (A2P registration and bring-your-own-Twilio)
+- [RCS](/tutorials/messaging/rcs) (verified business profile and rich messaging)
+- [iMessage](/tutorials/messaging/imessage) (rich messaging on Apple devices)
+- [Update SMS Number](/api-v1/post/sms-number-update) (API reference)
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
