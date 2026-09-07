@@ -19,8 +19,12 @@ The chat ID created from the /pathway/chat/create endpoint.
 ### Body
 
 <ParamField body="message" type="string">
-The message to send to the pathway (optional)
+The message to send to the pathway. Omit it (or send an empty string) on the first request to start the conversation: the pathway runs its start node and returns the agent's opening line without adding a user turn to the history.
 </ParamField>
+
+<Note>
+Each request that carries a non-empty `message` is billed as one pathway chat message.
+</Note>
 
 
 ### Response
@@ -75,6 +79,14 @@ The message to send to the pathway (optional)
   Will be `null` on success. Contains error details if the request failed.
 </ResponseField>
 
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `HANDLE_PATHWAY_CHAT_BAD_REQUEST` | `id` is not a known chat. |
+| `422` | `ROUTE_NO_MATCH_NO_FALLBACK` | No edge matched and the current node has no fallback. `ext` is a JSON string with `chat_id`, `pathway_id`, `node_id`, and `evaluated_fields`. |
+| `500` | `HANDLE_PATHWAY_CHAT_INTERNAL_SERVER_ERROR` | Unexpected failure. |
+
 
 <ResponseExample>
 
@@ -102,15 +114,6 @@ The message to send to the pathway (optional)
 ```
 
 </ResponseExample>
-
-
-
-
-
-
-
-
-
 
 ---
 

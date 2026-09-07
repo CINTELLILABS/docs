@@ -8,33 +8,52 @@ description: "Moves a pathway to a different folder or to the root level."
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Body Parameters
 <ParamField body="pathway_id" type="string" required>
   The ID of the pathway to move.
 </ParamField>
-<ParamField body="folder_id" type="string">
-  The ID of the destination folder. If null, the pathway will be moved to the root level.
+<ParamField body="folder_id" type="string | null">
+  The ID of the destination folder. Omit it or pass `null` to move the pathway to the root level.
 </ParamField>
 ### Response
-<ResponseField name="pathway_id" type="string">
+<ResponseField name="data.pathway_id" type="string">
   The ID of the moved pathway.
 </ResponseField>
-<ResponseField name="old_folder_id" type="string">
-  The ID of the original folder.
+<ResponseField name="data.old_folder_id" type="string | null">
+  The ID of the original folder, or `null` if it was at the root level.
 </ResponseField>
-<ResponseField name="new_folder_id" type="string">
-  The ID of the new folder, or null if moved to root level.
+<ResponseField name="data.new_folder_id" type="string | null">
+  The ID of the new folder, or `null` if moved to root level.
 </ResponseField>
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `MOVE_PATHWAY_BAD_REQUEST` | `pathway_id` is missing, the pathway is not yours, or `folder_id` is not one of your folders. |
+| `403` | `UNAUTHORIZED` | The caller's org role cannot edit pathways. |
+| `500` | `MOVE_PATHWAY_INTERNAL_SERVER_ERROR` | Unexpected failure. |
+
 <ResponseExample>
 ```json Response
 {
-  "pathway_id": "pathway_123",
-  "old_folder_id": "old_folder_456",
-  "new_folder_id": "new_folder_789"
+  "data": {
+    "pathway_id": "pathway_123",
+    "old_folder_id": "old_folder_456",
+    "new_folder_id": "new_folder_789"
+  },
+  "errors": null
 }
 ```
 </ResponseExample>
-```
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

@@ -1,7 +1,7 @@
 ---
 title: "Create Pathway Version"
 api: "POST https://api.bland.ai/v1/pathway/{pathway_id}/version"
-description: "Creates a new version of a specific pathway, including its name, nodes, and edges."
+description: "Creates a new version of a specific pathway, either from supplied nodes and edges or as a copy of an existing version."
 ---
 
 ### Headers
@@ -9,6 +9,10 @@ description: "Creates a new version of a specific pathway, including its name, n
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
 
 ### Path Parameters
 
@@ -18,78 +22,119 @@ description: "Creates a new version of a specific pathway, including its name, n
 
 ### Request Body
 
-<ParamField body="name" type="string" required>
-  The name of the new pathway version.
+Provide either `version_id` (to copy an existing graph) or both `nodes` and `edges` (to supply a new graph). When `version_id` is present, `nodes` and `edges` are ignored.
+
+<ParamField body="name" type="string">
+  The name of the new pathway version. If omitted, the version is listed as `"Version N"`.
 </ParamField>
 
-<ParamField body="nodes" type="array of objects" required>
-  An array of node objects defining the structure of the pathway.
+<ParamField body="version_id" type="integer | string">
+  Copy the graph of an existing version. Pass a version number to copy that version, or `0` / `"production"` to copy the live production graph.
+</ParamField>
+
+<ParamField body="nodes" type="array of objects">
+  An array of node objects defining the structure of the pathway. Required when `version_id` is omitted.
 
   <Accordion title="Node Object Parameters">
-    - `id` — Unique identifier of the node
-    - `type` — Type of the node (e.g., "Default", "End Call", "Webhook")
-    - `data` — Object containing node-specific data
-      - `name` — Name of the node
-      - `text` or `prompt` — Text or prompt associated with the node
+    - `id`: Unique identifier of the node
+    - `type`: Type of the node (e.g., "Default", "End Call", "Webhook")
+    - `data`: Object containing node-specific data
+      - `name`: Name of the node
+      - `text` or `prompt`: Text or prompt associated with the node
       - Other properties specific to the node type
   </Accordion>
 </ParamField>
 
-<ParamField body="edges" type="array of objects" required>
-  An array of edge objects defining the connections between nodes.
+<ParamField body="edges" type="array of objects">
+  An array of edge objects defining the connections between nodes. Required when `version_id` is omitted.
 
   <Accordion title="Edge Object Parameters">
-    - `id` — Unique identifier of the edge
-    - `source` — ID of the source node
-    - `target` — ID of the target node
-    - `label` — Label for this edge
+    - `id`: Unique identifier of the edge
+    - `source`: ID of the source node
+    - `target`: ID of the target node
+    - `data.label`: Label for this edge
   </Accordion>
 </ParamField>
 
 ### Response
 
 <ResponseField name="status" type="string">
-  The status of the operation (e.g., "success").
+  `success` on success, `error` on failure.
 </ResponseField>
 
 <ResponseField name="message" type="string">
-  A message describing the result of the operation.
+  `"Version created successfully"`, or `"Version created successfully from Version N"` when copying.
 </ResponseField>
 
 <ResponseField name="data" type="object">
   <Expandable title="properties">
-    <ResponseField name="created_at" type="string">
-      The timestamp when the new version was created.
-    </ResponseField>
-
-    <ResponseField name="id" type="string">
-      The unique identifier of the newly created version.
-    </ResponseField>
-
-    <ResponseField name="name" type="string">
-      The name of the newly created version.
+    <ResponseField name="name" type="string | undefined">
+      The `name` you supplied. Absent if you did not supply one.
     </ResponseField>
 
     <ResponseField name="version_number" type="integer">
       The version number of the newly created version.
     </ResponseField>
+
+    <ResponseField name="source_version_number" type="integer | string | undefined">
+      The `version_id` you supplied, if any.
+    </ResponseField>
   </Expandable>
 </ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "No nodes or edges provided"}` when neither `version_id` nor both `nodes` and `edges` are present |
+| `400` | `{"status": "error", "message": "Invalid version_id"}` when `version_id` does not match a version of this pathway |
+| `400` | `{"status": "error", "message": "Error creating pathway versions"}` |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
+
+<RequestExample>
+```json Copy production
+{
+  "name": "Hotfix greeting",
+  "version_id": "production"
+}
+```
+
+```json New graph
+{
+  "name": "Improved Customer Flow",
+  "nodes": [
+    {
+      "id": "1",
+      "type": "Default",
+      "data": { "name": "Start", "text": "Hello! How can I help?", "isStart": true }
+    },
+    {
+      "id": "2",
+      "type": "End Call",
+      "data": { "name": "End call", "prompt": "Say goodbye." }
+    }
+  ],
+  "edges": [
+    { "id": "edge-1-2", "source": "1", "target": "2", "data": { "label": "Done" } }
+  ]
+}
+```
+</RequestExample>
 
 <ResponseExample>
 ```json Response
 {
   "status": "success",
-  "message": "Version created successfully",
+  "message": "Version created successfully from Version production",
   "data": {
-    "created_at": "2024-03-07T10:15:30Z",
-    "id": "v3_ghi789",
-    "name": "Improved Customer Flow",
-    "version_number": 3
+    "name": "Hotfix greeting",
+    "version_number": 4,
+    "source_version_number": "production"
   }
 }
 ```
 </ResponseExample>
+
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

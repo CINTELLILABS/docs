@@ -12,37 +12,42 @@ description: "Retrieves all folders for the authenticated user, including folder
 
 ### Response
 
-<ResponseField name="folders" type="array">
-  An array of folder objects.
+<ResponseField name="data" type="array">
+  An array of folder objects, sorted by name.
 </ResponseField>
 
-<ResponseField name="folders[].id" type="string">
+<ResponseField name="data[].folder_id" type="string">
   The unique identifier of the folder.
 </ResponseField>
 
-<ResponseField name="folders[].name" type="string">
+<ResponseField name="data[].name" type="string">
   The name of the folder.
 </ResponseField>
 
-<ResponseField name="folders[].parent_folder_id" type="string">
-  The ID of the parent folder, if applicable.
+<ResponseField name="data[].parent_folder_id" type="string | null">
+  The ID of the parent folder, or `null` for a top-level folder.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. `500` returns `[{"error": "GET_FOLDERS_INTERNAL_SERVER_ERROR", ...}]`.
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
-  "folders": [
+  "data": [
     {
-      "id": "folder_123",
+      "folder_id": "folder_123",
       "name": "My Folder",
       "parent_folder_id": null
     },
     {
-      "id": "folder_456",
+      "folder_id": "folder_456",
       "name": "Subfolder",
       "parent_folder_id": "folder_123"
     }
-  ]
+  ],
+  "errors": null
 }
 ```
 </ResponseExample>

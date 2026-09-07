@@ -1,7 +1,7 @@
 ---
 title: "Update Pathway Version"
 api: "POST https://api.bland.ai/v1/pathway/{pathway_id}/version/{version_number}"
-description: "Updates a specific version of a pathway, including its version name, nodes, and edges."
+description: "Updates a specific version of a pathway: its name, nodes, edges, or execution mode."
 ---
 
 ### Headers
@@ -10,61 +10,87 @@ description: "Updates a specific version of a pathway, including its version nam
   Your API key for authentication.
 </ParamField>
 
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Path Parameters
 
 <ParamField path="pathway_id" type="string" required>
-  The ID of the pathway for which to create a new version.
+  The ID of the pathway that owns the version.
 </ParamField>
 
 <ParamField path="version_number" type="integer" required>
-  The version number of the pathway to update.
+  The version number of the pathway version to update.
 </ParamField>
 
 ### Request Body
 
-<ParamField body="name" type="string" required>
-  The name of the new pathway version.
+All fields are optional. Only the fields you send are changed. An empty body returns `"No changes to update"`.
+
+<ParamField body="name" type="string">
+  The new name of the pathway version.
 </ParamField>
 
-<ParamField body="nodes" type="array of objects" required>
+<ParamField body="nodes" type="array of objects">
   An array of node objects defining the structure of the pathway.
 
   <Accordion title="Node Object Parameters">
-    - `id` — Unique identifier of the node
-    - `type` — Type of the node (e.g., "Default", "End Call", "Webhook")
-    - `data` — Object containing node-specific data
-      - `name` — Name of the node
-      - `text` or `prompt` — Text or prompt associated with the node
+    - `id`: Unique identifier of the node
+    - `type`: Type of the node (e.g., "Default", "End Call", "Webhook")
+    - `data`: Object containing node-specific data
+      - `name`: Name of the node
+      - `text` or `prompt`: Text or prompt associated with the node
       - Other properties specific to the node type
   </Accordion>
 </ParamField>
 
-<ParamField body="edges" type="array of objects" required>
+<ParamField body="edges" type="array of objects">
   An array of edge objects defining the connections between nodes.
 
   <Accordion title="Edge Object Parameters">
-    - `id` — Unique identifier of the edge
-    - `source` — ID of the source node
-    - `target` — ID of the target node
-    - `label` — Label for this edge
+    - `id`: Unique identifier of the edge
+    - `source`: ID of the source node
+    - `target`: ID of the target node
+    - `data.label`: Label for this edge
   </Accordion>
+</ParamField>
+
+<ParamField body="execution_mode" type="string">
+  `rigid` or `flex`. In flex mode the router may move between nodes inside the same flex group without following an explicit edge.
+</ParamField>
+
+<ParamField body="flex_groups" type="object[]">
+  Flex groups for `execution_mode: "flex"`. Each item is `{ "ids": ["node_id", ...], "color": "#hex" }`. Group ids that do not match a node are dropped and reported in `warnings`. When the version already has flex groups, they are re-validated on every nodes or edges update.
 </ParamField>
 
 ### Response
 
 <ResponseField name="status" type="string">
-  The status of the operation (e.g., "success").
+  `success` on success, `error` on failure.
 </ResponseField>
 
 <ResponseField name="message" type="string">
-  A message describing the result of the operation.
+  `"Pathway version updated successfully"`, or `"No changes to update"` when the body was empty.
 </ResponseField>
+
+<ResponseField name="warnings" type="string[]">
+  Present only when nodes, edges, or flex groups were adjusted during validation.
+</ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "Pathway version not found"}` when `version_number` does not exist for this pathway |
+| `400` | `{"status": "error", "message": "Error updating pathway version"}` |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
 
 <ResponseExample>
 ```json Response
 {
   "status": "success",
-  "message": "Version updated successfully"
+  "message": "Pathway version updated successfully"
 }
 ```
 </ResponseExample>

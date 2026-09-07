@@ -1,7 +1,7 @@
 ---
 title: "Get Pathway Versions"
 api: "GET https://api.bland.ai/v1/pathway/{pathway_id}/versions"
-description: "Retrieves all versions of a specific pathway, including version number, creation date, name, and latest status."
+description: "Retrieves all non-archived versions of a specific pathway, including version number, creation date, name, and staging or published status."
 ---
 
 ### Headers
@@ -18,12 +18,18 @@ description: "Retrieves all versions of a specific pathway, including version nu
 
 ### Response
 
+Returns a JSON array of version objects, newest first. Archived versions (see [Delete Pathway Version](/api-v1/delete/pathway_version)) are excluded.
+
 <ResponseField name="id" type="string">
-  The unique identifier of the pathway version.
+  The internal row identifier of the version. Use `version_number`, not `id`, when calling the other version endpoints.
 </ResponseField>
 
 <ResponseField name="version_number" type="integer">
   The version number of this pathway version.
+</ResponseField>
+
+<ResponseField name="revision_number" type="integer | null">
+  Incremented each time the version is saved.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">
@@ -31,33 +37,61 @@ description: "Retrieves all versions of a specific pathway, including version nu
 </ResponseField>
 
 <ResponseField name="name" type="string">
-  The name of this pathway version.
+  The name of this pathway version. Defaults to `"Version N"` when the version was created without a name.
 </ResponseField>
 
-<ResponseField name="is_latest" type="boolean">
-  Indicates whether this is the latest version of the pathway.
+<ResponseField name="source_version_number" type="integer | null">
+  The version number this version was copied from, or `null` if it was created from scratch.
 </ResponseField>
+
+<ResponseField name="is_staging" type="boolean">
+  Present (and `true`) only on the version currently promoted to staging.
+</ResponseField>
+
+<ResponseField name="is_prev_published" type="boolean">
+  Present (and `true`) only on versions that have been published to production at some point. Only these versions can be used with [Rollback Pathway](/api-v1/post/pathway-rollback).
+</ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "Error fetching pathway versions"}` |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
 
 <ResponseExample>
 ```json Response
 [
   {
-    "id": "v1_abc123",
-    "version_number": 1,
-    "created_at": "2024-03-05T12:00:00Z",
-    "name": "Initial Version",
-    "is_latest": false
+    "id": "48213",
+    "version_number": 3,
+    "revision_number": 2,
+    "created_at": "2024-03-06T14:30:00.000Z",
+    "name": "Version 3",
+    "source_version_number": 2,
+    "is_prev_published": true
   },
   {
-    "id": "v2_def456",
+    "id": "48102",
     "version_number": 2,
-    "created_at": "2024-03-06T14:30:00Z",
+    "revision_number": 7,
+    "created_at": "2024-03-05T12:00:00.000Z",
     "name": "Updated Flow",
-    "is_latest": true
+    "source_version_number": null,
+    "is_staging": true
+  },
+  {
+    "id": "47990",
+    "version_number": 1,
+    "revision_number": 1,
+    "created_at": "2024-03-01T09:00:00.000Z",
+    "name": "First Draft Version",
+    "source_version_number": null
   }
 ]
 ```
 </ResponseExample>
+
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

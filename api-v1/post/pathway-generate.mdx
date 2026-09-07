@@ -21,14 +21,20 @@ description: "Create an asynchronous pathway generation job from a detailed prom
 </ParamField>
 
 <ParamField body="input_name" type="string">
-  Optional name to use for the generated pathway
+  Optional name to use for the generated pathway. Including `[bland]` in the name selects the advanced generator.
 </ParamField>
 
 ### How it works
 
 This endpoint only queues generation and returns a `jobId`.
 
-Use `GET /v1/pathway/generate/status/{job_id}` to start processing and poll until generation is complete.
+Use [Get Pathway Generation Status](/api-v1/get/pathway-generate-status-job-id) to start processing and poll until generation is complete.
+
+### Limits
+
+- Accounts that are not on an enterprise plan can generate at most 3 pathways in any rolling 24-hour window. Generated pathways are counted by their `"Created by Pathway Generator"` description, so renaming or editing them does not free up the quota. Exceeding it returns `400` with `"You have exceeded the maximum number of generated pathways."`.
+- `input_prompt` is screened for prohibited content before the job is queued, and every generated node is screened again before the pathway is saved (`"Prompt flagged for inappropriate content."`). Orgs with the `BYPASS_MODERATION` entitlement skip both checks.
+- The generate and status endpoints share an IP rate limit of 100 requests per 15 minutes. Exceeding it returns `429` with a plain-text body.
 
 ### Response
 
@@ -41,8 +47,17 @@ Use `GET /v1/pathway/generate/status/{job_id}` to start processing and poll unti
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of errors.
+  `null` on success, or a list of errors. Note that on this endpoint the error object's `message` is the code `PATHWAY_GENERATION_ERROR` and `error` carries the human-readable reason.
 </ResponseField>
+
+### Errors
+
+All validation failures return `400` with `error` set to one of:
+
+- `"Prompt must be greater than 100 characters."`
+- `"Input prompt must be less than 8000 characters."` (non-enterprise only)
+- `"Prompt flagged for inappropriate content."`
+- `"You have exceeded the maximum number of generated pathways."`
 
 <ResponseExample>
 ```json Success

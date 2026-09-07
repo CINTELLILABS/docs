@@ -1,5 +1,5 @@
 ---
-title: "Promote Pathway Version" 
+title: "Promote Pathway Version"
 api: "POST https://api.bland.ai/v1/pathway/{pathway_id}/publish"
 description: "Promote a pathway version for a pathway ID to either staging or production environment."
 ---
@@ -8,6 +8,10 @@ description: "Promote a pathway version for a pathway ID to either staging or pr
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+<Note>
+Org members need the `admin`, `owner`, or `operator` role. `prompter` and `viewer` members receive a `403` with error code `UNAUTHORIZED`.
+</Note>
 
 ### Path
 
@@ -25,18 +29,65 @@ The version number of the pathway you want to promote
     The environment you want to promote the pathway to. Can be `production` or `staging`. Default is `production`.
 </ParamField>
 
+### How it works
 
+- `production`: copies the version's graph into the live pathway and creates a new, frozen snapshot version (`data.new_version_number`) that records exactly what was published. The snapshot is what [Rollback Pathway](/api-v1/post/pathway-rollback) can return to.
+- `staging`: points the pathway's staging slot at the version. Nothing is copied.
 
 ### Response
 
 <ResponseField name="message" type="string">
-    A message indicating the status of the request.
+    `"Pathway published successfully"`.
 </ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="success" type="boolean">
+      `true`.
+    </ResponseField>
+
+    <ResponseField name="message" type="string">
+      `"New pathway version published successfully to production"` or `"Pathway staged successfully"`.
+    </ResponseField>
+
+    <ResponseField name="new_version_number" type="integer">
+      Production only. The version number of the snapshot created by this publish.
+    </ResponseField>
+
+    <ResponseField name="staged_version_number" type="integer">
+      Staging only. The version number now in staging.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "Error publishing pathway"}` for an unknown `version_id`, an `environment` other than `production` or `staging`, or a failed publish |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
+
 <ResponseExample>
 
-```json Response
+```json Production
 {
-  "message": "Pathway published successfully"
+  "message": "Pathway published successfully",
+  "data": {
+    "success": true,
+    "message": "New pathway version published successfully to production",
+    "new_version_number": 5
+  }
+}
+```
+
+```json Staging
+{
+  "message": "Pathway published successfully",
+  "data": {
+    "success": true,
+    "message": "Pathway staged successfully",
+    "staged_version_number": 4
+  }
 }
 ```
 </ResponseExample>

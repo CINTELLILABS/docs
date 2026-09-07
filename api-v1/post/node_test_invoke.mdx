@@ -12,12 +12,14 @@ description: "Start a node test run for a given node and pathway with a new prom
 
 ### Body Parameters
 
+The body is validated strictly: any key not listed here is rejected with `400` and error code `INVALID_PARAMETER`.
+
 <ParamField body="new_prompt" type="string">
-  The new prompt to test for this node. This will be used to simulate the agent's responses against the pinned and auto-selected conversations. Either `new_prompt` or `static_text` can be provided, but not both.
+  The new prompt to test for this node. This will be used to simulate the agent's responses against the selected conversations. Provide either `new_prompt` or `static_text`.
 </ParamField>
 
 <ParamField body="static_text" type="string">
-  Static text that the agent will always reply with. Either `static_text` or `new_prompt` can be provided, but not both. This is useful to test variable extractions on static text nodes.
+  Static text that the agent will always reply with. Provide either `static_text` or `new_prompt`. This is useful to test variable extractions on static text nodes.
 </ParamField>
 
 <ParamField body="judge_prompt" type="string">
@@ -49,7 +51,12 @@ description: "Start a node test run for a given node and pathway with a new prom
 </ParamField>
 
 <ParamField body="conversations" type="array" required>
-  Array of conversation references to include in the test. The system may automatically add up to 4 additional recent completed calls for the same node and pathway.
+  Array of conversation references to include in the test. Pass `[]` to let the server pick conversations for you:
+
+  - When `conversations` is non-empty, exactly those calls are used. Every id must be a call owned by your account, otherwise the request fails with `400` `INVALID_PARAMETER`. Calls in which the agent never spoke at this node are silently skipped.
+  - When `conversations` is empty, the server uses the conversations pinned to this node in the dashboard plus up to 4 recent completed calls on this pathway that visited the node (or pinned conversations only, when `pinned_only` is `true`).
+
+  At most 50 conversations can be tested in one run (`400` `TOO_MANY_CONVERSATIONS`).
 </ParamField>
 
 <ParamField body="conversations[].id" type="string" required>
@@ -58,6 +65,14 @@ description: "Start a node test run for a given node and pathway with a new prom
 
 <ParamField body="conversations[].type" type="string" required>
   Type of the conversation. We only support <code>"call"</code> for now.
+</ParamField>
+
+<ParamField body="conversations[].eval_prompt" type="string">
+  Optional judge instructions specific to this conversation, used in addition to `judge_prompt`.
+</ParamField>
+
+<ParamField body="pinned_only" type="boolean">
+  Only applies when `conversations` is empty. When `true`, test only the conversations pinned to this node and do not auto-select recent calls. Defaults to `false`.
 </ParamField>
 
 <ParamField body="node_id" type="string" required>
@@ -79,8 +94,16 @@ description: "Start a node test run for a given node and pathway with a new prom
 ### Response
 
 <ResponseField name="data.run_id" type="string">
-  Identifier of the created node test run. Use this ID with <code>GET /v1/node_tests/run/:id</code> to retrieve the full results.
+  Identifier of the created node test run. Use this ID with [Get Node Test Run](/api-v1/get/node_test_run) to retrieve the full results.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | Schema validation failed (`message` names the offending path), a conversation `type` other than `"call"`, or a call id that is invalid or not owned by your account. |
+| `400` | `TOO_MANY_CONVERSATIONS` | More than 50 conversations selected. |
+| `500` | `TEST_INVOCATION_FAILURE` | The test workflow could not be started. |
 
 
 <RequestExample>

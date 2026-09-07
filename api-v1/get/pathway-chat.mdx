@@ -18,25 +18,46 @@ The chat ID created from the /pathway/chat/create endpoint.
 
 ### Response
 
-<ResponseField name="errors" type="array">
-  List of errors or null.
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="chat_history" type="array">
+      Message objects for the conversation so far, each `{ "role": "user" | "assistant", "content": "..." }`. Empty until the first message is sent.
+    </ResponseField>
+
+    <ResponseField name="variables" type="object | null">
+      The chat's current variables (initial `request_data` plus anything extracted during the conversation), or `null` if none.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="data" type="array">
-  Message objects for the conversation history.
+<ResponseField name="errors" type="null | array">
+  `null` on success. `500` returns `[{"error": "GET_PATHWAY_CHAT_HISTORY_INTERNAL_SERVER_ERROR", ...}]`.
 </ResponseField>
+
+<Note>
+An unknown chat id, or a chat that belongs to another account, is not a `404`. It returns `200` with an empty `chat_history` and `variables: null`.
+</Note>
 
 <ResponseExample>
 
 ```json Response
 {
-    data: [
-        {
-            "role": "user",
-            "content": "message"
-        },
-        ... // more messages
-    ]
+  "data": {
+    "chat_history": [
+      {
+        "role": "user",
+        "content": "hello"
+      },
+      {
+        "role": "assistant",
+        "content": "Hey there, this is the Bland Bistro reservation line. Do you want to make a reservation?"
+      }
+    ],
+    "variables": {
+      "user_name": "John Doe"
+    }
+  },
+  "errors": null
 }
 ```
 

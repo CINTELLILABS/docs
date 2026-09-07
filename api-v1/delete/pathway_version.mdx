@@ -10,25 +10,39 @@ description: "Marks a specific version of a pathway as archived, effectively del
   Your API key for authentication.
 </ParamField>
 
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Path Parameters
 
 <ParamField path="pathway_id" type="string" required>
   The ID of the pathway containing the version to be deleted.
 </ParamField>
 
-<ParamField path="version_id" type="string" required>
-  The ID of the version to be deleted.
+<ParamField path="version_id" type="integer" required>
+  The version number of the version to archive (the `version_number` from [Get Pathway Versions](/api-v1/get/pathway_versions), not the `id`).
 </ParamField>
 
 ### Response
 
+Archived versions disappear from [Get Pathway Versions](/api-v1/get/pathway_versions) but are not hard-deleted. If the archived version was in staging, the staging slot is cleared.
+
 <ResponseField name="status" type="string">
-  The status of the operation (e.g., "success").
+  `success` on success, `error` on failure.
 </ResponseField>
 
 <ResponseField name="message" type="string">
-  A message describing the result of the operation.
+  `"Version deleted successfully"`.
 </ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "Error deleting pathway versions"}` |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
+| `404` | `{"status": "error", "message": "Pathway version not found"}` |
 
 <ResponseExample>
 ```json Response
