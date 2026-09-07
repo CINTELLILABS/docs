@@ -1,5 +1,5 @@
 ---
-title: "Delete Inbound Phone Number"  
+title: "Delete Inbound Phone Number"
 api: "POST https://api.bland.ai/v1/inbound/{phone_number}/delete"
 description: "Remove an inbound number that was uploaded through your own Twilio account. See [Custom Twilio Integration](/tutorials/custom-twilio) for more information."
 ---
@@ -11,7 +11,7 @@ description: "Remove an inbound number that was uploaded through your own Twilio
 </ParamField>
 
 <ParamField header="encrypted_key" type="string" required>
-  The `encrypted_key` for the Twilio account that owns the phone number you want to delete.
+  The `encrypted_key` for the Twilio account that owns the phone number you want to delete. This endpoint reads the `encrypted_key` header only.
 
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
@@ -19,7 +19,7 @@ description: "Remove an inbound number that was uploaded through your own Twilio
 ### Path
 
 <ParamField path="phone_number" type="string" required>
-  The phone number you want to remove from Bland's system.
+  The phone number you want to remove from Bland's system. Digit-only input is treated as a US number.
 </ParamField>
 
 ### Response
@@ -32,11 +32,25 @@ description: "Remove an inbound number that was uploaded through your own Twilio
   A message saying whether the deletion succeeded, or a helpful message describing why it failed.
 </ResponseField>
 
+Error status codes:
+
+- `400`: missing `encrypted_key` or an invalid phone number.
+- `403`: `Invalid encrypted key`. The key resolves to Bland's own Twilio account; only numbers imported with [Upload Inbound Phone Numbers](/api-v1/post/inbound-insert) can be deleted here.
+- `404`: the number is not in that Twilio account.
+- `500`: Twilio lookup failed, or the number was not found on your Bland account.
+
 <ResponseExample>
-```json
+```json Success
 {
   "status": "success",
   "message": "Successfully deleted number from database: +15555555555"
+}
+```
+
+```json Not in Twilio account (404)
+{
+  "status": "error",
+  "message": "Number not found or may not be owned by this account."
 }
 ```
 </ResponseExample>

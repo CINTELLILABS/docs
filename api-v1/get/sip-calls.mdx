@@ -4,6 +4,8 @@ api: "GET https://api.bland.ai/v1/sip/calls"
 description: "Retrieve SIP call logs for a phone number with cursor-based pagination."
 ---
 
+Call logs are reconstructed from SIP signaling records: one entry per INVITE, paired with its BYE when one was seen.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -13,34 +15,44 @@ description: "Retrieve SIP call logs for a phone number with cursor-based pagina
 ### Query Parameters
 
 <ParamField query="phone_number" type="string" required>
-  The phone number to fetch call logs for. Must be in E.164 format.
+  The number or SIP identity to fetch logs for. Phone-like input is normalized to E.164. Non-numeric identities (for example `bland-test-001`) are matched verbatim.
 </ParamField>
 
 <ParamField query="limit" type="number">
-  Maximum number of calls to return. Default: 50.
+  Maximum number of calls to return. Default: 100. Maximum: 500.
 </ParamField>
 
 <ParamField query="before" type="string">
-  Cursor for pagination. Pass the `call_id` of the last call from the previous page to fetch the next page.
+  ISO 8601 timestamp. Only calls with signaling before this time are returned. Pass the `start_time` of the last call from the previous page to fetch the next page. Unparseable values are ignored.
 </ParamField>
 
 ### Response
 
 <ResponseField name="calls" type="array">
-  Array of call records. Each includes:
-  - `call_id` (string) — Unique SIP Call-ID
-  - `direction` (string) — `"inbound"` or `"outbound"`
-  - `from` (string) — Caller number
-  - `to` (string) — Callee number
-  - `status` (string) — Final SIP status (e.g., `"200 OK"`, `"486 Busy"`)
-  - `sip_code` (number) — SIP response code
-  - `duration_seconds` (number) — Call duration
-  - `started_at` (string) — ISO 8601 timestamp
-  - `ended_at` (string) — ISO 8601 timestamp
-  - `source_ip` (string) — Source IP address
+  Newest first. Each entry includes:
+  - `callid` (string): the SIP Call-ID.
+  - `direction` (string): `"inbound"` or `"outbound"`, relative to the queried number.
+  - `start_time` (string): ISO 8601 timestamp of the INVITE.
+  - `end_time` (string): ISO 8601 timestamp of the BYE, or `null` if none was recorded.
+  - `duration_s` (number): seconds between `start_time` and `end_time`, or `null`.
+  - `from_uri` (string), `to_uri` (string): full SIP URIs from the INVITE.
+  - `from_user` (string), `to_user` (string): the user parts of those URIs.
+  - `connect_code` (string): the final SIP response code to the INVITE, as a string (for example `"200"`).
+  - `connect_reason` (string): the SIP reason phrase (for example `"OK"`).
+  - `src_ip` (string): source IP address of the INVITE.
 </ResponseField>
 
-```json Example Request
+### Error Responses
+
+<ResponseField name="400 INVALID_PARAMETER" type="object">
+  `phone_number` is missing or empty.
+</ResponseField>
+
+<ResponseField name="404 NOT_FOUND" type="object">
+  The number has no SIP configuration in your organization.
+</ResponseField>
+
+```bash Example Request
 curl -X GET 'https://api.bland.ai/v1/sip/calls?phone_number=%2B14150000000&limit=10' \
   -H "Authorization: Bearer <token>"
 ```
@@ -51,16 +63,18 @@ curl -X GET 'https://api.bland.ai/v1/sip/calls?phone_number=%2B14150000000&limit
   "data": {
     "calls": [
       {
-        "call_id": "abc123@sip.bland.ai",
+        "callid": "abc123@sip.bland.ai",
         "direction": "outbound",
-        "from": "+14150000000",
-        "to": "+15105551234",
-        "status": "200 OK",
-        "sip_code": 200,
-        "duration_seconds": 45,
-        "started_at": "2026-03-09T11:00:00Z",
-        "ended_at": "2026-03-09T11:00:45Z",
-        "source_ip": "35.80.235.26"
+        "start_time": "2026-03-09T11:00:00.000Z",
+        "end_time": "2026-03-09T11:00:45.000Z",
+        "duration_s": 45,
+        "from_uri": "sip:+14150000000@us2.sip.bland.ai",
+        "to_uri": "sip:+15105551234@trunk.provider.com",
+        "from_user": "+14150000000",
+        "to_user": "+15105551234",
+        "connect_code": "200",
+        "connect_reason": "OK",
+        "src_ip": "35.82.60.77"
       }
     ]
   },

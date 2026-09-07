@@ -4,6 +4,12 @@ api: "PATCH https://api.bland.ai/v1/sip/config"
 description: "Update advanced SIP configuration including failover, codecs, and alerts."
 ---
 
+Only the keys you send are updated. Omitted keys keep their current value.
+
+<Note>
+  `failover_config` and `codec_config` are stored on the configuration but are not yet enforced at call time.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -13,7 +19,7 @@ description: "Update advanced SIP configuration including failover, codecs, and 
 ### Body
 
 <ParamField body="phone_number" type="string" required>
-  The phone number to update configuration for. Must be in E.164 format.
+  The phone number to update configuration for. Must parse as an E.164 number.
 </ParamField>
 
 <ParamField body="direction" type="string" required>
@@ -22,26 +28,42 @@ description: "Update advanced SIP configuration including failover, codecs, and 
 
 <ParamField body="failover_config" type="object">
   Failover configuration:
-  - `enabled` (boolean) — Enable/disable failover
-  - `endpoints` (array) — Failover SIP servers, each with `host`, `port`, `transport`, and `priority`
-  - `triggers` (array) — Conditions that trigger failover: `"unreachable"`, `"auth_failure"`, `"timeout"`
-  - `failback` (string) — `"auto"` or `"manual"`
+  - `enabled` (boolean)
+  - `endpoints` (array): each with `host` (string), `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), and `priority` (number)
+  - `triggers` (string[]): conditions that trigger failover
+  - `failback` (string): `"auto"` or `"manual"`
 </ParamField>
 
 <ParamField body="codec_config" type="object">
   Codec configuration:
-  - `codecs` (array) — Ordered list of codec names: `"PCMU"`, `"PCMA"`, `"G.729"`, `"Opus"`, `"G.722"`
-  - `transcode` (boolean) — Enable transcoding between codecs
+  - `codecs` (string[]): ordered list of codec names
+  - `transcode` (boolean)
 </ParamField>
 
 <ParamField body="alert_config" type="object">
   Alert configuration:
-  - `enabled` (boolean) — Enable/disable alerts
-  - `thresholds` — `unreachable_minutes` (number), `failure_rate_percent` (number), `failure_rate_window_minutes` (number), `response_time_ms` (number)
-  - `channels` — `email` (boolean), `sms` (boolean), `webhook` (string, URL)
+  - `enabled` (boolean)
+  - `thresholds` (object): `unreachable_minutes`, `failure_rate_percent`, `failure_rate_window_minutes`, `response_time_ms` (all numbers)
+  - `channels` (object): `email` (string, address), `sms` (string, phone number), `webhook` (string, URL)
 </ParamField>
 
-```json Example Request
+At least one of `failover_config`, `codec_config`, or `alert_config` is required.
+
+### Response
+
+The updated SIP configuration record for that number and direction: `id`, `org_id`, `number`, `direction`, `sip_endpoint`, `headers`, `options`, `trunk_id`, `failover_config`, `codec_config`, `alert_config`, `created_at`, `updated_at`, plus the internal `inbound_id`.
+
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  `phone_number` or `direction` is missing, `phone_number` is not a valid number, or none of the three config objects was sent (`"No valid fields to update"`).
+</ResponseField>
+
+<ResponseField name="404 NOT_FOUND" type="object">
+  No SIP configuration exists for that number and direction.
+</ResponseField>
+
+```bash Example Request
 curl -X PATCH https://api.bland.ai/v1/sip/config \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -70,13 +92,58 @@ curl -X PATCH https://api.bland.ai/v1/sip/config \
         "response_time_ms": 500
       },
       "channels": {
-        "email": true,
-        "sms": false,
+        "email": "ops@example.com",
+        "sms": "+14155550100",
         "webhook": "https://hooks.example.com/sip-alerts"
       }
     }
   }'
 ```
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "0b6f1c2e-5a1d-4c0e-9a3b-7d2f8e9c1a45",
+    "org_id": "9b59f853-c2c7-4e3a-b5d6-8f7e9a1b2c3d",
+    "direction": "outbound",
+    "number": "+14150000000",
+    "sip_endpoint": "sip:trunk.provider.com",
+    "created_at": "2026-03-09T12:00:00.000Z",
+    "updated_at": "2026-03-10T09:30:00.000Z",
+    "headers": null,
+    "options": { "port": 5061, "transport": "tls", "secure_media": true },
+    "inbound_id": 1234,
+    "trunk_id": null,
+    "failover_config": {
+      "enabled": true,
+      "endpoints": [
+        { "host": "backup1.sip.provider.com", "port": 5061, "transport": "tls", "priority": 1 },
+        { "host": "backup2.sip.provider.com", "port": 5061, "transport": "tls", "priority": 2 }
+      ],
+      "triggers": ["unreachable", "timeout"],
+      "failback": "auto"
+    },
+    "codec_config": { "codecs": ["PCMU", "PCMA", "Opus"], "transcode": true },
+    "alert_config": {
+      "enabled": true,
+      "thresholds": {
+        "unreachable_minutes": 5,
+        "failure_rate_percent": 20,
+        "failure_rate_window_minutes": 30,
+        "response_time_ms": 500
+      },
+      "channels": {
+        "email": "ops@example.com",
+        "sms": "+14155550100",
+        "webhook": "https://hooks.example.com/sip-alerts"
+      }
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
 
 ---
 

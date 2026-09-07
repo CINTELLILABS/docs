@@ -13,17 +13,17 @@ description: "Get Bland's SIP server details and PBX configuration instructions 
 ### Query Parameters
 
 <ParamField query="phone_number" type="string">
-  Optional. If provided, includes per-number credentials (redacted) in the response.
+  Optional. Must parse as an E.164 number. When provided and the number has an outbound configuration with a `sip_username`, the response includes `credentials`.
 </ParamField>
 
 ### Response
 
 <ResponseField name="sip_server" type="string">
-  Bland's SIP server hostname for your region (e.g., `us1.sip.bland.ai`).
+  Bland's SIP server hostname for your region: `us2.sip.bland.ai`, `ca2.sip.bland.ai`, `asia2.sip.bland.ai`, or `eu2.sip.bland.ai`.
 </ResponseField>
 
 <ResponseField name="port" type="number">
-  SIP signaling port (e.g., `5061`).
+  SIP signaling port, `5061` (TLS).
 </ResponseField>
 
 <ResponseField name="instructions" type="string">
@@ -31,11 +31,21 @@ description: "Get Bland's SIP server details and PBX configuration instructions 
 </ResponseField>
 
 <ResponseField name="credentials" type="object">
-  Per-number registration credentials (only if `phone_number` is provided and registration auth is configured). Sensitive values are redacted.
+  `{ "sip_username": string, "sip_password": "********" }`. Only present when `phone_number` is given and that number's outbound options include a `sip_username`. The password is always redacted.
 </ResponseField>
 
-```json Example Request
-curl -X GET https://api.bland.ai/v1/sip/outbound-setup \
+### Error Responses
+
+<ResponseField name="400 INVALID_PARAMETER" type="object">
+  `phone_number` was sent but is empty.
+</ResponseField>
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  `phone_number` is not a valid number with a country code.
+</ResponseField>
+
+```bash Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/outbound-setup?phone_number=%2B14150000000' \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -43,9 +53,13 @@ curl -X GET https://api.bland.ai/v1/sip/outbound-setup \
 ```json Response
 {
   "data": {
-    "sip_server": "us1.sip.bland.ai",
+    "sip_server": "us2.sip.bland.ai",
     "port": 5061,
-    "instructions": "Configure your PBX to send SIP INVITE requests to us1.sip.bland.ai:5061 over TLS. Whitelist the IP addresses from /v1/sip/firewall-ips."
+    "instructions": "Configure your PBX to send outbound calls to the SIP server and port above. When prompted for a number, use the SIP username assigned to your number.",
+    "credentials": {
+      "sip_username": "bland",
+      "sip_password": "********"
+    }
   },
   "errors": null
 }

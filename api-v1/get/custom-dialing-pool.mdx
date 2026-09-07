@@ -5,7 +5,7 @@ description: "Retrieve a specific custom dialing pool by its ID."
 ---
 
 <Note>
-  Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
+  This endpoint requires an Enterprise plan. Other plans receive `403 ENTERPRISE_REQUIRED`.
 </Note>
 
 Retrieve details for a specific custom dialing pool using its unique identifier.
@@ -50,8 +50,8 @@ Retrieve details for a specific custom dialing pool using its unique identifier.
       UUID of associated Twilio credentials (or null if none).
     </ResponseField>
 
-    <ResponseField name="credentials_name" type="string | null">
-      Twilio account SID associated with the credentials, or `null`.
+    <ResponseField name="credentials_name" type="string|null">
+      Twilio Account SID for the associated credentials, or `null`.
     </ResponseField>
     
     <ResponseField name="created_at" type="string">
@@ -60,8 +60,8 @@ Retrieve details for a specific custom dialing pool using its unique identifier.
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array | null">
-  `null` on success. On failure, contains error objects.
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects on failure.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">
@@ -133,6 +133,18 @@ print(response.json())
     {
       "error": "POOL_NOT_FOUND",
       "message": "Geospatial dialing pool not found"
+    }
+  ]
+}
+```
+
+```json Error Response - Unauthorized
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ENTERPRISE_REQUIRED",
+      "message": "This feature is only available for enterprise users"
     }
   ]
 }

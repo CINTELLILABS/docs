@@ -13,24 +13,53 @@ description: "Get the health status of a SIP trunk by probing the endpoint with 
 ### Query Parameters
 
 <ParamField query="phone_number" type="string" required>
-  The phone number to check health for. Must be in E.164 format.
+  The number or SIP identity to check. Accepts an E.164 number, a DID, or an extension. The exact form you send is looked up first, then its `+` or plus-less sibling.
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Health status: `"healthy"`, `"unreachable"`, or `"unchecked"`. Inbound-only trunks show `"unchecked"` since there is no outbound endpoint to probe.
+<ResponseField name="configured" type="boolean">
+  `false` when the number has no SIP configuration. In that case only `configured` and `health` are returned.
 </ResponseField>
 
-<ResponseField name="response_time_ms" type="number">
-  Response time of the SIP OPTIONS probe in milliseconds. `null` if unreachable or unchecked.
+<ResponseField name="health" type="string">
+  One of:
+  - `"healthy"`: the endpoint answered a SIP OPTIONS probe over TLS.
+  - `"unreachable"`: the probe got no usable answer.
+  - `"mutual_tls"`: the endpoint is reachable but rejected the probe's TLS handshake because it requires a client certificate. Live calls present Bland's certificate, so this is not a failure.
+  - `"unchecked"`: no probe was run. Inbound-only trunks and configurations without a parseable `sip_endpoint` report this.
+  - `"unconfigured"`: `configured` is `false`.
 </ResponseField>
 
-<ResponseField name="checked_at" type="string">
-  ISO 8601 timestamp of when the health check was performed.
+<ResponseField name="inbound" type="object">
+  `{ "endpoint": string | null, "active": true }` when an inbound direction exists, otherwise `null`.
 </ResponseField>
 
-```json Example Request
+<ResponseField name="outbound" type="object">
+  `{ "endpoint": string | null, "active": true }` when an outbound direction exists, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="uptime_percent" type="number">
+  Always `null` today. Reserved for a rolling uptime figure.
+</ResponseField>
+
+<ResponseField name="avg_response_ms" type="number">
+  Response time of the SIP OPTIONS probe in milliseconds. `null` when `health` is `"unchecked"`.
+</ResponseField>
+
+<ResponseField name="last_checked" type="string">
+  ISO 8601 timestamp of this check.
+</ResponseField>
+
+The probe always uses TLS on the endpoint's port (default 5061) and resolves `_sips._tcp` SRV records when no port is pinned, the same way a live call does.
+
+### Error Responses
+
+<ResponseField name="400 INVALID_PARAMETER" type="object">
+  `phone_number` is missing or empty.
+</ResponseField>
+
+```bash Example Request
 curl -X GET 'https://api.bland.ai/v1/sip/status?phone_number=%2B14150000000' \
   -H "Authorization: Bearer <token>"
 ```
@@ -39,9 +68,26 @@ curl -X GET 'https://api.bland.ai/v1/sip/status?phone_number=%2B14150000000' \
 ```json Response
 {
   "data": {
-    "status": "healthy",
-    "response_time_ms": 42,
-    "checked_at": "2026-03-09T12:00:00Z"
+    "configured": true,
+    "health": "healthy",
+    "inbound": null,
+    "outbound": {
+      "endpoint": "sip:trunk.provider.com",
+      "active": true
+    },
+    "uptime_percent": null,
+    "avg_response_ms": 42,
+    "last_checked": "2026-03-09T12:00:00.000Z"
+  },
+  "errors": null
+}
+```
+
+```json Unconfigured
+{
+  "data": {
+    "configured": false,
+    "health": "unconfigured"
   },
   "errors": null
 }

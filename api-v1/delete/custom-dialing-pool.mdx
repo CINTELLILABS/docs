@@ -5,7 +5,7 @@ description: "Delete a custom dialing pool from your organization."
 ---
 
 <Note>
-  Custom dialing is only available on Enterprise plans.
+  This endpoint requires an Enterprise plan. Other plans receive `403 ENTERPRISE_REQUIRED`.
 </Note>
 
 ### Headers
@@ -22,12 +22,16 @@ description: "Delete a custom dialing pool from your organization."
 
 ### Response
 
-<ResponseField name="data" type="object">
-  Contains `message` and `deleted_pool_id`.
+<ResponseField name="data.message" type="string">
+  Confirmation that the pool was deleted.
 </ResponseField>
 
-<ResponseField name="errors" type="array | null">
-  `null` on success. Errors include `POOL_NOT_FOUND` (404) and `POOL_DELETE_FAILURE` (500).
+<ResponseField name="data.deleted_pool_id" type="string">
+  The ID of the deleted pool.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects on failure.
 </ResponseField>
 
 <ResponseExample>
@@ -40,7 +44,21 @@ description: "Delete a custom dialing pool from your organization."
   "errors": null
 }
 ```
+
+```json Pool Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "POOL_NOT_FOUND",
+      "message": "Geospatial dialing pool not found"
+    }
+  ]
+}
+```
 </ResponseExample>
+
+The endpoint returns `404 POOL_NOT_FOUND` when the pool does not exist or belongs to another organization, and `500 POOL_DELETE_FAILURE` when deletion fails.
 
 ---
 

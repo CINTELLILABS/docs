@@ -11,16 +11,25 @@ description: "Retrieves a list of all inbound phone numbers configured for your 
 </ParamField>
 
 <ParamField header="encrypted_key" type="string">
-  Use your own Twilio account and only return inbound numbers associated with that account sid (optional).
-  
+  Use your own Twilio account and only return inbound numbers associated with that account SID (optional). This endpoint reads the `encrypted_key` header only.
+
   Learn more about BYOT [here](/tutorials/custom-twilio).
-</ParamField> 
+</ParamField>
 
 ### Response
 
 <ResponseField name="inbound_numbers" type="array">
-  An array of objects, each representing an inbound phone number and its configuration.
+  An array of objects, each representing an inbound phone number and its configuration. Numbers whose subscription is not active are omitted.
+
+  Each object contains the number's current settings, using the same field names as [Update Inbound Number Details](/api-v1/post/inbound-number-update): `created_at`, `phone_number`, `prompt`, `webhook`, `webhook_events`, `voice`, `voice_settings`, `background_track`, `first_sentence`, `silence_end_message`, `model`, `temperature`, `pathway_id`, `pathway_version`, `pathway_ids`, `start_node_id`, `tools`, `dynamic_data`, `request_data`, `transfer_phone_number`, `transfer_list`, `fallback_number`, `memory_id`, `language`, `language_detection_period`, `language_detection_options`, `timezone`, `keywords`, `pronunciation_guide`, `interruption_threshold`, `interruptibility`, `block_interruptions`, `noise_cancellation`, `ignore_button_press`, `improve_accuracy`, `use_candidate_model`, `record`, `max_duration`, `metadata`, `summary_prompt`, `analysis_prompt`, `analysis_schema`, `analysis_preset`, `status_callback`, `skip_url_update`, `sms_config`, `whatsapp_config`, `imessage_config` and `messaging_service`.
+
+  Notes:
+  - `voice` is the voice ID (a UUID string).
+  - `sms_config` is an array with zero or one configuration object.
+  - `account_sid` (the Twilio account SID) is included only when `encrypted_key` is sent.
 </ResponseField>
+
+Errors return `500 { "status": "error", "message": "Error fetching inbound numbers" }`.
 
 <ResponseExample>
 ```json Response
@@ -31,45 +40,56 @@ description: "Retrieves a list of all inbound phone numbers configured for your 
             "phone_number": "+18005551234",
             "prompt": "When you receive a call, recite a random poem from 'Sunset Boulevard' and then ask, 'How may I assist you in your poetic journey today?'",
             "webhook": "https://api.example.com/poetry-line",
-            "voice_id": 2,
-            "dynamic_data": [/* Use [Dynamic Data](/api-reference/endpoint/dynamic_validate) to make API requests mid-call */],
-            "interruption_threshold": null,
-            "first_sentence": null,
-            "reduce_latency": true,
-            "transfer_phone_number": null,
+            "webhook_events": [],
+            "voice": "e1289219-0ea2-4f22-a994-c542c2a48a0f",
             "voice_settings": null,
-            "record": false,
-            "max_duration": 30
-        },
-        {
-            "created_at": "2023-11-25T21:42:22.325993+00:00",
-            "phone_number": "+18005559876",
-            "prompt": "Answer with 'You've reached the Secret Society of Enigmatic Enthusiasts. Please state the password or leave a message after the beep.'",
-            "webhook": "https://mysteryclub.example.com/inbound-call-hook",
-            "voice_id": 1,
+            "background_track": null,
+            "first_sentence": null,
+            "silence_end_message": null,
+            "model": "base",
+            "temperature": null,
+            "pathway_id": null,
+            "pathway_version": null,
+            "pathway_ids": null,
+            "start_node_id": null,
+            "tools": null,
             "dynamic_data": null,
-            "interruption_threshold": null,
-            "first_sentence": null,
-            "reduce_latency": true,
+            "request_data": null,
             "transfer_phone_number": null,
-            "voice_settings": null,
+            "transfer_list": null,
+            "fallback_number": null,
+            "memory_id": null,
+            "language": "en-US",
+            "language_detection_period": null,
+            "language_detection_options": null,
+            "timezone": null,
+            "keywords": null,
+            "pronunciation_guide": null,
+            "interruption_threshold": null,
+            "interruptibility": null,
+            "block_interruptions": null,
+            "noise_cancellation": false,
+            "ignore_button_press": false,
+            "improve_accuracy": null,
+            "use_candidate_model": false,
             "record": false,
-            "max_duration": 30
-        },
-        //...
+            "max_duration": 30,
+            "metadata": null,
+            "summary_prompt": null,
+            "analysis_prompt": null,
+            "analysis_schema": null,
+            "analysis_preset": null,
+            "status_callback": null,
+            "skip_url_update": false,
+            "sms_config": [],
+            "whatsapp_config": null,
+            "imessage_config": null,
+            "messaging_service": null
+        }
     ]
 }
-
 ```
 </ResponseExample>
-
-
-
-
-
-
-
-
 
 ---
 

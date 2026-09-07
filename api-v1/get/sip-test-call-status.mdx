@@ -13,29 +13,39 @@ description: "Poll the status and trace of a SIP test call."
 ### Query Parameters
 
 <ParamField query="call_id" type="string" required>
-  The call ID returned from `POST /v1/sip/test-call`.
+  The `call_id` returned from [Send SIP Test Call](/api-v1/post/sip-test-call). Test call records are kept for one hour.
 </ParamField>
 
 ### Response
 
 <ResponseField name="status" type="string">
-  Call status: `"queued"`, `"initiated"`, `"ringing"`, `"in-progress"`, `"completed"`, `"failed"`, `"busy"`, `"no-answer"`.
+  Raw carrier call status: `"queued"`, `"initiated"`, `"ringing"`, `"in-progress"`, `"completed"`, `"failed"`, `"busy"`, `"no-answer"`, or `"canceled"`.
 </ResponseField>
 
 <ResponseField name="result" type="string">
-  Final result enum: `"connected"`, `"failed"`, `"busy"`, `"no_answer"`, `"pending"`.
+  Normalized outcome: `"completed"`, `"failed"`, `"busy"`, `"no-answer"`, `"in-progress"`, `"ringing"`, `"queued"`, `"canceled"`, or `"unknown"`. A `"failed"` status with talk time is reported as `"completed"`, since the call connected.
 </ResponseField>
 
 <ResponseField name="duration_seconds" type="number">
-  Call duration in seconds.
+  Call duration in seconds, or `null` until the call ends.
 </ResponseField>
 
 <ResponseField name="timeline" type="array">
-  Array of timeline events with `event` (string), `at` (timestamp), and `detail` (string) fields.
+  Status events for the call, each with `event` (string) and `at` (timestamp).
 </ResponseField>
 
-```json Example Request
-curl -X GET 'https://api.bland.ai/v1/sip/test-call/status?call_id=tc_abc123' \
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  `call_id` is missing.
+</ResponseField>
+
+<ResponseField name="403 SIP_TEST_CALL_STATUS_FAILED" type="object">
+  The `call_id` is unknown, expired, or belongs to another organization, or the carrier lookup failed.
+</ResponseField>
+
+```bash Example Request
+curl -X GET 'https://api.bland.ai/v1/sip/test-call/status?call_id=2f9c1d4e-8a7b-4c3d-9e1f-0a2b3c4d5e6f' \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -44,13 +54,13 @@ curl -X GET 'https://api.bland.ai/v1/sip/test-call/status?call_id=tc_abc123' \
 {
   "data": {
     "status": "completed",
-    "result": "connected",
+    "result": "completed",
     "duration_seconds": 8,
     "timeline": [
-      { "event": "initiated", "at": "2026-03-09T12:00:00Z", "detail": "Call initiated" },
-      { "event": "ringing", "at": "2026-03-09T12:00:01Z", "detail": "Endpoint ringing" },
-      { "event": "answered", "at": "2026-03-09T12:00:03Z", "detail": "Call answered" },
-      { "event": "completed", "at": "2026-03-09T12:00:08Z", "detail": "Call ended" }
+      { "event": "initiated", "at": "Mon, 09 Mar 2026 12:00:00 +0000" },
+      { "event": "ringing", "at": "Mon, 09 Mar 2026 12:00:01 +0000" },
+      { "event": "in-progress", "at": "Mon, 09 Mar 2026 12:00:03 +0000" },
+      { "event": "completed", "at": "Mon, 09 Mar 2026 12:00:11 +0000" }
     ]
   },
   "errors": null

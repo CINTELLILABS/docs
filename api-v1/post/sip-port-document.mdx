@@ -1,7 +1,7 @@
 ---
 title: "Upload Port Document"
 api: "POST https://api.bland.ai/v1/sip/port/document"
-description: "Upload a Letter of Authorization (LOA) or proof of ownership document for number porting."
+description: "Upload a proof-of-ownership document (utility bill or carrier invoice) for number porting."
 ---
 
 ### Headers
@@ -21,7 +21,17 @@ description: "Upload a Letter of Authorization (LOA) or proof of ownership docum
 ### Response
 
 <ResponseField name="document_sid" type="string">
-  A unique document identifier to reference when initiating the port request.
+  A unique document identifier to pass in `documents` on [Initiate Port Request](/api-v1/post/sip-port-initiate). The document is filed as a utility bill; the Letter of Authorization is signed separately via the `signature_url` returned there.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  No `file` field was sent, or the file was rejected by type or size.
+</ResponseField>
+
+<ResponseField name="502 TWILIO_DOCUMENT_ERROR" type="object">
+  The carrier rejected the upload. The message carries the carrier's reason.
 </ResponseField>
 
 ```bash Example Request
@@ -34,7 +44,7 @@ curl -X POST https://api.bland.ai/v1/sip/port/document \
 ```json Response
 {
   "data": {
-    "document_sid": "doc_abc123"
+    "document_sid": "RDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   },
   "errors": null
 }

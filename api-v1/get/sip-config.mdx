@@ -13,20 +13,26 @@ description: "Retrieve the current SIP configuration for a phone number."
 ### Query Parameters
 
 <ParamField query="phone_number" type="string" required>
-  The phone number to fetch SIP configuration for. Must be in E.164 format.
+  The number or SIP identity to fetch configuration for. Accepts an E.164 number, a DID, or an extension. The exact form you send is looked up first, then its `+` or plus-less sibling.
 </ParamField>
 
 ### Response
 
 <ResponseField name="data.inbound" type="object">
-  Inbound SIP configuration, or `null` if not configured. Includes `number`, `id`, `org_id`, `direction`, `sip_endpoint`, `headers`, `options`, `created_at`, and `updated_at`. Sensitive fields (credentials) are redacted.
+  Inbound SIP configuration. The key is omitted when no inbound direction is configured. Includes `id`, `org_id`, `number`, `direction`, `sip_endpoint`, `headers`, `options`, `trunk_id`, `failover_config`, `codec_config`, `alert_config`, `created_at`, and `updated_at`. `options` is reduced to `auth_mode`, `port`, `transport`, and `secure_media`; any credentials are replaced with `********`.
 </ResponseField>
 
 <ResponseField name="data.outbound" type="object">
-  Outbound SIP configuration, or `null` if not configured. Same fields as inbound.
+  Outbound SIP configuration, omitted when not configured. Same fields as inbound. `options.sip_username` and `options.sip_password` are replaced with `********` when set.
 </ResponseField>
 
-```json Example Request
+### Error Responses
+
+<ResponseField name="400 INVALID_PARAMETER" type="object">
+  `phone_number` is missing or empty.
+</ResponseField>
+
+```bash Example Request
 curl -X GET 'https://api.bland.ai/v1/sip?phone_number=%2B14150000000' \
   -H "Authorization: Bearer <token>"
 ```
@@ -36,32 +42,44 @@ curl -X GET 'https://api.bland.ai/v1/sip?phone_number=%2B14150000000' \
 {
   "data": {
     "inbound": {
-      "number": "+14150000000",
-      "id": "abc123",
-      "org_id": "org_456",
+      "id": "0b6f1c2e-5a1d-4c0e-9a3b-7d2f8e9c1a45",
+      "org_id": "9b59f853-c2c7-4e3a-b5d6-8f7e9a1b2c3d",
       "direction": "inbound",
+      "number": "+14150000000",
       "sip_endpoint": null,
-      "created_at": "2026-03-09T12:00:00Z",
-      "updated_at": "2026-03-09T12:00:00Z",
+      "created_at": "2026-03-09T12:00:00.000Z",
+      "updated_at": "2026-03-09T12:00:00.000Z",
       "headers": null,
       "options": {
         "auth_mode": "ip"
-      }
+      },
+      "inbound_id": 1234,
+      "trunk_id": null,
+      "failover_config": null,
+      "codec_config": null,
+      "alert_config": null
     },
     "outbound": {
-      "number": "+14150000000",
-      "id": "def789",
-      "org_id": "org_456",
+      "id": "7c1d2e3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
+      "org_id": "9b59f853-c2c7-4e3a-b5d6-8f7e9a1b2c3d",
       "direction": "outbound",
+      "number": "+14150000000",
       "sip_endpoint": "sip:trunk.provider.com",
-      "created_at": "2026-03-09T12:00:00Z",
-      "updated_at": "2026-03-09T12:00:00Z",
+      "created_at": "2026-03-09T12:00:00.000Z",
+      "updated_at": "2026-03-09T12:00:00.000Z",
       "headers": null,
       "options": {
         "port": 5061,
         "transport": "tls",
-        "secure_media": true
-      }
+        "secure_media": true,
+        "sip_username": "********",
+        "sip_password": "********"
+      },
+      "inbound_id": 1234,
+      "trunk_id": null,
+      "failover_config": null,
+      "codec_config": null,
+      "alert_config": null
     }
   },
   "errors": null

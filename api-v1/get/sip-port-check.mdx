@@ -13,20 +13,27 @@ description: "Check whether phone numbers are eligible for porting to Bland."
 ### Query Parameters
 
 <ParamField query="phone_numbers" type="string[]" required>
-  Array of phone numbers to check. Must be in E.164 format.
+  One or more phone numbers to check, as repeated `phone_numbers[]` parameters. Each is normalized to E.164.
 </ParamField>
 
 ### Response
 
 <ResponseField name="results" type="array">
-  Array of portability check results. Each includes:
-  - `phone_number` (string) — The phone number checked
-  - `portable` (boolean) — Whether the number can be ported
-  - `number_type` (string) — Type of number: `"mobile"`, `"landline"`, `"toll-free"`, etc.
-  - `pin_required` (boolean) — Whether a PIN from the losing carrier is required
+  One result per number, in request order:
+  - `number` (string): the normalized number, or the raw input when it could not be parsed
+  - `portable` (boolean): whether the number can be ported
+  - `number_type` (string): the carrier's classification of the number, when available
+  - `pin_required` (boolean): present and `true` only when the losing carrier requires an account PIN. Supply it via `phone_number_pins` on [Initiate Port Request](/api-v1/post/sip-port-initiate).
+  - `not_portable_reason` (string): present when `portable` is `false`. `"Invalid phone number format"` and `"Portability check failed"` are returned by Bland; other values come from the carrier.
 </ResponseField>
 
-```json Example Request
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  `phone_numbers[]` is missing.
+</ResponseField>
+
+```bash Example Request
 curl -X GET 'https://api.bland.ai/v1/sip/port/check?phone_numbers[]=%2B14150000000&phone_numbers[]=%2B14150000001' \
   -H "Authorization: Bearer <token>"
 ```
@@ -37,13 +44,12 @@ curl -X GET 'https://api.bland.ai/v1/sip/port/check?phone_numbers[]=%2B141500000
   "data": {
     "results": [
       {
-        "phone_number": "+14150000000",
+        "number": "+14150000000",
         "portable": true,
-        "number_type": "landline",
-        "pin_required": false
+        "number_type": "local"
       },
       {
-        "phone_number": "+14150000001",
+        "number": "+14150000001",
         "portable": true,
         "number_type": "mobile",
         "pin_required": true

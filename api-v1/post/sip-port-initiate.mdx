@@ -12,81 +12,105 @@ description: "Submit a number porting request to transfer phone numbers from ano
 
 ### Body
 
-<ParamField body="phone_numbers" type="array" required>
-  Array of phone numbers to port. Each must be in E.164 format. You should verify portability first using `GET /v1/sip/port/check`.
+<ParamField body="phone_numbers" type="string[]" required>
+  Phone numbers to port. Each must parse as a valid number and is normalized to E.164. Verify portability first with [Check Number Portability](/api-v1/get/sip-port-check).
 </ParamField>
 
 <ParamField body="losing_carrier_information" type="object" required>
-  Information about the current carrier:
-  - `customer_type` (string) — `"business"` or `"personal"`
-  - `business_name` (string) — Business name on the account (if business)
-  - `first_name` (string) — Account holder first name
-  - `last_name` (string) — Account holder last name
-  - `account_number` (string) — Account number with the losing carrier
-  - `authorized_representative_email` (string) — Email for LOA signing
-  - `notification_emails` (array) — Additional emails for status updates
-  - `address` (object) — Service address: `street`, `street2`, `city`, `state`, `zip`, `country`
+  Account details at the current carrier, as they appear on the bill:
+  - `customer_type` (string): `"Individual"` or `"Business"`
+  - `customer_name` (string): the account holder or business name
+  - `account_number` (string, optional): account number with the losing carrier
+  - `account_telephone_number` (string): the main number on the carrier account
+  - `authorized_representative` (string): full name of the person authorized to port the numbers
+  - `authorized_representative_email` (string): email used for signing the Letter of Authorization
+  - `address` (object): service address with `street`, `street_2` (optional), `city`, `state`, `zip`, `country`
 </ParamField>
 
-<ParamField body="target_port_date" type="string">
-  Requested port date in ISO 8601 format. Must be at least 7 days from today. If omitted, the earliest possible date is used.
+<ParamField body="target_port_in_date" type="string" required>
+  Requested port date, `YYYY-MM-DD`. Must be at least 4 days from today.
 </ParamField>
 
-<ParamField body="documents" type="array">
-  Array of document SIDs returned from `POST /v1/sip/port/document`.
+<ParamField body="documents" type="string[]" required>
+  One or more `document_sid` values returned from [Upload Port Document](/api-v1/post/sip-port-document).
 </ParamField>
 
-<ParamField body="pin" type="string">
-  Account PIN from the losing carrier (required for some numbers — check via portability endpoint).
+<ParamField body="phone_number_pins" type="object">
+  Map of E.164 phone number to the account PIN at the losing carrier, for numbers where [Check Number Portability](/api-v1/get/sip-port-check) reported `pin_required: true`.
+</ParamField>
+
+<ParamField body="notification_emails" type="string[]">
+  Addresses that receive port status updates. Defaults to `[authorized_representative_email]`.
+</ParamField>
+
+<ParamField body="target_port_in_time_range_start" type="string">
+  Optional start of the preferred porting time window on the target date.
+</ParamField>
+
+<ParamField body="target_port_in_time_range_end" type="string">
+  Optional end of the preferred porting time window on the target date.
 </ParamField>
 
 ### Response
 
 <ResponseField name="port_request_id" type="string">
-  Unique identifier for the port request.
+  Unique identifier for the port request. Use it with [List Port Requests](/api-v1/get/sip-port-requests) and [Cancel Port Request](/api-v1/delete/sip-port-cancel).
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Initial status: `"waiting_for_signature"`.
+  The carrier's initial request status, for example `"in_review"` or `"waiting_for_signature"`.
 </ResponseField>
 
 <ResponseField name="signature_url" type="string">
-  URL for electronically signing the Letter of Authorization.
+  URL for electronically signing the Letter of Authorization, or `null` if the carrier did not return one.
 </ResponseField>
 
 <ResponseField name="phone_numbers" type="array">
-  Array of phone numbers included in the port request.
+  One entry per number: `number` (E.164), `status` (string), and `port_in_phone_number_sid` (string or `null`).
 </ResponseField>
 
-Number porting typically takes **7–14 business days**. Track progress via `GET /v1/sip/port` or the SIP Dashboard.
+Number porting typically takes 7 to 14 business days. Track progress with [List Port Requests](/api-v1/get/sip-port-requests).
 
-**Port status flow:** `waiting_for_signature` → `submitted` → `in_progress` → `completed`
+### Error Responses
 
-```json Example Request
+<ResponseField name="400 BAD_REQUEST" type="object">
+  A required field is missing, or `losing_carrier_information.address` lacks `street`, `city`, `state`, `zip`, or `country`.
+</ResponseField>
+
+<ResponseField name="400 INVALID_PHONE_NUMBER" type="object">
+  One of `phone_numbers` does not parse as a valid number.
+</ResponseField>
+
+<ResponseField name="502 TWILIO_PORT_ERROR" type="object">
+  The carrier rejected the request. The message carries the carrier's reason, including a `target_port_in_date` earlier than 4 days from today.
+</ResponseField>
+
+```bash Example Request
 curl -X POST https://api.bland.ai/v1/sip/port/initiate \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_numbers": ["+14150000000", "+14150000001"],
     "losing_carrier_information": {
-      "customer_type": "business",
-      "business_name": "Acme Corp",
-      "first_name": "Jane",
-      "last_name": "Doe",
+      "customer_type": "Business",
+      "customer_name": "Acme Corp",
       "account_number": "ACC-12345",
+      "account_telephone_number": "+14150000000",
+      "authorized_representative": "Jane Doe",
       "authorized_representative_email": "jane@acme.com",
-      "notification_emails": ["it@acme.com"],
       "address": {
         "street": "123 Main St",
-        "street2": "Suite 100",
+        "street_2": "Suite 100",
         "city": "San Francisco",
         "state": "CA",
         "zip": "94105",
         "country": "US"
       }
     },
-    "target_port_date": "2026-03-20T00:00:00Z",
-    "documents": ["doc_abc123"]
+    "notification_emails": ["it@acme.com"],
+    "target_port_in_date": "2026-03-20",
+    "phone_number_pins": { "+14150000001": "1234" },
+    "documents": ["RDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
   }'
 ```
 
@@ -94,10 +118,13 @@ curl -X POST https://api.bland.ai/v1/sip/port/initiate \
 ```json Response
 {
   "data": {
-    "port_request_id": "port_xyz789",
-    "status": "waiting_for_signature",
-    "signature_url": "https://sign.example.com/loa/port_xyz789",
-    "phone_numbers": ["+14150000000", "+14150000001"]
+    "port_request_id": "2f9c1d4e-8a7b-4c3d-9e1f-0a2b3c4d5e6f",
+    "status": "in_review",
+    "signature_url": "https://sign.example.com/loa/abc123",
+    "phone_numbers": [
+      { "number": "+14150000000", "status": "in_review", "port_in_phone_number_sid": "PNxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" },
+      { "number": "+14150000001", "status": "in_review", "port_in_phone_number_sid": "PNyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" }
+    ]
   },
   "errors": null
 }

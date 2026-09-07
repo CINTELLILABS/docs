@@ -13,24 +13,34 @@ description: "Update an existing SIP routing direction for a phone number."
 ### Body
 
 <ParamField body="phone_number" type="string" required>
-  The phone number to update. Must be in E.164 format.
+  The number or SIP identity to update, exactly as stored (E.164 for numbers attached with a leading `+`).
 </ParamField>
 
 <ParamField body="updates" type="object" required>
   The updated direction object. Must include `type` (`"inbound"` or `"outbound"`).
 </ParamField>
 
-For outbound updates, you can modify `sip_endpoint`, `options` (port, transport, secure_media, sip_username, sip_password), and `headers`.
+For outbound updates, you can modify `sip_endpoint`, `options` (`port`, `transport`, `secure_media`, `sip_username`, `sip_password`, `sip_realm`, `egress_mode`), and `headers`. `sip_endpoint` is optional: omit it to leave the endpoint unchanged.
 
-For inbound updates, you can modify `auth_mode`, `register_auth`, `sip_endpoint`, `options`, and `headers`.
+For inbound updates, you can modify `auth_mode`, `register_auth` (required when `auth_mode` is `"register"`), `sip_endpoint`, `options`, and `headers`.
+
+The direction being updated must already be attached to the number.
 
 ### Response
+
+`data` is `null` unless a PBX registration password was generated:
 
 <ResponseField name="register_password_for_pbx" type="string">
   Returned when switching to or updating registration-based auth. Configure this password in your PBX.
 </ResponseField>
 
-```json Example Request
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  The payload fails schema validation, the number is not attached to your organization, the direction is not attached, `sip_endpoint` is not a valid SIP URI, or `auth_mode` is `"register"` without `register_auth`.
+</ResponseField>
+
+```bash Example Request
 curl -X POST https://api.bland.ai/v1/sip/update \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -47,6 +57,15 @@ curl -X POST https://api.bland.ai/v1/sip/update \
     }
   }'
 ```
+
+<ResponseExample>
+```json Response
+{
+  "data": null,
+  "errors": null
+}
+```
+</ResponseExample>
 
 ---
 

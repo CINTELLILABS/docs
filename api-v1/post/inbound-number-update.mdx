@@ -1,8 +1,16 @@
 ---
-title: "Update Inbound Number Details"  
+title: "Update Inbound Number Details"
 api: "POST https://api.bland.ai/v1/inbound/{phone_number}"
-description: "Update your inbound agent's settings, prompt and other details."
+description: "Update your inbound agent's settings, prompt, pathway and other details."
 ---
+
+Every field in the body is optional. Only the fields you send are changed; fields you omit keep their current value. Most fields can be cleared by sending `null`.
+
+<Warning>
+  Sending `prompt` (any non-null value) detaches the number's pathway: `pathway_id`, `pathway_version` and `start_node_id` are reset to `null`. If a pathway-backed number only needs another setting changed (for example `webhook`), do not include `prompt` in the request.
+</Warning>
+
+`POST /v1/inbound/{phone_number}/update` is an alias for this endpoint.
 
 ### Headers
 
@@ -11,21 +19,21 @@ description: "Update your inbound agent's settings, prompt and other details."
 </ParamField>
 
 <ParamField header="encrypted_key" type="string">
-  The `encrypted_key` for the Twilio account that owns the phone number you want to modify. Not required if you are using a Bland phone number.
+  The `encrypted_key` for the Twilio account that owns the phone number you want to modify. Required for numbers imported from your own Twilio account, not required for Bland phone numbers. Also accepted as the `encrypted-key` header or an `encrypted_key` body field.
 
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
 
 ### Path Parameters
 
-<ParamField path="phone_number" type="string">
-    The inbound phone number you wish to update. 
-    
-    Formatting Notes:
-    - The `'+'` or `'%2B'` prefix is optional.
-    - Will assume a US country code if no country code is provided.
+<ParamField path="phone_number" type="string" required>
+    The inbound phone number you wish to update.
 
-    Valid Examples for `+13334445555`:
+    Formatting notes:
+    - The `'+'` or `'%2B'` prefix is optional.
+    - Digit-only input is first matched exactly as stored (this is how SIP DIDs such as `9994221001` are resolved), then as a US number.
+
+    Valid examples for `+13334445555`:
     - `%2B13334445555`
     - `13334445555`
     - `3334445555`
@@ -33,10 +41,12 @@ description: "Update your inbound agent's settings, prompt and other details."
 
 ### Body
 
-<ParamField body="prompt" type="string" required>
-    Provide instructions, relevant information, and examples of the ideal conversation flow. 
+<ParamField body="prompt" type="string">
+    Provide instructions, relevant information, and examples of the ideal conversation flow. Maximum 20,000 characters.
 
     For inbound numbers, consider including additional context about the purpose of the call, and what types of callers to expect.
+
+    Sending this field detaches any pathway attached to the number (see the warning above).
 
     <Accordion title="Best Practices">
         #### Out-of-the-Box Behaviors (Summarized):
@@ -47,66 +57,83 @@ description: "Update your inbound agent's settings, prompt and other details."
         #### Prompting Tips:
         - Want to easily test out exactly how your agent will behave?
             - [Try out Agent Testing!](https://app.bland.ai/home?page=testing)
-        - Aim for less than >2,000 characters where possible.
+        - Aim for less than 2,000 characters where possible.
         - Simple, direct prompts are the most predictable and reliable.
-        - Frame instructions positively: 
-            - `"Do this"` rather than `"Don't do this"`. 
+        - Frame instructions positively:
+            - `"Do this"` rather than `"Don't do this"`.
             - Ex. "Keep the conversation casual" rather than "Don't be too formal".
             - This gives concrete examples of what to do, instead of leaving expected behavior open to interpretation.
     </Accordion>
 </ParamField>
 
 <ParamField body="pathway_id" type="string">
-    Set the pathway that your agent will follow. This will override the `prompt` field, so there is no need to pass the 'prompt' field if you are setting a pathway.
+    Set the pathway that your agent will follow. There is no need to pass `prompt` when setting a pathway.
 
-    Warning: Setting a pathway will set the following fields to `null` / their default value - `prompt`, `first_sentence`, `model`, `dynamic_data`, `tools`, `transfer_list`
+    Warning: setting a pathway resets the following fields to `null`: `prompt`, `first_sentence`, `model`, `temperature`, `tools`, `transfer_list`, `transfer_phone_number`.
 
-    Set to `null` or an empty string to clear the pathway.
+    Set to `null` to clear the pathway.
+</ParamField>
+
+<ParamField body="pathway_ids" type="object">
+  Map of pathway IDs to descriptions for Transfer Pathway routing. A non-empty object replaces the stored map and clears the number's inline pathway nodes and edges. Send `null` or an empty object to clear it.
 </ParamField>
 
 <ParamField body="pathway_version" type="integer">
-  The version number of the pathway to use for the call. Defaults to the production version.
+  The version number of the pathway to use for the call. Defaults to the production version. Only applied together with `pathway_id`.
+</ParamField>
+
+<ParamField body="start_node_id" type="string">
+  The node the pathway should start from. Set to `null` to start from the pathway's default start node.
+</ParamField>
+
+<ParamField body="label" type="string">
+  A display label for the number, shown in the dashboard. Set to `null` or an empty string to clear. See also [Update Inbound Number Label](/api-v1/post/inbound-update-label).
 </ParamField>
 
 ### Agent Parameters (Body)
 
 <ParamField body="voice" type="string">
-  Set your agent's voice - all available voices can be found with the [List Voices](/api-v1/get/voices) endpoint.
+  Set your agent's voice. Pass a voice name or ID from the [List Voices](/api-v1/get/voices) endpoint. Returns 404 if the voice does not exist and 403 if it is a professional clone that is still in draft.
+
+  `voice_preset_id` is accepted as a legacy alias.
+</ParamField>
+
+<ParamField body="voice_settings" type="object">
+  Per-voice tuning settings, stored as sent. Set to `null` to clear.
 </ParamField>
 
 <ParamField body="background_track" type="string">
-  Select an audio track that you'd like to play in the background during the call. The audio will play continuously when the agent isn't speaking, and is incorporated into it's speech as well.
+  Select an audio track that you'd like to play in the background during the call. The audio will play continuously when the agent isn't speaking, and is incorporated into its speech as well.
 
-  Use this to provide a more natural, seamless, engaging experience for the conversation. We've found this creates a significantly smoother call experience by minimizing the stark differences between total silence and the agent's speech.
-
-  Options:
+  Options for Twilio and SIP numbers:
   - `null` - Default, will play audible but quiet phone static.
   - `office` - Office-style soundscape. Includes faint typing, chatter, clicks, and other office sounds.
   - `cafe` - Cafe-like soundscape. Includes faint talking, clinking, and other cafe sounds.
   - `restaurant` - Similar to `cafe`, but more subtle.
   - `none` - Minimizes background noise
+
+  Any other value returns 400 with the list of valid options. Background tracks are not supported on Vonage numbers (400).
 </ParamField>
 
 <ParamField body="first_sentence" type="string">
-  Makes your agent say a specific phrase or sentence for its first response.
+  Makes your agent say a specific phrase or sentence for its first response. Set to `null` or an empty string to clear.
 </ParamField>
 
-<ParamField body="summary_prompt" type="string">
-  (Optional) Custom instructions for how the call summary should be generated after the call completes. Use this to provide specific guidance or context for the AI when writing the post-call summary. Maximum length: 2000 characters.
-
-  Example:
-  ```json
-  {
-    "summary_prompt": "Summarize the call in 2-3 sentences, focusing on the customer's main concern and any next steps discussed."
-  }
-  ```
+<ParamField body="silence_end_message" type="string">
+  A message the agent says before ending the call after prolonged caller silence. Set to `null` or an empty string to clear.
 </ParamField>
 
-<ParamField body="block_interruptions" type="boolean" default="false">
-  When set to `true`, the AI will not respond or process interruptions from the user.
+<ParamField body="block_interruptions" type="boolean">
+  When set to `true`, the AI will not respond to or process interruptions from the caller. Conflicts with an `interruptibility` level of 1 to 4 in the same request (400).
 </ParamField>
 
-<ParamField body="interruption_threshold" type="number" default="500">
+<ParamField body="interruptibility" type="integer">
+  How easily the caller can interrupt the agent, from `0` to `4`: `0` blocks interruptions (an alias for `block_interruptions: true`), `1` difficult, `2` balanced, `3` easy to interrupt, `4` always interrupt. Set to `null` to clear.
+
+  Sending `0` together with `block_interruptions: false`, or a level of 1 to 4 together with `block_interruptions: true`, returns 400.
+</ParamField>
+
+<ParamField body="interruption_threshold" type="number">
   Adjusts how patient the AI is when waiting for the user to finish speaking.
 
   Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
@@ -116,19 +143,21 @@ description: "Update your inbound agent's settings, prompt and other details."
   - 100: Balanced to respond at a natural pace
   - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
 
-  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
+  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case. Unset by default; send `null` or `0` to clear.
+</ParamField>
+
+<ParamField body="agent_backchannel_level" type="integer">
+  How often the agent makes short acknowledgement sounds ("mm-hm", "right") while the caller speaks: `1` sparse, `2` normal, `3` rich. Any other value turns backchanneling off.
 </ParamField>
 
 <ParamField body="model" type="string" default="base">
   Select a model to use for your call.
 
-  Options: `base` or `turbo`.
+  Options: `base`, `turbo`, `enhanced`, `gpt4`, `candidate`. Set to `null` to reset to `base`. Other values are ignored.
 
   In nearly all cases, `base` is the best choice for now.
 
   <Accordion title="Model Differences">
-
-  There are two different ways to use Bland:
 
   - `model: base`
     - The original, follows scripts/procedures most effectively.
@@ -140,15 +169,27 @@ description: "Update your inbound agent's settings, prompt and other details."
     - Limited capabilities currently (excludes Transferring, IVR navigation, Custom Tools)
     - Extremely realistic conversation capabilities
 
+  - `model: candidate`
+    - Bland's release candidate model. Also sets `use_candidate_model` so pathway calls use it too.
+
   </Accordion>
 </ParamField>
 
-<ParamField body="request_data" type="object" default="{}">
-  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task. This data is accessible in variables if the call is answered.
-  For example, let's say in your app you want to programmatically set the name of the person you're calling. You could set `request_data` to:
+<ParamField body="use_candidate_model" type="boolean">
+  Use the release candidate model for pathway calls. `true` also sets `model` to `candidate`; `false` resets `model` to `base`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Model temperature between `0` and `1`. Values outside that range return 400. Set to `null` to clear.
+</ParamField>
+
+<ParamField body="request_data" type="object">
+  Request data fields are available to the AI agent during the call when referenced in the associated pathway or prompt. Set to `null` or an empty string to clear.
+
+  For example, to make a value available as `{{name}}` in the prompt:
 ```json Example
   {
-    "task": "Say hello to the user, who's name is {{name}}", // also works in the prompt, tools, etc.
+    "prompt": "Say hello to the caller, whose name is {{name}}",
     "request_data": {
       "name": "John Doe"
     }
@@ -157,15 +198,18 @@ description: "Update your inbound agent's settings, prompt and other details."
 </ParamField>
 
 <ParamField body="tools" type="array">
-  Interact with the real world through API calls.
+  Interact with the real world through API calls. Pass tool objects, or the IDs of saved tools (`TL-...`) and knowledge bases (`KB-...`). An unknown ID returns 400. Set to `null` to remove all tools.
 
   Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
 </ParamField>
 
+<ParamField body="calendly" type="object">
+  Shortcut for adding or updating a Calendly booking tool: `{ "url": "https://calendly.com/...", "timezone": "America/Chicago" }`. `timezone` defaults to `America/Chicago`.
+</ParamField>
+
 <ParamField body="language" type="string" default="en-US">
-  Select a supported language of your choice. 
-  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
-  
+  Select a supported language of your choice. Optimizes every part of our API for that language - transcription, speech, and other inner workings. An unsupported code returns 400. Set to `null` to reset to the default.
+
   <Accordion title="Expand to view language options">
     The available language options are as follows:
     - `auto` - Auto Detect
@@ -223,20 +267,39 @@ description: "Update your inbound agent's settings, prompt and other details."
 
   This helps significantly with use cases that rely on appointment setting, scheduling, or behaving differently based on the time of day.
 
-  Timezone options are [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) in the TZ identifier column.
+  Timezone options are [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) in the TZ identifier column. An invalid identifier returns 400.
 </ParamField>
 
 <ParamField body="transfer_phone_number" type="string">
-  A phone number that the agent can transfer to under specific conditions - such as being asked to speak to a human or supervisor.
+  A phone number that the agent can transfer to under specific conditions - such as being asked to speak to a human or supervisor. 10-digit numbers are treated as US numbers. Numbers on the DNC list return 400.
 
   Set to `null` to remove.
 
     <Accordion title="Prompting Notes">
         For best results:
         - Specify conditions that the agent should transfer to a human under (examples are great!)
-        - In the `task`, refer to the action solely as "transfer" or "transferring".
+        - In the prompt, refer to the action solely as "transfer" or "transferring".
         - Alternate phrasing such as "swap" or "switch" can mislead the agent, causing the action to be ignored.
     </Accordion>
+</ParamField>
+
+<ParamField body="transfer_list" type="object">
+  Give your agent the ability to transfer calls to a set of phone numbers.
+
+  Overrides `transfer_phone_number` if a `transfer_list.default` is specified.
+
+  Will default to `transfer_list.default`, or the chosen phone number. Set to `null` to remove.
+
+  Example usage to route calls to different departments:
+
+  ```json
+  "transfer_list": {
+      "default": "+12223334444",
+      "sales": "+12223334444",
+      "support": "+12223334444",
+      "billing": "+12223334444"
+  }
+  ```
 </ParamField>
 
 <ParamField body="fallback_number" type="string">
@@ -252,7 +315,7 @@ description: "Update your inbound agent's settings, prompt and other details."
 </ParamField>
 
 <ParamField body="pronunciation_guide" type="array">
-  Array of objects that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon.
+  Array of objects that guides the agent on how to say specific words. Use this to improve clarity for acronyms, names, brand terms, or jargon. Set to `null` to clear.
 
   ```json
   [
@@ -279,48 +342,16 @@ description: "Update your inbound agent's settings, prompt and other details."
   </Accordion>
 </ParamField>
 
-<ParamField body="transfer_list" type="object">
-  Give your agent the ability to transfer calls to a set of phone numbers.
-
-  Overrides `transfer_phone_number` if a `transfer_list.default` is specified.
-
-  Will default to `transfer_list.default`, or the chosen phone number.
-
-  Example usage to route calls to different departments:
-
-  ```json
-  "transfer_list": {
-      "default": "+12223334444",
-      "sales": "+12223334444",
-      "support": "+12223334444",
-      "billing": "+12223334444"
-  }
-  ```
-</ParamField>
-
 <ParamField body="dynamic_data" type="object">
-  Integrate data from external APIs into your agent's knowledge. 
+  Integrate data from external APIs into your agent's knowledge.
 
   Set to `null` or an empty string to clear dynamic data settings.
 
   Detailed usage in the [Send Call](/api-v1/post/calls#param-dynamic-data) endpoint.
 </ParamField>
 
-<ParamField body="interruption_threshold" type="number" default="500">
-  Adjusts how patient the AI is when waiting for the user to finish speaking.
-
-  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
-
-  Recommended range: 50-200
-  - 50: Extremely quick, back and forth conversation
-  - 100: Balanced to respond at a natural pace
-  - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
-
-  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
-</ParamField>
-
 <ParamField body="keywords" type="string[]" default="[]">
-  These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed.
+  These words will be boosted in the transcription engine - recommended for proper nouns or words that are frequently mis-transcribed. Each keyword must be under 100 characters. Set to `null` to clear.
 
   For example, if the word "Reece" is frequently transcribed as a homonym like "Reese" you could do this:
   ```json
@@ -345,22 +376,26 @@ description: "Update your inbound agent's settings, prompt and other details."
   When `true`, DTMF (digit) presses are ignored, disabling menu navigation or call transfers triggered by keypad input.
 </ParamField>
 
+<ParamField body="improve_accuracy" type="boolean">
+  Enable additional accuracy improvements for transcription at a small latency cost. Set to `false` or `null` to disable.
+</ParamField>
+
 ### Call Settings (Body)
 
 <ParamField body="max_duration" type="integer" default="30">
-  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
-  
+  When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended. Negative values return 400; a non-numeric value resets the field to `30`.
+
   Example Values: ```20, 2```
 </ParamField>
 
 <ParamField body="webhook" type="string">
-  When the call ends, we'll send the call details in a POST request to the URL you specify here.
+  When the call ends, we'll send the call details in a POST request to the URL you specify here. Must start with `https://`; other values are ignored. Set to `null` or an empty string to remove.
 
   The request body will match the response from the [GET /v1/calls/:call_id](/api-v1/get/calls-id) endpoint.
 </ParamField>
 
 <ParamField body="webhook_events" type="array">
-  Specify which events you want to stream to the webhook, during the call.
+  Specify which events you want to stream to the webhook, during the call. Only applied when `webhook` is included in the same request; unknown values are dropped. Set to `null` to clear.
 
   Options:
 
@@ -371,6 +406,7 @@ description: "Update your inbound agent's settings, prompt and other details."
   - `tool`
   - `dynamic_data`
   - `citations` (Sent separately, Enterprise only)
+  - `post_transfer_transcript`
 
 Example payloads:
   <CodeGroup>
@@ -559,45 +595,74 @@ Example payloads:
 
 </ParamField>
 
+<ParamField body="status_callback" type="string">
+  An `https://` URL that receives Twilio call status callbacks. Only applied to numbers imported from your own Twilio account (BYOT); ignored for Bland numbers. Set to `null` or an empty string to remove.
+</ParamField>
+
 <ParamField body="metadata" type="object">
-  Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls.
+  Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls. Set to `null` to clear.
 </ParamField>
 
 <ParamField body="summary_prompt" type="string">
-  At the end of each call, a `summary` is generated based on the transcript - you can use this field to add extra instructions and context for how it should be summarized.
+  At the end of each call, a `summary` is generated based on the transcript - you can use this field to add extra instructions and context for how it should be summarized. Maximum 2,000 characters. Set to `null` to clear.
 
-  For example: `"Summarize the call in French instead of English."`
+  For example: `"Summarize the call in 2-3 sentences, focusing on the customer's main concern and any next steps discussed."`
+</ParamField>
+
+<ParamField body="analysis_prompt" type="string">
+  Extra instructions for the post-call analysis. Maximum 5,000 characters. Set to `null` to clear.
+</ParamField>
+
+<ParamField body="analysis_schema" type="object">
+  A JSON schema of values to extract from each call during post-call analysis. Set to `null` or `{}` to clear.
+</ParamField>
+
+<ParamField body="analysis_preset" type="string">
+  The ID of a saved analysis preset. Returns 400 if the preset does not exist and 403 if it belongs to another organization. Set to `null` or an empty string to clear.
 </ParamField>
 
 <ParamField body="record" type="boolean" default="false">
-  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
+  To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.
 </ParamField>
 
 <ParamField body="citation_schema_ids" type="string[]">
-  The citation schema is an incredibly powerful tool for running **_post call analysis_**, including specific variable extractions, conditional logic, and more.
+  The citation schema is an incredibly powerful tool for running **_post call analysis_**, including specific variable extractions, conditional logic, and more. Set to `null` or `[]` to clear.
 
   You can build a citation schema [here](https://app.bland.ai/dashboard/analytics?tab=citations).
 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
+
+  `citation_schema_id` (a single ID) is accepted as a legacy alias.
+</ParamField>
+
+<ParamField body="disposition_ids" type="string[]">
+  IDs of the dispositions to classify calls to this number against. Set to `null` or `[]` to clear.
+</ParamField>
+
+<ParamField body="skip_url_update" type="boolean" default="false">
+  When `true`, Bland does not rewrite the number's voice and status-callback URLs in Twilio when saving. Use this if you manage those URLs yourself.
 </ParamField>
 
 ### Response
 
 <ResponseField name="status" type="string">
-  Whether the update was successful or not - will be `success` or `error`.
+  `success` on a successful update.
 </ResponseField>
 
 <ResponseField name="message" type="string">
-  A message describing the status of the update.
+  A message describing the result of the update.
 </ResponseField>
 
 <ResponseField name="updates" type="object">
-  An object containing the updated settings for the inbound number.
+  The settings that were written for the inbound number, keyed by field name. Only fields affected by this request are included. A pathway attach is reported as `pathway_id`, `pathway_version` and `pathway_version_id`.
 </ResponseField>
 
-<ResponseField name="failed_updates" type="object">
-  If the update was unsuccessful, this will contain the settings that failed to update. Useful to determine how your request is being interpreted on our end.
-</ResponseField>
+Errors use the shape `{ "status": "error", "message": "..." }`:
+
+- `400`: missing phone number, validation failures (invalid `dynamic_data`, `tools`, `language`, `timezone`, `background_track`, `temperature`, `max_duration`, transfer numbers, prompt length, an invalid or missing `encrypted_key` for a BYOT number).
+- `403`: `encrypted_key` does not belong to your account, `voice` is a draft professional clone, or `analysis_preset` belongs to another organization.
+- `404`: no inbound number found for your account, or `voice` not found.
+- `500`: unexpected error.
 
 <ResponseExample>
 
@@ -613,21 +678,19 @@ Example payloads:
         "record": false,
         "max_duration": 30,
         "model": "base",
-        //...
+        "skip_url_update": false
     }
 }
 ```
 
+```json Not found (404)
+{
+    "status": "error",
+    "message": "No inbound number found for +18584139939."
+}
+```
+
 </ResponseExample>
-
-
-
-
-
-
-
-
-
 
 ---
 
