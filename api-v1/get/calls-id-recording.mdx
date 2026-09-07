@@ -4,46 +4,74 @@ api: "GET https://api.bland.ai/v1/recordings/{call_id}"
 description: "Retrieve an audio stream for a call recording."
 ---
 
+<Note>
+  This endpoint streams the audio bytes. To get a URL for the recording instead, use [Get Call Recording URL](/api-v1/get/calls-id-recording-url).
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required={true}>
   Your API key for authentication.
 </ParamField>
 
-<ParamField header="content-type" type="string" required={false}>
-  Audio content type requested: `"audio/mpeg"` (MP3) or `"audio/wav"` (WAV). Defaults to WAV.
+<ParamField header="content-type" type="string" required={false} default="audio/wav">
+  Audio format to return: `"audio/mpeg"` (MP3), `"audio/wav"` (WAV), or `"audio/ogg"` (OGG/Opus). Defaults to WAV.
+</ParamField>
+
+<ParamField header="range" type="string" required={false}>
+  Standard HTTP byte range (for example `bytes=0-1023`) for seeking. Partial responses return `206` with a `Content-Range` header.
 </ParamField>
 
 ### Path Parameters
 
 <ParamField path="call_id" type="string" required>
-  The unique identifier of the call for which you want to retrieve its recording.
+  The unique identifier (UUID) of the call whose recording you want. You can also pass `{call_id}:{recording_id}` to address a specific recording; both parts must be UUIDs.
 </ParamField>
 
 ### Query Parameters
 
 <ParamField query="..." type="any" required={false}>
-  Any additional query parameters will be passed through to the underlying recording URL.
+  Any additional query parameters are passed through to the underlying recording URL.
 </ParamField>
 
 ### Response
 
-<ResponseField name="data" type="audio stream">
-  The audio recording stream of the call, in the requested or default format (WAV).
-</ResponseField>
+On success the body is the audio stream (`200`, or `206` for a `Range` request) with `Content-Type` set to the requested format.
 
-<ResponseField name="errors" type="null|array">
-  `null` on success, or an array of error objects if access fails.
-</ResponseField>
+On failure the body is JSON with `data: null` and one entry in `errors`:
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `INVALID_CALL_ID_OR_RECORDING_ID` | `call_id` (or `recording_id`) is not a valid UUID. |
+| `400` | `CALL_RECORDING_FETCH_FAILED` | Unexpected error while fetching the recording. |
+| `401` | `AUTHORIZATION_REQUIRED` | No valid API key was supplied and the recording is past its retention window. |
+| `401` | `UNAUTHORIZED` | Carrier credentials supplied with the request were rejected. |
+| `403` | `RECORDING_ACCESS_DENIED` | A customer-hosted (S3) recording could not be accessed. |
+| `404` | `CALL_RECORDING_NOT_FOUND` | No call with that ID in your organization, or the call has no recording. |
+| `404` | `RECORDING_NOT_FOUND` | The stored recording object could not be located. |
+| `500` | `RECORDING_FETCH_FAILED` | The recording could not be streamed from storage. |
+| `500` | `S3_CREDENTIALS_NOT_CONFIGURED` | The call's recording is in your own S3 bucket but no S3 credentials are configured for the account. |
 
 <ResponseExample>
-```json Response (not found)
+```json Not Found (404)
 {
   "data": null,
   "errors": [
     {
       "error": "CALL_RECORDING_NOT_FOUND",
       "message": "Call recording not found"
+    }
+  ]
+}
+```
+
+```json Invalid ID (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_CALL_ID_OR_RECORDING_ID",
+      "message": "Invalid call ID or recording ID"
     }
   ]
 }

@@ -20,26 +20,26 @@ Starts a live listen session for an active call, returning a WebSocket URL for r
 
 ## Prerequisites
 
-- Live listen must be enabled in organization preferences (`live_listen_enabled: true`)
+- Live listen must be enabled in your organization's recording preferences (`live_listen_enabled: true`). Set it with [Update Recording Preferences](/api-v1/post/recordings-preferences)
 - Call must be in active status (not completed)
 - Call must belong to the authenticated organization
 
 ## Response
-
-<ResponseField name="status" type="string">
-  Response status indicator
-</ResponseField>
 
 <ResponseField name="data" type="object">
   <Expandable title="data properties">
     <ResponseField name="url" type="string">
       WebSocket URL for connecting to the live audio stream
     </ResponseField>
+
+    <ResponseField name="expires_in_seconds" type="integer">
+      How long the URL stays valid for opening a connection, in seconds. Always `300`. Request a fresh URL after it expires; a connection already open is not affected.
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array" default="null">
-  Array of error objects if request failed
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure `data` is `null` and `errors` contains one entry with `error` and `message` (see [Error Codes](#error-codes))
 </ResponseField>
 
 <RequestExample>
@@ -78,9 +78,9 @@ print(data["data"]["url"])  # WebSocket URL
 
 ```json Success Response
 {
-  "status": "success",
   "data": {
-    "url": "wss://api.bland.ai/ws/listen/call_123456"
+    "url": "wss://api.bland.ai/ws/listen/call_123456",
+    "expires_in_seconds": 300
   },
   "errors": null
 }
@@ -88,7 +88,6 @@ print(data["data"]["url"])  # WebSocket URL
 
 ```json Organization Not Configured
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
@@ -101,7 +100,6 @@ print(data["data"]["url"])  # WebSocket URL
 
 ```json Call Not Found
 {
-  "status": "error", 
   "data": null,
   "errors": [
     {
@@ -114,8 +112,7 @@ print(data["data"]["url"])  # WebSocket URL
 
 ```json Call Not Active
 {
-  "status": "error",
-  "data": null, 
+  "data": null,
   "errors": [
     {
       "error": "INVALID_CALL_STATUS",
@@ -127,11 +124,10 @@ print(data["data"]["url"])  # WebSocket URL
 
 ```json Call Not Available for Streaming
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
-      "error": "CALL_NOT_FOUND", 
+      "error": "CALL_NOT_FOUND",
       "message": "Call was either not found or not started"
     }
   ]
@@ -156,7 +152,7 @@ After receiving the WebSocket URL, connect to it to receive real-time audio data
 The WebSocket streams binary audio data with these specifications:
 
 - **Format**: PCM Int16 (16-bit signed integers)
-- **Sample Rate**: 16,000 Hz  
+- **Sample Rate**: 16,000 Hz
 - **Channels**: Mono (1 channel)
 - **Byte Order**: Little-endian
 - **Data**: Combined audio from all call participants
@@ -172,17 +168,17 @@ socket.onmessage = (event) => {
   // Convert ArrayBuffer to Int16Array
   const dataView = new DataView(event.data);
   const int16Array = new Int16Array(dataView.byteLength / 2);
-  
+
   for (let i = 0; i < int16Array.length; i++) {
     int16Array[i] = dataView.getInt16(i * 2, true); // Little-endian
   }
-  
+
   // Process audio data (convert to Float32 for Web Audio API)
   const float32Array = new Float32Array(int16Array.length);
   for (let i = 0; i < int16Array.length; i++) {
     float32Array[i] = int16Array[i] / 32768; // Normalize to [-1, 1]
   }
-  
+
   // Use audio data for playback
 };
 
@@ -193,13 +189,14 @@ socket.onclose = () => {
 
 ## Error Codes
 
-| Error Code | Description |
-|------------|-------------|
-| `MISSING_CALL_ID` | Call ID parameter is required |
-| `INVALID_ORG_PREFERENCES` | Live listen is not enabled for organization |
-| `CALL_NOT_FOUND` | Call does not exist or does not belong to organization |
-| `INVALID_CALL_STATUS` | Call is not currently active |
-| `INTERNAL_SERVER_ERROR` | Server error occurred |
+| Status | Error Code | Description |
+|--------|------------|-------------|
+| `400` | `MISSING_CALL_ID` | Call ID parameter is required |
+| `400` | `INVALID_ORG_PREFERENCES` | Live listen is not enabled for organization |
+| `400` | `INVALID_CALL_STATUS` | Call has already completed |
+| `404` | `CALL_NOT_FOUND` | Call does not exist, does not belong to organization, or has no live audio stream yet |
+| `404` | `NOT_SUPPORTED_IN_ENVIRONMENT` | Live listen is not available in this deployment environment |
+| `500` | `INTERNAL_SERVER_ERROR` | Server error occurred |
 
 ## Notes
 

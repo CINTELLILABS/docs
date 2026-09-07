@@ -4,13 +4,13 @@ api: "GET https://api.bland.ai/v1/audit/logs"
 description: "Retrieve a paginated, filterable list of audit events for your organization. Designed for SIEM integration and compliance workflows."
 ---
 
-<Warning>
-  Audit logs are an enterprise feature and not yet available for all accounts. To enable audit logging for your organization, contact your Bland representative or [reach out to sales](https://www.bland.ai/book-a-demo).
-</Warning>
+<Note>
+  Audit logs are an enterprise feature. Requests from non-enterprise organizations return `403 ENTERPRISE_REQUIRED`. To enable audit logging for your organization, contact your Bland representative or [reach out to sales](https://www.bland.ai/book-a-demo).
+</Note>
 
 ## Overview
 
-Returns a time-ordered log of auditable actions taken within your organization — logins, logouts, pathway changes, knowledge base edits, and more.
+Returns a time-ordered log of auditable actions taken within your organization: logins, logouts, pathway changes, knowledge base edits, secret rotations, and more.
 
 Results are scoped to your organization and require an **admin** or **owner** role.
 
@@ -20,6 +20,8 @@ Results are scoped to your organization and require an **admin** or **owner** ro
 |---|---|
 | `auth.sso_login` | User logged in via SSO |
 | `auth.logout` | User logged out |
+| `auth.google_signup` | User signed up with Google |
+| `auth.google_login` | User logged in with Google |
 | `pathway.created` | Conversational pathway created |
 | `pathway.updated` | Pathway version updated |
 | `pathway.deleted` | Pathway deleted |
@@ -28,19 +30,37 @@ Results are scoped to your organization and require an **admin** or **owner** ro
 | `kb.file_replaced` | Knowledge base source file replaced |
 | `kb.urls_replaced` | Knowledge base URLs replaced (web scrape) |
 | `kb.version_restored` | Knowledge base version restored |
+| `data_sync.plan_created` | Cross-environment promotion plan created |
+| `data_sync.applied` | Cross-environment promotion applied |
+| `data_sync.applied_with_errors` | Cross-environment promotion applied with errors |
+| `data_sync.failed` | Cross-environment promotion failed |
+| `data_sync.reverted` | Cross-environment promotion reverted |
+| `secret.created` | Secret created |
+| `secret.updated` | Secret updated |
+| `secret.deleted` | Secret deleted |
+| `secret.paused` | Secret paused |
+| `secret.unpaused` | Secret unpaused |
+| `secret.auto_paused` | Secret automatically paused by the system |
+| `agent.promoted` | Agent version promoted to an environment |
+| `agent.rolled_back` | Agent environment rolled back to a previous version |
+| `agent.check_run.completed` | Agent check run completed |
+| `api_key.created` | API key created |
+| `api_key.deleted` | API key deleted |
+| `impersonation.started` | Support impersonation session started |
+| `impersonation.stopped` | Support impersonation session stopped |
 
-New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*`, `kb.*`) in your SIEM to group by category.
+New event types are added over time. Filter by prefix (for example `auth.*`, `pathway.*`, `kb.*`) in your SIEM to group by category.
 
 ### Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The key must belong to an enterprise organization and the caller must hold the `admin` or `owner` role.
 </ParamField>
 
 ### Query Parameters
 
 <ParamField query="event_type" type="string">
-  Filter by exact event type (e.g. `pathway.created`, `auth.sso_login`).
+  Filter by exact event type (for example `pathway.created`, `auth.sso_login`).
 </ParamField>
 
 <ParamField query="actor_id" type="string">
@@ -48,13 +68,13 @@ New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*
 </ParamField>
 
 <ParamField query="created_after" type="string">
-  ISO 8601 timestamp. Only return events created after this time.
+  ISO 8601 timestamp. Only return events created at or after this time (inclusive).
 
   Example: `2025-01-01T00:00:00Z`
 </ParamField>
 
 <ParamField query="created_before" type="string">
-  ISO 8601 timestamp. Only return events created before this time.
+  ISO 8601 timestamp. Only return events created at or before this time (inclusive).
 
   Example: `2025-02-01T00:00:00Z`
 </ParamField>
@@ -90,7 +110,7 @@ New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*
     </ResponseField>
 
     <ResponseField name="resource_type" type="string | null">
-      The type of resource affected (e.g. `convo_pathway`, `kb`). `null` for events like login/logout that don't target a specific resource.
+      The type of resource affected (for example `convo_pathway`, `kb`). `null` for events like login/logout that don't target a specific resource.
     </ResponseField>
 
     <ResponseField name="resource_id" type="string | null">
@@ -98,7 +118,7 @@ New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*
     </ResponseField>
 
     <ResponseField name="metadata" type="object | null">
-      Additional context about the event. Contents vary by event type — may include fields like `version_id`, `name`, `environment`, `filename`, `email`, etc.
+      Additional context about the event. Contents vary by event type and may include fields like `version_id`, `name`, `environment`, `filename`, `email`, etc.
     </ResponseField>
 
     <ResponseField name="created_at" type="string">
@@ -127,8 +147,21 @@ New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*
   Always `null` on success.
 </ResponseField>
 
+### Errors
+
+Errors return `{ "data": null, "errors": [{ "error": "...", "message": "..." }] }`.
+
+| Status | `error` | Cause |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | A query parameter failed validation (for example `page_size` above 100). The message names the parameter. |
+| `400` | `INVALID_DATE` | `created_after` or `created_before` is not a valid ISO 8601 date. |
+| `401` | `UNAUTHORIZED` | No organization could be resolved for the API key. |
+| `403` | `ENTERPRISE_REQUIRED` | Your organization is not on an enterprise plan. |
+| `403` | `FORBIDDEN` | The caller is not a member of the organization, or does not hold the `admin` or `owner` role. |
+| `500` | `INTERNAL_SERVER_ERROR` | Unexpected error. |
+
 <ResponseExample>
-```json
+```json Success
 {
   "data": {
     "events": [
@@ -165,6 +198,18 @@ New event types are added over time. Filter by prefix (e.g. `auth.*`, `pathway.*
     "page_size": 50
   },
   "errors": null
+}
+```
+
+```json Not Enterprise
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ENTERPRISE_REQUIRED",
+      "message": "This feature is only available for enterprise users"
+    }
+  ]
 }
 ```
 </ResponseExample>

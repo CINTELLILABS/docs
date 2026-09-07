@@ -1,0 +1,43 @@
+---
+title: "Get Call Recording URL"
+api: "GET https://api.bland.ai/v1/calls/{call_id}/recording"
+description: "Get a call recording URL or download the recording as MP3 audio."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="accept" type="string">
+  Include an audio media type such as `audio/mpeg` to download the recording bytes. Otherwise, the response is JSON containing the recording URL.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of a call owned by your organization.
+</ParamField>
+
+### Response
+
+The default JSON response is flat:
+
+<ResponseExample>
+```json Response
+{
+  "code": 200,
+  "status": "success",
+  "url": "https://api.twilio.com/2010-04-01/Accounts/AC.../Calls/CA.../Recordings/RE....mp3"
+}
+```
+</ResponseExample>
+
+With an audio `Accept` header, the response is `audio/mpeg` with a download filename of `recording-{call_id}.mp3`. A call with no recording returns `404`. Invalid input and recording fetch failures return a JSON error string or a flat error object with status `400` or `500`.
+
+For byte-range streaming and recording-specific IDs, use [Get Call Recording](/api-v1/get/calls-id-recording).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

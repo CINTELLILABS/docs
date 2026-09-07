@@ -1,7 +1,7 @@
 ---
-title: "Analyze Call with AI"  
+title: "Analyze Call with AI"
 api: "POST https://api.bland.ai/v1/calls/{call_id}/analyze"
-description: "Analyzes a call of calls based using questions and goals."
+description: "Analyze a completed call's transcript with AI, using a goal and a list of questions."
 ---
 
 ### Headers
@@ -18,14 +18,14 @@ description: "Analyzes a call of calls based using questions and goals."
 
 ### Request Body
 
-<ParamField body="goal" type="string" required>
-  This is the overall purpose of the call. Provides context for the analysis to guide how the questions/transcripts are interpreted.
+<ParamField body="goal" type="string" default="">
+  The overall purpose of the call. Provides context for the analysis to guide how the questions and transcript are interpreted. Optional; defaults to an empty string.
 </ParamField>
 
 <ParamField body="questions" type="string[][]" required>
-  An array of questions to be analyzed for the call. 
-  
-  Each question should be an array with two elements: the question text and the expected answer type (e.g., "string", "boolean").
+  A non-empty array of questions to be analyzed for the call.
+
+  Each question must be an array of exactly two strings: the question text and the expected answer type (e.g., "string", "boolean").
 
   Fairly flexible in terms of the expected answer type, and unanswerable questions will default to `null`.
 
@@ -40,30 +40,38 @@ description: "Analyzes a call of calls based using questions and goals."
   ```
 </ParamField>
 
+<ParamField body="call_id" type="string">
+  Optional. When present, overrides the `call_id` in the path.
+</ParamField>
+
 ### Response
 
-<ResponseField type="object" name="status">
-  Will be `success` if the request was successful.
+<ResponseField type="string" name="status">
+  `success` if the request was successful.
 </ResponseField>
 
 <ResponseField type="string" name="message">
-  Confirms the request was successful, or provides an error message if the request failed.
+  `"Successfully analyzed call"`.
 </ResponseField>
 
 <ResponseField type="array" name="answers">
-  Contains the analyzed answers for the call in an array.
+  The analyzed answers, in the same order as `questions`.
+</ResponseField>
+
+<ResponseField type="string[][]" name="questions">
+  The `questions` array you sent, echoed back.
 </ResponseField>
 
 <ResponseField type="number" name="credits_used">
-  Token-based price for the analysis request.
-
-  As a rough estimate, the base cost is `0.003` credits with an additional `0.0015` credits per call in the call.
-
-  Longer call transcripts and higher numbers of questions can increase the cost, however the cost scales very effectively with calls vs. individual calls.
+  Credits charged for this analysis. The charge is token-based: longer transcripts and more questions cost more.
 </ResponseField>
 
+<Note>
+  Invalid input (for example a missing or malformed `questions` array, or a `call_id` that does not belong to your organization) is returned as a `500` with the shape `{ "error": "<reason>", "message": "Server error analyzing call" }`, not as a `400`. Check `error` for the specific reason.
+</Note>
+
 <ResponseExample>
-```json
+```json Response
 {
     "status": "success",
     "message": "Successfully analyzed call",
@@ -72,17 +80,24 @@ description: "Analyzes a call of calls based using questions and goals."
         "Customer found the product sturdy and reliable",
         "A bit heavy",
         true
-    ]
+    ],
+    "questions": [
+        ["Who answered the call?", "human or voicemail"],
+        ["Positive feedback about the product: ", "string"],
+        ["Negative feedback about the product: ", "string"],
+        ["Customer confirmed they were satisfied", "boolean"]
+    ],
+    "credits_used": 0.0042
+}
+```
+
+```json Error (500)
+{
+    "error": "Invalid 'questions' parameter - must be non-empty array",
+    "message": "Server error analyzing call"
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
 
 ---
 

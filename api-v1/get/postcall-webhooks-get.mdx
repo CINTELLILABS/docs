@@ -6,7 +6,11 @@ description: "Get the post call webhook data for a specific call."
 
 ## Overview
 
-Retrieve the post call webhook data for a specific call using its call ID. This endpoint returns the webhook data that was sent when the call completed.
+Retrieve the post call webhook data for a specific call using its call ID. This endpoint returns the webhook data that was sent when the call completed, plus the send history for that webhook.
+
+<Note>
+  All `/v1/postcall` endpoints share a rate limit of 100 requests per 15 minutes. Requests over the limit receive a `429` response.
+</Note>
 
 ---
 
@@ -27,14 +31,15 @@ Retrieve the post call webhook data for a specific call using its call ID. This 
 ---
 
 ## Response
-<ResponseField name="data" type="object">
-  The post call webhook and send history for this call.
+
+<ResponseField name="data" type="object | null">
+  The post call webhook and send history for this call. `null` (with a `200` status) when no webhook is stored for the call or the call does not belong to your organization.
   <Expandable title="Properties">
     <ResponseField name="payload" type="object">
       The post call webhook payload, contains information about the call.
     </ResponseField>
     <ResponseField name="url" type="string">
-      The URL the payload inforamtion was sent to
+      The URL the payload information was sent to
     </ResponseField>
     <ResponseField name="created_at" type="string">
       Timestamp of when the webhook was first sent
@@ -46,38 +51,74 @@ Retrieve the post call webhook data for a specific call using its call ID. This 
       The ID of the org this webhook was sent from
     </ResponseField>
     <ResponseField name="metadata" type="array">
-      Array of objects containing metadata about webhook spawns, creates, and resends. Each object has the following properties:
+      Array of objects, one per send attempt. Each object has the following properties:
       <Expandable title="Array Item Properties">
         <ResponseField name="sent_at" type="string">
           Timestamp of when this webhook attempt was sent
         </ResponseField>
-        <ResponseField name="response_code" type="integer">
-          HTTP response code received from the webhook endpoint
+        <ResponseField name="response_code" type="integer | null">
+          HTTP response code received from the webhook endpoint. `null` when the request failed before a response was received (see `error_message`).
         </ResponseField>
         <ResponseField name="response_time" type="string">
           Time taken to receive a response from the webhook endpoint, appended with "ms"
         </ResponseField>
         <ResponseField name="send_type" type="string">
           How this webhook was triggered. Can be:
-          - "resend": Webhook was manually resent
-          - "create": Webhook was recreated outside normal flow
           - "spawn": Webhook was created by normal call flow
+          - "create": Webhook was created outside the normal call flow via [Create Post Call Webhook](/api-v1/post/postcall-webhooks-create)
+          - "resend": Webhook was resent via [Resend Post Call Webhook](/api-v1/post/postcall-webhooks-resend)
+          - "rebuild": Like "resend", but the payload was refreshed from current call data first
+          - "eval": A post-call eval result was delivered
+          - "disposition": A disposition follow-up was delivered
+        </ResponseField>
+        <ResponseField name="error_message" type="string">
+          Only present when the send failed. The error encountered while sending.
         </ResponseField>
       </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
-<ResponseField name="errors" type="array">
-  Array of error objects if returned.
+<ResponseField name="errors" type="array | null">
+  `null` on success. On a `500` response, an array with one object:
   <Expandable title="Array Item Properties">
     <ResponseField name="error" type="string">
-      The error code.
+      `INTERNAL_SERVER_ERROR`
     </ResponseField>
     <ResponseField name="message" type="string">
       The error message.
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "call_id": "00000000-0000-0000-0000-000000000000",
+    "payload": { "call_id": "00000000-0000-0000-0000-000000000000", "status": "completed" },
+    "url": "https://example.com/webhook",
+    "user_id": "00000000-0000-0000-0000-000000000100",
+    "created_at": "2025-01-15T14:32:00.000Z",
+    "metadata": [
+      {
+        "sent_at": "2025-01-15T14:32:00.000Z",
+        "response_code": 200,
+        "response_time": "143ms",
+        "send_type": "spawn"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": null
+}
+```
+</ResponseExample>
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

@@ -8,6 +8,14 @@ description: "Resend post call webhooks for specified calls."
 
 Resend post call webhooks for one or more call IDs. This endpoint allows you to manually trigger a resend of webhooks that were previously sent when calls completed. This endpoint can only re-send webhooks that were previously sent when calls completed. Webhooks will be re-sent to the same URL they were previously sent to.
 
+<Note>
+  All `/v1/postcall` endpoints share a rate limit of 100 requests per 15 minutes. Requests over the limit receive a `429` response.
+</Note>
+
+<Warning>
+  Every `call_id` must have a stored post call webhook. If any `call_id` has none (or does not belong to your organization), the whole request fails with a `500 INTERNAL_SERVER_ERROR`, but webhooks for the other call IDs in the same request may already have been re-sent. Check each ID with [Get Post Call Webhook](/api-v1/get/postcall-webhooks-get) first.
+</Warning>
+
 ---
 
 ## Headers
@@ -22,11 +30,6 @@ Resend post call webhooks for one or more call IDs. This endpoint allows you to 
 
 <ParamField body="call_ids" type="string[]" required>
   Array of call IDs to resend webhooks for. Each call ID must be unique within the array.
-  <Expandable title="Array Item Properties">
-    <ResponseField name="call_id" type="string">
-      The unique identifier of a call to resend the webhook for.
-    </ResponseField>
-  </Expandable>
 </ParamField>
 
 ---
@@ -46,44 +49,98 @@ Resend post call webhooks for one or more call IDs. This endpoint allows you to 
       The URL the webhook was resent to.
     </ResponseField>
     <ResponseField name="user_id" type="string">
-      The ID of the user/org that owns this webhook.
+      The ID of the org that owns this webhook.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       Timestamp of when the webhook was originally created.
     </ResponseField>
     <ResponseField name="metadata" type="array">
-      Array of metadata objects about webhook send attempts.
+      Array of metadata objects about every send attempt for this webhook, including earlier ones.
       <Expandable title="Array Item Properties">
         <ResponseField name="sent_at" type="string">
           Timestamp of when this webhook attempt was sent.
         </ResponseField>
-        <ResponseField name="response_code" type="integer">
-          HTTP response code received from the webhook endpoint.
+        <ResponseField name="response_code" type="integer | null">
+          HTTP response code received from the webhook endpoint. `null` when the request failed before a response was received (see `error_message`).
         </ResponseField>
         <ResponseField name="response_time" type="string">
-          Time taken to receive a response from the webhook endpoint.
+          Time taken to receive a response from the webhook endpoint, appended with "ms".
         </ResponseField>
         <ResponseField name="send_type" type="string">
-          How this webhook was triggered (will be "resend" in this case).
+          How this attempt was triggered: `spawn`, `create`, `resend`, `rebuild`, `eval`, or `disposition`. The attempt added by this request is `resend`.
+        </ResponseField>
+        <ResponseField name="error_message" type="string">
+          Only present when the send failed. The error encountered while sending.
         </ResponseField>
       </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array">
-  Array of error objects if any errors occurred.
+<ResponseField name="errors" type="array | null">
+  `null` on success. On an error response, an array of error objects.
   <Expandable title="Array Item Properties">
     <ResponseField name="error" type="string">
       The error code. Possible values:
-      - "invalid_parameter": Invalid request parameters
-      - "INTERNAL_SERVER_ERROR": Server error occurred
+      - "invalid_parameter" (`400`): `call_ids` is missing or not an array of strings, or contains duplicate call IDs
+      - "INTERNAL_SERVER_ERROR" (`500`): a `call_id` has no stored webhook, or an unexpected error occurred
     </ResponseField>
     <ResponseField name="message" type="string">
       Detailed error message.
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "call_ids": ["00000000-0000-0000-0000-000000000000"]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "data": [
+    {
+      "call_id": "00000000-0000-0000-0000-000000000000",
+      "payload": { "call_id": "00000000-0000-0000-0000-000000000000", "status": "completed" },
+      "url": "https://example.com/webhook",
+      "user_id": "00000000-0000-0000-0000-000000000100",
+      "created_at": "2025-01-15T14:32:00.000Z",
+      "metadata": [
+        {
+          "sent_at": "2025-01-15T14:32:00.000Z",
+          "response_code": 200,
+          "response_time": "143ms",
+          "send_type": "spawn"
+        },
+        {
+          "sent_at": "2025-01-16T09:00:00.000Z",
+          "response_code": 200,
+          "response_time": "98ms",
+          "send_type": "resend"
+        }
+      ]
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Duplicate IDs
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "invalid_parameter",
+      "message": "Found duplicate call ids: 00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}
+```
+</ResponseExample>
 
 ---
 

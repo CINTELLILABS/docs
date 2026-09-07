@@ -4,9 +4,9 @@ api: "POST https://api.bland.ai/v1/custom-dialing-pools"
 description: "Create a new custom dialing pool with phone numbers for optimized call routing."
 ---
 
-<Info>
-  **Enterprise Feature** - Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
+</Note>
 
 Custom dialing pools allow you to create collections of phone numbers that will be automatically selected based on geographic proximity to optimize call pickup rates.
 
@@ -19,9 +19,7 @@ Custom dialing pools allow you to create collections of phone numbers that will 
 ### Body
 
 <ParamField body="phone_numbers" type="array" required>
-  Array of phone numbers to include in the pool. All numbers must be valid US phone numbers with +1 prefix.
-  
-  **Format**: Each phone number must be exactly 12 characters: `+1` followed by 10 digits.
+  Array of phone numbers to include in the pool. Every number must be a valid US (`+1`) or UK (`+44`) number. At least one number is required.
   
   **Example**: `["+12345678901", "+19876543210"]`
 </ParamField>
@@ -36,12 +34,8 @@ Custom dialing pools allow you to create collections of phone numbers that will 
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
-</ResponseField>
-
 <ResponseField name="data" type="object">
-  The created custom dialing pool object (present only if status is `success`).
+  The created custom dialing pool object. A successful request returns `201`.
   
   <Expandable title="data properties">
     <ResponseField name="id" type="string">
@@ -66,8 +60,8 @@ Custom dialing pools allow you to create collections of phone numbers that will 
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array">
-  Array of error objects (present only if status is `error`).
+<ResponseField name="errors" type="array | null">
+  `null` on success. Validation errors include `error`, `message`, and, when applicable, `field`.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">
@@ -132,7 +126,6 @@ print(response.json())
 
 ```json Success Response
 {
-  "status": "success",
   "data": {
     "id": "550e8400-e29b-41d4-a716-446655440001",
     "owner_id": "550e8400-e29b-41d4-a716-446655440002",
@@ -146,12 +139,11 @@ print(response.json())
 
 ```json Error Response - Invalid Phone Numbers
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
       "error": "INVALID_PHONE_NUMBERS",
-      "message": "All phone numbers must be valid US numbers with +1 prefix"
+      "message": "All phone numbers must be valid US (+1) or UK (+44) numbers"
     }
   ]
 }
@@ -159,7 +151,6 @@ print(response.json())
 
 ```json Error Response - Invalid Credentials
 {
-  "status": "error",
   "data": null,
   "errors": [
     {

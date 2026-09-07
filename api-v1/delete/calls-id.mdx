@@ -1,0 +1,42 @@
+---
+title: "Delete Call"
+api: "DELETE https://api.bland.ai/v1/calls/{call_id}"
+description: "Delete a call record and optionally delete its recording."
+---
+
+<Note>
+  Your organization needs the `REDACT_CALLS` entitlement to use this endpoint.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of a call owned by your organization.
+</ParamField>
+
+### Body
+
+<ParamField body="delete_recording" type="boolean" default="false">
+  Also delete the stored recording. The call record and its webhook logs are always deleted.
+</ParamField>
+
+### Response
+
+A successful deletion returns `204 No Content`.
+
+Errors use the `{data, errors}` envelope:
+
+- `400 MISSING_CALL_ID`
+- `403 FORBIDDEN` when the required entitlement is missing
+- `404 CALL_NOT_FOUND` when the call does not exist or belongs to another organization
+- `500 INTERNAL_SERVER_ERROR`
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

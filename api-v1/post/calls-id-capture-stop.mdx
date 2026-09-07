@@ -1,0 +1,50 @@
+---
+title: "Stop Transfer Capture"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/capture/stop"
+description: "Stop recording and transcript capture after a call transfer."
+---
+
+Stops recording and transcript capture for the remainder of a transferred call. The operation is one-way and idempotent. Repeating it returns the original `capture_stopped_at` timestamp and retries any live stop signals.
+
+<Note>
+  This endpoint requires the post-transfer transcript feature to be enabled for your organization. It can only be used after the transfer completes.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of a call owned by your organization.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.capture_stopped_at" type="string">
+  The ISO 8601 timestamp after which capture is stopped.
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "capture_stopped_at": "2026-09-07T18:30:00.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+Errors include `MISSING_CALL_ID` (400), `UNAUTHORIZED` (401), `FEATURE_NOT_ENABLED` (403), `CALL_NOT_FOUND` (404), `CALL_ENDED` or `NOT_TRANSFERRED` (409), `NOT_SUPPORTED` (501), and `RECORDING_STOP_FAILED` (502). A `502` response also includes the durable `capture_stopped_at` timestamp at the top level so you can safely retry.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,38 @@
+---
+title: "Stream Active Calls"
+api: "GET https://api.bland.ai/v1/calls/active/stream"
+description: "Receive server-sent events when your organization's active calls change."
+---
+
+Opens a server-sent events (SSE) connection for active call updates.
+
+<Warning>
+  This endpoint is limited to 100 connection requests per 15 minutes per IP address. Requests over the limit return `429`.
+</Warning>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Events
+
+Each event is written as a `data:` line containing JSON:
+
+- `INITIAL_STATE`: Sent when the connection opens. `data` contains the current active call array.
+- `UPDATE`: Sent when an active call changes. `data` contains the update.
+- `HEARTBEAT`: Sent every 30 seconds with a millisecond `timestamp`.
+- `ERROR`: Sent with `message: "Connection error"` when the subscription fails after the connection opens.
+
+```text SSE
+data: {"type":"INITIAL_STATE","data":[]}
+
+data: {"type":"HEARTBEAT","timestamp":1788805800000}
+```
+
+If the stream cannot be established, the endpoint returns `500` with `data: null` and a `STREAM_ERROR` entry in `errors`.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -4,10 +4,14 @@ api: "GET https://api.bland.ai/v1/me"
 description: "Returns call data for your account."
 ---
 
+<Note>
+  This endpoint only works with an organization API key (a key that starts with `org_`). Requests made with any other key type return a `500` error.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your organization API key (`org_...`) for authentication.
 </ParamField>
 
 ### Response
@@ -18,12 +22,22 @@ Contains `current_balance` (number of credits), and `refill_to` if you have auto
 </ResponseField>
 
 <ResponseField name="status" type="string">
-The status of your account.
+The status of the API key used for the request.
 </ResponseField>
 
 <ResponseField name="total_calls" type="int">
-The total number of calls you've made.
+The number of calls your organization has made, capped at `1000`. Accounts with more than 1000 calls always see `1000`.
 </ResponseField>
+
+### Errors
+
+All errors return a `500` status with `{ "status": "error", "message": "..." }`:
+
+| Message | Cause |
+|---|---|
+| `Error fetching org data. Ensure you are requesting with an 'org_' key.` | The request was made with a non-organization API key. |
+| `Error fetching billing data.` | No billing record was found for your organization. |
+| `unable to fetch` | An unexpected error occurred. |
 
 <ResponseExample>
 ```json Response
@@ -33,18 +47,17 @@ The total number of calls you've made.
         "current_balance": 99919.1210000034,
         "refill_to": null
     },
-    "total_calls": 9903
+    "total_calls": 1000
+}
+```
+
+```json Non-org key
+{
+    "status": "error",
+    "message": "Error fetching org data. Ensure you are requesting with an 'org_' key."
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
-
 
 ---
 

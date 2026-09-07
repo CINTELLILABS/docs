@@ -1,8 +1,12 @@
 ---
-title: "Stop All Active Calls"  
+title: "Stop All Active Calls"
 api: "POST https://api.bland.ai/v1/calls/active/stop"
 description: "End all active phone calls on your account."
 ---
+
+Ends every call on your account that is currently in progress (`queue_status: "started"`). Queued and scheduled calls are not affected; cancel those one at a time with [Stop Active Call](/api-v1/post/calls-id-stop).
+
+The endpoint responds as soon as it has counted the matching calls. The calls are then ended asynchronously in batches, so they can stay active for a short time after the `200` response.
 
 ### Headers
 
@@ -12,39 +16,55 @@ description: "End all active phone calls on your account."
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="message" type="string">
+      `"Stopping active calls. This may take some time..."`, or `"No active calls to stop"` when nothing is in progress.
+    </ResponseField>
+
+    <ResponseField name="num_calls" type="integer">
+      The number of active calls that will be ended. `0` when there are none.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  If the status is `success`, the message will say "Call ended successfully."
-  Otherwise, if the status is `error`, the message will say "SID not found for
-  the given c_id." or "Internal server error."
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure the response is `500` with `data: null` and a single `INTERNAL_SERVER_ERROR` entry.
 </ResponseField>
-
-<ResponseField name="num_calls" type="integer">
-    The number of active calls that will be cancelled.
-</ResponseField>
-
 
 <ResponseExample>
-```json
+```json Response
 {
-  "status": "success",
-  "message": "Stopping active calls. This may take some time...",
-  "num_calls": 12
+  "data": {
+    "message": "Stopping active calls. This may take some time...",
+    "num_calls": 12
+  },
+  "errors": null
+}
+```
+
+```json No Active Calls
+{
+  "data": {
+    "message": "No active calls to stop",
+    "num_calls": 0
+  },
+  "errors": null
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INTERNAL_SERVER_ERROR",
+      "message": "Error stopping active calls"
+    }
+  ]
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
-
-
 
 ---
 
