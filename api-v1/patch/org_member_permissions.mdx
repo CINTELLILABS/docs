@@ -1,59 +1,76 @@
 ---
-title: "Update Organization Member Permissions"  
-api: "PATCH https://api.bland.ai/v1/orgs/{org_id}/members/permissions"  
-description: "Modify the permissions of an existing member within an organization."  
+title: "Update Organization Member Permissions"
+api: "PATCH https://api.bland.ai/v1/orgs/{org_id}/members/permissions"
+description: "Modify the permissions of an existing member within an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Requires the `owner` or `admin` role. A non-member caller or a caller without the required role gets a `500` response with error `ORG_MEMBER_UPDATE_FAILURE` and the reason in `message`, not a `403`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
 ### Body
 
-<ParamField body="action" type="string" required>  
-  The action to perform on the member's permissions.  
-  <br/>Valid values: `"add"`, `"remove"`, `"reset"`, `"set"`  
-</ParamField>  
+<ParamField body="action" type="string" required>
+  How to apply `permissions` to the member's current roles.
+  <br/>Valid values: `"add"` (append), `"remove"` (drop the listed roles), `"set"` (replace with the listed roles), `"reset"` (replace with `["viewer"]`, `permissions` is still required but ignored)
+</ParamField>
 
-<ParamField body="target" type="string" required>  
-  The user ID of the member whose permissions are being modified.  
-</ParamField>  
+<ParamField body="target" type="string" required>
+  The member whose permissions are being modified. Accepts a user ID, an email address, or an E.164 phone number of an existing member.
+</ParamField>
 
-<ParamField body="permissions" type="string[]" required>  
-  A list of permissions to update.  
-  <br/>Valid values: `"owner"`, `"admin"`, `"operator"`, `"viewer"`  
-</ParamField>  
+<ParamField body="permissions" type="string[]" required>
+  The roles to apply.
+  <br/>Valid values: `"admin"`, `"operator"`, `"prompter"`, `"viewer"`
+  <br/>`"owner"` cannot be granted or removed here, and the organization owner's permissions cannot be modified at all. Contact support to migrate ownership.
+</ParamField>
 
 ### Response
 
-<ResponseField name="data" type="object">  
-  Contains the updated permissions for the user.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  Contains the updated permissions for the user.
+</ResponseField>
 
-<ResponseField name="data.newPermissions" type="string[]">  
-  The updated list of permissions assigned to the user.  
-</ResponseField>  
+<ResponseField name="data.newPermissions" type="string[]">
+  The updated list of permissions assigned to the user.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `errors` contains one entry with `error: "ORG_MEMBER_UPDATE_FAILURE"` and a `message`. Status `400` when `action`, `target`, or `permissions` is missing, `500` for every other failure (target is not a member, invalid role, owner permissions, insufficient role).
+</ResponseField>
 
-<ResponseExample>  
+<ResponseExample>
 
-```json Response  
+```json Response
 {
   "data": {
     "newPermissions": ["viewer", "operator"]
   },
   "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ORG_MEMBER_UPDATE_FAILURE",
+      "message": "Cannot set or modify owner permission(s). Contact support to migrate ownership."
+    }
+  ]
 }
 ```
 </ResponseExample>

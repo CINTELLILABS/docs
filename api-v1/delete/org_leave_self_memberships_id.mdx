@@ -1,34 +1,40 @@
 ---
-title: "Leave Organization"  
-api: "DELETE https://api.bland.ai/v1/orgs/self/leave"  
-description: "Remove the authenticated user from an organization."  
+title: "Leave Organization"
+api: "DELETE https://api.bland.ai/v1/orgs/self/leave"
+description: "Remove the authenticated user from an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+The organization owner cannot leave. A non-member caller or the owner gets a `500` response with error `ORG_SELF_LEAVE_FAILURE` and the reason in `message` (for example `Cannot remove the organization owner.`), not a `403`.
+</Note>
 
 ### Body
 
-<ParamField body="org_id" type="string" required>  
-  The unique identifier of the organization the user wants to leave.  
-</ParamField>  
+<ParamField body="org_id" type="string" required>
+  The unique identifier of the organization the user wants to leave.
+</ParamField>
+
+Leaving also deletes your organization-scoped API keys for that organization.
 
 ### Response
 
-<ResponseField name="data" type="null">  
-  Always `null` upon successful removal.  
-</ResponseField>  
+<ResponseField name="data" type="null">
+  Always `null` upon successful removal.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_SELF_LEAVE_FAILURE"` and the reason in `message` (status `500`).
+</ResponseField>
 
-<ResponseExample>  
+<ResponseExample>
 
-```json Response  
+```json Response
 {
   "data": null,
   "errors": null

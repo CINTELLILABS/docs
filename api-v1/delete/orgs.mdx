@@ -1,43 +1,65 @@
 ---
-title: "Delete Organization"  
-api: "DELETE https://api.bland.ai/v1/orgs/{org_id}"  
-description: "Delete an organization."  
+title: "Delete Organization"
+api: "DELETE https://api.bland.ai/v1/orgs/{org_id}"
+description: "Delete an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Only the organization owner can delete the organization. Any other caller gets a `500` response with error `ORG_DELETE_FAILURE` and `message: "Error: Only the organization owner can perform this action."`, not a `403`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization you want to delete.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization you want to delete. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
 ### Body
 
-<ParamField body="delete_confirm" type="string" required>  
-  The slug of the organization to confirm deletion.  
-</ParamField>  
+<ParamField body="delete_confirm" type="string" required>
+  The `org_slug` of the organization, to confirm deletion. If it does not match, the request fails with the message `Organization name does not match. Please provide the correct organization name to delete.`
+</ParamField>
+
+### Constraints
+
+- Only the organization owner can delete the organization.
+- Suspended organizations and organizations with overdue payments cannot be deleted. Contact support.
+- An already deleted organization cannot be deleted again.
 
 ### Response
 
-<ResponseField name="data" type="null">  
-  Always `null` upon successful deletion.  
-</ResponseField>  
+<ResponseField name="data" type="null">
+  Always `null` upon successful deletion.
+</ResponseField>
 
-<ResponseField name="errors" type="null | array">  
-  `null` if successful; contains error details if the request fails.  
-</ResponseField>  
+<ResponseField name="errors" type="null | array">
+  `null` if successful. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_DELETE_FAILURE"` and the reason in `message` (status `500`).
+</ResponseField>
 
-<ResponseExample>  
+<ResponseExample>
 
-```json Response  
+```json Response
 {
   "data": null,
   "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ORG_DELETE_FAILURE",
+      "message": "Error: Organization name does not match. Please provide the correct organization name to delete."
+    }
+  ]
 }
 ```
 </ResponseExample>

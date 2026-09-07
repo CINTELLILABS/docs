@@ -1,109 +1,152 @@
 ---
-title: "Update Organization Properties"  
-api: "PATCH https://api.bland.ai/v1/orgs/{org_id}/properties"  
-description: "Modify specific properties of an organization."  
+title: "Update Organization Properties"
+api: "PATCH https://api.bland.ai/v1/orgs/{org_id}/properties"
+description: "Modify specific properties of an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Requires the `owner` or `admin` role. Callers with a lower role get `403 UNAUTHORIZED`. A caller who is not a member of the organization gets a `500` response with error `ORG_PROPERTY_UPDATE_FAILURE` and the reason in `message`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
 ### Body
 
-<ParamField body="updates" type="object" required>  
-  An object containing the properties to update.  
-  <br/><br/>**Valid keys:**  
-  - `"org_display_name"` (string) - The display name of the organization. Must be between **1 and 30 characters**.  
-  - `"preferences"` (object) - Preference settings for the organization:  
-    - `"use_bland_url"` (boolean) - Whether the organization prefers to use the Bland URL.  
-    - `"recording_lifespan_days"` (integer) - The lifespan of recordings in days. Must be between **1 and 1825** (inclusive) or `-1` to disable retention.  
-</ParamField>  
+<ParamField body="updates" type="object" required>
+  An object containing the properties to update. Only the keys below are applied; any other key is ignored.
+</ParamField>
+
+<ParamField body="updates.org_display_name" type="string">
+  The display name of the organization. Must be between 1 and 30 characters.
+</ParamField>
+
+<ParamField body="updates.preferences" type="object">
+  Preference settings for the organization. Unknown keys are rejected.
+  <br/><br/>**Valid keys:**
+  - `use_bland_url` (boolean)
+  - `recording_lifespan_days` (integer) - How long call recordings stay available. `1` to `1825` keeps recordings for that many days. `0` makes recordings expire immediately, so fetching one always requires an API key or signed-in session (the default for new organizations). `-1` removes the retention limit, so recordings never expire.
+  - `live_listen_enabled` (boolean)
+  - `record_bland_call_only` (boolean)
+  - `delay_post_call_until_citations` (boolean)
+  - `show_legacy_v1_voices` (boolean)
+  - `credit_alert_recipients` (string) - Comma-separated list of email addresses. Each entry must contain `@` and `.`.
+  - `qc_tags` - Not validated.
+  - `logging` (string or string[]) - Logging filter or group names.
+  - `redaction_exemptions` (string[])
+  - `watchtower_enabled` (boolean)
+  - `webhook_excluded_fields` (string[]) - Fields to omit from post-call webhooks. Valid values: `"pathway_logs"`, `"post_call_evals"`.
+  - `higher_accuracy_citations` (boolean)
+  - `default_member_role` (string) - Role given to members added without explicit `permissions`. Valid values: `"viewer"`, `"operator"`, `"prompter"`, `"admin"`.
+  - `inbound_caller_allowlist` (object) - `{ "masked_callers": string[], "prefixes": string[] }`. Both keys are optional. `masked_callers` accepts `"anonymous"`, `"restricted"`, `"blocked"`, `"unknown"`, `"unavailable"`, `"private"`, `"no_caller_id"`. `prefixes` are E.164 number prefixes.
+</ParamField>
+
+<Warning>
+`preferences` replaces the stored preferences object in full. Read the current value with [Get Organization](/api-v1/get/orgs) first and send back every key you want to keep.
+</Warning>
 
 ### Response
 
-<ResponseField name="data" type="object">  
-  The updated organization properties.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  The updated organization. Same shape as [Get Organization](/api-v1/get/orgs).
+</ResponseField>
 
-<ResponseField name="data.id" type="string">  
-  The unique identifier of the organization.  
-</ResponseField>  
+<ResponseField name="data.id" type="string">
+  The unique identifier of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_slug" type="string">  
-  The unique slug identifier of the organization.  
-</ResponseField>  
+<ResponseField name="data.org_slug" type="string">
+  The unique slug identifier of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_display_name" type="string">  
-  The updated display name of the organization.  
-</ResponseField>  
+<ResponseField name="data.org_display_name" type="string">
+  The updated display name of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_image_url" type="string | null">  
-  URL of the organization's image (if set).  
-</ResponseField>  
+<ResponseField name="data.org_image_url" type="string | null">
+  URL of the organization's image (if set).
+</ResponseField>
 
-<ResponseField name="data.org_plan" type="string">  
-  The organization's plan. Default: `"starter"`.  
-</ResponseField>  
+<ResponseField name="data.org_plan" type="string">
+  The organization's plan. Default: `"starter"`.
+</ResponseField>
 
-<ResponseField name="data.org_creation_date" type="string (ISO 8601)">  
-  The timestamp of when the organization was created.  
-</ResponseField>  
+<ResponseField name="data.org_creation_date" type="string (ISO 8601)">
+  The timestamp of when the organization was created.
+</ResponseField>
 
-<ResponseField name="data.kyc_level" type="integer">  
-  The KYC (Know Your Customer) verification level. Default: `0`.  
-</ResponseField>  
+<ResponseField name="data.kyc_level" type="integer">
+  The KYC (Know Your Customer) verification level. Default: `0`.
+</ResponseField>
 
-<ResponseField name="data.placement_group" type="string">  
-  The placement group of the organization. Default: `"blandshared"`.  
-</ResponseField>  
+<ResponseField name="data.placement_group" type="string">
+  The placement group of the organization. Default: `"blandshared"`.
+</ResponseField>
 
-<ResponseField name="data.is_deleted" type="boolean">  
-  Whether the organization is deleted. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_deleted" type="boolean">
+  Whether the organization is deleted. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.is_stripe_overdue" type="boolean">  
-  Whether the organization has overdue Stripe payments. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_stripe_overdue" type="boolean">
+  Whether the organization has overdue Stripe payments. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.is_suspended" type="boolean">  
-  Whether the organization is suspended. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_suspended" type="boolean">
+  Whether the organization is suspended. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.org_rate_limit" type="integer">  
-  The organization's request rate limit. Default: `5`.  
-</ResponseField>  
+<ResponseField name="data.org_rate_limit" type="integer">
+  The organization's request rate limit. Default: `5`.
+</ResponseField>
 
-<ResponseField name="data.org_type" type="string">  
-  The type of the organization. Default: `"normal"`.  
-</ResponseField>  
+<ResponseField name="data.org_type" type="string">
+  The type of the organization. Default: `"normal"`.
+</ResponseField>
 
-<ResponseField name="data.entitlements" type="array">  
-  A list of entitlements granted to the organization. Default: `[]`.  
-</ResponseField>  
+<ResponseField name="data.entitlements" type="array">
+  A list of entitlements granted to the organization. Default: `[]`.
+</ResponseField>
 
-<ResponseField name="data.preferences" type="object">  
-  The updated preferences for the organization.  
-</ResponseField>  
+<ResponseField name="data.preferences" type="object">
+  The updated preferences for the organization.
+</ResponseField>
 
-<ResponseField name="data.preferences.use_bland_url" type="boolean">  
-  Whether the organization prefers to use the Bland URL.  
-</ResponseField>  
+<ResponseField name="data.paid" type="boolean">
+  Whether the organization is on a paid plan. Computed from `org_plan` and `org_rate_limit`.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry. Status `400` `ORG_PROPERTY_UPDATE_FAILURE` when `updates` is missing, `403 UNAUTHORIZED` for insufficient role, `500 ORG_PROPERTY_UPDATE_FAILURE` with the validation reason in `message` for invalid values.
+</ResponseField>
 
-<ResponseExample>  
+<RequestExample>
 
-```json Response  
+```json Request
+{
+  "updates": {
+    "org_display_name": "Org Name",
+    "preferences": {
+      "use_bland_url": false,
+      "recording_lifespan_days": 90,
+      "default_member_role": "operator"
+    }
+  }
+}
+```
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
 {
   "data": {
     "id": "d122b4cf-1614-4124-aa28-15f81a09988f",
@@ -121,10 +164,25 @@ description: "Modify specific properties of an organization."
     "org_type": "normal",
     "entitlements": [],
     "preferences": {
-      "use_bland_url": false
-    }
+      "use_bland_url": false,
+      "recording_lifespan_days": 90,
+      "default_member_role": "operator"
+    },
+    "paid": false
   },
   "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ORG_PROPERTY_UPDATE_FAILURE",
+      "message": "Error: Recording lifespan must be between 1 and 1825 days (inclusive)."
+    }
+  ]
 }
 ```
 </ResponseExample>

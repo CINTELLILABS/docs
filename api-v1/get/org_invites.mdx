@@ -1,0 +1,95 @@
+---
+title: "List Organization Invites"
+api: "GET https://api.bland.ai/v1/orgs/{org_id}/invites"
+description: "Retrieve the pending (not yet redeemed) invitations for an organization."
+---
+
+Invitations are created by [Update Organization Members](/api-v1/patch/org_members) when the `target` phone number or email does not belong to an existing user. An invite is redeemed automatically when the invitee signs up with the same phone number or email, and disappears from this list.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Any member of the organization can list invites. A non-member caller gets a `500` response with error `ORG_INVITES_GET_FAILURE` and the reason in `message`, not a `403`.
+</Note>
+
+### Path Parameters
+
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  The pending invitations for the organization.
+</ResponseField>
+
+<ResponseField name="data[].id" type="string">
+  The unique identifier of the invite. Pass it to [Revoke Organization Invite](/api-v1/delete/org_invites_id) to cancel it.
+</ResponseField>
+
+<ResponseField name="data[].org_id" type="string">
+  The unique identifier of the organization.
+</ResponseField>
+
+<ResponseField name="data[].email" type="string | null">
+  The invited email address, lowercased. `null` for phone number invites.
+</ResponseField>
+
+<ResponseField name="data[].phone_number" type="string | null">
+  The invited phone number in E.164 format. `null` for email invites.
+</ResponseField>
+
+<ResponseField name="data[].permissions" type="string[]">
+  The roles the invitee receives when the invite is redeemed.
+  <br/>Valid values: `"owner"`, `"admin"`, `"operator"`, `"prompter"`, `"viewer"`
+</ResponseField>
+
+<ResponseField name="data[].created_by" type="string">
+  The user ID of the member who sent the invite.
+</ResponseField>
+
+<ResponseField name="data[].created_at" type="string (ISO 8601)">
+  When the invite was created.
+</ResponseField>
+
+<ResponseField name="data[].redeemed" type="boolean">
+  Always `false`. Redeemed invites are not returned.
+</ResponseField>
+
+<ResponseField name="data[].redeemed_at" type="null">
+  Always `null` for pending invites.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_INVITES_GET_FAILURE"` and the reason in `message` (status `500`).
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "6a1f3c2e-8b4d-4f0a-9c7e-2d5b8a1e4f6c",
+      "phone_number": null,
+      "email": "newhire@example.com",
+      "org_id": "d122b4cf-1614-4124-aa28-15f81a09988f",
+      "permissions": ["viewer"],
+      "created_at": "2025-02-14T06:46:11.274Z",
+      "redeemed": false,
+      "redeemed_at": null,
+      "created_by": "d6b149e1-f971-4641-8d28-64fdf78368af"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)
