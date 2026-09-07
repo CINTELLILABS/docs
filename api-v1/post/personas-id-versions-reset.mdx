@@ -1,0 +1,82 @@
+---
+title: "Reset Draft Persona Version"
+api: "POST https://api.bland.ai/v1/personas/{persona_id}/versions/reset"
+description: "Reset a persona's current draft from another version."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="persona_id" type="string" required>
+  The unique identifier of the persona.
+</ParamField>
+
+### Body
+
+<ParamField body="source_version_id" type="string" required>
+  The ID of a version that belongs to this persona. Its prompts, pathway conditions, knowledge bases, call configuration, default tools, and skills replace those fields on the current draft.
+</ParamField>
+
+<Warning>
+  Resetting a draft does not copy the source version's `memory_enabled`, `entity_schemas`, or `auth_config` values.
+</Warning>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated draft version.
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  `null` on success, or a list containing `INVALID_BODY`, `PERSONA_NOT_FOUND`, `SOURCE_VERSION_NOT_FOUND`, `NO_DRAFT_VERSION`, or `INTERNAL_SERVER_ERROR`.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "12345678-1234-1234-1234-123456789012",
+    "persona_id": "12345678-1234-1234-1234-123456789013",
+    "version_type": "draft",
+    "version_number": 4,
+    "orchestration_prompt": null,
+    "personality_prompt": "You are a helpful assistant",
+    "pathway_conditions": null,
+    "kb_ids": [],
+    "call_config": null,
+    "default_tools": [],
+    "memory_enabled": false,
+    "entity_schemas": null,
+    "auth_config": null,
+    "skills": null,
+    "promoted_from_version_id": "12345678-1234-1234-1234-123456789014",
+    "promoted_at": null,
+    "promoted_by": null,
+    "created_at": "2025-09-23T15:55:57.263Z",
+    "updated_at": "2025-09-23T16:03:12.181Z"
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SOURCE_VERSION_NOT_FOUND",
+      "message": "Source version not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

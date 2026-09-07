@@ -1,8 +1,12 @@
 ---
-title: "Update Web Agent Settings"  
+title: "Update Web Agent Settings"
 api: "POST https://api.bland.ai/v1/agents/{agent_id}"
 description: "Update your web agent's settings, prompt and other details."
 ---
+
+<Note>
+  Web Agents are the legacy inbound-based agent model, maintained for existing customers. They remain the voice backend for the [Web Chat Widget](/tutorials/chat-widget) (`agent_id` on [Create Widget](/api-v1/post/widget)). For phone calls, use [Send Call](/api-v1/post/calls) with a pathway or persona instead.
+</Note>
 
 ### Headers
 
@@ -12,14 +16,16 @@ description: "Update your web agent's settings, prompt and other details."
 
 ### Path Parameters
 
-<ParamField path="agent_id" type="string">
+<ParamField path="agent_id" type="string" required>
     The web agent you'll be updating.
 </ParamField>
 
 ### Body
 
-<ParamField body="prompt" type="string" required>
-    Provide instructions, relevant information, and examples of the ideal conversation flow. 
+All body fields are optional. Only the fields you send are changed. Unrecognized fields are silently dropped.
+
+<ParamField body="prompt" type="string">
+    Provide instructions, relevant information, and examples of the ideal conversation flow.
 
     <Accordion title="Best Practices">
         #### Out-of-the-Box Behaviors (Summarized):
@@ -30,146 +36,156 @@ description: "Update your web agent's settings, prompt and other details."
         #### Prompting Tips:
         - Want to easily test out exactly how your agent will behave?
             - [Try out Agent Testing!](https://app.bland.ai/home?page=testing)
-        - Aim for less than >2,000 characters where possible.
+        - Aim for less than 2,000 characters where possible.
         - Simple, direct prompts are the most predictable and reliable.
-        - Frame instructions positively: 
-            - `"Do this"` rather than `"Don't do this"`. 
+        - Frame instructions positively:
+            - `"Do this"` rather than `"Don't do this"`.
             - Ex. "Keep the conversation casual" rather than "Don't be too formal".
             - This gives concrete examples of what to do, instead of leaving expected behavior open to interpretation.
     </Accordion>
 </ParamField>
 
 <ParamField body="voice" type="string">
-  Set your agent's voice - all available voices can be found with the [List Voices](/api-v1/get/voices) endpoint.
+  Set your agent's voice by name or ID. All available voices can be found with the [List Voices](/api-v1/get/voices) endpoint. Unknown voices are rejected, and professional clone voices that are still in draft cannot be used (403).
 </ParamField>
 
 <ParamField body="webhook" type="string">
-  Set a webhook URL to receive call data after the web call completes.
+  Set a webhook URL to receive call data after the web call completes. Set to `null` to clear it.
+</ParamField>
+
+<ParamField body="webhook_events" type="string[]">
+  Which event streams to send to `webhook`. Allowed values: `latency`, `queue`, `call`, `dynamic_data`, `webhook`, `tool`, `citations`, `evals`, `post_transfer_transcript`. Set to `null` to clear.
 </ParamField>
 
 <ParamField body="metadata" type="object">
-  Add any additional information you want to associate with the call. This can be useful for tracking or categorizing calls.
+  Any additional information you want to associate with calls to this agent, for tracking or categorization.
 </ParamField>
 
 <ParamField body="pathway_id" type="string">
-    Set the pathway that your agent will follow. This will override the `prompt` field, so there is no need to pass the 'prompt' field if you are setting a pathway.
-
-    Warning: Setting a pathway will set the following fields to `null` / their default value - `prompt`, `first_sentence`, `model`, `dynamic_data`, `tools`, `transfer_list`
-
-    Set to `null` or an empty string to clear the pathway.
-
+  Set the pathway that your agent will follow. When a pathway is set, `prompt` is ignored at call time. Set to `null` to clear the pathway.
 </ParamField>
 
 <ParamField body="language" type="string" default="ENG">
-  Select a supported language of your choice. 
-  Optimizes every part of our API for that language - transcription, speech, and other inner workings.
-  
-  Supported Languages and their codes can be found [here](/api-v1/post/calls#param-language).
-</ParamField>
+  Select a supported language of your choice. Optimizes transcription, speech, and other inner workings for that language. Supported languages and their codes can be found [here](/api-v1/post/calls#param-language).
 
-<ParamField body="webhook" type="string">
-  The webhook should be a http / https callback url. We will send the call_id
-  and transcript to this URL after the call completes. This can be useful if you
-  want to have real time notifications when calls finish.
-
-  Set to `null` or an empty string to clear the webhook.
+  Note: `language` is stored and applied to calls but is not included in agent objects returned by this API.
 </ParamField>
 
 <ParamField body="model" type="string" default="base">
-  Select a model to use for your call.
+  Select a model to use for your call. See the [Send Call](/api-v1/post/calls#param-model) `model` parameter for options.
+</ParamField>
 
-  Options: `base` or `turbo`.
-
-  In nearly all cases, `base` is the best choice for now.
-
-  <Accordion title="Model Differences">
-
-  There are two different ways to use Bland:
-
-  - `model: base`
-    - The original, follows scripts/procedures most effectively.
-    - Supports all features and capabilities.
-    - Best for Custom Tools
-
-  - `model: turbo`
-    - The absolute fastest latency possible, can be verbose at times
-    - Limited capabilities currently (excludes Transferring, IVR navigation, Custom Tools)
-    - Extremely realistic conversation capabilities
-
-  </Accordion>
+<ParamField body="temperature" type="number">
+  Sampling temperature for the model. Set to `null` to use the default.
 </ParamField>
 
 <ParamField body="first_sentence" type="string">
-  A phrase that your call will start with instead of a generating one on the fly. This works both with and without `wait_for_greeting`. Can be more than one sentence, but must be less than 200 characters.
-
-  To remove, set to `null` or an empty string.
+  A phrase that your call will start with instead of generating one on the fly. Can be more than one sentence, but must be less than 200 characters. To remove, set to `null` or an empty string.
 </ParamField>
 
 <ParamField body="tools" type="array">
-  Interact with the real world through API calls.
-
-  Detailed tutorial here: [Custom Tools](/tutorials/custom-tools)
+  Interact with the real world through API calls. Detailed tutorial here: [Custom Tools](/tutorials/custom-tools).
 </ParamField>
 
 <ParamField body="dynamic_data" type="object">
-  Integrate data from external APIs into your agent's knowledge. 
-
-  Set to `null` or an empty string to clear dynamic data settings.
-
-  Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
+  Integrate data from external APIs into your agent's knowledge. Set to `null` to clear. Detailed usage in the [Send Call](/api-v1/post/calls) endpoint.
 </ParamField>
 
 <ParamField body="interruption_threshold" type="number" default={500}>
-  Adjusts how patient the AI is when waiting for the user to finish speaking.
+  Adjusts how patient the AI is when waiting for the user to finish speaking. Lower values mean the AI responds more quickly; higher values mean it waits longer.
 
-  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
-
-  Recommended range: 50-200
-  - 50: Extremely quick, back and forth conversation
-  - 100: Balanced to respond at a natural pace
-  - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
-
-  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
+  Recommended range: 50-200. Start with 100 and adjust in increments of about 10.
 </ParamField>
 
-<ParamField body="max_duration" type="integer (minutes)" default={30}>
-  The maximum duration that calls to your agent can last before being automatically terminated.
-
-  Set to `null` to reset to default.
+<ParamField body="interruptibility" type="number">
+  How easily the caller can interrupt the agent. `0` disables interruptions entirely. See the [Send Call](/api-v1/post/calls) `interruptibility` parameter for the scale.
 </ParamField>
+
+<ParamField body="noise_cancellation" type="boolean">
+  Enable background noise suppression on the caller's audio.
+</ParamField>
+
+<ParamField body="silence_end_message" type="string">
+  Message the agent says before hanging up after prolonged caller silence.
+</ParamField>
+
+<ParamField body="voice_settings" type="object">
+  Per-agent voice tuning object, stored as-is and applied to calls.
+</ParamField>
+
+<ParamField body="analysis_schema" type="object">
+  JSON schema of fields to extract from each call after it ends. Same shape as `analysis_schema` on [Send Call](/api-v1/post/calls).
+</ParamField>
+
+<ParamField body="redaction" type="string[]">
+  Compliance categories to redact from transcripts and recordings: any of `pii`, `phi`, `pci`. Unrecognized values are dropped. Never returned in agent objects.
+</ParamField>
+
+<ParamField body="max_duration" type="number" default={30}>
+  The maximum duration in minutes that calls to your agent can last before being automatically terminated. Set to `null` to reset to the default.
+</ParamField>
+
+<ParamField body="pronunciation_guide" type="array">
+  Pronunciation overrides applied to the agent's speech. Same shape as `pronunciation_guide` on [Send Call](/api-v1/post/calls).
+</ParamField>
+
+<Note>
+  Setting `voice` also clears any voice pool configured for this agent so the new voice takes effect immediately.
+</Note>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Whether the update was successful or not - will be `success` or `error`.
-</ResponseField>
-
-<ResponseField name="message" type="string">
-  A message describing the status of the update.
+<ResponseField name="agent" type="object">
+  The agent after the update. Same fields as [List Web Agents](/api-v1/get/agents#response).
 </ResponseField>
 
 <ResponseField name="updates" type="object">
-  An object containing the updated settings for the agent.
+  Echo of the fields that were applied, as interpreted by the server (`tools` is returned as its stored JSON string). Useful to confirm how your request was parsed.
 </ResponseField>
 
-<ResponseField name="failed_updates" type="object">
-  If the update was unsuccessful, this will contain the settings that failed to update. Useful to determine how your request is being interpreted on our end.
-</ResponseField>
+### Error Codes
+
+| Status | Body | Description |
+|--------|------|-------------|
+| 400 | `{"status": "error", "message": "..."}` | Invalid `interruptibility` or similar validation failure. |
+| 403 | `{"status": "error", "message": "..."}` | `voice` is a professional clone that is still in draft. |
+| 500 | `{"status": "error", "message": "No voice found for voice ..."}` | `voice` does not match any voice available to you. |
+| 500 | `{"status": "error", "message": "Internal server error"}` | Unknown `agent_id`, invalid `webhook_events` value, or unexpected failure. |
 
 <ResponseExample>
-
 ```json Response
 {
-    "status": "success",
-    "message": "Successfully updated agent 46f37229-7d12-44be-b343-6e68274cfbea.",
-    "updates": {
-        "model": "base"
-    }
+  "agent": {
+    "agent_id": "46f37229-7d12-44be-b343-6e68274cfbea",
+    "created_at": "2025-09-16T23:54:44.420Z",
+    "prompt": "You are Blandie, a friendly assistant for Bland AI.",
+    "pathway_id": null,
+    "webhook": null,
+    "webhook_events": null,
+    "voice": "maya",
+    "voice_settings": null,
+    "model": "base",
+    "temperature": null,
+    "first_sentence": null,
+    "dynamic_data": null,
+    "tools": null,
+    "interruption_threshold": null,
+    "interruptibility": null,
+    "noise_cancellation": null,
+    "silence_end_message": null,
+    "max_duration": 30,
+    "metadata": null,
+    "analysis_schema": null,
+    "pronunciation_guide": null
+  },
+  "updates": {
+    "agent_id": "46f37229-7d12-44be-b343-6e68274cfbea",
+    "model": "base",
+    "tools": null
+  }
 }
 ```
-
 </ResponseExample>
-
 
 ---
 

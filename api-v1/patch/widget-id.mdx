@@ -18,77 +18,82 @@ description: "Updates an existing widget. All fields in the request body are opt
 
 ### Body
 
-<ParamField body="pathway_id" type="string">
-  New pathway UUID to associate with the widget. Must be defined if `agent_prompt` is null.
+<Warning>
+  A widget must have exactly one of `pathway_id` or `agent_prompt` set after the update. To switch a pathway widget to a prompt, send `agent_prompt` together with `pathway_id: null` (and the reverse). Leaving both set fails with a `500 INTERNAL_SERVER_ERROR`.
+</Warning>
+
+<ParamField body="pathway_id" type="string | null">
+  New pathway UUID for the widget. Pass `null` to clear it when switching to `agent_prompt`.
 </ParamField>
 
-<ParamField body="agent_prompt" type="string">
-  New pathway UUID to associate with the widget. Must be defined if `pathway_id` is null.
+<ParamField body="agent_prompt" type="string | null">
+  New prompt for a prompt-based widget agent. Pass `null` to clear it when switching to `pathway_id`.
+</ParamField>
+
+<ParamField body="name" type="string | null">
+  New display name for the widget.
 </ParamField>
 
 <ParamField body="allowed_domains" type="string[]">
-  New array of allowed domains where the widget can be embedded.
+  New list of domains the widget can be embedded on.
 </ParamField>
 
 <ParamField body="messages_per_minute" type="number">
-  New rate limit for messages (minimum: 0).
+  New visitor message rate limit (minimum: 0).
 </ParamField>
 
-<ParamField body="config" type="any">
-  New widget configuration object (flexible JSON). Supports `timeoutSeconds` to configure conversation timeout (default: 86400 seconds / 24 hours).
+<ParamField body="config" type="object">
+  New widget configuration object. It replaces the stored object; it is not merged. See [Create Widget](/api-v1/post/widget#body) for the keys that are read (`timeoutSeconds`, `timeoutMessage`, `timeoutWarningSeconds`, `timeoutWarningMessage`, `voiceEnabled`, `styles`, `primaryColor`, `secondaryColor`, `hideFooter`, `headerContent`, `widgetIcon`).
 </ParamField>
 
 <ParamField body="agent_id" type="string">
-  New agent UUID to associate with the widget.
+  New web agent UUID for voice sessions.
 </ParamField>
 
-<ParamField body="webhook_url" type="string">
-  New URL to receive post-conversation webhook payloads when conversations end. See [Post-Conversation Webhooks](/tutorials/chat-widget#post-conversation-webhooks) for payload details.
+<ParamField body="webhook_url" type="string | null">
+  New HTTPS URL for post-conversation webhook payloads. See [Post-Conversation Webhooks](/tutorials/chat-widget#post-conversation-webhooks) for payload details.
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="number">
-  HTTP status code (200 for success).
-</ResponseField>
-
 <ResponseField name="data" type="object">
-  The updated widget object containing:
-
-  - `id` (string): Widget UUID
-  - `pathway_id` (string): Associated pathway UUID
-  - `agent_id` (string | null): Associated agent UUID or null
-  - `allowed_domains` (string[]): Array of allowed domains
-  - `messages_per_minute` (number): Rate limit for messages
-  - `config` (object): Widget configuration object
-  - `webhook_url` (string | null): Post-conversation webhook URL or null
-  - `created_at` (string): ISO timestamp
-  - `updated_at` (string): Updated ISO timestamp
+  The updated widget. Same fields as [Create Widget](/api-v1/post/widget#response).
 </ResponseField>
 
-<ResponseField name="errors" type="null">
-  Always null on successful response.
+<ResponseField name="errors" type="array | null">
+  `null` on success, or a list of `{error, message}` objects.
 </ResponseField>
+
+### Error Codes
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | `INVALID_PARAMETERS` | Request body is missing. |
+| 400 | `INVALID_PARAMETER` | Body failed schema validation (unknown keys are rejected). |
+| 400 | `INVALID_WEBHOOK_URL` | `webhook_url` is not a well-formed HTTPS URL of 500 characters or fewer. |
+| 404 | `NOT_FOUND` | No widget with that ID in your organization. |
+| 500 | `INTERNAL_SERVER_ERROR` | Includes the case where both or neither of `pathway_id` and `agent_prompt` end up set. |
 
 <ResponseExample>
 ```json Response
 {
-  "status": 200,
   "data": {
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T14:22:30Z",
+    "name": "Support widget",
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7",
+    "agent_prompt": null,
     "agent_id": "46f37229-7d12-44be-b343-6e68274cfbea",
+    "org_id": "99a0d526-6910-4f31-92b8-72834d0827fb",
     "allowed_domains": ["newdomain.com", "anotherdomain.com"],
     "messages_per_minute": 15,
+    "placement_group": "blandshared",
     "config": {
-      "theme": "dark",
-      "position": "bottom-left",
-      "greeting": "Hi there! What can I do for you?",
-      "timeoutSeconds": 7200
+      "timeoutSeconds": 7200,
+      "primaryColor": "#1a56db"
     },
-    "webhook_url": "https://example.com/conversation-webhook",
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T14:22:30Z"
+    "webhook_url": "https://example.com/conversation-webhook"
   },
   "errors": null
 }

@@ -12,76 +12,132 @@ description: "Creates a new widget."
 
 ### Body
 
-<ParamField body="pathway_id" type="string">
-  UUID of the pathway to associate with the widget. Must be defined if `agent_prompt` is null.
+<Warning>
+  Set exactly one of `pathway_id` or `agent_prompt`. The database enforces this rule, so sending both, or neither, fails with a `500 INTERNAL_SERVER_ERROR` rather than a validation error.
+</Warning>
+
+<ParamField body="pathway_id" type="string | null">
+  UUID of the pathway the widget runs. Required if `agent_prompt` is not set.
 </ParamField>
 
-<ParamField body="agent_prompt" type="string">
-  Prompt to use for the widget agent. Must be defined if `pathway_id` is null.
+<ParamField body="agent_prompt" type="string | null">
+  Prompt for a prompt-based widget agent. Required if `pathway_id` is not set.
 </ParamField>
 
 <ParamField body="allowed_domains" type="string[]" required>
-  Array of domains where the widget can be embedded.
+  Domains the widget can be embedded on.
 </ParamField>
 
 <ParamField body="messages_per_minute" type="number" required>
-  Rate limit for messages (minimum: 0).
+  Rate limit for visitor messages (minimum: 0).
 </ParamField>
 
-<ParamField body="config" type="any" required>
-  Widget configuration object (flexible JSON). Supports `timeoutSeconds` to configure conversation timeout (default: 86400 seconds / 24 hours).
+<ParamField body="config" type="object" required>
+  Widget configuration object. Any JSON object is accepted and stored, but only the keys below are read.
+
+  <Expandable title="config keys">
+    <ParamField body="timeoutSeconds" type="number" default={86400}>
+      Seconds of inactivity before the conversation is ended.
+    </ParamField>
+    <ParamField body="timeoutMessage" type="string">
+      Message shown to the visitor when the conversation times out.
+    </ParamField>
+    <ParamField body="timeoutWarningSeconds" type="number">
+      Seconds of inactivity before `timeoutWarningMessage` is shown. Both must be set for the warning to fire.
+    </ParamField>
+    <ParamField body="timeoutWarningMessage" type="string">
+      Warning message shown before the timeout.
+    </ParamField>
+    <ParamField body="voiceEnabled" type="boolean">
+      Set to `false` to force chat-only mode even when `agent_id` is set.
+    </ParamField>
+    <ParamField body="styles" type="object">
+      CSS overrides keyed by `widget`, `logo`, `panel`, and `headerLogo` (for example `{"panel": {"width": 380, "height": 600}}`).
+    </ParamField>
+    <ParamField body="primaryColor" type="string" default="#010414">
+      Primary color as a CSS color value.
+    </ParamField>
+    <ParamField body="secondaryColor" type="string" default="#010414">
+      Secondary color as a CSS color value.
+    </ParamField>
+    <ParamField body="hideFooter" type="boolean" default={false}>
+      Hides the widget footer.
+    </ParamField>
+    <ParamField body="headerContent" type="string" default="Chat Support">
+      Header text, or a URL to an image rendered in the header.
+    </ParamField>
+    <ParamField body="widgetIcon" type="string">
+      URL of the icon shown on the launcher button.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="name" type="string | null">
+  Display name for the widget.
 </ParamField>
 
 <ParamField body="agent_id" type="string">
-  Optional UUID of agent to associate with widget.
+  UUID of the [web agent](/api-v1/post/agents) that handles voice sessions for this widget.
 </ParamField>
 
-<ParamField body="webhook_url" type="string">
-  Optional URL to receive post-conversation webhook payloads when conversations end. See [Post-Conversation Webhooks](/tutorials/chat-widget#post-conversation-webhooks) for payload details.
+<ParamField body="webhook_url" type="string | null">
+  HTTPS URL that receives post-conversation webhook payloads when conversations end. See [Post-Conversation Webhooks](/tutorials/chat-widget#post-conversation-webhooks) for payload details.
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="number">
-  HTTP status code (200 for success).
-</ResponseField>
-
 <ResponseField name="data" type="object">
-  The created widget object containing:
+  The created widget:
 
-  - `id` (string): Generated widget UUID
-  - `pathway_id` (string): Associated pathway UUID
-  - `agent_id` (string | null): Associated agent UUID or null
-  - `allowed_domains` (string[]): Array of allowed domains
-  - `messages_per_minute` (number): Rate limit for messages
+  - `id` (string): Widget UUID
+  - `name` (string | null): Display name
+  - `org_id` (string): Your organization UUID
+  - `pathway_id` (string | null): Associated pathway UUID
+  - `agent_prompt` (string | null): Prompt used instead of a pathway
+  - `agent_id` (string | null): Associated web agent UUID
+  - `allowed_domains` (string[]): Allowed embed domains
+  - `messages_per_minute` (number): Visitor message rate limit
   - `config` (object): Widget configuration object
-  - `webhook_url` (string | null): Post-conversation webhook URL or null
+  - `webhook_url` (string | null): Post-conversation webhook URL
+  - `placement_group` (string): Internal routing group
   - `created_at` (string): ISO timestamp
   - `updated_at` (string): ISO timestamp
 </ResponseField>
 
-<ResponseField name="errors" type="null">
-  Always null on successful response.
+<ResponseField name="errors" type="array | null">
+  `null` on success, or a list of `{error, message}` objects.
 </ResponseField>
+
+### Error Codes
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | `INVALID_PARAMETERS` | Request body is missing. |
+| 400 | `INVALID_PARAMETER` | Body failed schema validation (unknown keys are rejected). |
+| 400 | `INVALID_WEBHOOK_URL` | `webhook_url` is not a well-formed HTTPS URL of 500 characters or fewer. |
+| 500 | `INTERNAL_SERVER_ERROR` | Includes the case where both or neither of `pathway_id` and `agent_prompt` are set. |
 
 <ResponseExample>
 ```json Response
 {
-  "status": 200,
   "data": {
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z",
+    "name": "Support widget",
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "pathway_id": "a0f0d4ed-f5f5-4f16-b3f9-22166594d7a7",
+    "agent_prompt": null,
     "agent_id": null,
+    "org_id": "99a0d526-6910-4f31-92b8-72834d0827fb",
     "allowed_domains": ["example.com", "subdomain.example.com"],
     "messages_per_minute": 10,
+    "placement_group": "blandshared",
     "config": {
-      "theme": "light",
-      "position": "bottom-right",
-      "timeoutSeconds": 3600
+      "timeoutSeconds": 3600,
+      "primaryColor": "#1a56db",
+      "headerContent": "Chat with us"
     },
-    "webhook_url": "https://example.com/webhook",
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T10:30:00Z"
+    "webhook_url": "https://example.com/webhook"
   },
   "errors": null
 }
