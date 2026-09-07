@@ -1,12 +1,12 @@
 ---
 title: "Delete Messages from Conversation"
 api: "DELETE https://api.bland.ai/v1/sms/conversations/{id}/messages"
-description: "Delete SMS conversations by their IDs."
+description: "Delete specific messages from an SMS conversation by their IDs."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -17,13 +17,13 @@ description: "Delete SMS conversations by their IDs."
 ### Path Parameters
 
 <ParamField path="id" type="string" required>
-  The ID of the conversation deleted.
+  The ID of the conversation that contains the messages.
 </ParamField>
 
 ### Body Parameters
 
 <ParamField body="message_ids" type="string[]" required>
-  A list of message ID integers to mark as deleted. Must not be empty.
+  A non-empty list of message IDs to mark as deleted. Use the `messages[].id` values returned by [Get Conversation](/api-v1/get/sms-conversations-id); these are strings, not integers. IDs that do not belong to the conversation are ignored.
 </ParamField>
 
 ### Response
@@ -43,6 +43,15 @@ description: "Delete SMS conversations by their IDs."
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects on failure.
 </ResponseField>
+
+Deleted messages are hidden from [Get Conversation](/api-v1/get/sms-conversations-id) and no longer count toward `message_count`; they are not physically removed.
+
+### Errors
+
+- `400` `CONVERSATION_ID_REQUIRED`: no conversation ID in the path.
+- `400` `MESSAGE_IDS_REQUIRED`: `message_ids` is missing, not an array, or empty.
+- `404` `CONVERSATION_NOT_FOUND`: the conversation does not exist or belongs to another organization.
+- `500` `ERROR_DELETING_MESSAGES`: unexpected server error (for example when `message_ids` contains non-string values).
 
 <ResponseExample>
 ```json Response

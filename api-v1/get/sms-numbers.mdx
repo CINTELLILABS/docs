@@ -4,9 +4,9 @@ api: "GET https://api.bland.ai/v1/sms/numbers"
 description: "Retrieve all phone numbers configured for SMS, along with their configuration and conversation counts. Pass `?channel=whatsapp` or `?channel=imessage` to return WhatsApp or iMessage configurations instead of SMS."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -14,26 +14,40 @@ description: "Retrieve all phone numbers configured for SMS, along with their co
   Your API key for authentication.
 </ParamField>
 
+### Query Parameters
+
+<ParamField query="channel" type="string" required={false}>
+  Which channel configuration to list. One of `sms`, `whatsapp`, or `imessage`. Defaults to `sms`. Only numbers that have a configuration for that channel are returned.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="array">
-  A list of phone numbers with SMS configurations.
+  A list of phone numbers with configurations for the requested channel.
 </ResponseField>
 
 <ResponseField name="data[].phone_number" type="string">
-  The E.164 formatted phone number assigned to the user.
+  The E.164 formatted phone number assigned to the organization.
+</ResponseField>
+
+<ResponseField name="data[].label" type="string|null">
+  The label set on the number, if any.
+</ResponseField>
+
+<ResponseField name="data[].messaging_service" type="string|null">
+  The provider that delivers messages for this number (for example `"linq"` for iMessage numbers), or `null` for Twilio-backed numbers.
 </ResponseField>
 
 <ResponseField name="data[].sms_config" type="object">
-  The configuration used when handling inbound SMS messages.
+  The configuration used when handling inbound messages. The key matches the requested channel: `sms_config`, `whatsapp_config`, or `imessage_config`.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.webhook" type="string">
- When the agent sends a response, we’ll send the message details in a POST request to the URL you specify here, along with chat history.
+ When the agent sends a response, we'll send the message details in a POST request to the URL you specify here, along with chat history.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.request_data" type="object">
-  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task. 
+  Request data fields are available to the AI agent during the conversation when referenced in the associated pathway or task.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.time_out" type="number">
@@ -41,11 +55,11 @@ description: "Retrieve all phone numbers configured for SMS, along with their co
 </ResponseField>
 
 <ResponseField name="data[].sms_config.messaging_service_sid" type="string">
-  Twilio Messaging Service SID, if set.
+  Twilio Messaging Service SID, if set. Not present on `imessage_config`.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.objective" type="string">
-  The assistant’s objective or system instruction.
+  The assistant's objective or system instruction.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.tools" type="array">
@@ -53,15 +67,15 @@ description: "Retrieve all phone numbers configured for SMS, along with their co
 </ResponseField>
 
 <ResponseField name="data[].sms_config.temperature" type="number">
-  The model’s temperature setting, controlling creativity.
+  The model's temperature setting, controlling creativity.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.pathway_id" type="string">
   The ID of the linked conversational pathway (if any).
 </ResponseField>
 
-<ResponseField name="data[].sms_config.pathway_version" type="string">
-  The specific version of the pathway to use.
+<ResponseField name="data[].sms_config.pathway_version" type="number">
+  The pathway version number in use.
 </ResponseField>
 
 <ResponseField name="data[].sms_config.start_node_id" type="string">
@@ -89,12 +103,17 @@ description: "Retrieve all phone numbers configured for SMS, along with their co
 </ResponseField>
 
 <ResponseField name="data[].conversation_count" type="integer">
-  The number of SMS conversations handled by this number.
+  The number of conversations handled by this number.
 </ResponseField>
 
-<ResponseField name="errors" type="null">
-  Always `null` on success.
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects on failure.
 </ResponseField>
+
+### Errors
+
+- `400` `INVALID_CHANNEL`: `channel` is not `sms`, `whatsapp`, or `imessage`.
+- `500`: unexpected server error.
 
 <ResponseExample>
 
@@ -103,19 +122,21 @@ description: "Retrieve all phone numbers configured for SMS, along with their co
   "data": [
     {
       "phone_number": "+14155552671",
+      "label": "Support line",
+      "messaging_service": null,
       "sms_config": {
         "webhook": "https://example.com/sms-webhook",
         "request_data": { "ref": "campaign_123" },
-        "time_out": 15,
+        "time_out": 60,
+        "timezone": "America/New_York",
         "messaging_service_sid": "MG1234567890abcdef",
         "objective": "Provide quick support to customers.",
         "tools": ["lookup", "escalate"],
         "temperature": 0.7,
         "pathway_id": "abc123",
-        "pathway_version": "latest",
+        "pathway_version": 3,
         "start_node_id": "entry-node",
         "restart_after_end_call": true,
-        "timezone": "America/New_York",
         "citation_schema_ids": ["b0477cba-1c97-4105-8ac9-46cb8eae5cf1"],
         "disposition_ids": ["d1234567-abcd-1234-efgh-123456789012"],
         "summary_prompt": "Summarize the key points and outcome of this conversation."

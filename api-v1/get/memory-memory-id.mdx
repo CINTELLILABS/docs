@@ -4,6 +4,10 @@ api: "GET https://api.bland.ai/v1/memory/{memory_id}"
 description: "Retrieve detailed information about a specific memory store and its users."
 ---
 
+<Note>
+  This endpoint belongs to the legacy Memory Store API, which is maintained for existing customers. For new integrations, use the [contact-based Memory API](/api-v1/post/memory-contact). The Memory router allows 100 requests per 15 minutes. Further requests return HTTP `429`.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -13,7 +17,21 @@ description: "Retrieve detailed information about a specific memory store and it
 ### Path Parameters
 
 <ParamField path="memory_id" type="string" required>
-  The unique identifier of the memory to retrieve.
+  The unique identifier of the memory to retrieve. The endpoint also accepts contact-based store IDs prefixed with `v2-persona-` or `v2-agent-`.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="number" default="50">
+  Maximum number of users to return.
+</ParamField>
+
+<ParamField query="offset" type="number" default="0">
+  Number of users to skip.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Filter users by phone number or memory summary.
 </ParamField>
 
 ### Response
@@ -50,8 +68,8 @@ description: "Retrieve detailed information about a specific memory store and it
   Total number of calls with this phone number.
 </ResponseField>
 
-<ResponseField name="data.users[].metadata" type="string">
-  Custom metadata text associated with this phone number.
+<ResponseField name="data.users[].metadata" type="object">
+  Structured facts associated with this contact.
 </ResponseField>
 
 <ResponseField name="data.users[].last_call_at" type="string|null">
@@ -60,6 +78,30 @@ description: "Retrieve detailed information about a specific memory store and it
 
 <ResponseField name="data.users[].summary" type="string">
   AI-generated summary of interactions with this phone number.
+</ResponseField>
+
+<ResponseField name="data.users[].calls" type="array">
+  Calls associated with the contact, including call IDs, timestamps, summaries, duration, direction, and phone numbers.
+</ResponseField>
+
+<ResponseField name="data.users[].contact_id" type="string">
+  Contact ID associated with this memory entry.
+</ResponseField>
+
+<ResponseField name="data.users[].contact_memory_id" type="string">
+  Contact memory record ID.
+</ResponseField>
+
+<ResponseField name="data.users[].contact_name" type="string|null">
+  Contact name, or `null` when no name is stored.
+</ResponseField>
+
+<ResponseField name="data.users[].agent_number" type="string|null">
+  Agent phone number associated with the memory.
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  Pagination metadata with `total`, `limit`, `offset`, and `has_more`.
 </ResponseField>
 
 <ResponseExample>
@@ -74,11 +116,25 @@ description: "Retrieve detailed information about a specific memory store and it
         "phone_number": "+12345678900",
         "created_at": "2025-07-21T07:09:04.372Z",
         "call_count": 0,
-        "metadata": "25 year old customer from New York",
+        "metadata": {
+          "age": 25,
+          "location": "New York"
+        },
         "last_call_at": null,
-        "summary": "Previous call discussion was on the topic of startups"
+        "summary": "Previous call discussion was on the topic of startups",
+        "calls": [],
+        "contact_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "contact_memory_id": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+        "contact_name": "Alex Smith",
+        "agent_number": "+14155550100"
       }
-    ]
+    ],
+    "pagination": {
+      "total": 1,
+      "limit": 50,
+      "offset": 0,
+      "has_more": false
+    }
   },
   "errors": null
 }
@@ -91,7 +147,7 @@ description: "Retrieve detailed information about a specific memory store and it
   "data": null,
   "errors": [
     {
-      "error": "MEMORY_NOT_FOUND",
+      "error": "NOT_FOUND",
       "message": "Memory not found."
     }
   ]
@@ -103,8 +159,8 @@ description: "Retrieve detailed information about a specific memory store and it
   "data": null,
   "errors": [
     {
-      "error": "MEMORY_ERROR",
-      "message": "Failed to retrieve memory data."
+      "error": "INTERNAL_ERROR",
+      "message": "An unexpected error occurred"
     }
   ]
 }

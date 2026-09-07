@@ -4,9 +4,9 @@ api: "GET https://api.bland.ai/v1/sms/conversations/{id}"
 description: "Retrieve a single SMS conversation and its messages by its ID"
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info> 
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -59,7 +59,7 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
 </ResponseField>
 
 <ResponseField name="data.curr_pathway_version" type="string|null">
-  The specific version of the pathway being used (e.g., "latest", "v1.0").
+  The pathway version number in use, as a string.
 </ResponseField>
 
 <ResponseField name="data.timed_out_at" type="string|null">
@@ -71,7 +71,7 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
 </ResponseField>
 
 <ResponseField name="data.effective_channel" type="string|null">
-  The resolved delivery channel for this conversation: `"sms"`, `"rcs"`, or `"whatsapp"`. Determined based on the input channel and whether the messaging service supports RCS.
+  The resolved delivery channel for this conversation: `"sms"`, `"rcs"`, `"whatsapp"`, or `"imessage"`. Determined based on the input channel and whether the messaging service supports RCS.
 </ResponseField>
 
 <ResponseField name="data.summary" type="string|null">
@@ -87,11 +87,11 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
 </ResponseField>
 
 <ResponseField name="data.messages" type="array">
-  An array of message objects in the conversation, sorted chronologically.
+  An array of message objects in the conversation, sorted chronologically. Messages removed with [Delete Messages from Conversation](/api-v1/delete/sms-conversations-message) are omitted.
 </ResponseField>
 
 <ResponseField name="data.messages[].id" type="string">
-  Unique ID of the message.
+  The message's external ID (the provider message SID, or the `message_sid` passed to `/v1/sms/create`), as a string. Older messages without an external ID fall back to their internal numeric ID as a string. Use these values with [Delete Messages from Conversation](/api-v1/delete/sms-conversations-message).
 </ResponseField>
 
 <ResponseField name="data.messages[].created_at" type="string">
@@ -122,8 +122,16 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
   Twilio error code if the message failed, otherwise `null`.
 </ResponseField>
 
+<ResponseField name="data.messages[].attachments" type="array|null">
+  Media attachments on the message, or `null`.
+</ResponseField>
+
+<ResponseField name="data.messages[].app_card" type="object|null">
+  The rendered iMessage app card sent with the message, or `null`.
+</ResponseField>
+
 <ResponseField name="data.disposition_logs" type="array">
-  An array of outcome run results for this conversation. Each entry represents one outcome that was evaluated when the conversation ended.
+  An array of outcome run results for this conversation, newest first. Each entry represents one outcome that was evaluated when the conversation ended. Runs from agent tests are excluded.
 </ResponseField>
 
 <ResponseField name="data.disposition_logs[].disposition_id" type="string">
@@ -150,9 +158,18 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
   Execution time in milliseconds.
 </ResponseField>
 
+<ResponseField name="data.disposition_logs[].reference_type" type="string">
+  The type of record the outcome ran against; `"SMS"` for conversation runs.
+</ResponseField>
+
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects if a failure occurred.
 </ResponseField>
+
+### Errors
+
+- `404` `CONVERSATION_NOT_FOUND`: the conversation does not exist or belongs to another organization.
+- `500` `ERROR_GETTING_CONVERSATION`: unexpected server error.
 
 <ResponseExample>
 ```json Response
@@ -168,7 +185,7 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
     "variables": null,
     "current_node_id": null,
     "curr_pathway_id": "pathway_abc123",
-    "curr_pathway_version": "latest",
+    "curr_pathway_version": "3",
     "timed_out_at": null,
     "last_message_at": "2025-05-13T20:50:59.233Z",
     "is_active": true,
@@ -183,9 +200,11 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
         "from": "+15550002222",
         "to": "+15550001111",
         "sender": "USER",
-        "id": 100001,
+        "id": "SM8a1c0e2f7b3d4e5f6a7b8c9d0e1f2a3b",
         "status": null,
-        "error_code": null
+        "error_code": null,
+        "attachments": null,
+        "app_card": null
       },
       {
         "created_at": "2025-05-13T20:51:00.917Z",
@@ -193,9 +212,11 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
         "from": "+15550002222",
         "to": "+15550001111",
         "sender": "AGENT",
-        "id": 100002,
+        "id": "SM9b2d1f3a8c4e5f6a7b8c9d0e1f2a3b4c",
         "status": "delivered",
-        "error_code": null
+        "error_code": null,
+        "attachments": null,
+        "app_card": null
       }
     ],
     "disposition_logs": [
@@ -208,7 +229,8 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
           "callDisposition": "confirmed"
         },
         "error": null,
-        "exec_time": 1234
+        "exec_time": 1234,
+        "reference_type": "SMS"
       }
     ]
   },

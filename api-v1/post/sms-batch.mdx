@@ -5,7 +5,7 @@ description: "Send SMS messages to a large list of recipients from a pre-uploade
 ---
 
 <Info>
-  **Enterprise Feature** - SMS batch sending is only available on Enterprise plans. Contact your Bland representative for access.
+  **Enterprise Feature** - This endpoint requires an Enterprise plan. Requests from other plans are rejected with `403 ENTERPRISE_REQUIRED`. Contact your Bland representative for access.
 </Info>
 
 ### Before You Begin: Upload Your CSV
@@ -16,7 +16,7 @@ Upload your CSV via `POST https://api.bland.ai/v1/files/attach` with `file_type:
 
 **CSV format requirements:**
 - Must include a column named exactly **`phone_number`** containing E.164-formatted numbers (e.g. `+14155551234`). Numbers without a leading `+` are automatically prefixed.
-- The `phone_number` column **cannot be remapped** via `column_mapping` — the column must be named `phone_number` in the CSV itself.
+- The `phone_number` column **cannot be remapped** via `column_mapping`: the column must be named `phone_number` in the CSV itself.
 - Additional columns become dynamic variables available in your pathway via `{{column_name}}` syntax.
 - Columns named `request_data.fieldname` (dot notation) are automatically parsed into the recipient's `request_data` object.
 - JSON arrays of objects are also accepted as an alternative to CSV.
@@ -70,7 +70,7 @@ phone_number,first_name,request_data.account_id
 <ParamField body="column_mapping" type="object">
   Maps column names in your CSV to SMS send parameter names. Use this when your CSV column names don't match the expected field names.
 
-  Use this to map non-phone columns to `request_data` or other SMS parameters. **Note:** `phone_number` cannot be used as a target — the phone number column in your CSV must be named `phone_number` exactly.
+  Use this to map non-phone columns to `request_data` or other SMS parameters. **Note:** `phone_number` cannot be used as a target; the phone number column in your CSV must be named `phone_number` exactly.
 
   Map columns to `request_data` to make them available as pathway variables:
   ```json
@@ -80,7 +80,7 @@ phone_number,first_name,request_data.account_id
   }
   ```
 
-  Only `request_data` is supported as a target — per-recipient fields like `pathway_id` or `persona_id` cannot be overridden from the CSV. Alternatively, use dot notation column names in your CSV directly (e.g. `request_data.customer_name`) to avoid needing `column_mapping` at all.
+  Only `request_data` is supported as a target. Per-recipient fields like `pathway_id` or `persona_id` cannot be overridden from the CSV. Alternatively, use dot notation column names in your CSV directly (e.g. `request_data.customer_name`) to avoid needing `column_mapping` at all.
 </ParamField>
 
 ### Response
@@ -104,6 +104,14 @@ phone_number,first_name,request_data.account_id
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects if the request failed.
 </ResponseField>
+
+### Errors
+
+- `400` `MISSING_FILE_ID`, `MISSING_AGENT_NUMBER`, `INVALID_GLOBAL_FORMAT`, `INVALID_COLUMN_MAPPING_FORMAT`: the body is missing a required field or has the wrong shape.
+- `403` `ENTERPRISE_REQUIRED`: your organization is not on an Enterprise plan.
+- `404` `FILE_NOT_FOUND`: `file_id` does not exist, was deleted, or was not uploaded with `file_type: "batches"`.
+- `404` `AGENT_NUMBER_NOT_FOUND`: `global.agent_number` is not a number on your account.
+- `500`: the batch workflow could not be started.
 
 <ResponseExample>
 ```json Request

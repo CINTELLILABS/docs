@@ -1,9 +1,16 @@
 ---
 title: "SMS Conversation Analysis"
 api: "POST https://api.bland.ai/v1/sms/analyze"
-description: "Answer questions and extract information from an SMS conversation."
+description: "Extract citation schema variables from an SMS conversation."
 ---
 
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
+
+<Note>
+  Each successful call is billed as a standard citation extraction (`citations.extraction.standard`), the same as an on-call citation run.
+</Note>
 
 ### Headers
 
@@ -50,22 +57,8 @@ The ID of the SMS conversation to analyze.
       An object containing the extracted variables as key-value pairs, where keys are variable names and values are the extracted data.
     </ResponseField>
 
-    <ResponseField name="citations" type="array">
-      An array of citation objects that reference where each variable was found in the conversation.
-      
-      <Expandable title="citation object">
-        <ResponseField name="variable" type="string">
-          The name of the variable this citation references.
-        </ResponseField>
-        
-        <ResponseField name="message" type="string">
-          The message text where the variable was found.
-        </ResponseField>
-        
-        <ResponseField name="confidence" type="number">
-          The confidence score (0-1) for this extraction.
-        </ResponseField>
-      </Expandable>
+    <ResponseField name="citations" type="object">
+      An object keyed by variable name. Each value is an array of the message excerpts that the variable's value was extracted from.
     </ResponseField>
 
     <ResponseField name="messages_processed" type="number">
@@ -74,9 +67,18 @@ The ID of the SMS conversation to analyze.
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array">
-  An array of error objects. Empty array when the request is successful.
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects on failure.
 </ResponseField>
+
+### Errors
+
+- `400` `MISSING_SCHEMA_ID`, `MISSING_CONVERSATION_ID`: a required body field is missing.
+- `400` `INVALID_SCHEMA`: the citation schema has no variables.
+- `403` `FORBIDDEN`: the conversation belongs to another organization.
+- `404` `SCHEMA_NOT_FOUND`, `CONVERSATION_NOT_FOUND`: the schema or conversation does not exist.
+- `404` `NO_MESSAGES`: the conversation has no messages to analyze.
+- `500` `INTERNAL_SERVER_ERROR`: extraction failed.
 
 <ResponseExample>
 
@@ -95,16 +97,13 @@ The ID of the SMS conversation to analyze.
             "urgency": "high",
             "budget_range": "$500-1000"
         },
-        "citations": [
-            {
-                "variable": "customer_name",
-                "message": "Hi, this is John Smith calling about...",
-                "confidence": 0.95
-            }
-        ],
+        "citations": {
+            "customer_name": ["Hi, this is John Smith texting about..."],
+            "preferred_time": ["Mornings work best for me"]
+        },
         "messages_processed": 12
     },
-    "errors": []
+    "errors": null
 }
 ```
 

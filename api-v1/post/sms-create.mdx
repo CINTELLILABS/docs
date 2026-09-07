@@ -4,9 +4,9 @@ api: "POST https://api.bland.ai/v1/sms/create"
 description: "Create an SMS conversation with specific pathway state without triggering immediate message sending."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -28,8 +28,16 @@ description: "Create an SMS conversation with specific pathway state without tri
   The content of the message to be stored in the conversation history.
 </ParamField>
 
-<ParamField body="message_sid" type="string" required={false}>
-  Optional Twilio message SID for tracking and correlation purposes.
+<ParamField body="message_sid" type="string" required>
+  External message ID stored on the message, for example the Twilio message SID. Any unique string is accepted. Returned as `messages[].id` on [Get Conversation](/api-v1/get/sms-conversations-id).
+</ParamField>
+
+<ParamField body="channel" type="string" required={false}>
+  The messaging channel of the conversation. One of `"sms"`, `"whatsapp"`, or `"imessage"`. Defaults to `"sms"`.
+</ParamField>
+
+<ParamField body="use_candidate_model" type="boolean" required={false}>
+  Whether the conversation should use the candidate model.
 </ParamField>
 
 <ParamField body="curr_pathway_id" type="string" required={false}>
@@ -37,7 +45,7 @@ description: "Create an SMS conversation with specific pathway state without tri
 </ParamField>
 
 <ParamField body="curr_pathway_version" type="string" required={false}>
-  The specific version of the pathway to use (e.g., "latest", "v1.0").
+  The pathway version number to use, as a string (for example `"3"`).
 </ParamField>
 
 <ParamField body="current_node_id" type="string" required={false}>
@@ -83,24 +91,27 @@ description: "Create an SMS conversation with specific pathway state without tri
 </ResponseField>
 
 <ResponseField name="data.conversation_id" type="string">
-  ID of the conversation that was created.
-</ResponseField>
-
-<ResponseField name="data.workflow_id" type="string">
-  ID of the Temporal workflow triggered to process the conversation setup.
+  ID of the conversation that was created or resumed.
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects if the request failed.
 </ResponseField>
 
+### Errors
+
+- `400` `MISSING_REQUIRED_FIELDS`: one of `user_number`, `agent_number`, `message`, or `message_sid` is missing.
+- `400` `INVALID_CHANNEL`: `channel` is not `sms`, `whatsapp`, or `imessage`.
+- `400` `INVALID_TIMEOUT_CONFIG`: `warning_time` is greater than or equal to `time_out`.
+- `404` `INBOUND_NUMBER_NOT_FOUND`: `agent_number` is not a number on your account.
+- `500` `ERROR_CREATING_SMS_CONVERSATION`: unexpected server error.
+
 <ResponseExample>
 ```json Response
 {
   "data": {
     "message": "SMS conversation created successfully",
-    "conversation_id": "conv_abc123",
-    "workflow_id": "workflow_xyz789"
+    "conversation_id": "conv_abc123"
   },
   "errors": null
 }

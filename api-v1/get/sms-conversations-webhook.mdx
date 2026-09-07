@@ -4,9 +4,9 @@ api: "GET https://api.bland.ai/v1/sms/conversations/{conversationId}/webhook"
 description: "Retrieve the webhook delivery log for an SMS conversation, including the payload, URL, response codes, and timing."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -48,16 +48,20 @@ description: "Retrieve the webhook delivery log for an SMS conversation, includi
 
 <ResponseField name="data.metadata" type="array">
   An array of delivery attempt records. Each entry contains:
-  - `sent_at` — ISO timestamp of the delivery attempt
-  - `response_code` — HTTP status code returned by your endpoint, or `null` if the request failed
-  - `response_time` — how long the request took
-  - `send_type` — delivery method (e.g. `"spawn"`)
-  - `error_message` — error details if the delivery failed
+  - `sent_at`: ISO timestamp of the delivery attempt
+  - `response_code`: HTTP status code returned by your endpoint, or `null` if the request failed
+  - `response_time`: how long the request took
+  - `send_type`: how the attempt was triggered, for example `"spawn"` for the original delivery, or `"resend"` / `"rebuild"` for attempts made through [Resend Post Conversation Webhook](/api-v1/post/sms-conversations-webhooks-resend)
+  - `error_message`: error details if the delivery failed
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects if a failure occurred.
 </ResponseField>
+
+### Errors
+
+- `500` `INTERNAL_SERVER_ERROR`: unexpected server error.
 
 <ResponseExample>
 ```json Response

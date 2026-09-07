@@ -4,9 +4,9 @@ api: "DELETE https://api.bland.ai/v1/sms/conversations/{id}"
 description: "Delete a specific conversation and all of its associated messages. This action is permanent."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -33,6 +33,13 @@ description: "Delete a specific conversation and all of its associated messages.
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects on failure.
 </ResponseField>
+
+The conversation's messages, webhook delivery log, and outcome runs are deleted with it.
+
+### Errors
+
+- `404` `CONVERSATION_NOT_FOUND`: the conversation does not exist or belongs to another organization.
+- `500` `ERROR_DELETING_CONVERSATION`: unexpected server error.
 
 <ResponseExample>
 ```json Response
