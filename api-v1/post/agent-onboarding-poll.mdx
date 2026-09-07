@@ -8,6 +8,10 @@ description: "Poll for the result of a device-authorization flow started with /v
 
 No authentication is required for this endpoint. Call it with the `device_code` from `/v1/agent/onboarding/start`, waiting at least the returned `interval` seconds between calls. See [Connect your AI agent](/platform/connect-your-agent) for the full flow.
 
+<Note>
+This endpoint has two independent `429` responses: `SLOW_DOWN` when you poll faster than the per-device `interval`, and `TOO_MANY_REQUESTS` from the per-IP rate limit (120 requests per minute per IP), which carries a `Retry-After` header instead of `interval`.
+</Note>
+
 ### Body Parameters
 
 <ParamField body="device_code" type="string" required>
@@ -106,7 +110,7 @@ No authentication is required for this endpoint. Call it with the `device_code` 
     "status": "approved",
     "api_key": "org_...",
     "org_id": "...",
-    "phone_number": "+15551234567",
+    "phone_number": "+14155550123",
     "plan": {
       "name": "agent_phone_basic",
       "display_name": "Agent Phone Plan",
@@ -140,6 +144,18 @@ No authentication is required for this endpoint. Call it with the `device_code` 
       "error": "SLOW_DOWN",
       "message": "Poll more slowly.",
       "interval": 10
+    }
+  ]
+}
+```
+
+```json Too many requests (429)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many requests. Try again later."
     }
   ]
 }
