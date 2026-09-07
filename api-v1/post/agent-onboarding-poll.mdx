@@ -44,8 +44,40 @@ No authentication is required for this endpoint. Call it with the `device_code` 
   Present when `status` is `approved`. The number provisioned for this org.
 </ResponseField>
 
-<ResponseField name="data.plan" type="string">
-  Present when `status` is `approved`. The subscription plan the org completed, `agent_phone`.
+<ResponseField name="data.plan" type="object">
+  Present when `status` is `approved`. The org's Agent Phone Plan subscription. The same object is returned by `GET /billing/agent_phone` (as `data`) and by `GET /v1/me` (as `plan`).
+</ResponseField>
+
+<ResponseField name="data.plan.name" type="string">
+  Internal plan identifier, `agent_phone_basic`.
+</ResponseField>
+
+<ResponseField name="data.plan.display_name" type="string">
+  Human-readable plan name, `Agent Phone Plan`.
+</ResponseField>
+
+<ResponseField name="data.plan.status" type="string">
+  Subscription status, `active`.
+</ResponseField>
+
+<ResponseField name="data.plan.phone_number" type="string">
+  The number provisioned for this org's Agent Phone Plan.
+</ResponseField>
+
+<ResponseField name="data.plan.concurrency" type="number">
+  Maximum concurrent calls, `1`.
+</ResponseField>
+
+<ResponseField name="data.plan.max_call_duration_minutes" type="number">
+  Maximum call length in minutes, `60`.
+</ResponseField>
+
+<ResponseField name="data.plan.allowed_countries" type="array">
+  Country codes calls, transfers, and SMS are allowed to, `["US", "CA"]`.
+</ResponseField>
+
+<ResponseField name="data.plan.current_period_end" type="string">
+  ISO 8601 timestamp for the end of the current billing period.
 </ResponseField>
 
 <ResponseField name="data.client_name" type="string">
@@ -75,7 +107,16 @@ No authentication is required for this endpoint. Call it with the `device_code` 
     "api_key": "org_...",
     "org_id": "...",
     "phone_number": "+15551234567",
-    "plan": "agent_phone",
+    "plan": {
+      "name": "agent_phone_basic",
+      "display_name": "Agent Phone Plan",
+      "status": "active",
+      "phone_number": "+14155550123",
+      "concurrency": 1,
+      "max_call_duration_minutes": 60,
+      "allowed_countries": ["US", "CA"],
+      "current_period_end": "2026-10-07T00:00:00.000Z"
+    },
     "client_name": "my-bot"
   },
   "errors": null

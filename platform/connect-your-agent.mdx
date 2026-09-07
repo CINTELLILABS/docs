@@ -95,7 +95,16 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
         "api_key": "org_...",
         "org_id": "...",
         "phone_number": "+15551234567",
-        "plan": "agent_phone",
+        "plan": {
+          "name": "agent_phone_basic",
+          "display_name": "Agent Phone Plan",
+          "status": "active",
+          "phone_number": "+14155550123",
+          "concurrency": 1,
+          "max_call_duration_minutes": 60,
+          "allowed_countries": ["US", "CA"],
+          "current_period_end": "2026-10-07T00:00:00.000Z"
+        },
         "client_name": "my-bot"
       },
       "errors": null
@@ -119,6 +128,8 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     bland auth login --device
     ```
 
+    `bland signup` is an alias for the same command, if you don't have an account yet.
+
     It prints the link and code, polls for you, and stores the resulting API key in your CLI profile once approved. See [Getting started](/sdks/cli#getting-started).
   </Tab>
   <Tab title="bland-skills">
@@ -136,7 +147,8 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 | Code | HTTP status | Where | Meaning |
 | --- | --- | --- | --- |
 | `SLOW_DOWN` | 429 | `/poll` | Polling faster than `interval`. Back off and retry. |
-| `ServiceUnavailable` | 503 | `/start` | Agent onboarding is temporarily disabled. Retry later. |
+| `TOO_MANY_REQUESTS` | 429 | `/start`, `/poll`, `/approve` (browser) | Rate limited. Respect the `Retry-After` header and retry. |
+| `FEATURE_DISABLED` | 503 | `/start` | Agent onboarding is temporarily disabled. Retry later. |
 | `PLAN_REQUIRED` | 402 | `/approve` (browser) | The org doesn't have an active Agent Phone Plan subscription yet. |
 | `PLAN_NUMBER_PENDING` | 409 | `/approve` (browser) | The plan is active but the phone number is still being provisioned. |
 | `CODE_NOT_FOUND` | 404 | `/approve` (browser) | The code doesn't exist or already expired. |
