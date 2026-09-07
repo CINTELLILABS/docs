@@ -18,17 +18,16 @@ description: "Retrieve logs for a specific batch."
 
 ### Query Parameters
 
-<ParamField query="take" type="integer">
-  Optional. The number of log entries to return.
+<ParamField query="take" type="integer" default="10">
+  The number of log entries to return. Clamped to the range 1 to 100.
 </ParamField>
 
 <ParamField query="skip" type="integer">
-  Optional. The number of log entries to skip (used for pagination).
+  The number of log entries to skip (used for pagination).
 </ParamField>
 
-<ParamField query="direction" type="string">
-  Optional. Sort order of logs.
-  <br/>Valid values: `"asc"` or `"desc"` (default is `"desc"`).
+<ParamField query="direction" type="string" default="desc">
+  Sort order by `timestamp`. Pass `"asc"` for oldest first; any other value sorts newest first.
 </ParamField>
 
 ### Response
@@ -65,6 +64,23 @@ description: "Retrieve logs for a specific batch."
 <ResponseField name="errors" type="null">
   Always `null` on success.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 500 | `BATCH_V2_LOGS_ERROR` | Unexpected failure |
+
+An unknown `batch_id` returns `200` with an empty `data` array.
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v2/batches/f6ef9224-0ec3-43e4-98a1-bb2a8765d110/logs?take=50&direction=asc" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
 
 <ResponseExample>
 

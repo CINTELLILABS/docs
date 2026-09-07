@@ -1,0 +1,114 @@
+---
+title: "Attach File"
+api: "POST https://api.bland.ai/v1/files/attach"
+description: "Upload a file to your organization and get a file_id to use with batches."
+---
+
+Uploads one file to your organization's storage and returns its ID. Use `usage: "batches"` to upload a CSV or JSON recipient list and pass the returned `id` as `file_id` to [Create Batch](/api-v2/post/batches).
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Your API key (with or without a `Bearer ` prefix). The key must belong to a user who is an owner, admin, or operator of the organization in `x-bland-org-id`.
+</ParamField>
+
+<ParamField header="x-bland-org-id" type="string" required>
+  ID of the organization to upload into. Missing header returns 400 `BAD_REQUEST`.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `multipart/form-data`.
+</ParamField>
+
+### Body Parameters (multipart/form-data)
+
+<ParamField body="file" type="file" required>
+  The file. Exactly one `file` part is allowed. Maximum 125 MB.
+</ParamField>
+
+<ParamField body="filename" type="string" required>
+  File name including extension. The extension decides the accepted types: `csv`, `json`, `mdx`, `pptx`, `pdf`, `txt`, `md`, `docx`, `xlsx`, `wav`, `png`, `jpg`, `jpeg`, `gif`, `webp`.
+</ParamField>
+
+<ParamField body="usage" type="string" required>
+  What the file is for: `batches`, `knowledgebase`, `audio`, `avatars`, or `media`.
+
+  - `batches`: only `csv` or `json`. A CSV must have a `phone_number` column; a JSON file must be an array of objects each with `phone_number`. Every number must be a possible phone number (a missing `+` is added before validation). Rows that fail return 400 `VALIDATION_ERROR` with the row index.
+  - `avatars`: only image extensions.
+</ParamField>
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.id" type="string">
+    File ID (UUID). Pass it as `file_id` to Create Batch.
+  </ResponseField>
+
+  <ResponseField name="data.filename" type="string">
+    The `filename` you sent.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `BAD_REQUEST` | Missing `x-bland-org-id`, missing `file`/`filename`/`usage`, or more than one `file` part |
+| 400 | `INVALID_EXTENSION` | Extension not in the accepted list, or not valid for the given `usage` |
+| 400 | `INVALID_TYPE` | Unknown `usage` value |
+| 400 | `VALIDATION_ERROR` | Batch file content failed validation (one entry per problem) |
+| 401 | `UNAUTHORIZED` | Missing or invalid credentials |
+| 403 | `FORBIDDEN` | Not an owner, admin, or operator of the organization, or the organization is suspended or overdue |
+| 403 | `INSUFFICIENT_SPACE` | Organization storage exceeds the 100 GB limit |
+| 404 | `NOT_FOUND` | Organization not found or you are not a member |
+| 413 | `FILE_TOO_LARGE` | File exceeds 125 MB |
+| 500 | `UPLOAD_ERROR`, `STORAGE_LIST_ERROR` | Storage failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/files/attach \
+  -H "Authorization: YOUR_API_KEY" \
+  -H "x-bland-org-id: YOUR_ORG_ID" \
+  -F "file=@recipients.csv" \
+  -F "filename=recipients.csv" \
+  -F "usage=batches"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "filename": "recipients.csv",
+    "id": "2f6d1b0e-5c3a-4e8f-9a7b-1c2d3e4f5a6b"
+  },
+  "errors": null
+}
+```
+
+```json Validation Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "VALIDATION_ERROR",
+      "message": "You must provide these required columns: phone_number"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

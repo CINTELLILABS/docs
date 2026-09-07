@@ -1,8 +1,14 @@
 ---
-title: "List Knowledge Base Details"
+title: "Get Knowledge Base Details"
 api: "GET https://api.bland.ai/v1/knowledgebases/{vector_id}"
 description: "View the details for a specific knowledge base."
 ---
+
+<Warning>
+This endpoint belongs to the legacy Vector Knowledge Bases API. It is maintained for existing customers only. Use the current [Knowledge Bases API](/api-v1/get/knowledge-id) for new work.
+</Warning>
+
+This route proxies to the legacy knowledge base service. Any upstream failure, including an unknown `vector_id`, returns a 500 with `errors[].error` set to `KB_GET_SINGLE_EMBEDDING_FAILURE`.
 
 ### Headers
 
@@ -11,7 +17,7 @@ description: "View the details for a specific knowledge base."
 </ParamField>
 
 <ParamField header="include-text" type="boolean" default="false">
-    Include the full text of the documents stored in the knowledge base. This can be useful for debugging, but may return large amounts of data.
+    Include the full text of the documents stored in the knowledge base. This can be useful for debugging, but may return large amounts of data. `include_text` is accepted as an alias.
 </ParamField>
 
 ### Path Parameters
@@ -22,27 +28,33 @@ description: "View the details for a specific knowledge base."
 
 ### Response
 
-<ResponseField name="vector_id" type="string">
-    The unique identifier for the knowledge base.
+<ResponseField name="data" type="object">
+  <ResponseField name="data.vector_id" type="string">
+      The unique identifier for the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.name" type="string">
+      The name of the knowledge base.
+  </ResponseField>
+
+  <ResponseField name="data.description" type="string">
+      A description of the knowledge base.
+  </ResponseField>
 </ResponseField>
 
-<ResponseField name="name" type="string">
-    The name of the knowledge base.
+<ResponseField name="errors" type="null">
+  `null` on success.
 </ResponseField>
-
-<ResponseField name="description" type="string">
-    A description of the knowledge base.
-</ResponseField>
-
 
 <ResponseExample>
 ```json Response
 {
-    {
-        "vector_id": "KB-55e64dae-1585-4632-ae97-c909c288c6bc",
-        "name": "Bland AI FAQs",
-        "description": "Business facts, policies, and frequently asked questions for Bland AI."
-    }
+  "data": {
+    "vector_id": "KB-55e64dae-1585-4632-ae97-c909c288c6bc",
+    "name": "Bland AI FAQs",
+    "description": "Business facts, policies, and frequently asked questions for Bland AI."
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

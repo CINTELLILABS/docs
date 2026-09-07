@@ -1,0 +1,91 @@
+---
+title: "Restore Knowledge Base Version"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/versions/{version_id}/restore"
+description: "Makes an earlier version the current version and re-embeds it."
+---
+
+Roll a knowledge base back to a previous version. The selected version becomes current, the status moves to `PROCESSING`, and re-embedding runs in the background. No version is deleted, so you can restore forward again later.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The knowledge base to roll back.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The version to restore, from [List Knowledge Base Versions](/api-v1/get/knowledge-id-versions).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.success" type="boolean">
+    `true` when the version was made current and re-embedding was requested.
+  </ResponseField>
+
+  <ResponseField name="data.restored_version_id" type="string">
+    The version that is now current.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    `"Version restored successfully. Re-embedding in progress."`
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | Code | Message |
+|---|---|---|
+| 404 | `KB_ERROR` | `Version not found` |
+| 409 | `KB_ERROR` | `Source is still indexing. Wait until it completes.` |
+| 500 | `RESTORE_VERSION_ERROR` | `Failed to restore version` |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c/versions/0c9b8a7f-6e5d-4c3b-2a19-8f7e6d5c4b3a/restore \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "restored_version_id": "0c9b8a7f-6e5d-4c3b-2a19-8f7e6d5c4b3a",
+    "message": "Version restored successfully. Re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json Conflict Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Source is still indexing. Wait until it completes."
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

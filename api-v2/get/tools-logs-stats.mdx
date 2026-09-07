@@ -34,22 +34,24 @@ description: "Retrieve aggregated execution statistics for your tools, grouped a
 
 **Date Range**
 
+If you send neither `period` nor a date, the window is the last 30 days. The window can never exceed 90 days.
+
 <ParamField query="period" type="string">
-  Preset time period. Allowed values: `"today"`, `"week"`, `"month"`. Overridden by `start_date`/`end_date` if both are provided.
+  Preset time period. Allowed values: `"today"`, `"week"` (last 7 days), `"month"` (last 30 days). Ignored when `start_date` is provided.
 </ParamField>
 
 <ParamField query="start_date" type="string">
-  Start of the date range (ISO 8601). Maximum range is 90 days from `end_date`.
+  Start of the date range (ISO 8601). If `end_date` is omitted the window ends now.
 </ParamField>
 
 <ParamField query="end_date" type="string">
-  End of the date range (ISO 8601). Maximum range is 90 days from `start_date`.
+  End of the date range (ISO 8601). If `start_date` and `period` are omitted the window starts 30 days before this date.
 </ParamField>
 
 **Filters**
 
 <ParamField query="tool_id" type="string">
-  Filter stats to a specific tool ID.
+  Filter stats to a specific tool UUID (without the `TL-` prefix).
 </ParamField>
 
 <ParamField query="resource_id" type="string">
@@ -82,70 +84,132 @@ description: "Retrieve aggregated execution statistics for your tools, grouped a
 
 ### Response
 
-<ResponseField name="results" type="array">
-  Array of aggregated result objects. Each entry contains the grouped dimensions and the requested metric values.
+<ResponseField name="data" type="object">
+  Aggregated results plus a description of the query that ran.
 
-  <Expandable title="result entry">
-    <ResponseField name="integration" type="string">
-      Integration key (present when grouped by `integration`).
+  <Expandable title="data">
+    <ResponseField name="results" type="array">
+      Array of aggregated result objects. Each entry contains the grouped dimensions and the requested metric values. Without `group_by`, the array holds a single totals object.
+
+      <Expandable title="result entry">
+        <ResponseField name="integration" type="string">
+          Integration key. Present when grouped by `integration`, and also filled in from the tool's metadata on any row that has a `tool_id`.
+        </ResponseField>
+        <ResponseField name="action" type="string">
+          Action name (present when grouped by `action`).
+        </ResponseField>
+        <ResponseField name="status" type="string">
+          Execution status (present when grouped by `status`).
+        </ResponseField>
+        <ResponseField name="tool_id" type="string">
+          Tool UUID (present when grouped by `tool_id`).
+        </ResponseField>
+        <ResponseField name="tool_label" type="string | null">
+          The tool's label or name (present when the row has a `tool_id`).
+        </ResponseField>
+        <ResponseField name="resource_id" type="string">
+          Resource ID (present when grouped by `resource_id`).
+        </ResponseField>
+        <ResponseField name="error_type" type="string">
+          Error category (present when grouped by `error_type`).
+        </ResponseField>
+        <ResponseField name="date" type="string">
+          `YYYY-MM-DD` date string (present when grouped by `date`).
+        </ResponseField>
+        <ResponseField name="count" type="number">
+          Total execution count (present when `count` is in `metrics`).
+        </ResponseField>
+        <ResponseField name="avg_execution_time_ms" type="number | null">
+          Average execution time in ms (present when `execution_time_ms:avg` is in `metrics`).
+        </ResponseField>
+        <ResponseField name="avg_input_size_kb" type="number | null">
+          Average input size in KB (present when `input_size_kb:avg` is in `metrics`).
+        </ResponseField>
+        <ResponseField name="avg_output_size_kb" type="number | null">
+          Average output size in KB (present when `output_size_kb:avg` is in `metrics`).
+        </ResponseField>
+      </Expandable>
     </ResponseField>
-    <ResponseField name="action" type="string">
-      Action name (present when grouped by `action`).
-    </ResponseField>
-    <ResponseField name="status" type="string">
-      Execution status (present when grouped by `status`).
-    </ResponseField>
-    <ResponseField name="tool_id" type="string">
-      Tool ID (present when grouped by `tool_id`).
-    </ResponseField>
-    <ResponseField name="date" type="string">
-      Date string (present when grouped by `date`).
-    </ResponseField>
-    <ResponseField name="count" type="number">
-      Total execution count (present when `count` is in `metrics`).
-    </ResponseField>
-    <ResponseField name="execution_time_ms_avg" type="number">
-      Average execution time in ms (present when `execution_time_ms:avg` is in `metrics`).
-    </ResponseField>
-    <ResponseField name="input_size_kb_avg" type="number">
-      Average input size in KB (present when `input_size_kb:avg` is in `metrics`).
-    </ResponseField>
-    <ResponseField name="output_size_kb_avg" type="number">
-      Average output size in KB (present when `output_size_kb:avg` is in `metrics`).
+
+    <ResponseField name="meta" type="object">
+      The query that was executed.
+
+      <Expandable title="meta">
+        <ResponseField name="group_by" type="string[]">
+          The grouping fields that were applied.
+        </ResponseField>
+        <ResponseField name="metrics" type="string[]">
+          The metric keys present on each result, for example `["count", "avg_execution_time_ms"]`.
+        </ResponseField>
+        <ResponseField name="filters" type="object">
+          The resolved `start_date` and `end_date` (ISO 8601) plus any `tool_id`, `resource_id`, `integration`, `action`, `status`, `error_type`, and `call_id` filters you sent.
+        </ResponseField>
+        <ResponseField name="limit" type="number">
+          The group limit that was applied.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="meta" type="object">
-  Metadata about the query that was executed.
+<ResponseField name="errors" type="array | null">
+  An empty array on success, or a list of `{ error, message }` objects if the request failed.
 </ResponseField>
 
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `INVALID_PARAMETER` | A query parameter has the wrong type or value, or `start_date`/`end_date` is not a valid date. |
+| 400 | `INVALID_DATE_RANGE` | The window exceeds 90 days, or `start_date` is after `end_date`. |
+| 500 | `INTERNAL_SERVER_ERROR` | Stats could not be retrieved. |
+
 <ResponseExample>
-```json Request
-GET /v2/tools/logs/stats?group_by=integration,status&metrics=count,execution_time_ms:avg&period=week
+```bash Request
+curl "https://api.bland.ai/v2/tools/logs/stats?group_by=integration,status&metrics=count,execution_time_ms:avg&period=week" \
+  -H "authorization: YOUR_API_KEY"
 ```
 
 ```json Response (Success)
 {
-  "results": [
-    {
-      "integration": "slack",
-      "status": "success",
-      "count": 142,
-      "execution_time_ms_avg": 318.5
-    },
-    {
-      "integration": "slack",
-      "status": "error",
-      "count": 3,
-      "execution_time_ms_avg": 10000.0
+  "data": {
+    "results": [
+      {
+        "integration": "slack",
+        "status": "success",
+        "count": 142,
+        "avg_execution_time_ms": 318.5
+      },
+      {
+        "integration": "slack",
+        "status": "error",
+        "count": 3,
+        "avg_execution_time_ms": 10000.0
+      }
+    ],
+    "meta": {
+      "group_by": ["integration", "status"],
+      "metrics": ["count", "avg_execution_time_ms"],
+      "filters": {
+        "start_date": "2025-09-16T00:00:00.000Z",
+        "end_date": "2025-09-23T23:59:59.999Z"
+      },
+      "limit": 50
     }
-  ],
-  "meta": {
-    "group_by": ["integration", "status"],
-    "metrics": ["count", "execution_time_ms:avg"],
-    "period": "week"
-  }
+  },
+  "errors": []
+}
+```
+
+```json Error (INVALID_DATE_RANGE)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_DATE_RANGE",
+      "message": "Date range cannot exceed 90 days"
+    }
+  ]
 }
 ```
 </ResponseExample>

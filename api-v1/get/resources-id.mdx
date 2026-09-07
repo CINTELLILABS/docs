@@ -1,0 +1,179 @@
+---
+title: "Get Resource"
+api: "GET https://api.bland.ai/v1/resources/{resource_id}"
+description: "Retrieve one connected integration account (resource) by ID."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="resource_id" type="string" required>
+  UUID of the resource. A value that is not a UUID returns a 400.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.status" type="string">
+    Always `"success"`.
+  </ResponseField>
+
+  <ResponseField name="data.resource" type="object">
+    <ResponseField name="data.resource.id" type="string">
+      Resource UUID. Use it as `resource_id` when [creating a tool](/api-v2/post/tools).
+    </ResponseField>
+
+    <ResponseField name="data.resource.user_id" type="string">
+      User who connected the resource.
+    </ResponseField>
+
+    <ResponseField name="data.resource.org_id" type="string">
+      Owning organization.
+    </ResponseField>
+
+    <ResponseField name="data.resource.integration" type="string">
+      Integration key.
+    </ResponseField>
+
+    <ResponseField name="data.resource.name" type="string">
+      Display name.
+    </ResponseField>
+
+    <ResponseField name="data.resource.description" type="string | null">
+      Optional description.
+    </ResponseField>
+
+    <ResponseField name="data.resource.auth" type="object">
+      Auth configuration: `type` is one of `none`, `api_key`, `bearer`, `oauth2`, `basic`, or `nango`. `data` holds a `secretId` (or `nangoIntegration` and `connectionId` for `nango`). Secret values are never returned.
+    </ResponseField>
+
+    <ResponseField name="data.resource.config" type="object">
+      Integration-specific configuration.
+    </ResponseField>
+
+    <ResponseField name="data.resource.tags" type="array">
+      Free-form tags.
+    </ResponseField>
+
+    <ResponseField name="data.resource.status" type="string">
+      Connection status, `"connected"` by default.
+    </ResponseField>
+
+    <ResponseField name="data.resource.status_message" type="string | null">
+      Detail for a non-connected status.
+    </ResponseField>
+
+    <ResponseField name="data.resource.is_active" type="boolean">
+      Whether the resource can be used by tools.
+    </ResponseField>
+
+    <ResponseField name="data.resource.last_used_at" type="string | null">
+      ISO timestamp of the last tool execution through this resource.
+    </ResponseField>
+
+    <ResponseField name="data.resource.last_validated_at" type="string | null">
+      ISO timestamp of the last credential validation.
+    </ResponseField>
+
+    <ResponseField name="data.resource.metadata" type="object">
+      Provider metadata captured at connect time.
+    </ResponseField>
+
+    <ResponseField name="data.resource.created_at" type="string">
+      ISO timestamp of creation.
+    </ResponseField>
+
+    <ResponseField name="data.resource.updated_at" type="string">
+      ISO timestamp of last update.
+    </ResponseField>
+
+    <ResponseField name="data.resource.available_actions" type="object | null">
+      `action_count`, `context_action_count`, and `total_action_count` for the resource's integration, or `null` if the integration is no longer registered.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `INVALID_PARAMETER` | `resource_id` is empty or not a UUID |
+| 404 | `RESOURCE_NOT_FOUND` | No resource with that ID in your organization |
+| 500 | `GET_RESOURCE_ERROR` | Unexpected failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.bland.ai/v1/resources/3f1c2a7e-8d41-4b6a-9c0e-2b7d1f5a6e90 \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "status": "success",
+    "resource": {
+      "id": "3f1c2a7e-8d41-4b6a-9c0e-2b7d1f5a6e90",
+      "user_id": "7a9b2c1d-3e4f-4a5b-8c6d-9e0f1a2b3c4d",
+      "org_id": "64602f94-d670-43d2-8474-bcdcb9522c4f",
+      "integration": "slack",
+      "auth": {
+        "type": "nango",
+        "data": {
+          "nangoIntegration": "slack",
+          "connectionId": "conn_01HZ..."
+        }
+      },
+      "name": "Acme Workspace",
+      "description": null,
+      "config": {},
+      "tags": [],
+      "status": "connected",
+      "status_message": null,
+      "is_active": true,
+      "last_used_at": "2025-06-01T12:00:00.000Z",
+      "last_validated_at": null,
+      "metadata": {},
+      "created_at": "2025-05-08T19:28:12.627Z",
+      "updated_at": "2025-06-01T12:00:00.000Z",
+      "available_actions": {
+        "action_count": 4,
+        "context_action_count": 1,
+        "total_action_count": 5
+      }
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "RESOURCE_NOT_FOUND",
+      "message": "Resource not found"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

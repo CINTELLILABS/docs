@@ -4,6 +4,12 @@ api: "GET https://api.bland.ai/v1/knowledgebases"
 description: "List all knowledge bases in your account."
 ---
 
+<Warning>
+This endpoint belongs to the legacy Vector Knowledge Bases API. It is maintained for existing customers only. Use the current [Knowledge Bases API](/api-v1/get/knowledge) for new work.
+</Warning>
+
+This route proxies to the legacy knowledge base service. Any upstream failure returns a 500 with `errors[].error` set to `KB_GET_ALL_EMBEDDINGS_FAILURE`.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -11,49 +17,49 @@ description: "List all knowledge bases in your account."
 </ParamField>
 
 <ParamField header="include-text" type="boolean" default="false">
-    Include the full text of the documents stored in the knowledge base. This can be useful for debugging, but may return large amounts of data.
+    Include the full text of the documents stored in the knowledge base. This can be useful for debugging, but may return large amounts of data. `include_text` is accepted as an alias.
 </ParamField>
 
 ### Response
 
-<ResponseField name="vectors" type="array">
+<ResponseField name="data" type="object">
+  <ResponseField name="data.vectors" type="array">
     An array of objects, for each knowledge base in your account.
 
-    <ResponseField name="vectors[].vector_id" type="string">
+    <ResponseField name="data.vectors[].vector_id" type="string">
         The unique identifier for the knowledge base.
     </ResponseField>
 
-    <ResponseField name="vectors[].name" type="string">
+    <ResponseField name="data.vectors[].name" type="string">
         The name of the knowledge base.
     </ResponseField>
 
-    <ResponseField name="vectors[].description" type="string">
+    <ResponseField name="data.vectors[].description" type="string">
         A description of the knowledge base.
     </ResponseField>
+  </ResponseField>
 </ResponseField>
 
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
 
 <ResponseExample>
 ```json Response
 {
+  "data": {
     "vectors": [
-        {
-            "vector_id": "KB-55e64dae-1585-4632-bc97-c909c288c6bc",
-            "name": "Bland AI FAQs",
-            "description": "Business facts, policies, and frequently asked questions for Bland AI."
-        }
+      {
+        "vector_id": "KB-55e64dae-1585-4632-bc97-c909c288c6bc",
+        "name": "Bland AI FAQs",
+        "description": "Business facts, policies, and frequently asked questions for Bland AI."
+      }
     ]
+  },
+  "errors": null
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
-
 
 ---
 

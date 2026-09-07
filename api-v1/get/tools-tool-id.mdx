@@ -4,6 +4,10 @@ api: "GET https://api.bland.ai/v1/tools/{tool_id}"
 description: "Retrieve a Custom Tool you've created."
 ---
 
+<Note>
+Custom Tools v1 is a legacy API maintained for existing customers. Built-in integration tools are managed with the [v2 Tools API](/api-v2/get/tools). Custom HTTP tools that call your own URL are still created and read through v1.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -12,17 +16,25 @@ description: "Retrieve a Custom Tool you've created."
 
 ### Path Parameters
 <ParamField path="tool_id" type="string" required>
-    The ID of the tool you want to retrieve (starting with `TL-`).
+    The ID of the tool you want to retrieve, with or without the `TL-` prefix. A value that is not a UUID returns 400 `INVALID_PARAMETER`. A tool that does not exist or belongs to another organization returns 404 `NOT_FOUND`.
 </ParamField>
 
 ### Response
 
 <ResponseField name="status" type="string">
-    Whether the requet succeeded or failed.
+    Whether the request succeeded or failed.
 </ResponseField>
 
-<ResponseField name="tool" type="array">
-    The tool you've created.
+<ResponseField name="tool" type="object">
+    The tool record: `tool_id` (prefixed `TL-`), `label`, `tool` (the definition object), `public`, `user_id`, `resource_id`, `is_active`, `is_draft`, `staging_tool`, `agent_id`, and `created_at`.
+</ResponseField>
+
+<ResponseField name="data" type="null">
+    Always `null` on this endpoint.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+    `null` on success.
 </ResponseField>
 
 <ResponseExample>
@@ -61,12 +73,32 @@ description: "Retrieve a Custom Tool you've created."
                 "confirmation_message": "$.message"
             }
         },
-        "public": false
-    }
+        "public": false,
+        "user_id": "8a1f0c2e-3b4d-4e5f-9a6b-7c8d9e0f1a2b",
+        "resource_id": null,
+        "is_active": true,
+        "is_draft": false,
+        "staging_tool": null,
+        "agent_id": null,
+        "created_at": "2024-03-16T18:22:10.000Z"
+    },
+    "data": null,
+    "errors": null
+}
+```
+
+```json Not found (404)
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "NOT_FOUND",
+            "message": "Tool not found"
+        }
+    ]
 }
 ```
 </ResponseExample>
-
 
 ---
 

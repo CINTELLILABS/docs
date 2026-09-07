@@ -1,0 +1,144 @@
+---
+title: "Run Tool"
+api: "POST https://api.bland.ai/v2/tools/{tool_id}/run"
+description: "Execute a tool once with the inputs you provide, outside of a call, and get the integration's response back."
+---
+
+Use this endpoint to test a tool or to invoke it from your own systems. For integration tools, the stored `body` values are merged with your `inputs` and the run is recorded in [Tool Execution Logs](/api-v2/get/tools-logs). For a legacy custom tool, placeholders in the stored URL, headers, and body are replaced from `inputs` before the HTTP request is sent.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="tool_id" type="string" required>
+  The tool's ID. Both the raw UUID and the `TL-` prefixed form are accepted.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="staging" type="boolean">
+  Set to `true` to run the tool's `staging_tool` draft definition instead of the live one. Returns `400` if no draft is saved.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="inputs" type="object">
+  Values for the tool's `input_schema` properties, keyed by property name. They are merged over the tool's stored `body` template. Defaults to `{}`.
+
+  For integration tools, an `inputs.resource_id` value overrides the tool's connected resource for this run.
+</ParamField>
+
+### Response
+
+The HTTP status mirrors the outcome: `200` when the integration or endpoint succeeded, otherwise the status code the integration reported. In both cases the body uses the shape below with `errors: null`.
+
+<ResponseField name="data.success" type="boolean">
+  Whether the execution succeeded.
+</ResponseField>
+
+<ResponseField name="data.statusCode" type="number">
+  The status code reported by the integration or HTTP endpoint.
+</ResponseField>
+
+<ResponseField name="data.data" type="any">
+  The integration's response payload, or the parsed HTTP response body for a legacy custom tool.
+</ResponseField>
+
+<ResponseField name="data.responseTime" type="string">
+  Wall-clock execution time, for example `"342ms"`.
+</ResponseField>
+
+<ResponseField name="data.console" type="array">
+  Only for `custom-code` tools. The snippet's redacted console output, returned on both success and failure. It is never included inside `data.data`, so it cannot leak into a live call's response mappings.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` when the tool ran (even if it failed), or a list of `{ error, message }` objects when the request itself was rejected.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `Bad Request` | The tool is still a draft (`is_draft`), the requested definition (live or staging) is missing, or the stored definition is not a valid integration or custom HTTP tool. |
+| 404 | `Not Found` | No active tool with that ID belongs to your account. |
+| 500 | `Internal Error` | Execution threw an unexpected error. The message contains the error text. |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v2/tools/8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f/run \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "inputs": {
+      "channel": "#support",
+      "message": "Customer requested a callback."
+    }
+  }'
+```
+
+```bash Run the staging draft
+curl -X POST "https://api.bland.ai/v2/tools/TL-8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f/run?staging=true" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{ "inputs": { "channel": "#support", "message": "Test from staging" } }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response (Success)
+{
+  "data": {
+    "success": true,
+    "statusCode": 200,
+    "data": {
+      "ok": true,
+      "ts": "1727104416.000200"
+    },
+    "responseTime": "342ms"
+  },
+  "errors": null
+}
+```
+
+```json Response (Custom code with console)
+{
+  "data": {
+    "success": true,
+    "statusCode": 200,
+    "data": {
+      "total": 42
+    },
+    "responseTime": "1180ms",
+    "console": [
+      "[log] fetched 3 orders"
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Error (Not Found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "Not Found",
+      "message": "Tool 'TL-8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f' not found or not active."
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

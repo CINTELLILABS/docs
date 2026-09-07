@@ -18,8 +18,10 @@ description: "Retrieve metadata for a specific batch. This does not include logs
 
 ### Response
 
-<ResponseField name="data" type="object">
-  Metadata and configuration details of the batch.
+The stored batch row. If the batch does not exist or belongs to another organization, the request still returns `200` with `"data": null` rather than a 404.
+
+<ResponseField name="data" type="object | null">
+  Metadata and configuration details of the batch, or `null` if not found.
 </ResponseField>
 
 <ResponseField name="data.id" type="string">
@@ -31,24 +33,71 @@ description: "Retrieve metadata for a specific batch. This does not include logs
 </ResponseField>
 
 <ResponseField name="data.base_prompt" type="string">
-  A JSON string representing shared call properties such as `task` or `record`.
+  A JSON string of the `global` object the batch was created with.
 </ResponseField>
 
 <ResponseField name="data.created_at" type="string (ISO 8601)">
   The timestamp of when the batch was created.
 </ResponseField>
 
-<ResponseField name="data.call_objects" type="array">
-  A preview of call objects in the batch.
+<ResponseField name="data.call_objects" type="array | null">
+  The full `call_objects` array the batch was created with. `null` for batches created from a `file_id`.
 </ResponseField>
 
 <ResponseField name="data.description" type="string">
   A human-readable label or description for the batch.
 </ResponseField>
 
+<ResponseField name="data.batch_status" type="string | object">
+  `"initializing"` until the batch starts dispatching, then an object with `calls_requested`, `calls_in_progress`, `calls_completed`, `calls_failed`, and `calls_failed_errors`.
+</ResponseField>
+
+<ResponseField name="data.calls_in_retry" type="array">
+  Call IDs currently being retried.
+</ResponseField>
+
+<ResponseField name="data.label" type="string | null">
+  A JSON string of the `column_mapping` used for file batches, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="data.agent_id" type="string | null">
+  The `global.agent_id` the batch was created with, if any.
+</ResponseField>
+
+<ResponseField name="data.campaign_id" type="string | null">
+  Always `null` for batches created through this API.
+</ResponseField>
+
+<ResponseField name="data.call_params" type="string | null">
+  Unused by v2 batches. Always `null`.
+</ResponseField>
+
+<ResponseField name="data.call_data" type="string | null">
+  Unused by v2 batches. Always `null`.
+</ResponseField>
+
+<ResponseField name="data.endpoint_code" type="string">
+  Always `"api"`.
+</ResponseField>
+
 <ResponseField name="errors" type="null">
   Always `null` on success.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 500 | `BATCH_V2_FETCH_ERROR` | Unexpected failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.bland.ai/v2/batches/a9a033b7-44d8-40c6-aaec-42cd43106273 \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
 
 <ResponseExample>
 
@@ -57,16 +106,37 @@ description: "Retrieve metadata for a specific batch. This does not include logs
   "data": {
     "id": "a9a033b7-44d8-40c6-aaec-42cd43106273",
     "user_id": "657ad643-92ca-477c-97cc-9d8e6e74d7af",
+    "campaign_id": null,
+    "call_params": null,
     "base_prompt": "{\"record\":true,\"task\":\"Say hello to the user\"}",
+    "endpoint_code": "api",
     "created_at": "2025-05-08T19:28:12.627Z",
+    "label": null,
+    "call_data": null,
+    "batch_status": {
+      "calls_requested": 1,
+      "calls_in_progress": [],
+      "calls_completed": ["a24616b4-be8f-42e4-be29-4c5ec005756c"],
+      "calls_failed": 0,
+      "calls_failed_errors": []
+    },
+    "calls_in_retry": [],
     "call_objects": [
       {
         "task": "Say hello to the user",
         "phone_number": "+1234567890"
       }
     ],
-    "description": "Untitled Batch"
+    "description": "Untitled Batch",
+    "agent_id": null
   },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
   "errors": null
 }
 ```

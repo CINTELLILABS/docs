@@ -1,11 +1,17 @@
 ---
 title: 'Upload Text'
-api: 'POST  https://api.bland.ai/v1/knowledgebases/upload'
+api: 'POST https://api.bland.ai/v1/knowledgebases/upload'
 description: 'Upload a text file as a new knowledge base'
 contentType: 'multipart/form-data'
 ---
 
-Upload text files along with optional metadata like name and description.
+<Warning>
+This endpoint belongs to the legacy Vector Knowledge Bases API. It is maintained for existing customers only. Use the current [Knowledge Bases API](/api-v1/post/knowledge-learn-file) for new work.
+</Warning>
+
+Upload a text file, or raw text, along with optional metadata like name and description.
+
+Unlike the other legacy endpoints, this route creates the knowledge base in the current Knowledge Bases system. The returned `vector_id` is the new knowledge base ID with a `KB-` prefix, and the knowledge base appears in [List Knowledge Bases](/api-v1/get/knowledge).
 
 ### Headers
 
@@ -15,17 +21,63 @@ Upload text files along with optional metadata like name and description.
 
 ### Body
 
-<ParamField body="file" type="file" required>
-  The text file to be uploaded. Must be a .pdf, .txt, .doc, or .docx file.
+<ParamField body="file" type="file">
+  The file to be uploaded. Maximum size is 20 MB (413 `FILE_TOO_LARGE` when exceeded). File type is not validated by this endpoint.
+
+  When `file` is omitted the request is treated as a text upload and `name` and `text` are required.
 </ParamField>
 
 <ParamField body="name" type="string">
-  Name for the uploaded text file
+  Name for the knowledge base. Defaults to the filename for file uploads. Required for text uploads (400 `KB_ERROR`, "name is required").
+</ParamField>
+
+<ParamField body="text" type="string">
+  Raw text content, used when no `file` is sent. Must be non-empty and at most 1 MB (400 `KB_ERROR`).
 </ParamField>
 
 <ParamField body="description" type="string">
-  Description for the uploaded text file
+  Description for the knowledge base
 </ParamField>
+
+### Rate limits
+
+- 3 requests per 10 seconds per organization (429).
+- One upload at a time per organization with a 10 second cooldown. A second upload inside the window returns 423 `KB_UPLOAD_RATE_LIMITED`.
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.vector_id" type="string">
+    The knowledge base ID with a "KB-" prefix.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "vector_id": "KB-55e64dae-1585-4632-ae97-c909c288c6bc"
+  },
+  "errors": null
+}
+```
+
+```json Rate Limited Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_UPLOAD_RATE_LIMITED",
+      "message": "Please wait 10 seconds between knowledge base uploads, or wait for your current upload to complete."
+    }
+  ]
+}
+```
+</ResponseExample>
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

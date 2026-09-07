@@ -18,11 +18,25 @@ Query a knowledge base using natural language and receive contextual responses. 
 
 ### Body Parameters
 
+Provide `knowledge_base_id` or `knowledge_base_ids`, and `query` or `messages`. Omitting either pair returns `400`.
+
+<ParamField body="knowledge_base_id" type="string">
+  The ID of a single knowledge base to query.
+</ParamField>
+
+<ParamField body="knowledge_base_ids" type="string[]">
+  IDs of several knowledge bases to query together. Takes precedence over `knowledge_base_id` when both are sent.
+</ParamField>
+
+<ParamField body="query" type="string">
+  A direct search query. Takes precedence over `messages` when both are sent.
+</ParamField>
+
 <ParamField body="messages" type="array">
-  Array of chat messages for conversational context. Use this for multi-turn conversations.
+  Chat history for multi-turn conversations. A search query is generated from the history, and the history is also passed to the answer model.
 
   <ParamField body="messages[].role" type="string" required>
-    The role of the message sender (e.g., "user", "assistant", "system").
+    `"user"`, `"assistant"`, or `"system"`.
   </ParamField>
 
   <ParamField body="messages[].content" type="string" required>
@@ -30,36 +44,64 @@ Query a knowledge base using natural language and receive contextual responses. 
   </ParamField>
 </ParamField>
 
-<ParamField body="knowledge_base_id" type="string" required>
-  The ID of the knowledge base to query against.
+<ParamField body="top_k" type="number">
+  Maximum number of chunks to retrieve.
+</ParamField>
+
+<ParamField body="alpha" type="number">
+  Hybrid retrieval weighting between vector and keyword search.
+</ParamField>
+
+<ParamField body="persona_id" type="string">
+  Attribute the query to a persona for analytics.
+</ParamField>
+
+<ParamField body="persona_version_id" type="string">
+  Attribute the query to a specific persona version.
+</ParamField>
+
+<ParamField body="enable_cache" type="boolean" default="true">
+  Set to `false` to bypass the retrieval cache for this request.
 </ParamField>
 
 ### Response
 
 <ResponseField name="data" type="object">
-  Chat response with contextual information.
-
-  <ResponseField name="data.response" type="string">
-    The AI-generated response based on the knowledge base content.
+  <ResponseField name="data.result" type="string">
+    The generated answer. When the retrieved chunks do not support the question, or no query could be derived from `messages`, this is a fixed string (`"No answer was found in the selected sources."` for a detected gap, `"<No relevant information found>"` when no query could be derived) and no answer is generated.
   </ResponseField>
 
-  <ResponseField name="data.context" type="string">
-    Additional context information used to generate the response.
+  <ResponseField name="data.chunks" type="array">
+    Retrieved chunks used as context. Omitted when no query could be derived.
+
+    <ResponseField name="data.chunks[].text" type="string">
+      Chunk text.
+    </ResponseField>
+
+    <ResponseField name="data.chunks[].content_type" type="string">
+      `"document"` for ingested content or `"human_qa"` for a suggestion added through [Create Suggestion](/api-v1/post/knowledge-improve).
+    </ResponseField>
+
+    <ResponseField name="data.chunks[].score" type="number">
+      Relevance score, when available.
+    </ResponseField>
+
+    <ResponseField name="data.chunks[].cascade_path" type="string">
+      `"stage1"` or `"stage2"`, present when the knowledge base uses a `ranking_config`.
+    </ResponseField>
   </ResponseField>
 
-  <ResponseField name="data.sources" type="array">
-    Array of source documents that were used to generate the response.
+  <ResponseField name="data.generated_query" type="string">
+    The search query derived from `messages`. Absent when you passed `query` directly.
+  </ResponseField>
 
-    <ResponseField name="data.sources[].id" type="string">
-      Unique identifier of the source document.
+  <ResponseField name="data.gap_evaluation" type="object">
+    <ResponseField name="data.gap_evaluation.is_knowledge_gap" type="boolean">
+      `true` when the knowledge bases could not answer the question.
     </ResponseField>
 
-    <ResponseField name="data.sources[].content" type="string">
-      Relevant content from the source document.
-    </ResponseField>
-
-    <ResponseField name="data.sources[].metadata" type="object">
-      Additional metadata about the source document.
+    <ResponseField name="data.gap_evaluation.gap_id" type="string">
+      ID of the recorded knowledge gap, when one was created.
     </ResponseField>
   </ResponseField>
 </ResponseField>
@@ -68,24 +110,72 @@ Query a knowledge base using natural language and receive contextual responses. 
   Will be `null` on successful query.
 </ResponseField>
 
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `KB_ERROR` | Neither `knowledge_base_id` nor `knowledge_base_ids` given, or neither `query` nor `messages` given |
+| 500 | `KB_CHAT_ERROR` | Unexpected server error |
+
+<RequestExample>
+
+```bash Direct Query
+curl -X POST https://api.bland.ai/v1/knowledge/chat \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "knowledge_base_id": "3f1c2a9e-7b4d-4c1e-9a2b-1d5e6f7a8b9c",
+    "query": "What is your refund policy?"
+  }'
+```
+
+```json Conversation Across Two Knowledge Bases
+{
+  "knowledge_base_ids": [
+    "3f1c2a9e-7b4d-4c1e-9a2b-1d5e6f7a8b9c",
+    "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+  ],
+  "messages": [
+    { "role": "user", "content": "I bought a blender last month." },
+    { "role": "assistant", "content": "How can I help with it?" },
+    { "role": "user", "content": "Can I still return it?" }
+  ]
+}
+```
+
+</RequestExample>
+
 <ResponseExample>
 
 ```json Success Response
 {
   "data": {
-    "response": "Our refund policy allows for full refunds within 30 days of purchase. For products purchased more than 30 days ago, we offer store credit or exchanges. Please contact our customer service team at support@example.com to initiate a refund request.",
-    "context": "Based on company policy documentation regarding refunds and returns",
-    "sources": [
+    "result": "Yes. Full refunds are available within 30 days of purchase. After 30 days you can exchange the item or receive store credit.",
+    "chunks": [
       {
-        "id": "doc_01H8X9QK5R2N7P3M6Z8W4Y1V7V",
-        "content": "Refund Policy: Full refunds are available within 30 days of purchase...",
-        "metadata": {
-          "document_type": "policy",
-          "section": "refunds",
-          "last_updated": "2025-01-01"
-        }
+        "text": "Refund Policy: Full refunds are available within 30 days of purchase...",
+        "content_type": "document",
+        "score": 0.87
       }
-    ]
+    ],
+    "generated_query": "blender return policy after one month",
+    "gap_evaluation": {
+      "is_knowledge_gap": false
+    }
+  },
+  "errors": null
+}
+```
+
+```json Knowledge Gap
+{
+  "data": {
+    "result": "No answer was found in the selected sources.",
+    "chunks": [],
+    "gap_evaluation": {
+      "is_knowledge_gap": true,
+      "gap_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
+    }
   },
   "errors": null
 }
@@ -97,7 +187,7 @@ Query a knowledge base using natural language and receive contextual responses. 
   "errors": [
     {
       "error": "KB_ERROR",
-      "message": "Knowledge base not found or not accessible"
+      "message": "Either knowledge_base_id or knowledge_base_ids is required"
     }
   ]
 }

@@ -19,26 +19,40 @@ Analyzes a website to discover available URLs from its sitemap. This is useful f
 ### Body Parameters
 
 <ParamField body="url" type="string" required>
-  The base URL of the website to discover sitemap URLs from.
+  The base URL of the website to discover sitemap URLs from. Must include a scheme and hostname.
+</ParamField>
+
+<ParamField body="limit" type="number" default="100">
+  Maximum number of URLs to return, from 1 to 2000. Values outside that range return `400`.
 </ParamField>
 
 ### Response
 
 <ResponseField name="data" type="object">
-  Discovered URLs and sitemap information.
-
   <ResponseField name="data.urls" type="string[]">
-    Array of discovered URLs from the website's sitemap.
+    Discovered URLs, capped at `limit`.
   </ResponseField>
 
-  <ResponseField name="data.sitemap_url" type="string">
-    The sitemap URL that was found and processed (if any).
+  <ResponseField name="data.total_count" type="number">
+    Number of URLs in `urls`.
+  </ResponseField>
+
+  <ResponseField name="data.truncated" type="boolean">
+    `true` when more URLs were discovered than `limit` allowed.
   </ResponseField>
 </ResponseField>
 
 <ResponseField name="errors" type="null">
   Will be `null` on successful discovery.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `KB_ERROR` | Missing `url`, invalid URL format, or `limit` outside 1 to 2000 |
+| 500 | `KB_ERROR` | Discovery failed upstream (`"Failed to discover sitemap URLs"`) |
+| 500 | `SITEMAP_DISCOVERY_ERROR` | Unexpected server error |
 
 <RequestExample>
 
@@ -68,22 +82,11 @@ curl -X POST https://api.bland.ai/v1/knowledge/crawl \
       "https://example.com/",
       "https://example.com/about",
       "https://example.com/products",
-      "https://example.com/contact",
       "https://example.com/docs/getting-started",
-      "https://example.com/docs/api-reference",
-      "https://example.com/docs/tutorials"
+      "https://example.com/docs/api-reference"
     ],
-    "sitemap_url": "https://example.com/sitemap.xml"
-  },
-  "errors": null
-}
-```
-
-```json No Sitemap Found
-{
-  "data": {
-    "urls": [],
-    "sitemap_url": null
+    "total_count": 5,
+    "truncated": false
   },
   "errors": null
 }
@@ -94,8 +97,8 @@ curl -X POST https://api.bland.ai/v1/knowledge/crawl \
   "data": null,
   "errors": [
     {
-      "error": "INVALID_INPUT",
-      "message": "Invalid URL provided"
+      "error": "KB_ERROR",
+      "message": "Invalid URL format"
     }
   ]
 }

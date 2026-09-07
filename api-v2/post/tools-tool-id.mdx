@@ -13,23 +13,23 @@ description: "Update an existing tool. All fields are optional. Only the fields 
 ### Path Parameters
 
 <ParamField path="tool_id" type="string" required>
-  The unique identifier of the tool to update.
+  The tool's UUID exactly as returned by [Create Tool](/api-v2/post/tools) or [List Tools](/api-v2/get/tools). This endpoint does not accept the `TL-` prefix: `TL-...` returns `400 INVALID_PARAMETER` with the message `id: Invalid UUID format`.
 </ParamField>
 
 ### Body Parameters
 
-All fields are optional. Only fields included in the request body will be updated.
+All fields are optional. Fields you send are merged over the stored tool definition, then the merged definition is validated as a whole. Fields you omit keep their current value. Only integration tools can be updated here; a custom HTTP tool returns `400 INVALID_TOOL_TYPE` and must be updated with [Update Custom Tool](/api-v1/post/tools-tool-id).
 
 <ParamField body="name" type="string">
   The name the AI will see when deciding to use this tool.
 </ParamField>
 
 <ParamField body="description" type="string">
-  Description of what the tool does.
+  Description of what the tool does. Maximum 5000 characters.
 </ParamField>
 
 <ParamField body="integration" type="string">
-  The integration key to update. Must be one of: `bland-sms`, `custom-code`, `slack`, `salesforce`, `rest_api`, `hubspot`, `calendly`, `cal-com-v2`, `notion`.
+  The integration key to update. Must be one of: `bland`, `bland-sms`, `custom-code`, `slack`, `salesforce`, `rest_api`, `hubspot`, `calendly`, `cal-com-v2`, `notion`.
 </ParamField>
 
 <ParamField body="action" type="string">
@@ -37,11 +37,11 @@ All fields are optional. Only fields included in the request body will be update
 </ParamField>
 
 <ParamField body="input_schema" type="object">
-  Must be a valid OpenAI function calling parameter schema. Defines the parameters the AI will fill in when invoking this tool.
+  JSON Schema that defines the parameters the AI will fill in when invoking this tool.
 </ParamField>
 
 <ParamField body="body" type="string | object">
-  Request body template sent to the integration.
+  Request body template sent to the integration. For `custom-code` tools with the `run_snippet` action, `body.timeout` is in seconds and must be an integer from 1 to 60.
 </ParamField>
 
 <ParamField body="speech" type="string">
@@ -84,28 +84,54 @@ All fields are optional. Only fields included in the request body will be update
   UUID of a connected resource (e.g. a Slack workspace or Salesforce org) to scope this tool to. The resource must be active and belong to your account. Returns `404` if the ID is invalid or inactive. To list available resource IDs for an integration, call `GET /v1/integrations/{integration}/resources`.
 </ParamField>
 
+<ParamField body="extractVarSettings" type="object">
+  Controls how the AI extracts the tool's input variables. See [Create Tool](/api-v2/post/tools) for the `useAudio`, `ignorePrevious`, and `audioVariables` fields.
+</ParamField>
+
 <ParamField body="public" type="boolean">
-  Whether this tool is publicly visible.
+  Accepted, but this endpoint does not change the tool's visibility. The value is stored inside the tool definition JSON and the `public` column returned by [List Tools](/api-v2/get/tools) is left unchanged. Set `public` when you create the tool instead.
 </ParamField>
 
 <ParamField body="label" type="string">
   Human-readable label for this tool.
 </ParamField>
 
+<ParamField body="staging_tool" type="object">
+  Replaces the tool's draft definition (the version run with `?staging=true`).
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  Accepted and ignored. Agent attribution is set at creation time only.
+</ParamField>
+
+<Note>
+  Unknown top-level keys are not rejected. They are merged into the stored tool definition, so send only the fields listed above.
+</Note>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  `"success"` on success, `"error"` on failure.
-</ResponseField>
+Returns `200` with the updated tool's ID.
 
 <ResponseField name="data.id" type="string">
-  The ID of the updated tool.
+  The UUID of the updated tool.
 </ResponseField>
 
-<ResponseField name="errors" type="null|array">
-  `null` on success, or a list of error objects if the request failed.
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of `{ error, message }` objects if the request failed.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `INVALID_PARAMETER` | `tool_id` is not a UUID, or a custom-code timeout is invalid. |
+| 400 | `INVALID_TOOL_TYPE` | The tool is a custom HTTP tool, not an integration tool. |
+| 400 | `TOOL_V2_UPDATE_VALIDATION_ERROR` | The merged definition fails validation. The message lists each failing path, for example `[/timeout: Expected number to be less or equal to 60000]`. |
+| 400 | `INTEGRATION_NOT_FOUND` | The merged `integration` is not registered. |
+| 400 | `ACTION_NOT_FOUND` | The merged `action` does not exist for the integration. |
+| 404 | `TOOL_NOT_FOUND` | No tool with that ID belongs to your account. |
+| 404 | `RESOURCE_NOT_FOUND` | The new `resource_id` is unknown, inactive, or not yours. |
+| 500 | `UPDATE_INTERNAL_SERVER_ERROR` | Unexpected server error. |
 
 <ResponseExample>
 ```json Request (Partial Update)
@@ -117,9 +143,8 @@ All fields are optional. Only fields included in the request body will be update
 
 ```json Response (Success)
 {
-  "status": "success",
   "data": {
-    "id": "abc123def456"
+    "id": "8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f"
   },
   "errors": null
 }
@@ -130,8 +155,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "TOOL_NOT_FOUND",
-      "message": "Tool not found"
+      "error": "TOOL_NOT_FOUND",
+      "message": "Tool not found or you don't have access to it"
     }
   ]
 }
@@ -142,8 +167,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "INVALID_PARAMETER",
-      "message": "timeout must be between 1000 and 60000"
+      "error": "INVALID_PARAMETER",
+      "message": "id: Invalid UUID format"
     }
   ]
 }
@@ -154,8 +179,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "TOOL_V2_UPDATE_VALIDATION_ERROR",
-      "message": "Validation failed for the provided tool configuration"
+      "error": "TOOL_V2_UPDATE_VALIDATION_ERROR",
+      "message": "[/timeout: Expected number to be less or equal to 60000] "
     }
   ]
 }
@@ -166,8 +191,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "INVALID_TOOL_TYPE",
-      "message": "The specified tool type is not supported"
+      "error": "INVALID_TOOL_TYPE",
+      "message": "V2 endpoint only works with integration tools. Custom tools should use V1 endpoint at POST /v1/tools/:tool_id"
     }
   ]
 }
@@ -178,8 +203,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "INTEGRATION_NOT_FOUND",
-      "message": "Integration 'my_integration' is not available. Available integrations: bland-sms, custom-code, slack, salesforce, rest_api, hubspot, calendly, cal-com-v2, notion"
+      "error": "INTEGRATION_NOT_FOUND",
+      "message": "Integration 'my_integration' is not available. Available integrations: bland-sms, bland, custom-code, slack, salesforce, rest_api, hubspot, calendly, cal-com-v2, notion"
     }
   ]
 }
@@ -190,8 +215,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "ACTION_NOT_FOUND",
-      "message": "Action 'my_action' not found for integration 'slack'"
+      "error": "ACTION_NOT_FOUND",
+      "message": "Action 'my_action' not found for integration 'slack'. Available actions: send_message, create_channel"
     }
   ]
 }
@@ -202,8 +227,8 @@ All fields are optional. Only fields included in the request body will be update
   "data": null,
   "errors": [
     {
-      "code": "RESOURCE_NOT_FOUND",
-      "message": "Resource not found or is inactive"
+      "error": "RESOURCE_NOT_FOUND",
+      "message": "Resource 8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f not found, inactive, or you don't have access to it"
     }
   ]
 }

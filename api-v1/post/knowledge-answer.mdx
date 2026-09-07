@@ -1,0 +1,161 @@
+---
+title: "Retrieve Knowledge Base Context"
+api: "POST https://api.bland.ai/v1/knowledge/answer"
+description: "Runs retrieval against one or more knowledge bases and returns the matching chunks without generating an answer."
+---
+
+Retrieve the raw chunks that match a query, with no language model step. Use this when you want to build your own answer, inspect what the agent would see, or debug retrieval quality. For a generated answer, use [Chat with Knowledge Base](/api-v1/post/knowledge-chat).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Body Parameters
+
+Provide `query` or `messages`, and `knowledge_base_id` or `knowledge_base_ids`.
+
+<ParamField body="query" type="string">
+  The search query. Takes precedence over `messages` when both are sent.
+</ParamField>
+
+<ParamField body="messages" type="array">
+  Chat history. When `query` is omitted, a search query is extracted from the conversation.
+
+  <ParamField body="messages[].role" type="string" required>
+    `"user"`, `"assistant"`, or `"system"`.
+  </ParamField>
+
+  <ParamField body="messages[].content" type="string" required>
+    The message text.
+  </ParamField>
+</ParamField>
+
+<ParamField body="knowledge_base_id" type="string">
+  A single knowledge base ID to search.
+</ParamField>
+
+<ParamField body="knowledge_base_ids" type="string[]">
+  Knowledge base IDs to search together. Takes precedence over `knowledge_base_id` when both are sent. IDs that are not valid UUIDs are dropped, and knowledge bases with status `FAILED` are skipped.
+</ParamField>
+
+<ParamField body="top_k" type="number">
+  Maximum number of chunks to return. Uses the retrieval service default when omitted.
+</ParamField>
+
+<ParamField body="alpha" type="number">
+  Hybrid search weighting between keyword and vector similarity. Uses the retrieval service default when omitted.
+</ParamField>
+
+<ParamField body="enable_cache" type="boolean" default="true">
+  Set to `false` to bypass the query cache and hit the retrieval service directly.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object | null">
+  Retrieval result. `null` when no query could be derived from `messages`, or when none of the supplied IDs resolve to a searchable knowledge base.
+
+  <ResponseField name="data.results" type="array">
+    Matching chunks, best match first.
+
+    <ResponseField name="data.results[].text" type="string">
+      Chunk text.
+    </ResponseField>
+
+    <ResponseField name="data.results[].content_type" type="string">
+      `"document"` for content from the source, `"human_qa"` for a suggestion added through [Create Suggestion](/api-v1/post/knowledge-improve).
+    </ResponseField>
+
+    <ResponseField name="data.results[].score" type="number">
+      Relevance score, when reported by the retrieval service.
+    </ResponseField>
+
+    <ResponseField name="data.results[].cascade_path" type="string">
+      `"stage1"` or `"stage2"`, present when the knowledge base has a `ranking_config` set.
+    </ResponseField>
+  </ResponseField>
+
+  <ResponseField name="data.formatted_context" type="string">
+    The chunks joined into the context block an agent would receive.
+  </ResponseField>
+
+  <ResponseField name="data.generatedQuery" type="string">
+    The query that was searched. Equal to `query` when supplied, otherwise the query extracted from `messages`.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | Code | Message |
+|---|---|---|
+| 400 | `KB_ERROR` | `Either knowledge_base_id or knowledge_base_ids is required` |
+| 400 | `KB_ERROR` | `Either query or messages is required` |
+| 500 | `KB_ERROR` | `Failed to query knowledge base` (retrieval service unavailable or timed out after 2.5 seconds) |
+| 500 | `KB_QUERY_ERROR` | `Failed to query knowledge base` |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/answer \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "query": "What is the refund window?",
+    "knowledge_base_ids": ["6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c"],
+    "top_k": 5
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "results": [
+      {
+        "text": "Refund Policy: Full refunds are available within 30 days of purchase.",
+        "content_type": "document",
+        "score": 0.91
+      },
+      {
+        "text": "Q: Can I get a refund after 30 days? A: We offer store credit or exchanges.",
+        "content_type": "human_qa",
+        "score": 0.74
+      }
+    ],
+    "formatted_context": "Refund Policy: Full refunds are available within 30 days of purchase.\n\nQ: Can I get a refund after 30 days? A: We offer store credit or exchanges.",
+    "generatedQuery": "What is the refund window?"
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Either query or messages is required"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

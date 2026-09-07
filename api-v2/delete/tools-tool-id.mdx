@@ -1,0 +1,75 @@
+---
+title: "Delete Tool"
+api: "DELETE https://api.bland.ai/v2/tools/{tool_id}"
+description: "Permanently delete a tool. Works for both integration tools and legacy custom tools."
+---
+
+Deleting a tool removes it from the database immediately. There is no soft delete or restore. Existing execution logs that reference the tool are kept, with their `tool_id` set to `null`.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="tool_id" type="string" required>
+  The tool's UUID exactly as returned by [Create Tool](/api-v2/post/tools) or [List Tools](/api-v2/get/tools). This endpoint does not accept the `TL-` prefix: `TL-...` returns `400 INVALID_PARAMETER` with the message `id: Invalid UUID format`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.message" type="string">
+  `"Tool has been deleted."`
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of `{ error, message }` objects if the request failed.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `INVALID_PARAMETER` | `tool_id` is not a UUID. |
+| 404 | `TOOL_NOT_FOUND` | No tool with that ID belongs to your account. |
+| 500 | `DELETE_INTERNAL_SERVER_ERROR` | Unexpected server error. |
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.bland.ai/v2/tools/8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response (Success)
+{
+  "data": {
+    "message": "Tool has been deleted."
+  },
+  "errors": null
+}
+```
+
+```json Error (TOOL_NOT_FOUND)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOOL_NOT_FOUND",
+      "message": "Tool not found or you don't have access to it"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
