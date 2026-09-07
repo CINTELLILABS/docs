@@ -1,0 +1,81 @@
+---
+title: "Start Agent Onboarding"
+api: "POST https://api.bland.ai/v1/agent/onboarding/start"
+description: "Start the device-authorization flow a bot uses to get its own Bland API key and phone number. No API key required."
+---
+
+### Overview
+
+No authentication is required for this endpoint, it's how a bot gets an API key in the first place. See [Connect your AI agent](/platform/connect-your-agent) for the full flow.
+
+### Body Parameters
+
+<ParamField body="client_name" type="string">
+  A name for the bot starting the flow, shown to the owner during signup so they know what's asking. Max length `64`. Allowed characters: letters, numbers, spaces, and `._/-`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Device and user codes for the flow.
+</ResponseField>
+
+<ResponseField name="data.device_code" type="string">
+  Opaque code your bot polls with at `/v1/agent/onboarding/poll`. Keep this private.
+</ResponseField>
+
+<ResponseField name="data.user_code" type="string">
+  Short code to show the owner. They enter this at `verification_url` if it isn't already pre-filled.
+</ResponseField>
+
+<ResponseField name="data.verification_url" type="string">
+  The page where the owner completes signup, without the code embedded.
+</ResponseField>
+
+<ResponseField name="data.verification_url_complete" type="string">
+  The same page with `user_code` pre-filled. Prefer this when you can show a clickable link.
+</ResponseField>
+
+<ResponseField name="data.expires_in" type="number">
+  Seconds until the codes expire (`900`, 15 minutes).
+</ResponseField>
+
+<ResponseField name="data.interval" type="number">
+  Minimum seconds to wait between calls to `/poll`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "device_code": "Xk9pQ2mZ...",
+    "user_code": "BQPL-7VXR",
+    "verification_url": "https://app.bland.ai/agent-setup",
+    "verification_url_complete": "https://app.bland.ai/agent-setup?code=BQPL-7VXR",
+    "expires_in": 900,
+    "interval": 5
+  },
+  "errors": null
+}
+```
+
+```json Service unavailable (503)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ServiceUnavailable",
+      "message": "Agent onboarding is temporarily unavailable."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

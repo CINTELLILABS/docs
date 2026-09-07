@@ -1,0 +1,128 @@
+---
+title: "Approve Agent Onboarding"
+api: "POST https://api.bland.ai/v1/agent/onboarding/approve"
+description: "Claim a device-authorization code after the owner signs up and subscribes in the browser. Called by the Bland dashboard, not by the bot."
+---
+
+### Overview
+
+This endpoint is called from the browser by the dashboard during the [agent onboarding](/platform/connect-your-agent) flow, after the owner signs up (or logs in) and subscribes to the [Agent Phone Plan](/platform/agent-phone-plan). It isn't called directly by the bot, the bot only ever sees its effect through `/v1/agent/onboarding/poll`.
+
+<Note>
+Requires an authenticated dashboard session for an org (not a personal account, and not an API key). The response never includes the `api_key`, only the bot's later `poll` call receives it.
+</Note>
+
+### Body Parameters
+
+<ParamField body="user_code" type="string" required>
+  The short code shown to the owner by `/v1/agent/onboarding/start`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Confirmation that the code was claimed for this org.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  `approved`.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  The org the code was claimed for.
+</ResponseField>
+
+<ResponseField name="data.phone_number" type="string">
+  The number provisioned for this org's Agent Phone Plan.
+</ResponseField>
+
+<ResponseField name="data.client_name" type="string">
+  The `client_name` the bot passed to `/start`, if any.
+</ResponseField>
+
+<ResponseField name="data.key_prefix" type="string">
+  A short, non-secret prefix of the API key that will be issued to the bot, for display only.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "status": "approved",
+    "org_id": "...",
+    "phone_number": "+15551234567",
+    "client_name": "my-bot",
+    "key_prefix": "org_ab12"
+  },
+  "errors": null
+}
+```
+
+```json Plan required (402)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PLAN_REQUIRED",
+      "message": "An active Agent Phone Plan subscription is required."
+    }
+  ]
+}
+```
+
+```json Number pending (409)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PLAN_NUMBER_PENDING",
+      "message": "Your phone number is still being provisioned."
+    }
+  ]
+}
+```
+
+```json Code not found (404)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CODE_NOT_FOUND",
+      "message": "This code is invalid or has expired."
+    }
+  ]
+}
+```
+
+```json Code already used (409)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CODE_ALREADY_USED",
+      "message": "This code has already been used."
+    }
+  ]
+}
+```
+
+```json Org context required (403)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ORG_CONTEXT_REQUIRED",
+      "message": "Sign in as an organization to approve a device code."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

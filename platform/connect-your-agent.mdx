@@ -1,0 +1,172 @@
+---
+title: "Connect your AI agent"
+description: "Let a bot sign itself up for Bland: it shows its owner a link and a code, the owner finishes signup in a browser, and the bot gets an API key and a phone number."
+---
+
+## Overview
+
+Most Bland integrations start with a human signing up in the dashboard, minting an API key, and pasting it into whatever they're building. That doesn't work well for an autonomous bot: there's no dashboard session to sign into, and often no browser or localhost to redirect back to.
+
+Agent onboarding solves this with a device-authorization flow, the same shape used by tools like `gh auth login` or a smart TV signing into a streaming app: the bot starts the flow over a plain API call, shows its owner a short code and a link, and polls in the background while the owner finishes signup and subscribes in their own browser. No callback URL, no localhost, no client secret. It works the same way whether the bot is running on your laptop or on a server with no browser at all.
+
+At the end of the flow, the bot receives a dedicated API key and the phone number provisioned for it. The owner never sees or handles the key.
+
+<Note>
+This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-plan). If the owner already has a Bland account, they sign in and subscribe instead of creating a new one.
+</Note>
+
+## The flow
+
+<Steps>
+  <Step title="Start the flow">
+    Call `POST /v1/agent/onboarding/start`. No API key is required, this is how a bot gets one.
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/agent/onboarding/start \
+      -H "Content-Type: application/json" \
+      -d '{"client_name": "my-bot"}'
+    ```
+
+    ```json Response
+    {
+      "data": {
+        "device_code": "Xk9pQ2mZ...",
+        "user_code": "BQPL-7VXR",
+        "verification_url": "https://app.bland.ai/agent-setup",
+        "verification_url_complete": "https://app.bland.ai/agent-setup?code=BQPL-7VXR",
+        "expires_in": 900,
+        "interval": 5
+      },
+      "errors": null
+    }
+    ```
+
+    `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). It's shown to the owner so they know which bot is asking.
+  </Step>
+
+  <Step title="Show the link and code to your owner">
+    Display `verification_url_complete` (or `verification_url` plus `user_code` if you can't render a clickable link) wherever your owner will see it: a chat message, a terminal, a Slack DM.
+
+    The owner opens the link, signs up or logs in, enters the code if it isn't already pre-filled, and subscribes to the [Agent Phone Plan](/platform/agent-phone-plan). This happens once, in their browser. Your bot doesn't participate in it beyond polling for the result.
+  </Step>
+
+  <Step title="Poll until approved">
+    Call `POST /v1/agent/onboarding/poll` with the `device_code`, waiting at least `interval` seconds between calls.
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/agent/onboarding/poll \
+      -H "Content-Type: application/json" \
+      -d '{"device_code": "Xk9pQ2mZ..."}'
+    ```
+
+    Each response has a `status`:
+
+    | `status` | Meaning |
+    | --- | --- |
+    | `pending` | Still waiting on the owner. Keep polling at the returned `interval`. |
+    | `approved` | Onboarding is complete. The response includes `api_key`, `org_id`, and `phone_number`. |
+    | `expired` | The code expired, or the `device_code` was never valid. These two cases aren't distinguished, so don't use `expired` to debug a typo, start over with a fresh `/start` call instead. |
+
+    If you poll faster than `interval`, you get a `429` with error code `SLOW_DOWN` instead of a status:
+
+    ```json 429 SLOW_DOWN
+    {
+      "data": null,
+      "errors": [
+        {
+          "error": "SLOW_DOWN",
+          "message": "Poll more slowly.",
+          "interval": 10
+        }
+      ]
+    }
+    ```
+
+    Back off to the `interval` in the error body (also sent as a `Retry-After` header) before polling again.
+  </Step>
+
+  <Step title="Use the key">
+    Once `status` is `approved`, the response looks like this:
+
+    ```json Response
+    {
+      "data": {
+        "status": "approved",
+        "api_key": "org_...",
+        "org_id": "...",
+        "phone_number": "+15551234567",
+        "plan": "agent_phone",
+        "client_name": "my-bot"
+      },
+      "errors": null
+    }
+    ```
+
+    This is the only time `api_key` is returned. Store it immediately, the code is single-use, so polling again after this returns `expired`.
+  </Step>
+</Steps>
+
+## Try it with a client
+
+<Tabs>
+  <Tab title="cURL">
+    Use the two calls above directly: `POST /v1/agent/onboarding/start`, then poll `POST /v1/agent/onboarding/poll` with the returned `device_code` until `status` is `approved`.
+  </Tab>
+  <Tab title="bland-cli">
+    The [Bland CLI](/sdks/cli) wraps the whole flow in one command:
+
+    ```bash
+    bland auth login --device
+    ```
+
+    It prints the link and code, polls for you, and stores the resulting API key in your CLI profile once approved. See [Getting started](/sdks/cli#getting-started).
+  </Tab>
+  <Tab title="bland-skills">
+    Agents built with `bland-skills` (for example, running inside Claude Code) use two tools:
+
+    - `bland_auth_login` with mode `"device"` starts the flow and returns the link and code to show your owner.
+    - `bland_auth_poll` polls until the flow is approved and returns the API key.
+
+    The key is handled by the tool call result, not printed to the conversation.
+  </Tab>
+</Tabs>
+
+## Error codes
+
+| Code | HTTP status | Where | Meaning |
+| --- | --- | --- | --- |
+| `SLOW_DOWN` | 429 | `/poll` | Polling faster than `interval`. Back off and retry. |
+| `ServiceUnavailable` | 503 | `/start` | Agent onboarding is temporarily disabled. Retry later. |
+| `PLAN_REQUIRED` | 402 | `/approve` (browser) | The org doesn't have an active Agent Phone Plan subscription yet. |
+| `PLAN_NUMBER_PENDING` | 409 | `/approve` (browser) | The plan is active but the phone number is still being provisioned. |
+| `CODE_NOT_FOUND` | 404 | `/approve` (browser) | The code doesn't exist or already expired. |
+| `CODE_ALREADY_USED` | 409 | `/approve` (browser) | The code was already approved. |
+| `ORG_CONTEXT_REQUIRED` | 403 | `/approve` (browser) | The signed-in account isn't acting as an org, so it can't approve a device code. |
+
+The `/approve` codes happen in the owner's browser during signup, your bot only ever sees their effect: `poll` staying `pending` for longer than expected, or eventually returning `expired`.
+
+## Security notes
+
+- **Codes expire in 15 minutes.** If the owner doesn't finish in time, start over with a new `/start` call.
+- **Codes are single-use.** The first successful `poll` after approval returns the `api_key` and consumes the code. Any poll after that returns `expired`.
+- **The API key is scoped to that org** and can be revoked at any time from **Settings > API Keys** in the dashboard, without affecting any other keys on the account.
+- Treat the returned `api_key` like a password: store it in your bot's secret storage, not in logs or chat transcripts.
+
+<Note>
+MCP requires an API key. If your agent talks to Bland over [MCP](/integrations/mcp/overview), use the `api_key` from this flow the same way you'd use any other Bland API key.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent Phone Plan" icon="phone" href="/platform/agent-phone-plan">
+    What's included, limits, and how to cancel.
+  </Card>
+  <Card title="Command Line Interface" icon="terminal" href="/sdks/cli">
+    `bland auth login --device` and the rest of the CLI.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,114 @@
+---
+title: "Poll Agent Onboarding"
+api: "POST https://api.bland.ai/v1/agent/onboarding/poll"
+description: "Poll for the result of a device-authorization flow started with /v1/agent/onboarding/start. No API key required."
+---
+
+### Overview
+
+No authentication is required for this endpoint. Call it with the `device_code` from `/v1/agent/onboarding/start`, waiting at least the returned `interval` seconds between calls. See [Connect your AI agent](/platform/connect-your-agent) for the full flow.
+
+### Body Parameters
+
+<ParamField body="device_code" type="string" required>
+  The `device_code` returned by `/v1/agent/onboarding/start`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Current state of the flow.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  One of `pending`, `approved`, `expired`.
+</ResponseField>
+
+<ResponseField name="data.interval" type="number">
+  Present when `status` is `pending`. Minimum seconds to wait before polling again.
+</ResponseField>
+
+<ResponseField name="data.expires_in" type="number">
+  Present when `status` is `pending`. Seconds remaining before the codes expire.
+</ResponseField>
+
+<ResponseField name="data.api_key" type="string">
+  Present only when `status` is `approved`. A dedicated API key for the org, returned exactly once.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  Present when `status` is `approved`. The org the key belongs to.
+</ResponseField>
+
+<ResponseField name="data.phone_number" type="string">
+  Present when `status` is `approved`. The number provisioned for this org.
+</ResponseField>
+
+<ResponseField name="data.plan" type="string">
+  Present when `status` is `approved`. The subscription plan the org completed, `agent_phone`.
+</ResponseField>
+
+<ResponseField name="data.client_name" type="string">
+  Present when `status` is `approved`, if a `client_name` was given to `/start`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` unless polling too fast.
+</ResponseField>
+
+<ResponseExample>
+```json Pending
+{
+  "data": {
+    "status": "pending",
+    "interval": 5,
+    "expires_in": 823
+  },
+  "errors": null
+}
+```
+
+```json Approved
+{
+  "data": {
+    "status": "approved",
+    "api_key": "org_...",
+    "org_id": "...",
+    "phone_number": "+15551234567",
+    "plan": "agent_phone",
+    "client_name": "my-bot"
+  },
+  "errors": null
+}
+```
+
+```json Expired
+{
+  "data": {
+    "status": "expired"
+  },
+  "errors": null
+}
+```
+
+```json Too fast (429)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SLOW_DOWN",
+      "message": "Poll more slowly.",
+      "interval": 10
+    }
+  ]
+}
+```
+</ResponseExample>
+
+<Note>
+An `expired` status covers both an expired code and a `device_code` that was never valid. The two aren't distinguished, so don't rely on this response to debug a mistyped code, start over with a new `/start` call instead.
+</Note>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
