@@ -1,0 +1,66 @@
+---
+title: "List Voice Library"
+api: "GET https://api.bland.ai/v1/voices/library"
+description: "List only the voices owned by your organization."
+---
+
+Returns the private clones and saved public voices owned by your organization. Unlike [List Voices](/api-v1/get/voices), this endpoint does not mix in the public catalog.
+
+Use each row's `voice_id` to group saved copies that point to the same provider voice.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="voices" type="array">
+  Voices owned by your organization. Each row uses the same sanitized voice fields as [List Voices](/api-v1/get/voices#response), including rating aggregates.
+</ResponseField>
+
+<ResponseField name="count" type="number">
+  Number of voices returned.
+</ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Authentication is missing. |
+| `LIBRARY_LIST_FAILED` | 400 | An owned voice could not be listed. |
+| `UNEXPECTED_ERROR` | 500 | The library could not be fetched. |
+
+<ResponseExample>
+```json Response
+{
+  "voices": [
+    {
+      "id": "5f29c646-1881-4882-8d8c-8616a2d5ce9c",
+      "name": "MyClone",
+      "description": null,
+      "public": false,
+      "ratings": 0,
+      "tags": ["Beige Clone V3", "cloned", "female"],
+      "user_id": "9e1d2c3b-4a5f-6780-bcde-f01234567890",
+      "voice_id": "c18a1cd5-91ef-4b06-841a-e58b8b487e8c",
+      "service": "BTTS_V3",
+      "finetuned": false,
+      "is_live": true,
+      "consistency": null,
+      "expressiveness": null,
+      "boost_language_consistency": true,
+      "is_creator_voice": false,
+      "total_ratings": 0,
+      "average_rating": 0
+    }
+  ],
+  "count": 1
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

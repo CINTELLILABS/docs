@@ -1,15 +1,15 @@
 ---
 title: "Add Voice Sample"
 api: "POST https://api.bland.ai/v1/voices/samples"
-description: "Append training samples to an existing voice clone you own."
+description: "Append training samples to an existing V1 voice clone you own."
 contentType: "multipart/form-data"
 ---
 
 ## Overview
 
-Appends one or more audio samples to an existing voice clone, retraining the voice on the expanded sample set.
+Appends one or more audio samples to an existing legacy **BTTS V1** voice clone. Each sample is transcribed and stored alongside the voice's existing samples.
 
-Sample limits depend on the voice's engine. **BTTS V1** voices accept up to 5 samples total. **BTTS V2** and **BTTS V3** voices are single-sample by design and do not accept additional samples; use [Clone Voice](/api-v1/post/clone) to create a new voice instead.
+A V1 voice holds at most 5 samples in total. **BTTS V2** and **BTTS V3** voices are single-sample by design and reject this call; use [Clone Voice](/api-v1/post/clone) to create a new voice instead.
 
 Sent as `multipart/form-data`.
 
@@ -18,7 +18,7 @@ Sent as `multipart/form-data`.
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. A bare key or `Bearer <key>` are both accepted.
 </ParamField>
 
 ---
@@ -26,38 +26,65 @@ Sent as `multipart/form-data`.
 ## Form Fields
 
 <ParamField body="voice_id" type="string" required>
-  UUID of the voice to add samples to. Must be a voice your org owns.
+  UUID of the voice to add samples to. Must be a V1 voice your org owns. `voice` is accepted as an alias.
 </ParamField>
 
 <ParamField body="audio_samples" type="file[]" required>
-  WAV files to append. Each file 1-60 seconds, max 10 MB. The combined sample count after this call cannot exceed 5 for a V1 voice.
+  Audio files to append, up to 5 per request and 25 MB combined. Each file 1 to 60 seconds and at most 10 MB. The voice's sample count after this call cannot exceed 5.
 </ParamField>
 
 ---
 
 ## Response
 
-<ResponseField name="status" type="string">
-  `success` on success.
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="status" type="string">
+      `success`.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      For example `"Added 2 samples to voice"`.
+    </ResponseField>
+    <ResponseField name="samples" type="array">
+      The samples added by this call.
+
+      <Expandable title="Sample fields">
+        <ResponseField name="sample_id" type="string">
+          UUID of the new sample.
+        </ResponseField>
+        <ResponseField name="transcription" type="string">
+          Automatic transcription of the sample. Correct it with [Update Voice Sample Transcriptions](/api-v1/patch/voices-id-samples).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="samples" type="array">
-  The samples currently attached to the voice after the update. See [List Voice Samples](/api-v1/get/voices-id-samples#response) for field shape.
+<ResponseField name="errors" type="null | array">
+  `null` on success.
 </ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `BAD_REQUEST` | 400 | `voice_id` is missing, or no `audio_samples` file was sent. |
+| `INTERNAL_SERVER_ERROR` | 500 | The voice was not found or is not yours, the voice is not a V1 (`BTTS`) voice, the call would exceed 5 samples, a file failed a size or duration check, or processing failed. The message says which. |
 
 <ResponseExample>
 ```json Response
 {
-  "status": "success",
-  "samples": [
-    {
-      "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
-      "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
-      "transcription": null,
-      "duration_seconds": 11.4,
-      "created_at": "2026-06-22T21:34:31.347Z"
-    }
-  ]
+  "data": {
+    "status": "success",
+    "message": "Added 1 samples to voice",
+    "samples": [
+      {
+        "sample_id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
+        "transcription": "Hello and welcome to Bland."
+      }
+    ]
+  },
+  "errors": null
 }
 ```
 
@@ -83,7 +110,7 @@ Sent as `multipart/form-data`.
 {
   "data": null,
   "errors": [
-    { "error": "Validation Error", "message": "Cannot add 2 sample(s). Voice already has 4 samples. Maximum allowed is 5 samples per voice." }
+    { "error": "INTERNAL_SERVER_ERROR", "message": "Cannot add 2 sample(s). Voice already has 4 of 5 maximum samples." }
   ]
 }
 ```

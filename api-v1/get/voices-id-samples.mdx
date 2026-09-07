@@ -6,16 +6,16 @@ description: "List the training samples attached to a voice clone you own."
 
 ## Overview
 
-Returns the training samples used to create a voice clone. Only voices owned by your org return samples; default voices and shared library voices return `400 VOICE_SAMPLES_ERROR` with the message `"Voice is a default voice and not owned by the user."`
+Returns the training samples stored on a voice clone. Only cloned voices owned by your org return samples; default voices, shared-library voices, and voices owned by other orgs return `400 VOICE_SAMPLES_ERROR`.
 
-Retrievable samples are only present for V1 (`BTTS`) voices. **V2 and V3 voices both return `[]`** even though they were cloned from a sample, because the underlying single source clip is not exposed via this endpoint. Use the source audio of your original clone for those.
+Stored samples exist for legacy V1 (`BTTS`) voices, which are the only engine that accepts [Add Voice Sample](/api-v1/post/voices-samples). **V3 voices always return `[]`.** V2 voices normally return `[]` too, because their single source clip is not stored as a sample.
 
 ---
 
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The key's user must be an owner or admin of the org.
 </ParamField>
 
 ---
@@ -31,7 +31,7 @@ Retrievable samples are only present for V1 (`BTTS`) voices. **V2 and V3 voices 
 ## Query Parameters
 
 <ParamField query="include_audio" type="boolean" default="false">
-  When `true`, includes base64-encoded audio data with each sample. Increases response size significantly. Use [Get Voice Sample](/api-v1/get/voices-id-samples-sample-id) for a single sample with audio instead.
+  When `true`, decodes and includes the audio of every sample. Increases response size and latency significantly. Use [Get Voice Sample](/api-v1/get/voices-id-samples-sample-id) for a single sample instead.
 </ParamField>
 
 ---
@@ -39,7 +39,7 @@ Retrievable samples are only present for V1 (`BTTS`) voices. **V2 and V3 voices 
 ## Response
 
 <ResponseField name="samples" type="array">
-  Array of training sample records. Empty array for V3 voices.
+  Array of training sample records.
 
   <Expandable title="Sample fields">
     <ResponseField name="id" type="string">
@@ -49,22 +49,45 @@ Retrievable samples are only present for V1 (`BTTS`) voices. **V2 and V3 voices 
       UUID of the parent voice.
     </ResponseField>
     <ResponseField name="transcription" type="string | null">
-      Transcribed text for the sample. `null` if transcription has not been generated yet.
-    </ResponseField>
-    <ResponseField name="duration_seconds" type="number">
-      Length of the sample audio.
-    </ResponseField>
-    <ResponseField name="audio_data" type="string">
-      Base64-encoded audio. Only present when `include_audio=true`.
+      Transcribed text for the sample.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp.
     </ResponseField>
+    <ResponseField name="audio" type="string | null">
+      Base64-encoded 32-bit float PCM samples (no WAV header). Only present when `include_audio=true`. `null` if the audio could not be decoded, with the reason in `error`.
+    </ResponseField>
+    <ResponseField name="sample_rate" type="number | null">
+      Sample rate of `audio` in Hz. Only present when `include_audio=true`.
+    </ResponseField>
+    <ResponseField name="error" type="string">
+      Only present when `include_audio=true` and decoding failed for this sample.
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `VOICE_SAMPLES_ERROR` | 400 | The voice was not found, is not a cloned voice, or is not owned by your org. |
+| `UNEXPECTED_ERROR` | 500 | Listing or decoding failed. |
+
 <ResponseExample>
 ```json Response
+{
+  "samples": [
+    {
+      "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
+      "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+      "transcription": "Hello and welcome to Bland.",
+      "created_at": "2026-06-22T21:34:31.347Z"
+    }
+  ]
+}
+```
+
+```json V3 voice
 {
   "samples": []
 }

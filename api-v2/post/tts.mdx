@@ -27,7 +27,7 @@ For LLM tokens, multiple conversational turns, and interruption support, use [Re
 
 ## Pricing
 
-Text-to-speech is currently billed at **\$0.015 per 1,000 characters**, the same rate on every plan. This is a limited-time launch offer, discounted from the standard \$0.04 per 1,000 characters. Each request carries a minimum charge of \$0.001, so very short generations bill at the minimum rather than the per-character rate.
+Text-to-speech is billed per character of `text` against your wallet balance. The base rate is **\$0.05 per 1,000 characters**. An organization with an active Speech subscription is charged its tier's discounted per-character rate instead, on all of its usage. Each request carries a minimum charge of \$0.001, so very short generations bill at the minimum rather than the per-character rate.
 
 Some public-library voices carry an additional per-character creator fee. For a completed response, the charge comes back in the `x-cost` header. An interrupted raw stream can bill less because delivery accounting happens after that header is sent.
 
@@ -48,7 +48,7 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 <ParamField body="text" type="string" required>
   The text to speak. Maximum 5,000 characters.
 
-  Insert a pause with `<|N|>`, where N is a positive number of seconds: `"Welcome to Bland. <|0.8|> How can I help?"`
+  Insert a pause with <code>&lt;|N|&gt;</code>, where N is a positive number of seconds, at most `10`: <code>Welcome to Bland. &lt;|0.8|&gt; How can I help?</code>. A marker above 10 seconds returns `400 invalid_request` naming the marker; use several shorter pauses instead.
 </ParamField>
 
 <ParamField body="voice" type="string" required>
@@ -143,7 +143,7 @@ Every error returns the same shape, with a stable machine-readable code:
 
 | Code | HTTP | Meaning |
 |---|---|---|
-| `invalid_request` | 400 | A required field is missing or has the wrong shape. |
+| `invalid_request` | 400 | A required field is missing or has the wrong shape, or an `N`-second pause marker exceeds 10 seconds. |
 | `text_too_long` | 400 | `text` exceeds 5,000 characters. |
 | `unsupported_encoding` | 400 | `audio.encoding` is not an allowed value. |
 | `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the encoding. |
@@ -152,6 +152,7 @@ Every error returns the same shape, with a stable machine-readable code:
 | `insufficient_credits` | 402 | The account is out of credits. |
 | `voice_not_live` | 403 | The professional voice is still a draft. Promote it to live first. |
 | `voice_not_found` | 404 | The voice UUID does not exist, or you cannot access it. |
+| `concurrency_limit_reached` | 429 | Your organization has no free speech concurrency slot. `Retry-After` is set; see [Speech Limits](/speech/limits). |
 | `synthesis_failed` | 500 | Synthesis failed before or during streaming. |
 
 ---

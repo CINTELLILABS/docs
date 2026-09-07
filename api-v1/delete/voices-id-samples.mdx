@@ -6,14 +6,16 @@ description: "Remove one or more training samples from a voice clone you own."
 
 ## Overview
 
-Removes the specified samples from a voice clone. The voice is retrained against the remaining samples. If you remove every sample from a voice it becomes unusable for synthesis; delete the voice itself via [Delete Voice](/api-v1/delete/voices-id) if that is your intent.
+Deletes the specified samples and their stored audio from a voice clone. The deletion is all-or-nothing: if any listed sample does not exist or belongs to a different voice, nothing is deleted.
+
+Deleting samples does not retrain the voice. To remove the voice entirely, use [Delete Voice](/api-v1/delete/voices-id).
 
 ---
 
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The key's user must be an owner or admin of the org.
 </ParamField>
 
 ---
@@ -29,7 +31,7 @@ Removes the specified samples from a voice clone. The voice is retrained against
 ## Body Parameters
 
 <ParamField body="sample_ids" type="string[]" required>
-  Array of sample UUIDs to delete.
+  Non-empty array of sample UUIDs to delete. Every id must belong to this voice.
 
   ```json
   { "sample_ids": ["d15b199a-1b79-4664-9a9a-b149ee3b136a"] }
@@ -44,15 +46,28 @@ Removes the specified samples from a voice clone. The voice is retrained against
   `success` on success.
 </ResponseField>
 
-<ResponseField name="samples" type="array">
-  The samples remaining on the voice after the deletion.
+<ResponseField name="success" type="boolean">
+  `true`.
 </ResponseField>
+
+<ResponseField name="deleted_count" type="number">
+  Number of samples deleted.
+</ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `INVALID_REQUEST` | 400 | `sample_ids` is missing, not an array, or empty. |
+| `VOICE_SAMPLES_DELETE_ERROR` | 400 | The voice was not found or is not a cloned voice you own, one or more samples were not found, or a sample belongs to a different voice. |
+| `UNEXPECTED_ERROR` | 500 | The deletion failed. |
 
 <ResponseExample>
 ```json Response
 {
   "status": "success",
-  "samples": []
+  "success": true,
+  "deleted_count": 1
 }
 ```
 

@@ -1,0 +1,55 @@
+---
+title: "Delete Voice Rating"
+api: "DELETE https://api.bland.ai/v1/voices/{id}/rate"
+description: "Remove your rating from a public voice."
+---
+
+Removes your current rating from a voice. The operation is idempotent: deleting a rating that is already absent still succeeds.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the voice whose rating you want to remove.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `success`.
+</ResponseField>
+
+<ResponseField name="total_ratings" type="number">
+  Updated number of ratings on the voice.
+</ResponseField>
+
+<ResponseField name="average_rating" type="number">
+  Updated average rating.
+</ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `VOICE_NOT_FOUND` | 404 | `id` is not a valid UUID. |
+| `ERROR_RATING_VOICE` | 400 | The rating could not be removed. |
+| `UNEXPECTED_ERROR` | 500 | The operation failed unexpectedly. |
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "total_ratings": 7,
+  "average_rating": 4.86
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

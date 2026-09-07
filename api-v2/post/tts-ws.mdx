@@ -128,6 +128,8 @@ Append a text delta to a turn. Send each LLM token or any larger fragment as soo
 
 <ParamField body="text" type="string" required>
   The next text delta. A single character is valid. One turn may contain at most 4,000 characters in total.
+
+  Pause markers (<code>&lt;|N|&gt;</code>, N in seconds) are accepted and may straddle two deltas. A marker above 10 seconds, or an opening <code>&lt;|</code> that is not closed within 16 characters, sends an `invalid_request` error and ends the turn as `failed`.
 </ParamField>
 
 ### `end_of_turn`
@@ -253,7 +255,7 @@ The session has settled and is about to close normally.
 | `invalid_message` | Message or session | A frame is not valid JSON, has an unknown type, or has an invalid field. |
 | `init_required` | Session | A message other than `close` arrived before `init`. |
 | `already_initialized` | Session | `init` was sent more than once. |
-| `invalid_request` | Message or session | A field is invalid for the current state. |
+| `invalid_request` | Message, turn, or session | A field is invalid for the current state, or an `N`-second pause marker exceeds 10 seconds (the turn ends as `failed`). |
 | `voice_not_found` | Session | The voice does not exist or is not accessible. |
 | `unsupported_voice` | Session | The voice is not a `BTTS_V2` or `BTTS_V3` voice. |
 | `voice_not_live` | Session | A professional voice is still a draft. Promote it to live first. |
