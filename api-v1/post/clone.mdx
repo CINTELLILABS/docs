@@ -1,25 +1,27 @@
 ---
 title: "Clone Voice"
 api: "POST https://api.bland.ai/v1/voices/clone"
-description: "Create a custom voice clone from audio samples."
+description: "Create a custom voice clone from an audio sample."
 contentType: "multipart/form-data"
 ---
 
 ## Overview
 
-Creates a Bland TTS voice clone from one or more audio samples. Sent as `multipart/form-data`. The new voice is private to your org and immediately usable with [Speak](/api-v2/post/tts).
+Creates a Bland TTS voice clone from an audio sample. Sent as `multipart/form-data`. The new voice is private to your org and immediately usable with [Synthesize Speech](/api-v2/post/tts).
 
 Two cloning engines are available, selectable per request:
 
-- **BTTS V3** (default), single 10-second sample, 17+ languages, highest fidelity. Returned `service: "BTTS_V3"`.
-- **BTTS V2**, exactly 1 WAV file, 17+ languages. Returned `service: "BTTS_V2"`.
+- **BTTS V3** (default), one sample, highest fidelity. Returned `service: "BTTS_V3"`.
+- **BTTS V2**, one sample. Returned `service: "BTTS_V2"`.
+
+Each org can hold a limited number of instant clones. See [Speech Limits](/speech/limits) for the allowance and how to raise it.
 
 ---
 
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. A bare key or `Bearer <key>` are both accepted.
 </ParamField>
 
 ---
@@ -27,48 +29,51 @@ Two cloning engines are available, selectable per request:
 ## Form Fields
 
 <ParamField body="name" type="string" required>
-  Display name for the voice clone. 1-30 characters. Must be unique in your library.
+  Display name for the voice clone. 1 to 30 characters. Must not already be used by a voice in your org (case-insensitive); check first with [Check Voice Name Availability](/api-v1/post/voices-check-name-availability).
 </ParamField>
 
-<ParamField body="audio_samples" type="file[]" required>
-  Audio file or files. Constraints depend on the engine flag (see below). WAV format recommended.
+<ParamField body="audio_samples" type="file" required>
+  The audio sample. WAV format recommended. Both engines read only the first `audio_samples` file; additional files are ignored.
 </ParamField>
 
 <ParamField body="gender" type="string">
-  `male` or `female`. Optional but recommended; helps the underlying model.
+  `male` or `female`. Any other value is rejected.
 </ParamField>
 
 <ParamField body="description" type="string">
-  Free-text description. Surfaced as additional context to the model for tone and style.
+  Free-text description stored on the voice.
 </ParamField>
 
-<ParamField body="isBTTS_V3" type="boolean">
-  Use the V3 engine. Default if no engine flag is set. Pass `"true"` as a multipart string.
+<ParamField body="isBTTS_V3" type="string">
+  Use the V3 engine. This is the default when no engine flag is set. Pass `"true"` as a multipart string.
 </ParamField>
 
-<ParamField body="isBTTS_V2" type="boolean">
+<ParamField body="isBTTS_V2" type="string">
   Use the V2 engine instead of V3. Pass `"true"` as a multipart string.
+</ParamField>
+
+<ParamField body="boost_language_consistency" type="string" default="true">
+  V3 only. `"true"` (default) builds a continuation clone from the sample and its transcript, which follows the sample's language closely. Pass `"false"` for a reference clone that generalizes better across languages with slightly looser voice mimicry. You can change this later with [Update Voice Settings](/api-v1/post/voices-id-settings).
 </ParamField>
 
 ---
 
 ## Engine constraints
 
-Each engine validates `audio_samples` differently. Mismatched files will return a `Validation Error` before the clone is created.
+Each engine validates the sample before the clone is created. A failing file returns `INTERNAL_SERVER_ERROR` with a message naming the file and the limit.
 
 <Accordion title="V3 (default)">
-  - Exactly 1 audio file.
-  - Roughly 10 seconds is ideal.
   - Max 10 MB.
-  - 17+ languages supported.
+  - 1 to 60 seconds of audio. Roughly 10 seconds is ideal.
+  - The sample is transcribed automatically. With `boost_language_consistency=true`, a failed transcription fails the clone.
 </Accordion>
 
 <Accordion title="V2 (isBTTS_V2=true)">
-  - Exactly 1 audio file.
-  - Roughly 10 seconds is ideal.
   - Max 10 MB.
-  - 17+ languages supported.
+  - 3 to 60 seconds of audio. Roughly 10 seconds is ideal.
 </Accordion>
+
+For the languages each engine synthesizes, see [List TTS Models](/api-v1/get/models).
 
 ---
 
@@ -77,7 +82,7 @@ Each engine validates `audio_samples` differently. Mismatched files will return 
 Returns `200 OK` with the new voice on success.
 
 <ResponseField name="data.voice_id" type="string">
-  UUID of the new voice clone. Use it as `voice_id` in [Speak](/api-v2/post/tts).
+  UUID of the new voice clone. Use it as `voice` in [Synthesize Speech](/api-v2/post/tts).
 </ResponseField>
 
 <ResponseField name="data.name" type="string">
@@ -88,10 +93,16 @@ Returns `200 OK` with the new voice on success.
   `null` on success.
 </ResponseField>
 
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `BAD_REQUEST` | 400 | `name` is missing, `name` is already taken in your org, or no `audio_samples` file was sent. |
+| `INTERNAL_SERVER_ERROR` | 500 | The clone was rejected or failed. The message says why: the org's voice clone limit was reached, `name` is over 30 characters, `gender` is invalid, the file failed a size or duration check, or the engine failed. |
+
 <ResponseExample>
 ```json Response
 {
-  "status": 200,
   "data": {
     "voice_id": "4cc89edf-c4b7-4df8-98c5-f8548fcd7c62",
     "name": "DocTestClone"
@@ -100,22 +111,20 @@ Returns `200 OK` with the new voice on success.
 }
 ```
 
-```json Validation Error
+```json Name Taken
 {
-  "status": 400,
   "data": null,
   "errors": [
-    { "error": "Validation Error", "message": "No files provided for voice cloning." }
+    { "error": "BAD_REQUEST", "message": "Voice name \"DocTestClone\" is already taken" }
   ]
 }
 ```
 
-```json Voice Limit Exceeded
+```json Voice Limit Reached
 {
-  "status": 400,
   "data": null,
   "errors": [
-    { "error": "Limit Exceeded", "message": "You have reached the maximum number of voices for your plan." }
+    { "error": "INTERNAL_SERVER_ERROR", "message": "You have reached the maximum number of voices for your plan." }
   ]
 }
 ```
@@ -123,7 +132,7 @@ Returns `200 OK` with the new voice on success.
 
 ---
 
-V2 and V3 voices are single-sample by design. Use [List Voice Samples](/api-v1/get/voices-id-samples) to inspect the source sample attached to a voice.
+V2 and V3 voices are single-sample by design. [List Voice Samples](/api-v1/get/voices-id-samples) returns `[]` for them; sample management applies to legacy V1 (`BTTS`) voices only.
 
 ---
 

@@ -15,7 +15,7 @@ The samples themselves and their audio are not modified.
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The key's user must be an owner or admin of the org.
 </ParamField>
 
 ---
@@ -31,7 +31,7 @@ The samples themselves and their audio are not modified.
 ## Body Parameters
 
 <ParamField body="samples" type="array" required>
-  Array of sample updates. Each entry must include `id` and `transcription`.
+  Non-empty array of sample updates. Each entry must include `id` and `transcription`.
 
   ```json
   {
@@ -51,8 +51,16 @@ The samples themselves and their audio are not modified.
 </ResponseField>
 
 <ResponseField name="samples" type="array">
-  The updated samples. See [List Voice Samples](/api-v1/get/voices-id-samples#response) for field shape.
+  The updated samples: `id`, `voice_id`, `transcription`, `created_at`.
 </ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `INVALID_REQUEST` | 400 | `samples` is missing, not an array, or empty. |
+| `VOICE_SAMPLES_UPDATE_ERROR` | 400 | The voice was not found or is not a cloned voice you own, or a sample does not belong to it. |
+| `UNEXPECTED_ERROR` | 500 | The update failed. |
 
 <ResponseExample>
 ```json Response
@@ -63,7 +71,6 @@ The samples themselves and their audio are not modified.
       "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
       "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
       "transcription": "Hello and welcome to Bland.",
-      "duration_seconds": 11.4,
       "created_at": "2026-06-22T21:34:31.347Z"
     }
   ]

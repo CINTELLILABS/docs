@@ -6,16 +6,16 @@ description: "Download a single training sample as audio or JSON metadata."
 
 ## Overview
 
-Returns a single training sample for a voice you own. By default the response is the raw WAV audio. Pass `?format=json` to get the metadata plus base64-encoded audio instead.
+Returns a single training sample for a cloned voice you own. By default the response is a WAV file. Pass `?format=json` to get the metadata plus base64-encoded audio instead.
 
-Only voices owned by your org return samples. Default voices and shared-library voices return `400 VOICE_SAMPLE_ERROR`.
+Only cloned voices owned by your org return samples. Default voices, shared-library voices, and voices owned by other orgs return `400 VOICE_SAMPLE_ERROR`.
 
 ---
 
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The key's user must be an owner or admin of the org.
 </ParamField>
 
 ---
@@ -35,17 +35,17 @@ Only voices owned by your org return samples. Default voices and shared-library 
 ## Query Parameters
 
 <ParamField query="format" type="string" default="audio">
-  Response format. `audio` returns the raw WAV binary, `json` returns sample metadata with base64-encoded audio under `data`.
+  `audio` returns a WAV file. `json` returns sample metadata with base64-encoded audio.
 </ParamField>
 
 ---
 
 ## Response
 
-With `format=audio` (default), returns the WAV binary with:
+With `format=audio` (default), returns a mono, 32-bit IEEE float WAV file (`audioFormat: 3`) at the sample's native rate, with:
 
 - `Content-Type: audio/wav`
-- `Content-Disposition: attachment; filename="sample-<id>.wav"`
+- `Content-Disposition: attachment; filename="sample-<sample_id>.wav"`
 
 With `format=json`, returns sample metadata.
 
@@ -56,20 +56,33 @@ With `format=json`, returns sample metadata.
     <ResponseField name="id" type="string" />
     <ResponseField name="voice_id" type="string" />
     <ResponseField name="transcription" type="string | null" />
-    <ResponseField name="duration_seconds" type="number" />
-    <ResponseField name="audio_data" type="string">
-      Base64-encoded WAV audio.
-    </ResponseField>
     <ResponseField name="created_at" type="string" />
+    <ResponseField name="audio" type="string | null">
+      Base64-encoded 32-bit float PCM samples (no WAV header). `null` if the audio could not be decoded, with the reason in `error`.
+    </ResponseField>
+    <ResponseField name="sample_rate" type="number | null">
+      Sample rate of `audio` in Hz.
+    </ResponseField>
+    <ResponseField name="error" type="string">
+      Only present when decoding failed.
+    </ResponseField>
   </Expandable>
 </ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `VOICE_SAMPLE_ERROR` | 400 | The voice was not found or is not a cloned voice you own, or `sample_id` does not exist on that voice (`"Sample not found"`). |
+| `AUDIO_NOT_FOUND` | 404 | `format=audio` only: the sample exists but has no decodable audio. |
+| `UNEXPECTED_ERROR` | 500 | Decoding failed. |
 
 <ResponseExample>
 ```http Audio Response
 HTTP/1.1 200 OK
 Content-Type: audio/wav
-Content-Length: 245318
-Content-Disposition: attachment; filename="sample-d15b199a.wav"
+Content-Length: 490636
+Content-Disposition: attachment; filename="sample-d15b199a-1b79-4664-9a9a-b149ee3b136a.wav"
 
 <WAV binary>
 ```
@@ -80,18 +93,18 @@ Content-Disposition: attachment; filename="sample-d15b199a.wav"
     "id": "d15b199a-1b79-4664-9a9a-b149ee3b136a",
     "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
     "transcription": "Hello and welcome to Bland.",
-    "duration_seconds": 11.4,
-    "audio_data": "<base64 WAV>",
-    "created_at": "2026-06-22T21:34:31.347Z"
+    "created_at": "2026-06-22T21:34:31.347Z",
+    "audio": "<base64 float32 PCM>",
+    "sample_rate": 24000
   }
 }
 ```
 
-```json Audio Not Found
+```json Sample Not Found
 {
   "data": null,
   "errors": [
-    { "error": "AUDIO_NOT_FOUND", "message": "No audio data found for this sample" }
+    { "error": "VOICE_SAMPLE_ERROR", "message": "Sample not found" }
   ]
 }
 ```

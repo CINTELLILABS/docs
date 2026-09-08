@@ -19,7 +19,7 @@ description: "Retrieve a single stored text-to-speech generation."
 ## Query Parameters
 
 <ParamField query="format" type="string">
-  Pass `audio` to receive the raw WAV binary instead of the metadata JSON.
+  Pass `audio` to receive the stored audio binary instead of the metadata JSON.
 </ParamField>
 
 ## Response
@@ -66,7 +66,9 @@ Without `?format=audio`, returns the generation metadata:
   ISO 8601 timestamp of when the generation was created.
 </ResponseField>
 
-With `?format=audio`, returns a raw WAV audio binary (same as the original `POST /v1/speak` response).
+With `?format=audio`, returns the stored audio using the content type associated with `output_format`. PCM rows use a WAV content type, while Opus rows use an Ogg-compatible content type.
+
+Returns `404 NOT_FOUND` when the generation does not exist or belongs to another org.
 
 <ResponseExample>
 ```json Metadata response

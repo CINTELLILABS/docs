@@ -53,6 +53,21 @@ For just the publicly-shared library, use [List Shared Voices](/api-v1/get/voice
     <ResponseField name="finetuned" type="boolean">
       `true` if the voice has been fine-tuned past the base clone.
     </ResponseField>
+    <ResponseField name="is_live" type="boolean">
+      Whether the voice can be used for synthesis. Professional voices remain `false` until promoted.
+    </ResponseField>
+    <ResponseField name="consistency" type="number | null">
+      The stored consistency setting. `null` for V3 voices.
+    </ResponseField>
+    <ResponseField name="expressiveness" type="number | null">
+      The stored expressiveness setting. `null` for V3 voices.
+    </ResponseField>
+    <ResponseField name="voice_meta" type="object | null">
+      V2 engine settings. Returned only for V2 voices.
+    </ResponseField>
+    <ResponseField name="boost_language_consistency" type="boolean">
+      V3 cloning mode. Returned only for V3 voices and defaults to `true` when unset.
+    </ResponseField>
     <ResponseField name="is_creator_voice" type="boolean">
       `true` for voices in the Bland creator program. Creator voices may carry a per-character fee in addition to synthesis cost.
     </ResponseField>
@@ -74,6 +89,13 @@ For just the publicly-shared library, use [List Shared Voices](/api-v1/get/voice
   </Expandable>
 </ResponseField>
 
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `VOICE_NOT_FOUND` | 400 | A voice referenced while building the list could not be accessed. |
+| `UNEXPECTED_ERROR` | 500 | The voices could not be listed. |
+
 <ResponseExample>
 ```json Response
 {
@@ -88,6 +110,10 @@ For just the publicly-shared library, use [List Shared Voices](/api-v1/get/voice
       "voice_id": "5134ee24-7d14-49a4-8aff-2215d295b6cc",
       "service": "BTTS_V2",
       "finetuned": false,
+      "is_live": true,
+      "consistency": 8,
+      "expressiveness": 1,
+      "voice_meta": { "per_decode": 8, "boost": 1 },
       "is_creator_voice": false,
       "ratings": 1234,
       "total_ratings": 1234,
@@ -105,6 +131,10 @@ For just the publicly-shared library, use [List Shared Voices](/api-v1/get/voice
       "voice_id": "c18a1cd5-91ef-4b06-841a-e58b8b487e8c",
       "service": "BTTS_V3",
       "finetuned": false,
+      "is_live": true,
+      "consistency": null,
+      "expressiveness": null,
+      "boost_language_consistency": true,
       "is_creator_voice": false,
       "ratings": 0,
       "total_ratings": 0,

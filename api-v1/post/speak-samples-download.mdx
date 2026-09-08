@@ -1,0 +1,57 @@
+---
+title: "Download TTS Generations"
+api: "POST https://api.bland.ai/v1/speak/samples/download"
+description: "Download up to 100 stored text-to-speech generations."
+---
+
+Downloads stored generations owned by your organization. One matching generation returns its audio file directly. Two or more matching generations return a ZIP archive.
+
+Unknown IDs and IDs owned by another organization are skipped. When any are skipped, the response includes `x-bland-skipped-count` without revealing which IDs were rejected.
+
+<Note>
+  Requests are limited to 10 per minute per organization. Sustained excess requests block downloads for 5 minutes and return `429 RATE_LIMITED` with `Retry-After`.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="sample_ids" type="string[]" required>
+  Non-empty generation IDs. Duplicates are removed before enforcing the 100-ID limit. Empty strings are discarded.
+</ParamField>
+
+### Response
+
+For one matching generation, the response uses its stored audio content type and a filename such as `speak-<id>.wav` or `speak-<id>.ogg`.
+
+For multiple matching generations, the response is `application/zip`. Each archive entry uses the stored format's file extension. A request is rejected with `413 BULK_TOO_LARGE` when the matching audio exceeds 500 MB in total.
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `INVALID_REQUEST` | 400 | `sample_ids` is missing, empty, or contains a non-string value. |
+| `TOO_MANY_IDS` | 400 | More than 100 unique, non-empty IDs were supplied. |
+| `NOT_FOUND` | 404 | None of the supplied IDs matched a generation owned by your organization. |
+| `BULK_TOO_LARGE` | 413 | The matching audio exceeds 500 MB. |
+| `RATE_LIMITED` | 429 | The bulk download limit was exceeded. |
+| `INTERNAL_SERVER_ERROR` | 500 | The download could not be prepared. |
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/speak/samples/download \
+  --header 'authorization: YOUR_API_KEY' \
+  --header 'content-type: application/json' \
+  --data '{"sample_ids":["a3f8c2d1-4b5e-6789-0abc-def012345678"]}' \
+  --output generation.wav
+```
+</RequestExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

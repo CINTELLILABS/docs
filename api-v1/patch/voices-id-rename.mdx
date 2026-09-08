@@ -6,7 +6,7 @@ description: "Change the display name of a cloned voice you own."
 
 ## Overview
 
-Renames a voice clone in your library. Only voices owned by your org can be renamed; default and shared-library voices return `403`.
+Renames a voice clone in your library. Only voices owned by your org can be renamed. Default voices, shared-library voices, and voices owned by another org fail with `500 RENAME_VOICE_INTERNAL_SERVER_ERROR`.
 
 ---
 
@@ -28,8 +28,8 @@ Renames a voice clone in your library. Only voices owned by your org can be rena
 
 ## Body Parameters
 
-<ParamField body="name" type="string" required>
-  New display name. 1-30 characters. Must be unique within your library.
+<ParamField body="name" type="string">
+  New display name. The endpoint does not validate length or uniqueness. If omitted, Prisma treats the update as a no-op and returns the current name.
 </ParamField>
 
 ---
@@ -48,6 +48,12 @@ Renames a voice clone in your library. Only voices owned by your org can be rena
   `null` on success.
 </ResponseField>
 
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `RENAME_VOICE_INTERNAL_SERVER_ERROR` | 500 | The voice is not a cloned voice owned by your org, or the update failed. The error message contains the reason. |
+
 <ResponseExample>
 ```json Response
 {
@@ -59,11 +65,11 @@ Renames a voice clone in your library. Only voices owned by your org can be rena
 }
 ```
 
-```json Name Taken
+```json Not Owned
 {
   "data": null,
   "errors": [
-    { "error": "Validation Error", "message": "Voice name is already taken" }
+    { "error": "RENAME_VOICE_INTERNAL_SERVER_ERROR", "message": "Voice does not belong to the user." }
   ]
 }
 ```

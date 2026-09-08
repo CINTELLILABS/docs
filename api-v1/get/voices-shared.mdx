@@ -6,44 +6,60 @@ description: "Browse the public Bland voice library."
 
 ## Overview
 
-Returns the catalog of publicly-shared voices in the Bland library. These are voices that other creators have published for everyone to use; they are not in your org's library until you call [Add Library Voice](/api-v1/post/voices-library-add-id).
+Returns one page of the publicly-shared voices in the Bland library. These are voices that creators have published for everyone to use; they are not in your org's library until you call [Add Library Voice](/api-v1/post/voices-library-add-id).
 
-Use this endpoint to power voice-picker UIs and discovery flows.
+Use this endpoint to power voice-picker UIs and discovery flows. For one voice's detail, use [Get Shared Voice](/api-v1/get/voices-shared-id).
 
----
-
-## Headers
-
-<ParamField header="authorization" type="string" required>
-  Your API key for authentication.
-</ParamField>
+<Note>
+  No API key is required. Requests are throttled per IP address at 120 per minute; a breach returns `429 RATE_LIMITED` with a `Retry-After` header and blocks the IP for 60 seconds.
+</Note>
 
 ---
 
 ## Query Parameters
 
-<ParamField query="limit" type="integer" default="50">
-  Number of voices to return.
+<ParamField query="page" type="integer" default="1">
+  1-indexed page number. Must be a positive integer.
 </ParamField>
 
-<ParamField query="offset" type="integer" default="0">
-  Pagination offset.
+<ParamField query="page_size" type="integer" default="24">
+  Voices per page, 1 to 100. Values above 100 are clamped to 100.
 </ParamField>
 
 <ParamField query="search" type="string">
-  Free-text search across voice name, description, and tags.
+  Case-insensitive substring match on voice name and description. Maximum 200 characters.
 </ParamField>
 
-<ParamField query="language" type="string">
-  Filter to voices tagged for a specific language (for example `en`, `es`, `ja`).
+<ParamField query="service" type="string">
+  Filter to one engine: `BTTS`, `BTTS_V2`, or `BTTS_V3`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filter to voices carrying any of the given tags. Repeat the parameter for several tags (`?tag=english&tag=calm`). Matching is case-insensitive for the first letter (`male` and `Male` both match).
+</ParamField>
+
+<ParamField query="gender" type="string">
+  Convenience alias for `tag`: `male` or `female`.
+</ParamField>
+
+<ParamField query="sort" type="string" default="recent">
+  Sort order. One of:
+
+  - `recent`: newest first.
+  - `name`: alphabetical.
+  - `ratings`: most ratings first.
+  - `top_rated`: highest average rating first, tiebroken by rating count.
+  - `trending`: precomputed recent-popularity score, tiebroken by newest.
 </ParamField>
 
 ---
 
 ## Response
 
+Responses carry `Cache-Control: public, max-age=30` and an `X-Cache` header (`HIT` or `MISS`); the same query is served from a 30-second server-side cache.
+
 <ResponseField name="voices" type="array">
-  Array of shared voices.
+  The page of shared voices.
 
   <Expandable title="Voice fields">
     <ResponseField name="id" type="string">
@@ -54,22 +70,22 @@ Use this endpoint to power voice-picker UIs and discovery flows.
     </ResponseField>
     <ResponseField name="description" type="string | null" />
     <ResponseField name="service" type="string">
-      The voice's underlying TTS service. Examples: `BTTS_V2`, `BTTS_V3`.
+      The voice's engine: `BTTS`, `BTTS_V2`, `BTTS_V3`, or `LEGACY`.
     </ResponseField>
     <ResponseField name="is_creator_voice" type="boolean">
       `true` if the voice is part of the creator program. Creator voices may carry a per-character fee in addition to the synthesis cost.
     </ResponseField>
     <ResponseField name="ratings" type="number">
-      Total number of ratings the voice has received.
+      Legacy rating counter.
     </ResponseField>
     <ResponseField name="rating_count" type="number">
-      Alias of `ratings` returned for backwards compatibility.
+      Number of distinct users who have rated the voice.
     </ResponseField>
     <ResponseField name="rating_avg" type="number">
       Average rating, 0-5.
     </ResponseField>
     <ResponseField name="trending_score" type="number">
-      Internal score used to surface trending voices in the dashboard.
+      Precomputed popularity score used by `sort=trending`.
     </ResponseField>
     <ResponseField name="tags" type="string[]" />
     <ResponseField name="created_at" type="string">
@@ -82,13 +98,49 @@ Use this endpoint to power voice-picker UIs and discovery flows.
       Name of the creator who published the voice, if applicable.
     </ResponseField>
     <ResponseField name="creator_fee_cents_per_1k" type="number | null">
-      Per-character creator fee in cents per 1,000 characters. `null` for non-creator voices.
+      Creator fee in cents per 1,000 characters. `null` for non-creator voices.
     </ResponseField>
     <ResponseField name="creator_fee_cents_per_10k" type="number | null">
-      Per-character creator fee in cents per 10,000 characters. `null` for non-creator voices.
+      Deprecated alias of `creator_fee_cents_per_1k` (same value).
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<ResponseField name="total" type="number">
+  Total voices matching the filters, across all pages.
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  The page returned.
+</ResponseField>
+
+<ResponseField name="page_size" type="number">
+  The page size applied.
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  `true` when `page * page_size < total`.
+</ResponseField>
+
+### Errors
+
+Errors use the `{ "data": null, "errors": [...] }` envelope.
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `INVALID_PAGE` | 400 | `page` is not a positive integer. |
+| `INVALID_PAGE_SIZE` | 400 | `page_size` is not a positive integer. |
+| `SEARCH_TOO_LONG` | 400 | `search` exceeds 200 characters. |
+| `INVALID_SORT` | 400 | `sort` is not one of the accepted values. |
+| `INVALID_SERVICE` | 400 | `service` is not `BTTS`, `BTTS_V2`, or `BTTS_V3`. |
+| `RATE_LIMITED` | 429 | More than 120 requests per minute from one IP. `Retry-After` is set. |
+| `SHARED_VOICES_ERROR` | 500 | The catalog could not be fetched. |
+
+<RequestExample>
+```bash cURL
+curl "https://api.bland.ai/v1/voices/shared?page=1&page_size=24&sort=top_rated&gender=female"
+```
+</RequestExample>
 
 <ResponseExample>
 ```json Response
@@ -111,6 +163,19 @@ Use this endpoint to power voice-picker UIs and discovery flows.
       "creator_fee_cents_per_1k": null,
       "creator_fee_cents_per_10k": null
     }
+  ],
+  "total": 412,
+  "page": 1,
+  "page_size": 24,
+  "has_more": true
+}
+```
+
+```json Invalid Sort
+{
+  "data": null,
+  "errors": [
+    { "error": "INVALID_SORT", "message": "sort must be one of: name, ratings, recent, trending, top_rated" }
   ]
 }
 ```

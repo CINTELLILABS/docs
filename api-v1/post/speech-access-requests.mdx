@@ -1,0 +1,87 @@
+---
+title: "Request Speech Limit Increase"
+api: "POST https://api.bland.ai/v1/speech/access-requests"
+description: "Request a higher instant or professional voice clone limit."
+---
+
+Submits a request for a higher voice clone limit. It does not change your limit immediately. The Speech team reviews the request and replies by email.
+
+Your account must have an email address. Only one unresolved request can exist for each limit type and organization.
+
+<Note>
+  Concurrency increases are handled case by case. Email `tts@bland.ai` with your use case and expected volume instead of using this endpoint.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="limit_type" type="string" required>
+  `instant_clone` or `professional_clone`.
+</ParamField>
+
+<ParamField body="requested_amount" type="integer" required>
+  Requested total limit, from 1 to 1000.
+</ParamField>
+
+<ParamField body="use_case" type="string" required>
+  What you are building and why you need the increase. Maximum 2,000 characters after trimming.
+</ParamField>
+
+### Response
+
+Returns `201 Created`.
+
+<ResponseField name="data.id" type="string">
+  Request UUID.
+</ResponseField>
+
+<ResponseField name="data.limit_type" type="string">
+  Requested limit type.
+</ResponseField>
+
+<ResponseField name="data.requested_amount" type="integer">
+  Requested total limit.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  `new` when created.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 creation timestamp.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| HTTP | Meaning |
+|---|---|
+| 400 | A field is invalid, `concurrency` was requested, or the account has no email address. |
+| 409 | An unresolved request already exists for this limit type and organization. |
+
+<ResponseExample>
+```json 201
+{
+  "data": {
+    "id": "10f2fb73-1bc9-4c95-b934-c84edcb7d281",
+    "limit_type": "instant_clone",
+    "requested_amount": 25,
+    "status": "new",
+    "created_at": "2026-09-07T18:22:10.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

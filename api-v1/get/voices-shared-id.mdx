@@ -1,0 +1,81 @@
+---
+title: "Get Shared Voice"
+api: "GET https://api.bland.ai/v1/voices/shared/{id}"
+description: "Get one public library voice without an API key."
+---
+
+## Overview
+
+Returns a single voice from the public Bland library, in the same shape as a row from [List Shared Voices](/api-v1/get/voices-shared). Use it to open a detail view from a picker without authenticating.
+
+Only public, non-deleted voices are returned. A private voice, a deleted voice, and an unknown id all return the same `404`, so existence is never revealed.
+
+<Note>
+  No API key is required. Responses carry `Cache-Control: public, max-age=30`.
+</Note>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the shared voice. Names are not accepted.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="voice" type="object">
+  The shared voice. See [List Shared Voices](/api-v1/get/voices-shared#response) for the field list.
+</ResponseField>
+
+### Errors
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `VOICE_NOT_FOUND` | 404 | The id is not a UUID, or no public voice has that id. |
+| `SHARED_VOICE_ERROR` | 500 | The voice could not be fetched. |
+
+<RequestExample>
+```bash cURL
+curl "https://api.bland.ai/v1/voices/shared/e657b253-ca1f-41cc-b25f-7267ae644519"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "voice": {
+    "id": "e657b253-ca1f-41cc-b25f-7267ae644519",
+    "name": "StephenD",
+    "description": null,
+    "service": "BTTS_V2",
+    "is_creator_voice": false,
+    "ratings": 12,
+    "rating_count": 12,
+    "rating_avg": 4.5,
+    "trending_score": 0,
+    "tags": ["english", "male", "cloned"],
+    "created_at": "2026-04-16T09:14:25.232Z",
+    "public": true,
+    "creator_display_name": null,
+    "creator_fee_cents_per_1k": null,
+    "creator_fee_cents_per_10k": null
+  }
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "VOICE_NOT_FOUND", "message": "Voice not found" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
