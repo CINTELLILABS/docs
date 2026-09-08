@@ -1,0 +1,99 @@
+---
+title: "Publish Workbench Setup"
+api: "POST https://api.bland.ai/v1/evals/workbench-setups/{setup_id}/publications"
+description: "Publish the setup's current draft as a new active version."
+---
+
+<Note>
+  A setup must have at least one attached agent before it can be published. Each attached agent must also have at least one target level key assigned.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="setup_id" type="string" required>
+  The ID of the workbench setup to publish.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.workbench_setup_id" type="string">
+  ID of the workbench setup that was published.
+</ResponseField>
+
+<ResponseField name="data.current_version_id" type="string">
+  ID of the new editable draft version created after publishing.
+</ResponseField>
+
+<ResponseField name="data.active_version_id" type="string">
+  ID of the newly published (archived) version. This is now the active version.
+</ResponseField>
+
+<ResponseField name="data.published_version" type="object">
+  Summary of the version that was published.
+
+  <Expandable title="published_version fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the published version.
+    </ResponseField>
+    <ResponseField name="workbench_setup_id" type="string">
+      ID of the parent workbench setup.
+    </ResponseField>
+    <ResponseField name="version_number" type="integer">
+      Version number of the published snapshot.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the version.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      Always `"archived"` for a published version.
+    </ResponseField>
+    <ResponseField name="attached_agent_count" type="integer">
+      Number of eval agents in this version.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      Identifier of the user who created this version, or `null`.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp for when this version was created.
+    </ResponseField>
+    <ResponseField name="latest_run" type="object | null">
+      The most recent run against this version, or `null` if none exist.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "errors": null,
+  "data": {
+    "workbench_setup_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "current_version_id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+    "active_version_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "published_version": {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "workbench_setup_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "version_number": 3,
+      "name": "Onboarding Quality Check",
+      "state": "archived",
+      "attached_agent_count": 4,
+      "created_by": "9a8b7c6d-5e4f-3210-9876-543210fedcba",
+      "created_at": "2026-05-20T14:00:00.000Z",
+      "latest_run": null
+    }
+  }
+}
+```
+
+</ResponseExample>

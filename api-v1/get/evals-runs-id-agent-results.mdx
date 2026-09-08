@@ -1,0 +1,233 @@
+---
+title: "List Agent Results"
+api: "GET https://api.bland.ai/v1/evals/runs/{run_id}/agent-results"
+description: "List every individual judge verdict in an eval run."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="run_id" type="string" required>
+  The ID of the eval run.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="25">
+  Number of results to return. Between 1 and 100.
+</ParamField>
+
+<ParamField query="starting_after" type="string">
+  Cursor: return results after this object ID.
+</ParamField>
+
+<ParamField query="ending_before" type="string">
+  Cursor: return results before this object ID. Cannot be combined with `starting_after`.
+</ParamField>
+
+### Response
+
+<ResponseField name="object" type="string">
+  Always `"list"`.
+</ResponseField>
+
+<ResponseField name="data" type="array of objects">
+  The list of agent result objects, one per call-by-agent evaluation.
+
+  <Expandable title="EvalRunAgentResult fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for this agent result.
+    </ResponseField>
+
+    <ResponseField name="org_id" type="string">
+      The organization that owns this result.
+    </ResponseField>
+
+    <ResponseField name="eval_run_id" type="string">
+      The eval run this result belongs to.
+    </ResponseField>
+
+    <ResponseField name="eval_run_call_result_id" type="string">
+      The call result this agent verdict is part of.
+    </ResponseField>
+
+    <ResponseField name="eval_run_agent_snapshot_id" type="string">
+      The frozen agent snapshot used to produce this verdict.
+    </ResponseField>
+
+    <ResponseField name="eval_agent_id" type="string">
+      The eval agent that produced this verdict.
+    </ResponseField>
+
+    <ResponseField name="eval_agent_version_id" type="string">
+      The specific version of the eval agent used.
+    </ResponseField>
+
+    <ResponseField name="call_id" type="string">
+      The call that was scored.
+    </ResponseField>
+
+    <ResponseField name="selected_level_key" type="string or null">
+      The level key the judge selected, or `null` if scoring failed or evidence was insufficient.
+    </ResponseField>
+
+    <ResponseField name="selected_level_label" type="string or null">
+      Human-readable label for the selected level.
+    </ResponseField>
+
+    <ResponseField name="score_normalized_0_100" type="number or null">
+      Normalized score for this verdict, 0-100.
+    </ResponseField>
+
+    <ResponseField name="is_target_match" type="boolean or null">
+      Whether the selected level is one of the configured target levels.
+    </ResponseField>
+
+    <ResponseField name="is_insufficient_evidence" type="boolean">
+      Whether the judge determined there was not enough evidence to produce a verdict.
+    </ResponseField>
+
+    <ResponseField name="confidence" type="number or null">
+      Judge confidence in the verdict, 0-1.
+    </ResponseField>
+
+    <ResponseField name="reasoning_md" type="string or null">
+      Markdown-formatted reasoning from the judge.
+    </ResponseField>
+
+    <ResponseField name="evidence" type="array of objects">
+      Transcript or audio quotes the judge cited as evidence.
+
+      <Expandable title="Evidence quote fields">
+        <ResponseField name="source" type="string">
+          Where the evidence came from. One of `transcript` or `audio`.
+        </ResponseField>
+
+        <ResponseField name="speaker" type="string or null">
+          Who spoke this quote. One of `agent`, `customer`, `unknown`, or `null`.
+        </ResponseField>
+
+        <ResponseField name="start_ms" type="integer or null">
+          Start time of the quote in milliseconds, if available.
+        </ResponseField>
+
+        <ResponseField name="end_ms" type="integer or null">
+          End time of the quote in milliseconds, if available.
+        </ResponseField>
+
+        <ResponseField name="text" type="string">
+          The quoted text.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="failed" type="boolean">
+      Whether this evaluation failed to complete.
+    </ResponseField>
+
+    <ResponseField name="failure_code" type="string or null">
+      Machine-readable failure code, if `failed` is `true`.
+    </ResponseField>
+
+    <ResponseField name="failure_message" type="string or null">
+      Human-readable failure description, if `failed` is `true`.
+    </ResponseField>
+
+    <ResponseField name="billable_cost_usd" type="number or null">
+      Billable cost for this individual verdict in USD.
+    </ResponseField>
+
+    <ResponseField name="audit" type="object">
+      Audit metadata for the judge call.
+
+      <Expandable title="Audit fields">
+        <ResponseField name="prompt_version" type="string">
+          Version of the judge prompt used.
+        </ResponseField>
+
+        <ResponseField name="input_tokens" type="integer or null">
+          Number of input tokens consumed.
+        </ResponseField>
+
+        <ResponseField name="output_tokens" type="integer or null">
+          Number of output tokens produced.
+        </ResponseField>
+
+        <ResponseField name="latency_ms" type="integer or null">
+          Latency of the judge call in milliseconds.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when this result was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Whether more results exist beyond this page.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string or null">
+  Cursor to use in `starting_after` to retrieve the next page, or `null` if there are no more results.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "c2d3e4f5-a6b7-8901-cdef-234567890123",
+        "org_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+        "eval_run_id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+        "eval_run_call_result_id": "b1c2d3e4-f5a6-7890-bcde-f12345678901",
+        "eval_run_agent_snapshot_id": "33333333-aaaa-bbbb-cccc-dddddddddddd",
+        "eval_agent_id": "11111111-aaaa-bbbb-cccc-dddddddddddd",
+        "eval_agent_version_id": "22222222-aaaa-bbbb-cccc-dddddddddddd",
+        "call_id": "a1b2c3d4-0000-0000-0000-000000000001",
+        "selected_level_key": "pass",
+        "selected_level_label": "Pass",
+        "score_normalized_0_100": 88.0,
+        "is_target_match": true,
+        "is_insufficient_evidence": false,
+        "confidence": 0.93,
+        "reasoning_md": "The agent correctly identified the account issue and offered a resolution within the first two minutes of the call.",
+        "evidence": [
+          {
+            "source": "transcript",
+            "speaker": "agent",
+            "start_ms": 45200,
+            "end_ms": 52100,
+            "text": "I can see your account has a pending charge from last week. Let me reverse that for you right now."
+          }
+        ],
+        "failed": false,
+        "failure_code": null,
+        "failure_message": null,
+        "billable_cost_usd": 0.02,
+        "audit": {
+          "prompt_version": "v3.1.0",
+          "input_tokens": 2840,
+          "output_tokens": 312,
+          "latency_ms": 1843
+        },
+        "created_at": "2026-05-27T10:00:48.000Z"
+      }
+    ],
+    "has_more": false,
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>

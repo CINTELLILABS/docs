@@ -1,0 +1,175 @@
+---
+title: "Create User Template"
+api: "POST https://api.bland.ai/v1/evals/user-templates"
+description: "Save a new eval agent template, from scratch or by snapshotting an existing eval agent."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  Display name for the template. Maximum 120 characters.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of the template. Maximum 4000 characters. Pass `null` to leave blank.
+</ParamField>
+
+<ParamField body="category" type="string">
+  Category label for the template. Maximum 64 characters. Pass `null` to leave blank.
+</ParamField>
+
+<ParamField body="modality" type="string">
+  Evaluation modality. Either `text` or `audio`.
+</ParamField>
+
+<ParamField body="system_prompt_md" type="string">
+  System prompt for the eval agent, in Markdown. Maximum 50000 characters.
+</ParamField>
+
+<ParamField body="prompt_md" type="string">
+  Evaluation prompt, in Markdown. Maximum 50000 characters.
+</ParamField>
+
+<ParamField body="levels" type="array">
+  Ordered scoring levels. Each level object requires `level_key` (string, 1-64 chars), `label` (string, 1-80 chars), and `prompt_md` (string). The `color` field is optional: one of `rose`, `amber`, `gold`, `emerald`, `blue`, `indigo`, `violet`, or `fog`.
+</ParamField>
+
+<ParamField body="target_level_keys" type="array">
+  Array of `level_key` strings that represent the passing threshold.
+</ParamField>
+
+<ParamField body="visibility" type="string">
+  Access scope for the template. One of `private`, `org`, or `public`.
+</ParamField>
+
+<ParamField body="from_agent_id" type="string">
+  UUID of an existing eval agent to snapshot content from.
+</ParamField>
+
+<ParamField body="from_version_id" type="string">
+  UUID of a specific version of the eval agent to snapshot. Only used when `from_agent_id` is provided. Defaults to the agent's current version if omitted.
+</ParamField>
+
+<Note>
+  There are two creation paths. Pass `from_agent_id` (optionally with `from_version_id`) to snapshot an existing agent's content into the template, or pass inline content fields to build one from scratch. When both are supplied, `from_agent_id` provides the content and inline fields act as overrides.
+</Note>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique identifier (UUID) for the new template.
+</ResponseField>
+
+<ResponseField name="org_id" type="string">
+  UUID of the organization that owns this template.
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  Short key used to reference the template.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Display name of the template.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the template, or `null`.
+</ResponseField>
+
+<ResponseField name="category" type="string">
+  Category of the template, or `null`.
+</ResponseField>
+
+<ResponseField name="modality" type="string">
+  Evaluation modality. Either `text` or `audio`.
+</ResponseField>
+
+<ResponseField name="system_prompt_md" type="string">
+  System prompt for the eval agent, in Markdown.
+</ResponseField>
+
+<ResponseField name="prompt_md" type="string">
+  Evaluation prompt, in Markdown.
+</ResponseField>
+
+<ResponseField name="levels" type="array">
+  Ordered scoring levels.
+</ResponseField>
+
+<ResponseField name="target_level_keys" type="array">
+  Array of `level_key` strings that represent the passing threshold.
+</ResponseField>
+
+<ResponseField name="visibility" type="string">
+  Access scope. One of `private`, `org`, or `public`.
+</ResponseField>
+
+<ResponseField name="source_agent_id" type="string">
+  UUID of the eval agent this template was snapshotted from, or `null`.
+</ResponseField>
+
+<ResponseField name="source_version_id" type="string">
+  UUID of the specific version snapshotted, or `null`.
+</ResponseField>
+
+<ResponseField name="created_by" type="string">
+  UUID of the user who created the template, or `null`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the template was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of when the template was last updated.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+    "org_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
+    "key": "my_hallucination_check",
+    "name": "My Hallucination Check",
+    "description": "Customized hallucination detection for our product domain.",
+    "category": "quality",
+    "modality": "text",
+    "system_prompt_md": "You are an expert evaluator assessing whether an AI agent fabricated information.",
+    "prompt_md": "Review the conversation and identify any claims that were factually incorrect or unsupported.",
+    "levels": [
+      {
+        "level_key": "no_hallucination",
+        "label": "No Hallucination",
+        "prompt_md": "The agent made no factually incorrect or unsupported claims.",
+        "color": "emerald"
+      },
+      {
+        "level_key": "hallucination_detected",
+        "label": "Hallucination Detected",
+        "prompt_md": "The agent stated something factually incorrect or unsupported.",
+        "color": "rose"
+      }
+    ],
+    "target_level_keys": ["no_hallucination"],
+    "visibility": "org",
+    "source_agent_id": null,
+    "source_version_id": null,
+    "created_by": "9a8b7c6d-5e4f-3210-9876-543210fedcba",
+    "created_at": "2026-05-27T10:00:00.000Z",
+    "updated_at": "2026-05-27T10:00:00.000Z"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
