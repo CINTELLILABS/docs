@@ -1,5 +1,5 @@
 ---
-title: "Number Details"  
+title: "Number Details"
 api: "GET https://api.bland.ai/v1/inbound/{phone_number}"
 description: "Retrieve settings for your inbound phone number."
 ---
@@ -12,14 +12,14 @@ description: "Retrieve settings for your inbound phone number."
 
 ### Path Parameters
 
-<ParamField path="phone_number" type="string">
-    The inbound phone number to update. 
-    
+<ParamField path="phone_number" type="string" required>
+    The inbound phone number to look up.
+
     Formatting notes:
     - The `'+'` or `'%2B'` prefix is optional.
-    - Will assume a US country code if no country code is provided.
+    - Digit-only input is first matched exactly as stored (this is how SIP DIDs such as `9994221001` are resolved), then as a US number.
 
-    Valid Examples for `+13334445555`:
+    Valid examples for `+13334445555`:
     - `%2B13334445555`
     - `13334445555`
     - `3334445555`
@@ -27,6 +27,8 @@ description: "Retrieve settings for your inbound phone number."
 </ParamField>
 
 ### Response
+
+The response is the number's configuration object (no envelope). It uses the same field names as [Update Inbound Number Details](/api-v1/post/inbound-number-update); the most commonly used fields are listed here.
 
 <ResponseField name="created_at" type="string">
   The timestamp when the inbound number was configured.
@@ -37,16 +39,20 @@ description: "Retrieve settings for your inbound phone number."
 </ResponseField>
 
 <ResponseField name="prompt" type="string">
-  The prompt your agent is using.
+  The prompt your agent is using. `null` when the number uses a pathway.
+</ResponseField>
+
+<ResponseField name="pathway_id" type="string">
+  The `pathway_id` your agent is using, with `pathway_version` and `start_node_id` alongside it.
 </ResponseField>
 
 <ResponseField name="webhook" type="string">
-  The webhook URL, if any, where transcripts are sent after each call to the number completes.
+  The webhook URL, if any, where transcripts are sent after each call to the number completes. `webhook_events` lists the streamed events.
 </ResponseField>
 
-<ResponseField name="voice" type="integer">
-  The `voice` your agent is currently using.
-  
+<ResponseField name="voice" type="string">
+  The ID of the voice your agent is currently using.
+
   For more information, see [List Voices](/api-v1/get/voices).
 </ResponseField>
 
@@ -56,13 +62,16 @@ description: "Retrieve settings for your inbound phone number."
   Will be `null` by default, until an option such as `office`, `cafe`, `restaurant`, or `none` is applied.
 </ResponseField>
 
-<ResponseField name="pathway_id" type="string">
-    The `pathway_id` your agent is using. 
-
+<ResponseField name="tools" type="array">
+  The custom tools attached to the number.
 </ResponseField>
 
-<ResponseField name="dynamic_data" type="string">
+<ResponseField name="dynamic_data" type="object">
   Any dynamic data associated with the inbound number, if applicable.
+</ResponseField>
+
+<ResponseField name="request_data" type="object">
+  Variables made available to the agent on every call to this number.
 </ResponseField>
 
 <ResponseField name="max_duration" type="integer">
@@ -73,6 +82,22 @@ description: "Retrieve settings for your inbound phone number."
   A pre-configured phone number used as a forwarding destination during Bland maintenance windows. Does not affect normal call routing. Returns `null` if no fallback is configured.
 </ResponseField>
 
+<ResponseField name="citation_schema_ids" type="string[]">
+  Citation schemas run after each call. `disposition_ids` is returned the same way.
+</ResponseField>
+
+<ResponseField name="sms_config" type="object">
+  The number's SMS configuration, or `null`. The SMS objective is returned as `prompt`.
+</ResponseField>
+
+Also returned: `first_sentence`, `silence_end_message`, `model`, `temperature`, `voice_settings`, `transfer_phone_number`, `transfer_list`, `memory_id`, `language`, `language_detection_period`, `language_detection_options`, `timezone`, `keywords`, `pronunciation_guide`, `interruption_threshold`, `interruptibility`, `block_interruptions`, `noise_cancellation`, `ignore_button_press`, `improve_accuracy`, `use_candidate_model`, `record`, `metadata`, `summary_prompt`, `analysis_prompt`, `analysis_schema`, `analysis_preset`, `status_callback`, `skip_url_update`, `pathway_ids`, `account_sid`, `whatsapp_config`, `imessage_config`, `messaging_service`.
+
+Errors use the shape `{ "status": "error", "message": "..." }`:
+
+- `400`: the literal `:phone_number` placeholder was sent.
+- `404`: `Number not found` (not on your account, or its subscription is not active).
+- `500`: error fetching inbound numbers.
+
 <ResponseExample>
 ```json Response
 {
@@ -80,20 +105,33 @@ description: "Retrieve settings for your inbound phone number."
     "phone_number": "+18584139939",
     "prompt": "You're Blandie, the helpful AI assistant. The person calling you has inquired...",
     "webhook": "https://webhook.site/0a0a0a0a-0a0a-0a0a-0a0a-0a0a0a0a0a0",
-    "voice_id": 2,
+    "webhook_events": [],
+    "voice": "e1289219-0ea2-4f22-a994-c542c2a48a0f",
+    "background_track": null,
+    "pathway_id": null,
+    "pathway_version": null,
+    "start_node_id": null,
+    "tools": null,
     "dynamic_data": null,
-    "max_duration": 30
+    "request_data": null,
+    "max_duration": 30,
+    "fallback_number": null,
+    "citation_schema_ids": [],
+    "disposition_ids": [],
+    "sms_config": null,
+    "record": false,
+    "model": "base",
+    "language": "en-US"
+}
+```
+
+```json Not found (404)
+{
+    "status": "error",
+    "message": "Number not found"
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
-
 
 ---
 

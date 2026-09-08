@@ -13,15 +13,15 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 ### Body
 
 <ParamField body="phone_number" type="string">
-  A single phone number to configure. PSTN numbers are normalized to E.164 (e.g., `+14150000000`); when bound to a trunk (`trunk_id`), non-E.164 SIP identities such as DIDs and extensions are also accepted. Use either `phone_number` or `phone_numbers`, not both.
+  A single phone number or SIP identity to configure. Values with a leading `+` are normalized to E.164 (for example `+14150000000`). Anything else (plus-less DIDs, extensions, text identities) is stored verbatim. A leading `sip:` and any `@domain` are stripped. Use either `phone_number` or `phone_numbers`, not both.
 </ParamField>
 
 <ParamField body="phone_numbers" type="string[]">
-  An array of phone numbers or DIDs to configure (up to 100). PSTN numbers are normalized to E.164; trunk-bound numbers also accept DIDs and extensions. Use either `phone_number` or `phone_numbers`, not both.
+  An array of phone numbers or SIP identities to configure (1 to 100), with the same normalization as `phone_number`. Takes precedence over `phone_number` when both are sent.
 </ParamField>
 
 <ParamField body="directions" type="array" required>
-  An array of direction objects. Each specifies either `inbound` or `outbound` routing configuration.
+  One or two direction objects (unique by `type`). Each specifies either `inbound` or `outbound` routing configuration.
 </ParamField>
 
 <ParamField body="service" type="string" required>
@@ -29,7 +29,7 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 </ParamField>
 
 <ParamField body="trunk_id" type="string">
-  Bind the numbers to a reusable trunk. When set, outbound endpoint and authentication are inherited from the trunk (no need to repeat `sip_endpoint`/auth per number), and non-E.164 DIDs and extensions are accepted.
+  ID of a SIP trunk configured for your organization. When set, the outbound endpoint and authentication are inherited from the trunk, so you do not need to repeat `sip_endpoint` or credentials per number. Returns 400 if the trunk does not belong to your organization.
 </ParamField>
 
 #### Inbound Direction Object
@@ -55,7 +55,7 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 </ParamField>
 
 <ParamField body="directions[].options" type="object">
-  Connection options: `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), `secure_media` (boolean), `sip_username` (string), `sip_password` (string).
+  Connection options: `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), `secure_media` (boolean), `sip_username` (string), `sip_password` (string), `sip_realm` (string, digest realm to pin for carrier auth; rarely needed), and `egress_mode` (`"managed"`, the default, or `"direct"`).
 </ParamField>
 
 #### Outbound Direction Object
@@ -73,7 +73,7 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 </ParamField>
 
 <ParamField body="directions[].options" type="object">
-  Connection options: `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), `secure_media` (boolean), `sip_username` (string), `sip_password` (string).
+  Connection options: `port` (number), `transport` (`"udp"`, `"tcp"`, or `"tls"`), `secure_media` (boolean), `sip_username` (string), `sip_password` (string), `sip_realm` (string, digest realm to pin for carrier auth; rarely needed), and `egress_mode` (`"managed"`, the default, or `"direct"`). `"direct"` egress requires the number to be bound to a `trunk_id` that carries the carrier credentials.
 </ParamField>
 
 ### Response
@@ -83,18 +83,24 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 </ResponseField>
 
 <ResponseField name="failed" type="array">
-  Array of phone numbers that failed to configure, with error reasons.
+  Numbers that failed to configure, each as `{ "number": string, "error": string }`. Failures include a direction that already exists on the number, an invalid `sip_endpoint`, a number owned by another organization, and the per-number limit of 10 attachments.
 </ResponseField>
 
 <ResponseField name="register_password_for_pbx" type="string">
   Only returned when using registration-based auth. This is the derived password you must configure in your PBX.
 </ResponseField>
 
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  The payload fails schema validation (the message lists the failing paths), no number was given, or every number failed to attach (the message is the first failure's reason).
+</ResponseField>
+
 ### Header Configuration Examples
 
 Headers allow you to map SIP headers to Bland pathway variables and vice versa.
 
-```json Example Request (Outbound with Headers)
+```bash Example Request (Outbound with Headers)
 curl -X POST https://api.bland.ai/v1/sip/attach \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -136,7 +142,7 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
   }'
 ```
 
-```json Example Request (Batch Attach)
+```bash Example Request (Batch Attach)
 curl -X POST https://api.bland.ai/v1/sip/attach \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -156,7 +162,7 @@ curl -X POST https://api.bland.ai/v1/sip/attach \
   }'
 ```
 
-```json Example Request (Bind to a Trunk)
+```bash Example Request (Bind to a Trunk)
 curl -X POST https://api.bland.ai/v1/sip/attach \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \

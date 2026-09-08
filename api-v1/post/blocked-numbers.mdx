@@ -5,7 +5,7 @@ description: "Create one or more block rules to prevent specific phone numbers f
 ---
 
 <Info>
-  **Call Blocking** – Blocked numbers will be rejected before reaching any agent. Blocking can apply globally or to specific inbound lines.
+  **Call Blocking**: blocked numbers are rejected before reaching any agent. Blocking can apply globally or to specific inbound lines.
 </Info>
 
 ### Headers
@@ -17,47 +17,48 @@ description: "Create one or more block rules to prevent specific phone numbers f
 ### Body Parameters
 
 <ParamField body="numbers" type="string[]" required>
-  A list of phone numbers to block, formatted in E.164 (e.g., `+14155551234`). Maximum 10 numbers per request.
+  A list of phone numbers to block, formatted in E.164 (e.g., `+14155551234`). 1 to 10 numbers per request. Numbers are validated and standardized; an invalid entry fails the whole request with `400 INVALID_PHONE_NUMBER`.
 </ParamField>
 
 <ParamField body="is_global" type="boolean" required>
-  Set to `true` to block the numbers globally across all inbound numbers. Set to `false` to scope the block to a specific `inbound_number`. You cannot enable both `is_global` and `inbound_number` in the same request.
+  Set to `true` to block the numbers globally across all inbound numbers. Set to `false` to scope the block to a specific `inbound_number`.
 </ParamField>
 
-<ParamField body="inbound_number" type="string" required={false}>
-  The E.164 formatted inbound number to associate the block with. Required when `is_global` is `false`.
+<ParamField body="inbound_number" type="string">
+  The E.164 formatted inbound number to associate the block with. Required when `is_global` is `false` (`400 INBOUND_NUMBER_REQUIRED` otherwise). When `is_global` is `true` it must be omitted or `null`; sending a value fails schema validation (`400 VALIDATION_ERROR`).
 </ParamField>
 
-<ParamField body="reason" type="string" required={false}>
-  Optional text to describe the reason for blocking.
+<ParamField body="reason" type="string">
+  Optional text to describe the reason for blocking. `null` is accepted.
 </ParamField>
 
 ### Response
 
-<ResponseField name="data" type="object">
-  Contains the number of rules created and the list of created blocks.
-</ResponseField>
+Returns `201 Created` with the standard `{ "data": ..., "errors": null }` envelope.
 
 <ResponseField name="data.created_count" type="number">
-  Number of block rules successfully created.
+  The number of entries in `numbers`.
 </ResponseField>
 
 <ResponseField name="data.blocks" type="array">
-  List of block rule objects that were created.
+  List of block rule objects that were created. `id` is a string (a UUID, or a legacy integer ID as a string) and is used as `block_id` on the other endpoints.
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
-  `null` on success, or an array of error objects if validation fails.
+  `null` on success. On failure `data` is `null` and each error has `error` and `message` (schema errors also carry `field`):
+
+  - `400` `VALIDATION_ERROR`, `INVALID_PHONE_NUMBER`, `INBOUND_NUMBER_REQUIRED`
+  - `500` `SERVICE_ERROR`
 </ResponseField>
 
 <ResponseExample>
-```json Response
+```json Created (201)
 {
   "data": {
     "created_count": 1,
     "blocks": [
       {
-        "id": 123,
+        "id": "c1f0a5e2-7d5b-4a3c-9f61-2b8e4d7a9c10",
         "blocked_number": "+10000000000",
         "is_global": true,
         "inbound_number": null,
@@ -71,7 +72,18 @@ description: "Create one or more block rules to prevent specific phone numbers f
   },
   "errors": null
 }
+```
 
+```json Missing inbound number (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INBOUND_NUMBER_REQUIRED",
+      "message": "inbound_number is required when is_global is false"
+    }
+  ]
+}
 ```
 </ResponseExample>
 ---

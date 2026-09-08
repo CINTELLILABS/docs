@@ -13,17 +13,21 @@ description: "List all number porting requests for your organization."
 ### Response
 
 <ResponseField name="port_requests" type="array">
-  Array of port request objects. Each includes:
-  - `id` (string) — Port request ID
-  - `status` (string) — Current status: `"waiting_for_signature"`, `"submitted"`, `"in_progress"`, `"completed"`, `"canceled"`, `"failed"`
-  - `phone_numbers` (array) — Numbers included in the port, each with individual status
-  - `authorized_rep_email` (string) — Email of the authorized representative
-  - `notification_emails` (array) — Notification email addresses
-  - `created_at` (string) — ISO 8601 timestamp
-  - `updated_at` (string) — ISO 8601 timestamp
+  Port requests, newest first. Each includes:
+  - `id` (string): port request ID
+  - `org_id` (string)
+  - `twilio_port_sid` (string): the carrier's reference for the request
+  - `status` (string): the carrier's current request status as reported by its webhooks (for example `"in_review"`, `"waiting_for_signature"`, `"completed"`), or `"canceled"` after [Cancel Port Request](/api-v1/delete/sip-port-cancel)
+  - `phone_numbers` (array): each with `number`, `status`, and `port_in_phone_number_sid`
+  - `authorized_rep_email` (string)
+  - `notification_emails` (string[])
+  - `created_at` (string): ISO 8601 timestamp
+  - `updated_at` (string): ISO 8601 timestamp
 </ResponseField>
 
-```json Example Request
+When a request reaches `"completed"`, the ported numbers are added to your organization as inbound numbers automatically.
+
+```bash Example Request
 curl -X GET https://api.bland.ai/v1/sip/port \
   -H "Authorization: Bearer <token>"
 ```
@@ -34,16 +38,18 @@ curl -X GET https://api.bland.ai/v1/sip/port \
   "data": {
     "port_requests": [
       {
-        "id": "port_xyz789",
-        "status": "in_progress",
+        "id": "2f9c1d4e-8a7b-4c3d-9e1f-0a2b3c4d5e6f",
+        "org_id": "9b59f853-c2c7-4e3a-b5d6-8f7e9a1b2c3d",
+        "twilio_port_sid": "KWxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "status": "in_review",
         "phone_numbers": [
-          { "number": "+14150000000", "status": "in_progress" },
-          { "number": "+14150000001", "status": "in_progress" }
+          { "number": "+14150000000", "status": "in_review", "port_in_phone_number_sid": "PNxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" },
+          { "number": "+14150000001", "status": "in_review", "port_in_phone_number_sid": "PNyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" }
         ],
         "authorized_rep_email": "jane@acme.com",
         "notification_emails": ["it@acme.com"],
-        "created_at": "2026-03-09T12:00:00Z",
-        "updated_at": "2026-03-12T08:00:00Z"
+        "created_at": "2026-03-09T12:00:00.000Z",
+        "updated_at": "2026-03-12T08:00:00.000Z"
       }
     ]
   },

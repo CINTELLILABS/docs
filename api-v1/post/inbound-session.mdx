@@ -17,14 +17,14 @@ This endpoint creates a session token that can be used to pass variables to inbo
 ### Body
 
 <ParamField body="phone_number" type="string" required>
-  The inbound phone number that this session will be associated with. This should be a phone number you own and have configured for inbound calls.
-  
+  The inbound phone number that this session will be associated with. This should be a phone number you own and have configured for inbound calls. It must match the stored number exactly.
+
   Example format: `"+12223334444"`
 </ParamField>
 
 <ParamField body="request_data" type="object">
   Optional variables that will be available in your pathway when a call is made using this session token. These variables can include any data you want to pass to the call context.
-  
+
   Example:
   ```json
   {
@@ -49,12 +49,22 @@ Example:
 
 ### Response
 
-<ResponseField name="token" type="string">
+Returns `201 Created` with the standard `{ "data": ..., "errors": null }` envelope.
+
+<ResponseField name="data.token" type="string">
   The session token that should be passed as the `x-bland-session-id` SIP header when making the inbound call.
 </ResponseField>
 
-<ResponseField name="expires_at" type="string">
-  ISO 8601 timestamp indicating when this session token expires. Sessions have a limited lifetime for security purposes. The default is 1 hour.
+<ResponseField name="data.expires_at" type="string">
+  ISO 8601 timestamp indicating when this session token expires, 1 hour after creation.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success. On failure `data` is `null` and `errors` holds one object with `error` and `message`:
+
+  - `400` `MISSING_PHONE_NUMBER`: `phone_number` was not provided.
+  - `404` `INBOUND_NOT_FOUND`: the number is not an inbound number on your account.
+  - `500` `TOKEN_CREATION_FAILED` or `INTERNAL_SERVER_ERROR`.
 </ResponseField>
 
 ### SIP Integration
@@ -65,9 +75,8 @@ To use the session token:
 2. When making a SIP call to your inbound number, include the header: `x-bland-session-id: <token>`
 3. Your Bland call will have access to any variables you specified in the `request_data` field, in addition to any variables you had initially set up for the inbound number.
 
-### Example
-
-```bash
+<RequestExample>
+```bash cURL
 curl -X POST https://api.bland.ai/v1/inbound/session \
   -H "authorization: sk-your-api-key" \
   -H "Content-Type: application/json" \
@@ -81,14 +90,31 @@ curl -X POST https://api.bland.ai/v1/inbound/session \
     "voice": "June"
   }'
 ```
+</RequestExample>
 
-Response:
-```json
+<ResponseExample>
+```json Created (201)
 {
-  "token": "550e8400-e29b-41d4-a716-446655440000",
-  "expires_at": "2024-01-15T10:30:00Z"
+  "data": {
+    "token": "550e8400-e29b-41d4-a716-446655440000",
+    "expires_at": "2024-01-15T10:30:00.000Z"
+  },
+  "errors": null
 }
 ```
+
+```json Not found (404)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INBOUND_NOT_FOUND",
+      "message": "Inbound phone number not found or access denied"
+    }
+  ]
+}
+```
+</ResponseExample>
 
 ---
 

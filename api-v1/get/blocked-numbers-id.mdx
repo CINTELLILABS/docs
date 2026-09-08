@@ -12,8 +12,8 @@ description: "Retrieve the details of a specific block rule."
 
 ### Path Parameters
 
-<ParamField path="block_id" type="number" required>
-  The unique ID of the block rule you wish to retrieve.
+<ParamField path="block_id" type="string" required>
+  The ID of the block rule you wish to retrieve, as returned by [Create Block Rules](/api-v1/post/blocked-numbers). Inactive rules are returned too.
 </ParamField>
 
 ### Response
@@ -22,8 +22,8 @@ description: "Retrieve the details of a specific block rule."
   The block rule object if found.
 </ResponseField>
 
-<ResponseField name="data.id" type="number">
-  The unique ID of the block rule.
+<ResponseField name="data.id" type="string">
+  The ID of the block rule (a UUID, or a legacy integer ID as a string).
 </ResponseField>
 
 <ResponseField name="data.blocked_number" type="string">
@@ -59,14 +59,14 @@ description: "Retrieve the details of a specific block rule."
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
-  `null` on success, or a list of error objects if the block ID is invalid or not found.
+  `null` on success, or a list of error objects (`404 BLOCK_NOT_FOUND` when the rule does not exist on your organization, `500 SERVICE_ERROR`).
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
   "data": {
-    "id": 123,
+    "id": "c1f0a5e2-7d5b-4a3c-9f61-2b8e4d7a9c10",
     "blocked_number": "+10000000000",
     "is_global": false,
     "inbound_number": "+18888888888",

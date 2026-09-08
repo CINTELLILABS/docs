@@ -1,8 +1,12 @@
 ---
 title: "Purchase Phone Number"
 api: "POST https://api.bland.ai/numbers/purchase"
-description: "Purchase a new phone number (inbound/outbound). ($15/mo. subscription using your stored payment method)."
+description: "Purchase a new phone number (inbound/outbound). Billed as a monthly subscription using your stored payment method."
 ---
+
+Your account must have a Stripe customer with a default payment method attached before you can purchase a number. `POST /v1/inbound/purchase` redirects (308) to this endpoint.
+
+To see which numbers are available before purchasing, use [List Available Numbers](/api-v1/get/available-numbers).
 
 ### Headers
 
@@ -12,32 +16,86 @@ description: "Purchase a new phone number (inbound/outbound). ($15/mo. subscript
 
 ### Body
 
-<ParamField body="area_code" default="415" type="string">
-  Choose a three-digit area code for your phone number. If set as a parameter, a number will only be purchased by exact match if available.
-</ParamField>
+You must send `area_code` or `phone_number`. A request with neither returns `400 INVALID_REQUEST`.
 
+<ParamField body="area_code" type="string">
+  A three-digit area code, sent as a string (for example `"415"`). A number is purchased only if one with this exact area code is available. Ignored when `phone_number` is provided.
+</ParamField>
 
 <ParamField body="country_code" default="US" type="string">
   Choose a country code for your phone number.
 
-  Options: `"US"` or `"CA"` for Canada. For others, please contact support.
+  Options: `"US"` or `"CA"` for Canada. Any other value returns `400 INVALID_COUNTRY_CODE`. For other countries, please contact support.
 </ParamField>
 
 <ParamField body="phone_number" type="string">
-  Specify an exact phone number you'd like to use. If provided, will override the `area_code` parameter and does not fall back to any other number.
+  Specify an exact phone number you'd like to use. If provided, `area_code` is ignored and no other number is purchased if this one is unavailable.
 
-  Example of the correct format (Note the `"+1"` is mandatory): `"+12223334444"`
+  Non-digit characters are stripped; at least 10 digits are required. Use the full number including the country code: `"+12223334444"`.
 </ParamField>
 
+### Response
 
+Returns the standard `{ "data": ..., "errors": null }` envelope.
 
+<ResponseField name="data.received" type="boolean">
+  `true` when the purchase completed.
+</ResponseField>
 
+<ResponseField name="data.phone_number" type="string">
+  The purchased number in E.164 format. It is immediately listed by [List Numbers](/api-v1/get/inbound) and can be configured with [Update Inbound Number Details](/api-v1/post/inbound-number-update).
+</ResponseField>
 
+<ResponseField name="errors" type="null|array">
+  `null` on success. On failure `data` is `null` and `errors` holds one object with `error` and `message`:
 
+  - `400` `INVALID_REQUEST`: neither `area_code` nor `phone_number` was sent.
+  - `400` `INVALID_PHONE_NUMBER`: fewer than 10 digits.
+  - `400` `INVALID_COUNTRY_CODE`: `country_code` is not `US` or `CA`.
+  - `400` `MISSING_BILLING_RECORD`: no billing record for the account.
+  - `400` `BILLING_MIGRATION_REQUIRED`: billing account is being migrated; retry in 10 seconds.
+  - `400` `MISSING_PAYMENT_METHOD`: no default payment method attached.
+  - `404` `NUMBER_UNAVAILABLE_ERROR`: no numbers available, the requested number is taken, or no number with that area code is available.
+  - `400` `INBOUND_ROW_NOT_CREATED`, `SUBSCRIPTION_NOT_CREATED`, `SUBSCRIPTION_NOT_ACTIVE`: the purchase was rolled back because the number record or its subscription could not be created.
+  - `500` `MISSING_CUSTOMER`: the Stripe customer could not be retrieved.
+  - `500` `PURCHASE_ERROR`: unexpected error.
+</ResponseField>
 
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/numbers/purchase \
+  -H "authorization: sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "area_code": "415",
+    "country_code": "US"
+  }'
+```
+</RequestExample>
 
+<ResponseExample>
+```json Success
+{
+  "data": {
+    "received": true,
+    "phone_number": "+14155551234"
+  },
+  "errors": null
+}
+```
 
-
+```json Number unavailable (404)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NUMBER_UNAVAILABLE_ERROR",
+      "message": "Specified area code not available"
+    }
+  ]
+}
+```
+</ResponseExample>
 
 ---
 

@@ -13,14 +13,16 @@ description: "List all phone numbers with SIP configurations for your organizati
 ### Response
 
 <ResponseField name="data.numbers" type="array">
-  Array of SIP number summaries. Each entry includes:
-  - `phone_number` (string) — The phone number in E.164 format
-  - `directions` (array) — List of configured directions (`"inbound"`, `"outbound"`)
-  - `sip_endpoint` (string) — The SIP endpoint (for outbound)
-  - `health_status` (string) — Current health: `"healthy"`, `"unreachable"`, or `"unchecked"`
+  One summary per configured number or SIP identity, most recently configured first:
+  - `phone_number` (string): the number as stored (E.164, DID, or extension)
+  - `directions` (string[]): configured directions, `"inbound"` and/or `"outbound"`
+  - `sip_endpoint` (string): the configured endpoint, or `null`. When both directions set one, the inbound endpoint is shown.
+  - `configured_at` (string): ISO 8601 timestamp of the first direction configured
 </ResponseField>
 
-```json Example Request
+For health, use [Get Trunk Health](/api-v1/get/sip-status) per number.
+
+```bash Example Request
 curl -X GET https://api.bland.ai/v1/sip/numbers \
   -H "Authorization: Bearer <token>"
 ```
@@ -34,13 +36,13 @@ curl -X GET https://api.bland.ai/v1/sip/numbers \
         "phone_number": "+14150000000",
         "directions": ["inbound", "outbound"],
         "sip_endpoint": "sip:trunk.provider.com",
-        "health_status": "healthy"
+        "configured_at": "2026-03-09T12:00:00.000Z"
       },
       {
         "phone_number": "+14150000001",
         "directions": ["inbound"],
         "sip_endpoint": null,
-        "health_status": "unchecked"
+        "configured_at": "2026-03-01T08:00:00.000Z"
       }
     ]
   },

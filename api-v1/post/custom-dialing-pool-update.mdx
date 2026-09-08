@@ -5,10 +5,10 @@ description: "Update an existing custom dialing pool with new phone numbers or c
 ---
 
 <Note>
-  Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
+  This endpoint requires an Enterprise plan. Other plans receive `403 ENTERPRISE_REQUIRED`.
 </Note>
 
-Update an existing custom dialing pool by replacing its phone numbers and/or Twilio credentials. This operation will completely replace the existing phone numbers with the new ones provided.
+Update the phone numbers, Twilio credentials, or both for an existing custom dialing pool. Omitted fields remain unchanged.
 
 ### Headers
 
@@ -27,7 +27,7 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
 ### Body
 
 <ParamField body="phone_numbers" type="array">
-  Array of phone numbers to replace the existing numbers in the pool. Every number must be a valid US (`+1`) or UK (`+44`) number. Omit this field to leave the current numbers unchanged.
+  Array of valid US (`+1`) or UK (`+44`) numbers. When provided, this array replaces the current phone numbers.
   
   **Example**: `["+12345678901", "+19876543210"]`
   
@@ -37,7 +37,7 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
 </ParamField>
 
 <ParamField body="encrypted_key" type="string">
-  Optional UUID of Twilio credentials to associate with this pool. If provided, the credentials must belong to your account. Omit this field to leave the current credentials unchanged.
+  Optional UUID of Twilio credentials to associate with this pool. If provided, the credentials must belong to your account.
   
   **Format**: UUID format (e.g., `550e8400-e29b-41d4-a716-446655440000`)
 
@@ -70,8 +70,8 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
       UUID of associated Twilio credentials (or null if none).
     </ResponseField>
 
-    <ResponseField name="credentials_name" type="string | null">
-      Twilio account SID associated with the credentials, or `null`.
+    <ResponseField name="credentials_name" type="string|null">
+      Twilio Account SID for the associated credentials, or `null`.
     </ResponseField>
     
     <ResponseField name="created_at" type="string">
@@ -80,8 +80,8 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array | null">
-  `null` on success. Validation errors include `error`, `message`, and, when applicable, `field`.
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects on failure.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">

@@ -13,7 +13,7 @@ description: "Place a live test call to your SIP endpoint to verify connectivity
 ### Body
 
 <ParamField body="phone_number" type="string" required>
-  The phone number with an outbound SIP configuration to test. Must be in E.164 format.
+  The phone number with an outbound SIP configuration to test. Must parse as an E.164 number.
 </ParamField>
 
 ### Response
@@ -26,9 +26,19 @@ description: "Place a live test call to your SIP endpoint to verify connectivity
   Confirmation message.
 </ResponseField>
 
-Test calls are rate-limited to **10 per 15 minutes** per organization.
+The test call plays a short announcement to your endpoint and rings it for up to 60 seconds. Poll [Get Test Call Status](/api-v1/get/sip-test-call-status) with the returned `call_id`.
 
-```json Example Request
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  `phone_number` is missing or invalid, the number has no outbound SIP configuration, no `sip_endpoint` is set, or the carrier rejected the call (the message starts with `Test call failed:`).
+</ResponseField>
+
+<ResponseField name="429 TOO_MANY_REQUESTS" type="object">
+  More than 10 test calls in 15 minutes for your organization. Body: `{ "data": null, "errors": [{ "error": "TOO_MANY_REQUESTS", "message": "Too many test call requests. Please try again in 15 minutes." }] }`.
+</ResponseField>
+
+```bash Example Request
 curl -X POST https://api.bland.ai/v1/sip/test-call \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -41,8 +51,8 @@ curl -X POST https://api.bland.ai/v1/sip/test-call \
 ```json Response
 {
   "data": {
-    "call_id": "tc_abc123",
-    "message": "Test call initiated"
+    "call_id": "2f9c1d4e-8a7b-4c3d-9e1f-0a2b3c4d5e6f",
+    "message": "Test call initiated. Your SIP endpoint should ring shortly."
   },
   "errors": null
 }

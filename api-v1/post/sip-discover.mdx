@@ -4,6 +4,8 @@ api: "POST https://api.bland.ai/v1/sip/discover"
 description: "Auto-discover optimal SIP connection settings by probing your endpoint with DNS resolution and SIP OPTIONS."
 ---
 
+Discovery resolves your host (A, AAAA, and `_sips._tcp` SRV records), then sends SIP OPTIONS over TLS to detect the PBX type, supported codecs, and methods. The request blocks until discovery finishes and returns the full result, so no polling is needed.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -13,15 +15,15 @@ description: "Auto-discover optimal SIP connection settings by probing your endp
 ### Body
 
 <ParamField body="host" type="string" required>
-  The hostname or IP address of your SIP endpoint.
+  The hostname or IP address of your SIP endpoint. In production, private IPs, localhost, and cloud metadata addresses are rejected.
 </ParamField>
 
 <ParamField body="port" type="number">
-  Specific port to probe. If omitted, ports 5060, 5061, and 5080 are tested.
+  Specific port to probe (1 to 65535). If omitted, port 5061 is probed along with any SRV-advertised targets. Tunnel hosts (ngrok, localtunnel, and similar) require an explicit port.
 </ParamField>
 
 <ParamField body="transport" type="string">
-  Specific transport to test: `"udp"`, `"tcp"`, or `"tls"`. If omitted, both UDP and TCP are tested.
+  Accepted for compatibility but ignored. Bland only connects over TLS, so every probe uses TLS.
 </ParamField>
 
 ### Response
@@ -31,32 +33,54 @@ description: "Auto-discover optimal SIP connection settings by probing your endp
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Discovery status: `"running"`, `"completed"`, or `"failed"`.
+  `"completed"` when at least one probe got a SIP answer or a TLS-level rejection (reachable but requires a client certificate), otherwise `"failed"`.
 </ResponseField>
 
 <ResponseField name="host" type="string">
   The host that was probed.
 </ResponseField>
 
-<ResponseField name="resolved_addresses" type="array">
+<ResponseField name="resolved_addresses" type="string[]">
   IP addresses resolved from DNS A/AAAA lookups.
 </ResponseField>
 
 <ResponseField name="srv_records" type="array">
-  SRV records found for `_sip._udp`, `_sip._tcp`, `_sips._tcp`.
+  `_sips._tcp` SRV records found, each with `name`, `port`, `priority`, and `weight`.
 </ResponseField>
 
 <ResponseField name="attempts" type="array">
-  Details of each probe attempt including port, transport, response time, response code, and user agent.
+  One entry per probe: `port`, `transport` (always `"tls"`), `status` (`"success"`, `"failed"`, `"skipped"`, or `"tls_rejected"`), and when present `host` (SRV target that differs from the input host), `from_srv` (boolean), `response_time_ms`, `user_agent`, and `error`.
 </ResponseField>
 
 <ResponseField name="recommended" type="object">
-  Recommended connection settings: `port`, `transport`, `user_agent`, `detected_system` (e.g., "Asterisk", "FreeSWITCH", "Kamailio"), `codecs`, and `methods`.
+  Settings from the best probe: `port`, `transport`, and when detected `user_agent`, `detected_system` (for example `"Asterisk"`, `"FreeSWITCH"`, `"Kamailio"`), `codecs`, and `methods`. `from_srv: true` means the target came from an SRV record; do not pin that port so each call can re-resolve SRV. `requires_client_certificate: true` means the endpoint was reachable only at the TLS layer, so no SIP details are available.
 </ResponseField>
 
-Only one discovery can run per organization at a time. Discovery results are cached for 10 minutes.
+<ResponseField name="error" type="string">
+  Explanation when `status` is `"failed"`, or guidance when the endpoint requires a client certificate.
+</ResponseField>
 
-```json Example Request
+<ResponseField name="started_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+Only one discovery can run per organization at a time. Results are retained for 10 minutes and can be re-read with [Get Discovery Status](/api-v1/get/sip-discover-status).
+
+### Error Responses
+
+<ResponseField name="400 BAD_REQUEST" type="object">
+  `host` is missing, or `port` is not an integer between 1 and 65535.
+</ResponseField>
+
+<ResponseField name="429 TOO_MANY_REQUESTS" type="object">
+  Another discovery is already in progress for your organization. Retry shortly.
+</ResponseField>
+
+```bash Example Request
 curl -X POST https://api.bland.ai/v1/sip/discover \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
@@ -69,29 +93,30 @@ curl -X POST https://api.bland.ai/v1/sip/discover \
 ```json Response
 {
   "data": {
-    "discovery_id": "disc_abc123",
+    "discovery_id": "9b59f853-c2c7-4e3a-b5d6-8f7e9a1b2c3d-1f2e3d4c5b6a7980",
     "status": "completed",
     "host": "sip.example.com",
     "resolved_addresses": ["203.0.113.10"],
     "srv_records": [],
     "attempts": [
       {
-        "port": 5060,
-        "transport": "udp",
+        "port": 5061,
+        "transport": "tls",
+        "status": "success",
         "response_time_ms": 45,
-        "response_code": 200,
         "user_agent": "Asterisk PBX 18.0.0"
       }
     ],
     "recommended": {
-      "port": 5060,
-      "transport": "udp",
+      "port": 5061,
+      "transport": "tls",
+      "user_agent": "Asterisk PBX 18.0.0",
       "detected_system": "Asterisk",
-      "codecs": ["PCMU", "PCMA", "G.722"],
+      "codecs": ["PCMU", "PCMA", "G722"],
       "methods": ["INVITE", "ACK", "BYE", "CANCEL", "OPTIONS"]
     },
-    "started_at": "2026-03-09T12:00:00Z",
-    "completed_at": "2026-03-09T12:00:05Z"
+    "started_at": "2026-03-09T12:00:00.000Z",
+    "completed_at": "2026-03-09T12:00:05.000Z"
   },
   "errors": null
 }

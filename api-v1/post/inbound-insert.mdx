@@ -1,5 +1,5 @@
 ---
-title: "Upload Inbound Phone Numbers"  
+title: "Upload Inbound Phone Numbers"
 api: "POST https://api.bland.ai/v1/inbound/insert"
 description: "Add inbound numbers to Bland from your own Twilio account. See [Custom Twilio Integration](/tutorials/custom-twilio) for more information."
 ---
@@ -11,50 +11,65 @@ description: "Add inbound numbers to Bland from your own Twilio account. See [Cu
 </ParamField>
 
 <ParamField header="encrypted_key" type="string" required>
-  The encrypted_key of the Twilio account you want to upload numbers from.
-  
+  The `encrypted_key` of the Twilio account you want to upload numbers from. Also accepted as the `encrypted-key` header or as an `encrypted_key` field in the body.
+
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
 
 ### Body
 
-<ParamField body="numbers" type="string[]" required >
-    <Expandable title="properties">
-    <ParamField required>
-
-    An array of phone numbers you want to upload to Bland.
+<ParamField body="numbers" type="string[]" required>
+    An array of phone numbers you want to upload to Bland. Each number must exist in the Twilio account that `encrypted_key` points to.
 
     Include the leading `'+'`, country code and the phone number without any special characters.
 
     Example: `["+12223334444", "+13334445555"]`
-    </ParamField>
-    </Expandable>
 </ParamField>
 
 ### Response
 
+Numbers are processed in order. The request stops at the first number that fails and returns an error response; numbers inserted before that point stay inserted and are listed in `inserted`.
+
 <ResponseField name="status" type="string">
-  Can be `success` or `error`.
+  `success` when every number was inserted, otherwise `error`.
 </ResponseField>
 
 <ResponseField name="message" type="string">
-  A message saying whether the insertion succeeded, or a helpful message describing why it failed.
+  A message saying whether the insertion succeeded, or describing why it stopped.
 </ResponseField>
 
-<ResponseField name="inserted" type="array">
-  An array of phone numbers that were successfully inserted.
-
-  Any phone numbers that failed to be inserted will not be included in this array - for example if they are already in your account or not associated with the sepcified Twilio account.
+<ResponseField name="inserted" type="string[]">
+  The phone numbers that were inserted, in E.164 format as reported by Twilio.
 </ResponseField>
+
+<ResponseField name="type" type="string">
+  Only present on some `403` responses. `number_imported_by_another_organization` or `number_already_imported`.
+</ResponseField>
+
+Error status codes:
+
+- `400`: missing `encrypted_key`, `numbers` is not a non-empty array, or an entry is not a string.
+- `403`: the number is not in that Twilio account (`You do not own the number ...`), or it has already been imported into Bland (`type` set).
+- `500`: database error while checking or inserting numbers.
 
 <ResponseExample>
-```json
+```json Success
 {
   "status": "success",
   "message": "Successfully inserted numbers",
   "inserted": [
     "+12223334444",
     "+13334445555"
+  ]
+}
+```
+
+```json Stopped on a failure (403)
+{
+  "status": "error",
+  "message": "You do not own the number +13334445555",
+  "inserted": [
+    "+12223334444"
   ]
 }
 ```

@@ -5,7 +5,7 @@ description: "Update attributes of an existing block rule."
 ---
 
 <Info>
-  You can only update fields like `reason` or `is_active`. Phone numbers and scope (global/inbound) are immutable after creation.
+  You can only update `reason` and `is_active`. Phone numbers and scope (global/inbound) are immutable after creation.
 </Info>
 
 ### Headers
@@ -16,18 +16,20 @@ description: "Update attributes of an existing block rule."
 
 ### Path Parameters
 
-<ParamField path="block_id" type="number" required>
-  The unique ID of the block rule to update.
+<ParamField path="block_id" type="string" required>
+  The ID of the block rule to update, as returned by [Create Block Rules](/api-v1/post/blocked-numbers).
 </ParamField>
 
 ### Body Parameters
 
-<ParamField body="reason" type="string" required={false}>
-  Optional reason for blocking. Set to `null` to remove an existing reason.
+Both keys must be present in the body; omitting either returns `400 VALIDATION_ERROR`. Send `null` for a field you do not want to change.
+
+<ParamField body="reason" type="string|null" required>
+  The new reason for the block. `null` leaves the existing reason unchanged.
 </ParamField>
 
-<ParamField body="is_active" type="boolean" required={false}>
-  Controls whether the block rule is currently enforced. Set to `false` to disable or `true` to re-enable. Use `null` to leave unchanged.
+<ParamField body="is_active" type="boolean|null" required>
+  Controls whether the block rule is currently enforced. Set to `false` to disable or `true` to re-enable. `null` leaves it unchanged.
 </ParamField>
 
 ### Response
@@ -36,8 +38,8 @@ description: "Update attributes of an existing block rule."
   The updated block rule object.
 </ResponseField>
 
-<ResponseField name="data.id" type="number">
-  Unique ID of the block rule.
+<ResponseField name="data.id" type="string">
+  ID of the block rule.
 </ResponseField>
 
 <ResponseField name="data.blocked_number" type="string">
@@ -73,14 +75,26 @@ description: "Update attributes of an existing block rule."
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
-  `null` on success, or a list of validation or lookup errors.
+  `null` on success. Otherwise `data` is `null` and `errors` holds `400 VALIDATION_ERROR`, `404 BLOCK_NOT_FOUND` or `500 SERVICE_ERROR`.
 </ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v1/blocked_numbers/c1f0a5e2-7d5b-4a3c-9f61-2b8e4d7a9c10/edit \
+  -H "authorization: sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "User requested block",
+    "is_active": false
+  }'
+```
+</RequestExample>
 
 <ResponseExample>
 ```json Response
 {
   "data": {
-    "id": 123,
+    "id": "c1f0a5e2-7d5b-4a3c-9f61-2b8e4d7a9c10",
     "blocked_number": "+10000000000",
     "is_global": false,
     "inbound_number": "+18888888888",
@@ -91,6 +105,19 @@ description: "Update attributes of an existing block rule."
     "updated_at": "2025-01-10T12:00:00.000Z"
   },
   "errors": null
+}
+```
+
+```json Missing key (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "VALIDATION_ERROR",
+      "message": "must have required property 'is_active'",
+      "field": "#/required"
+    }
+  ]
 }
 ```
 </ResponseExample>

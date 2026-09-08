@@ -1,0 +1,65 @@
+---
+title: "List Available Numbers"
+api: "GET https://api.bland.ai/v1/available_numbers"
+description: "List phone numbers available for purchase in a US or Canadian area code."
+---
+
+Returns up to 5 voice-enabled local numbers that can be purchased with [Purchase Phone Number](/api-v1/post/inbound-purchase). Availability is not reserved; a number can be taken between this call and the purchase.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="area_code" type="string" default="415">
+  The three-digit area code to search.
+</ParamField>
+
+<ParamField query="country_code" type="string" default="US">
+  `US` or `CA`. Any other value returns 400.
+</ParamField>
+
+### Response
+
+<ResponseField name="phoneNumbers" type="array">
+  Available numbers (no envelope). Each item has:
+
+  - `phone_number`: the number in E.164 format.
+  - `friendly_name`: the number formatted for display.
+  - `isoCountry`: `US` or `CA`.
+  - `location`: `"City, Region"` when the city is known, otherwise `"Region, Country"`.
+</ResponseField>
+
+Errors:
+
+- `400 { "status": "error", "message": "Only US and CA country codes supported for now." }` for an unsupported `country_code`.
+- `400 { "Error": "Error fetching available numbers..." }` when the carrier lookup fails.
+
+<RequestExample>
+```bash cURL
+curl "https://api.bland.ai/v1/available_numbers?area_code=415&country_code=US" \
+  -H "authorization: sk-your-api-key"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "phoneNumbers": [
+    {
+      "isoCountry": "US",
+      "friendly_name": "(415) 555-0123",
+      "phone_number": "+14155550123",
+      "location": "San Francisco, CA"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

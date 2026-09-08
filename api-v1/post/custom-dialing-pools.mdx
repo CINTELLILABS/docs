@@ -5,7 +5,7 @@ description: "Create a new custom dialing pool with phone numbers for optimized 
 ---
 
 <Note>
-  Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
+  This endpoint requires an Enterprise plan. Other plans receive `403 ENTERPRISE_REQUIRED`.
 </Note>
 
 Custom dialing pools allow you to create collections of phone numbers that will be automatically selected based on geographic proximity to optimize call pickup rates.
@@ -19,7 +19,7 @@ Custom dialing pools allow you to create collections of phone numbers that will 
 ### Body
 
 <ParamField body="phone_numbers" type="array" required>
-  Array of phone numbers to include in the pool. Every number must be a valid US (`+1`) or UK (`+44`) number. At least one number is required.
+  Array of phone numbers to include in the pool. Each value must be a valid US (`+1`) or UK (`+44`) number.
   
   **Example**: `["+12345678901", "+19876543210"]`
 </ParamField>
@@ -34,8 +34,10 @@ Custom dialing pools allow you to create collections of phone numbers that will 
 
 ### Response
 
+Successful creation returns HTTP `201`.
+
 <ResponseField name="data" type="object">
-  The created custom dialing pool object. A successful request returns `201`.
+  The created custom dialing pool object.
   
   <Expandable title="data properties">
     <ResponseField name="id" type="string">
@@ -60,8 +62,8 @@ Custom dialing pools allow you to create collections of phone numbers that will 
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array | null">
-  `null` on success. Validation errors include `error`, `message`, and, when applicable, `field`.
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects on failure.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">
@@ -165,13 +167,16 @@ print(response.json())
 
 ## Usage with Calls
 
-Once you've created a custom dialing pool, you can use it in your call requests by specifying the `custom_dialing` parameter:
+Once you've created a custom dialing pool, use it in a call request with `dialing_strategy`:
 
 ```json
 {
   "phone_number": "+12345678901",
   "task": "Your call task here",
-  "custom_dialing": "550e8400-e29b-41d4-a716-446655440001"
+  "dialing_strategy": {
+    "type": "custom_pooling",
+    "pool_id": "550e8400-e29b-41d4-a716-446655440001"
+  }
 }
 ```
 

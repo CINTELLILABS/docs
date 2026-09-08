@@ -5,7 +5,7 @@ description: "Retrieve block rules associated with your inbound numbers."
 ---
 
 <Info>
-  **Block Rule Management** – This endpoint returns block rules for either all global blocks or a specific inbound number, depending on the query parameters.
+  **Block Rule Management**: this endpoint returns block rules for either all global blocks or a specific inbound number, depending on the query parameters.
 </Info>
 
 ### Headers
@@ -17,11 +17,11 @@ description: "Retrieve block rules associated with your inbound numbers."
 ### Query Parameters
 
 <ParamField query="inbound_number" type="string" required={false}>
-  The E.164 formatted inbound number to filter results by. If omitted, returns only global block rules.
+  The E.164 formatted inbound number (including the leading `+`) to filter results by. Returns only the rules scoped to that number. If omitted, returns only global block rules. An invalid number returns `400 INVALID_PHONE_NUMBER`.
 </ParamField>
 
 <ParamField query="active_only" type="boolean" required={false}>
-  Whether to only return currently active block rules. Default is `true`. Set to `false` to include deleted or inactive rules.
+  Whether to only return currently active block rules. Default is `true`. Pass the string `false` to include inactive rules; any other value is treated as `false`.
 </ParamField>
 
 ### Response
@@ -31,7 +31,7 @@ description: "Retrieve block rules associated with your inbound numbers."
 </ResponseField>
 
 <ResponseField name="data.blocks" type="array">
-  Array of block rule objects.
+  Array of block rule objects. `id` is a string (a UUID, or a legacy integer ID as a string).
 </ResponseField>
 
 <ResponseField name="data.total_count" type="number">
@@ -43,7 +43,7 @@ description: "Retrieve block rules associated with your inbound numbers."
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
-  `null` on success, or a list of error objects if validation fails.
+  `null` on success, or a list of error objects (`400 INVALID_PHONE_NUMBER`, `500 SERVICE_ERROR`).
 </ResponseField>
 
 <ResponseExample>
@@ -52,7 +52,7 @@ description: "Retrieve block rules associated with your inbound numbers."
   "data": {
     "blocks": [
       {
-        "id": 456,
+        "id": "c1f0a5e2-7d5b-4a3c-9f61-2b8e4d7a9c10",
         "blocked_number": "+10000000000",
         "is_global": false,
         "inbound_number": "+19999999999",
