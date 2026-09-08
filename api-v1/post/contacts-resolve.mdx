@@ -27,19 +27,13 @@ description: "Find an existing contact or create a new one."
   Name of the contact.
 </ParamField>
 
-<ParamField body="persona_id" type="string">
-  Persona ID for memory scoping. Either `persona_id` or `agent_number` should be provided for memory creation.
-</ParamField>
-
-<ParamField body="agent_number" type="string">
-  Agent phone number for memory scoping. Either `persona_id` or `agent_number` should be provided for memory creation.
-</ParamField>
-
 <ParamField body="metadata" type="object">
   Custom metadata to associate with the contact.
 </ParamField>
 
 ### Response
+
+The endpoint returns HTTP `201` when it creates a contact and `200` when it finds an existing contact.
 
 <ResponseField name="data" type="object">
   Response containing the contact and creation status.
@@ -73,6 +67,18 @@ description: "Find an existing contact or create a new one."
   ISO timestamp when the contact was last updated.
 </ResponseField>
 
+<ResponseField name="data.contact.identifiers" type="array">
+  Contact identifiers, including phone numbers, email addresses, and external IDs.
+</ResponseField>
+
+<ResponseField name="data.contact.memories" type="array">
+  Contact memory records. Each record includes its associated `entities` array.
+</ResponseField>
+
+<ResponseField name="data.contact.crm_syncs" type="array">
+  CRM synchronization records associated with the contact.
+</ResponseField>
+
 <ResponseField name="data.created" type="boolean">
   Whether a new contact was created (true) or an existing one was found (false).
 </ResponseField>
@@ -93,7 +99,15 @@ description: "Find an existing contact or create a new one."
         "source": "api"
       },
       "created_at": "2025-07-22T10:30:00.000Z",
-      "updated_at": "2025-07-22T10:30:00.000Z"
+      "updated_at": "2025-07-22T10:30:00.000Z",
+      "identifiers": [
+        {
+          "identifier_type": "phone_number",
+          "identifier_value": "+14155550192"
+        }
+      ],
+      "memories": [],
+      "crm_syncs": []
     },
     "created": true
   },
@@ -112,7 +126,10 @@ description: "Find an existing contact or create a new one."
         "source": "web_signup"
       },
       "created_at": "2025-07-20T10:30:00.000Z",
-      "updated_at": "2025-07-22T15:45:00.000Z"
+      "updated_at": "2025-07-22T15:45:00.000Z",
+      "identifiers": [],
+      "memories": [],
+      "crm_syncs": []
     },
     "created": false
   },

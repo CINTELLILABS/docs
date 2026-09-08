@@ -4,9 +4,9 @@ api: "PATCH https://api.bland.ai/v1/sms/conversations/{conversation_id}"
 description: "Updates properties of an existing SMS conversation."
 ---
 
-<Info>
-  **Enterprise Feature** - This endpoint is available for enterprise customers only.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 <ParamField header="authorization" type="string" required>
@@ -19,40 +19,58 @@ description: "Updates properties of an existing SMS conversation."
 </ParamField>
 
 ### Body Parameters
-<ParamField body="is_active" type="boolean">
-  Sets the active status of the conversation. When set to `false`, the conversation will be marked as inactive.
+<ParamField body="is_active" type="boolean" required>
+  Sets the active status of the conversation. When set to `false`, the conversation is marked as inactive. Must be a boolean; any other value is rejected with `INVALID_IS_ACTIVE_VALUE`.
 </ParamField>
 
 ### Response
-<ResponseField name="message" type="string">
+<ResponseField name="data" type="object">
+  Confirmation and the updated conversation values.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
   Confirmation message indicating the conversation was updated successfully.
 </ResponseField>
 
-<ResponseField name="conversation" type="object">
+<ResponseField name="data.conversation" type="object">
   The updated conversation object containing the new values.
 </ResponseField>
 
-<ResponseField name="conversation.id" type="string">
+<ResponseField name="data.conversation.id" type="string">
   The unique identifier of the conversation.
 </ResponseField>
 
-<ResponseField name="conversation.is_active" type="boolean">
+<ResponseField name="data.conversation.is_active" type="boolean">
   The current active status of the conversation.
 </ResponseField>
 
-<ResponseField name="conversation.updated_at" type="string">
+<ResponseField name="data.conversation.updated_at" type="string">
   ISO 8601 timestamp of when the conversation was last updated.
 </ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects on failure.
+</ResponseField>
+
+### Errors
+
+- `400` `CONVERSATION_ID_REQUIRED`: no conversation ID in the path.
+- `400` `INVALID_IS_ACTIVE_VALUE`: `is_active` is missing or not a boolean.
+- `404` `CONVERSATION_NOT_FOUND`: the conversation does not exist or belongs to another organization.
+- `500` `ERROR_UPDATING_CONVERSATION`: unexpected server error.
 
 <ResponseExample>
 ```json Success Response
 {
-  "message": "Conversation updated successfully",
-  "conversation": {
-    "id": "conv_1234567890",
-    "is_active": false,
-    "updated_at": "2024-01-15T10:30:00.000Z"
-  }
+  "data": {
+    "message": "Conversation updated successfully",
+    "conversation": {
+      "id": "conv_1234567890",
+      "is_active": false,
+      "updated_at": "2024-01-15T10:30:00.000Z"
+    }
+  },
+  "errors": null
 }
 ```
 
@@ -61,8 +79,8 @@ description: "Updates properties of an existing SMS conversation."
   "data": null,
   "errors": [
     {
-      "message": "Conversation ID is required",
-      "error": "CONVERSATION_ID_REQUIRED"
+      "message": "is_active must be a boolean value",
+      "error": "INVALID_IS_ACTIVE_VALUE"
     }
   ]
 }

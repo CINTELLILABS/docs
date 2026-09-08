@@ -1,0 +1,128 @@
+---
+title: "Register A2P Brand"
+api: "POST https://api.bland.ai/v1/sms/a2p/register/brand"
+description: "Submit a business and its authorized representative for Twilio A2P brand registration."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your Bland API key.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="twilioAccountSid" type="string" required>
+  Your Twilio Account SID.
+</ParamField>
+
+<ParamField body="twilioAuthToken" type="string" required>
+  Your Twilio auth token.
+</ParamField>
+
+<ParamField body="brandDetails" type="object" required>
+  Information about the business being registered.
+</ParamField>
+
+<ParamField body="brandDetails.businessName" type="string" required>
+  Legal business name.
+</ParamField>
+
+<ParamField body="brandDetails.ein" type="string" required>
+  Employer Identification Number.
+</ParamField>
+
+<ParamField body="brandDetails.vertical" type="string" required>
+  Twilio business industry value, such as `TECHNOLOGY`, `RETAIL`, or `HEALTHCARE`.
+</ParamField>
+
+<ParamField body="brandDetails.address" type="string" required>
+  Street address.
+</ParamField>
+
+<ParamField body="brandDetails.city" type="string" required>
+  City.
+</ParamField>
+
+<ParamField body="brandDetails.state" type="string" required>
+  Two-letter US state code.
+</ParamField>
+
+<ParamField body="brandDetails.postalCode" type="string" required>
+  Postal code.
+</ParamField>
+
+<ParamField body="brandDetails.country" type="string" required>
+  ISO country code.
+</ParamField>
+
+<ParamField body="brandDetails.email" type="string" required>
+  Business contact email.
+</ParamField>
+
+<ParamField body="brandDetails.type" type="string" required>
+  Business type, such as `Corporation`, `Partnership`, or `Non-profit Corporation`.
+</ParamField>
+
+<ParamField body="brandDetails.website" type="string" required>
+  Business website.
+</ParamField>
+
+<ParamField body="brandDetails.trusted_user" type="object" required>
+  Authorized representative for the business.
+</ParamField>
+
+<ParamField body="brandDetails.trusted_user.position" type="string" required>
+  Representative's job position.
+</ParamField>
+
+<ParamField body="brandDetails.trusted_user.first_name" type="string" required>
+  Representative's first name.
+</ParamField>
+
+<ParamField body="brandDetails.trusted_user.last_name" type="string" required>
+  Representative's last name.
+</ParamField>
+
+<ParamField body="brandDetails.trusted_user.phone_number" type="string" required>
+  Representative's phone number.
+</ParamField>
+
+<ParamField body="brandDetails.trusted_user.email" type="string" required>
+  Representative's email address.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the brand registration was submitted.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The Brand Registration object returned by Twilio.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "message": "A2P Brand registration successful. Check status on Twilio or through https://app.bland.ai/sms/register/check",
+  "data": {
+    "sid": "BNXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "status": "PENDING"
+  }
+}
+```
+
+```json Invalid Request
+{
+  "status": "error",
+  "message": "Missing required brandDetails fields"
+}
+```
+</ResponseExample>
+
+The endpoint returns `400` when required request fields are missing and `500` when registration fails.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

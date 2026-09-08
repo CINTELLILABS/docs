@@ -1,11 +1,11 @@
 ---
 title: "Update SMS Configuration"
 api: "POST https://api.bland.ai/v1/sms/number/update"
-description: "Update the SMS configuration for a phone number owned by the authenticated user."
+description: "Update the SMS, WhatsApp, or iMessage configuration for a phone number owned by the authenticated organization."
 ---
 
 <Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+  **Enterprise Feature** - This endpoint requires an Enterprise plan. Requests from other plans are rejected with `403 ENTERPRISE_REQUIRED`. Contact your Bland representative for access.
 </Info>
 
 ### Headers
@@ -17,19 +17,27 @@ description: "Update the SMS configuration for a phone number owned by the authe
 ### Body Parameters
 
 <ParamField body="phone_number" type="string" required>
-  The E.164 formatted phone number to update (must belong to the authenticated user).
+  The E.164 formatted phone number to update (must belong to the authenticated organization).
+</ParamField>
+
+<ParamField body="channel" type="string" required={false}>
+  Which channel configuration to update. One of `"sms"`, `"whatsapp"`, or `"imessage"`. Defaults to `"sms"`. Numbers provisioned for iMessage are updated as `imessage` automatically unless you pass `"whatsapp"`.
 </ParamField>
 
 <ParamField body="webhook" type="string" required={false}>
-  When the agent sends a response, we’ll send the message details in a POST request to the URL you specify here, along with chat history.
+  When the agent sends a response, we'll send the message details in a POST request to the URL you specify here, along with chat history.
 </ParamField>
 
 <ParamField body="request_data" type="object|array" required={false}>
-  Request data fields are available to the AI agent during the call when referenced in the associated pathway or task.
+  Request data fields are available to the AI agent during the conversation when referenced in the associated pathway or task.
+</ParamField>
+
+<ParamField body="response_data" type="object|array" required={false}>
+  Response data fields stored on the configuration and included in webhook payloads.
 </ParamField>
 
 <ParamField body="time_out" type="number" required={false}>
-  Maximum time to wait for a user response, in seconds, before the timeout flow fires. Default is no timeout. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
+  Maximum time to wait for a user response, in seconds, before the timeout flow fires. Default is no timeout. Positive values below `30` are raised to `30`. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
 </ParamField>
 
 <ParamField body="timeout_action" type="string" required={false}>
@@ -41,7 +49,7 @@ description: "Update the SMS configuration for a phone number owned by the authe
 </ParamField>
 
 <ParamField body="warning_time" type="number" required={false}>
-  Seconds to wait before sending the warning message. Must be less than `time_out`, otherwise the update is rejected. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
+  Seconds to wait before sending the warning message. Must be less than `time_out`, otherwise the update fails with `500 ERROR_UPDATING_SMS_CONFIG`. Can be overridden per-conversation via `/v1/sms/send` or `/v1/sms/create`.
 </ParamField>
 
 <ParamField body="warning_message" type="string" required={false}>
@@ -49,11 +57,11 @@ description: "Update the SMS configuration for a phone number owned by the authe
 </ParamField>
 
 <ParamField body="messaging_service_sid" type="string" required={false}>
-  Twilio Messaging Service SID, if set.
+  Twilio Messaging Service SID, if set. Ignored for `imessage`.
 </ParamField>
 
 <ParamField body="objective" type="string" required={false}>
-  Assistant system prompt or conversational goal.
+  Assistant system prompt or conversational goal. `prompt` and `task` are accepted as aliases and stored as `objective`.
 </ParamField>
 
 <ParamField body="tools" type="array" required={false}>
@@ -61,15 +69,19 @@ description: "Update the SMS configuration for a phone number owned by the authe
 </ParamField>
 
 <ParamField body="temperature" type="number" required={false}>
-  The model’s temperature setting, controlling creativity.
+  The model's temperature setting, controlling creativity.
+</ParamField>
+
+<ParamField body="use_candidate_model" type="boolean" required={false}>
+  Whether conversations on this number should use the candidate model.
 </ParamField>
 
 <ParamField body="pathway_id" type="string" required={false}>
   The ID of the linked conversational pathway (if any).
 </ParamField>
 
-<ParamField body="pathway_version" type="string" required={false}>
-  The specific version of the pathway to use.
+<ParamField body="pathway_version" type="number" required={false}>
+  The pathway version number to use.
 </ParamField>
 
 <ParamField body="start_node_id" type="string" required={false}>
@@ -96,10 +108,12 @@ description: "Update the SMS configuration for a phone number owned by the authe
   An array of citation schema IDs to extract when conversations end on this number. See [Citations](/enterprise-features/citations).
 </ParamField>
 
+Fields not listed here are ignored.
+
 ### Response
 
 <ResponseField name="data" type="object">
-  Contains a confirmation message and the updated SMS configuration.
+  Contains a confirmation message and the updated configuration.
 </ResponseField>
 
 <ResponseField name="data.message" type="string">
@@ -107,7 +121,7 @@ description: "Update the SMS configuration for a phone number owned by the authe
 </ResponseField>
 
 <ResponseField name="data.sms_config" type="object">
-  The updated and sanitized SMS configuration object.
+  The updated and sanitized configuration object. The key matches the channel updated: `sms_config`, `whatsapp_config`, or `imessage_config`.
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
@@ -122,6 +136,14 @@ description: "Update the SMS configuration for a phone number owned by the authe
   A machine-readable error code.
 </ResponseField>
 
+### Errors
+
+- `400` `INVALID_CHANNEL`: `channel` is not `sms`, `whatsapp`, or `imessage`.
+- `400` `PHONE_NUMBER_REQUIRED`: `phone_number` is missing.
+- `403` `ENTERPRISE_REQUIRED`: your organization is not on an Enterprise plan.
+- `404` `INBOUND_NUMBER_NOT_FOUND`: the number is not on your account, or it could not be found in the Twilio account behind it.
+- `500` `ERROR_UPDATING_SMS_CONFIG` (or `ERROR_UPDATING_WHATSAPP_CONFIG` / `ERROR_UPDATING_IMESSAGE_CONFIG`): the configuration could not be saved, including when `warning_time` is not less than `time_out`.
+
 
 <ResponseExample>
 
@@ -132,6 +154,7 @@ description: "Update the SMS configuration for a phone number owned by the authe
     "sms_config": {
       "webhook": null,
       "request_data": [],
+      "response_data": null,
       "time_out": null,
       "timeout_action": null,
       "timeout_message": null,

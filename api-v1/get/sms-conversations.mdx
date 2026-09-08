@@ -1,12 +1,12 @@
 ---
 title: "List Conversations"
 api: "GET https://api.bland.ai/v1/sms/conversations"
-description: "Retrieve a paginated list of SMS conversations for the authenticated user, with filtering, sorting, and metadata."
+description: "Retrieve a paginated list of SMS conversations for your organization, with filtering, sorting, and metadata."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
 
 ### Headers
 
@@ -16,27 +16,44 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
 
 ### Query Parameters
 
-<ParamField query="page" type="number" required={false}>
-  The page number to retrieve. Defaults to `1`.
+<ParamField query="limit" type="number" required={false}>
+  Maximum number of conversations to return, from `0` to `1000`. Defaults to `1000`.
 </ParamField>
 
-<ParamField query="pageSize" type="number" required={false}>
-  The number of conversations per page. Defaults to `25`.
+<ParamField query="from" type="number" required={false}>
+  Zero-based offset of the first conversation to return. Defaults to `0`. Combine with `limit` to page through results.
 </ParamField>
 
-<ParamField query="sortBy" type="string" required={false}>
-  Field to sort by. Allowed values: `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`. Defaults to `created_at`.
+<ParamField query="sort_by" type="string" required={false}>
+  Field to sort by. One of `created_at`, `updated_at`, `last_message_at`, or `message_count`. Defaults to `created_at`.
 </ParamField>
 
-<ParamField query="sortDir" type="string" required={false}>
-  Direction of sorting. Either `asc` or `desc`. Defaults to `desc`.
+<ParamField query="ascending" type="boolean" required={false}>
+  Sort direction. `true` for ascending, `false` for descending. Defaults to `false`.
 </ParamField>
 
 <ParamField query="filters" type="object[]" required={false}>
-  A JSON-encoded array of filter objects. Each object should contain:
-  - `field`: one of `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `variables`, `current_node_id`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`
-  - `operator`: one of `eq`, `contains`, `startsWith`, `endsWith`, `gt`, `gte`, `lt`, `lte`
-  - `value`: the filter value
+  One or more filter objects, each passed as a JSON-encoded string (`filters[]={"field":"is_active","operator":"equals","value":true}`), or a single `filters` parameter containing a JSON array. Each object has `field`, `operator`, and `value`.
+
+  Supported `field` values and the operators each accepts:
+  - `conversation_id`: `equals`
+  - `user_number`, `agent_number`: `equals`, `contains`
+  - `is_active`: `equals` (boolean)
+  - `status`: `equals`, `not`. Value is one of `active`, `completed`, `timed_out`, or `inactive`
+  - `channel`: `equals`. Value is one of `SMS`, `WHATSAPP`, or `IMESSAGE`
+  - `curr_pathway_id`: `equals`, `isEmpty`, `isNotEmpty`
+  - `created_at`, `updated_at`, `last_message_at`: `equals` (matches the whole calendar day), `gt`, `gte`, `lt`, `lte`
+  - `message_count`: `equals`, `gt`, `gte`, `lt`, `lte`
+  - `pathway_tags`: `hasSome`, `none`. Value is a JSON-encoded tag object or array of tag objects
+  - `variables`, `citation_variables`: `hasSome`, `none` with a JSON-encoded `{"key": value}` object; `citation_variables` also accepts `isEmpty` and `isNotEmpty`
+  - `disposition_logs`: `hasSome`, `none` with a JSON-encoded `{"key": value}` object matched against outcome results, or `isEmpty` / `isNotEmpty`
+  - Other scalar columns of the conversation (for example `current_node_id`, `curr_pathway_version`, `timed_out_at`): `equals`, `not`, `in`, `notIn`, `contains`, `startsWith`, `endsWith`, `isEmpty`, `isNotEmpty`, `gt`, `gte`, `lt`, `lte`
+
+  The full operator set is `equals`, `not`, `in`, `notIn`, `lt`, `lte`, `gt`, `gte`, `contains`, `startsWith`, `endsWith`, `isEmpty`, `isNotEmpty`, `hasSome`, `hasEvery`, `none`. A filter with an unknown field or an operator the field does not support is ignored rather than rejected.
+</ParamField>
+
+<ParamField query="mode" type="string" required={false}>
+  How multiple filters combine. `AND` or `OR`. Defaults to `AND`.
 </ParamField>
 
 ### Response
@@ -81,6 +98,14 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
   Indicates whether the conversation is still active.
 </ResponseField>
 
+<ResponseField name="data[].timed_out_at" type="string|null">
+  ISO timestamp when the conversation timed out due to inactivity, or `null`.
+</ResponseField>
+
+<ResponseField name="data[].ended_by_end_call_node" type="boolean">
+  `true` when the conversation was ended by an End Call node in the pathway.
+</ResponseField>
+
 <ResponseField name="data[].message_count" type="number">
   Number of messages in the conversation.
 </ResponseField>
@@ -98,7 +123,7 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
 </ResponseField>
 
 <ResponseField name="data[].effective_channel" type="string|null">
-  The resolved delivery channel: `"sms"`, `"rcs"`, or `"whatsapp"`.
+  The resolved delivery channel: `"sms"`, `"rcs"`, `"whatsapp"`, or `"imessage"`.
 </ResponseField>
 
 <ResponseField name="data[].summary" type="string|null">
@@ -117,22 +142,26 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
   `null` on success, or a list of errors on failure.
 </ResponseField>
 
-<ResponseField name="extra.pagination.totalItems" type="number">
+<ResponseField name="pagination.totalItems" type="number">
   Total number of conversations matching the query.
 </ResponseField>
 
-<ResponseField name="extra.pagination.totalPages" type="number">
-  Total number of pages available.
+<ResponseField name="pagination.totalPages" type="number">
+  Total number of pages available at the current `limit`.
 </ResponseField>
 
-<ResponseField name="extra.pagination.currentPage" type="number">
-  The current page of the response.
+<ResponseField name="pagination.currentPage" type="number">
+  The current page, derived from `from` and `limit`.
 </ResponseField>
 
-<ResponseField name="extra.pagination.pageSize" type="number">
-  Number of items per page in the current response.
+<ResponseField name="pagination.pageSize" type="number">
+  The `limit` applied to this response.
 </ResponseField>
 
+### Errors
+
+- `400` `INVALID_PARAMETER`: a query parameter has the wrong type or is out of range (for example `limit` above `1000`).
+- `500` `ERROR_GETTING_CONVERSATIONS`: unexpected server error.
 
 <ResponseExample>
 ```json Response
@@ -146,26 +175,26 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
       "agent_number": "+15552223333",
       "variables": { "campaign_id": "xyz789" },
       "current_node_id": "node_intro",
-      "curr_pathway_id": "pathway_abc123",
       "is_active": true,
+      "timed_out_at": null,
+      "ended_by_end_call_node": false,
       "message_count": 5,
       "last_message": "Hi there, how can I help you?",
       "last_message_at": "2024-11-21T09:12:00.000Z",
+      "curr_pathway_id": "pathway_abc123",
       "pathway_tags": [{"name": "Greeting", "color": "#4287f5"}],
-      "effective_channel": "sms",
       "summary": null,
       "citation_variables": null,
-      "disposition_tag": null
+      "disposition_tag": null,
+      "effective_channel": "sms"
     }
   ],
   "errors": null,
-  "extra": {
-    "pagination": {
-      "totalItems": 42,
-      "totalPages": 5,
-      "currentPage": 1,
-      "pageSize": 10
-    }
+  "pagination": {
+    "totalItems": 42,
+    "totalPages": 5,
+    "currentPage": 1,
+    "pageSize": 10
   }
 }
 ```

@@ -5,7 +5,7 @@ description: "Send an SMS message from an agent to a user. This creates or resum
 ---
 
 <Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+  **Enterprise Feature** - This endpoint requires an Enterprise plan. Requests from other plans are rejected with `403 ENTERPRISE_REQUIRED`. Contact your Bland representative for access.
 </Info>
 
 ### Headers
@@ -43,11 +43,15 @@ Allows you to create a new conversation, archiving the existing conversation and
 <ParamField body="persona_id" type="string" required={false}>
   UUID of a persona to use for this conversation. When provided, the persona's configuration is applied instead of the number's SMS config. Use `persona_version` to select which version to use.
 
-  Cannot be used as a substitute for `agent_number` — the agent number must still belong to your account. The persona_id controls *how* the conversation is handled, not *which number* sends it.
+  Cannot be used as a substitute for `agent_number`: the agent number must still belong to your account. The persona_id controls *how* the conversation is handled, not *which number* sends it.
 </ParamField>
 
 <ParamField body="persona_version" type="string" required={false}>
   Which version of the persona to use. Allowed values: `"production"` (default), `"draft"`.
+</ParamField>
+
+<ParamField body="use_candidate_model" type="boolean" required={false}>
+  Whether the conversation should use the candidate model.
 </ParamField>
 
 <ParamField body="persona_settings" type="object" required={false}>
@@ -136,11 +140,15 @@ This overrides the webhook for the conversation, instead of using the webhook at
 ### Response
 
 <ResponseField name="data" type="object">
-  An object confirming the message was sent and referencing the triggered workflow.
+  An object confirming the message was accepted for delivery.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Always `"processing"`. Delivery happens asynchronously in a background workflow.
 </ResponseField>
 
 <ResponseField name="data.message" type="string">
-  Confirmation text for the successful send.
+  Confirmation text for the accepted request.
 </ResponseField>
 
 <ResponseField name="data.conversation_id" type="string">
@@ -148,20 +156,34 @@ This overrides the webhook for the conversation, instead of using the webhook at
 </ResponseField>
 
 <ResponseField name="data.message_id" type="string">
-  ID of the message that was sent, if a single message was sent, to track message delivery and status.
+  ID of the queued message. Only present when `agent_message` or `content_sid` was supplied; omitted when the agent generates the reply. Use it to track delivery status via [Get Conversation](/api-v1/get/sms-conversations-id).
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects if the request failed.
 </ResponseField>
 
+### Errors
+
+- `400` `MISSING_REQUIRED_FIELDS`: `user_number` or `agent_number` is missing.
+- `400` `INVALID_CHANNEL`: `channel` is not `sms`, `whatsapp`, or `imessage`.
+- `400` `INVALID_TIMEOUT_CONFIG`: `warning_time` is greater than or equal to `time_out`.
+- `400` `INVALID_TEMPLATE_USAGE`: `content_sid` was supplied without `channel: "whatsapp"`.
+- `400` `INVALID_PERSONA_ID`: `persona_id` is not a UUID.
+- `400` `NO_PERSONA_VERSION`: the persona has no production version (or no draft version when `persona_version` is `"draft"`).
+- `403` `ENTERPRISE_REQUIRED`: your organization is not on an Enterprise plan.
+- `404` `PERSONA_NOT_FOUND`: `persona_id` does not belong to your account.
+- `404` `INBOUND_NUMBER_NOT_FOUND`: `agent_number` is not a number on your account.
+- `500` `ERROR_SENDING_SMS`: unexpected server error.
+
 <ResponseExample>
 ```json Response
 {
   "data": {
-    "message": "SMS sent successfully",
+    "status": "processing",
+    "message": "SMS accepted for delivery. Check status of SMS with the message_id",
     "conversation_id": "convo_abc123",
-    "workflow_id": "workflow_xyz789"
+    "message_id": "0f7c2d3e-4a5b-4c6d-8e9f-0a1b2c3d4e5f"
   },
   "errors": null
 }

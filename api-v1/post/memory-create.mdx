@@ -4,11 +4,17 @@ api: "POST https://api.bland.ai/v1/memory/create"
 description: "Create a new memory to organize and track call interactions by phone numbers."
 ---
 
+<Note>
+  This endpoint belongs to the legacy Memory Store API, which is maintained for existing customers. For new integrations, use the [contact-based Memory API](/api-v1/post/memory-contact). The Memory router allows 100 requests per 15 minutes. Further requests return HTTP `429`. Your organization role must be admin, owner, or operator.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+Your organization role must be admin, owner, or operator.
 
 ### Body Parameters
 
@@ -17,6 +23,8 @@ description: "Create a new memory to organize and track call interactions by pho
 </ParamField>
 
 ### Response
+
+Successful creation returns HTTP `201`.
 
 <ResponseField name="data" type="object">
   The created memory object.
@@ -65,7 +73,7 @@ description: "Create a new memory to organize and track call interactions by pho
   "data": null,
   "errors": [
     {
-      "error": "INVALID_REQUEST",
+      "error": "BAD_REQUEST",
       "message": "Memory name is required."
     }
   ]
@@ -77,8 +85,8 @@ description: "Create a new memory to organize and track call interactions by pho
   "data": null,
   "errors": [
     {
-      "error": "MEMORY_CREATE_ERROR",
-      "message": "Failed to create memory."
+      "error": "INTERNAL_ERROR",
+      "message": "An unexpected error occurred"
     }
   ]
 }

@@ -1,0 +1,152 @@
+---
+title: "Resend Post Conversation Webhook"
+api: "POST https://api.bland.ai/v1/sms/conversations/webhooks/resend"
+description: "Resend the status webhook for one or more SMS conversations to the URL it was originally delivered to."
+---
+
+<Note>
+  Messaging is an Enterprise feature. Configuring a number for messaging (`POST /v1/sms/number/update`) and sending (`/send`, `/batch`) require an Enterprise plan. This endpoint itself is not plan-gated.
+</Note>
+
+Resend the status webhook for conversations whose webhook was previously sent. Only conversations with a stored webhook log (see [Get Post Conversation Webhook](/api-v1/get/sms-conversations-webhook)) can be resent, and each is sent to the same URL it was originally delivered to. This is the messaging counterpart of [Resend Post Call Webhook](/api-v1/post/postcall-webhooks-resend).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="conversation_ids" type="string[]" required>
+  Conversation IDs to resend webhooks for. Between 1 and 100 IDs; each must be unique within the array.
+</ParamField>
+
+<ParamField body="rebuild" type="boolean" required={false}>
+  Defaults to `true`, which rebuilds the payload from the conversation's current state (summary, citations, outcomes) before sending, so a resend after re-running outcomes delivers the corrected data. Pass `false` to replay the originally stored payload byte for byte. If a rebuild fails, the stored payload is sent instead.
+</ParamField>
+
+If any requested conversation has no stored webhook, the request fails with `404` and no webhooks are resent.
+
+### Response
+
+<ResponseField name="data" type="array">
+  One webhook log object per conversation, in request order.
+</ResponseField>
+
+<ResponseField name="data[].conversation_id" type="string">
+  The conversation this webhook log belongs to.
+</ResponseField>
+
+<ResponseField name="data[].url" type="string">
+  The webhook URL the payload was resent to.
+</ResponseField>
+
+<ResponseField name="data[].payload" type="object">
+  The payload that was originally delivered when the conversation ended. This stored record is never rewritten by a resend.
+</ResponseField>
+
+<ResponseField name="data[].sent_payload" type="object">
+  The payload delivered by this resend. Differs from `payload` when `rebuild` was `true` and the conversation's analysis fields changed.
+</ResponseField>
+
+<ResponseField name="data[].rebuilt" type="boolean">
+  `true` when the payload was rebuilt from current conversation state before sending.
+</ResponseField>
+
+<ResponseField name="data[].created_at" type="string">
+  ISO timestamp for when the webhook log was created.
+</ResponseField>
+
+<ResponseField name="data[].user_id" type="string">
+  The organization ID that owns this conversation.
+</ResponseField>
+
+<ResponseField name="data[].metadata" type="array">
+  All delivery attempts for this conversation, including the one just made. Each entry contains `sent_at`, `response_code`, `response_time`, `send_type` (`"rebuild"` or `"resend"` for attempts made through this endpoint), and `error_message` when delivery failed.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if a failure occurred.
+</ResponseField>
+
+### Errors
+
+- `400` `INVALID_PARAMETER`: `conversation_ids` is missing, empty, longer than 100, contains non-strings, or contains duplicates.
+- `404` `WEBHOOK_NOT_FOUND`: one or more conversations have no stored webhook log. The message lists the IDs.
+- `500` `INTERNAL_SERVER_ERROR`: unexpected server error.
+
+<RequestExample>
+```json Request
+{
+  "conversation_ids": ["convo_abc123"],
+  "rebuild": true
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "conversation_id": "convo_abc123",
+      "url": "https://example.com/sms-webhook",
+      "payload": {
+        "type": "status",
+        "conversation_id": "convo_abc123",
+        "status": "ended",
+        "phone_number": "+15550001111",
+        "agent_number": "+15550002222",
+        "channel": "sms",
+        "message_count": 5
+      },
+      "sent_payload": {
+        "type": "status",
+        "conversation_id": "convo_abc123",
+        "status": "ended",
+        "phone_number": "+15550001111",
+        "agent_number": "+15550002222",
+        "channel": "sms",
+        "message_count": 5,
+        "summary": "Customer confirmed their appointment for Friday."
+      },
+      "rebuilt": true,
+      "created_at": "2026-04-13T20:50:59.233Z",
+      "user_id": "user_abc123",
+      "metadata": [
+        {
+          "sent_at": "2026-04-13T20:50:59.000Z",
+          "response_code": 200,
+          "response_time": "142ms",
+          "send_type": "spawn"
+        },
+        {
+          "sent_at": "2026-04-14T09:12:03.000Z",
+          "response_code": 200,
+          "response_time": "98ms",
+          "send_type": "rebuild"
+        }
+      ]
+    }
+  ],
+  "errors": null
+}
+```
+
+```json 404 Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "WEBHOOK_NOT_FOUND",
+      "message": "No webhook log found for conversation ids: convo_abc123"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

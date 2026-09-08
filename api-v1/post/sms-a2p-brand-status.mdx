@@ -1,0 +1,71 @@
+---
+title: "Check A2P Brand Status"
+api: "POST https://api.bland.ai/v1/sms/a2p/status/brand"
+description: "Check the Twilio registration and identity status for an A2P brand."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your Bland API key.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="twilioAccountSid" type="string" required>
+  Your Twilio Account SID.
+</ParamField>
+
+<ParamField body="twilioAuthToken" type="string" required>
+  Your Twilio auth token.
+</ParamField>
+
+<ParamField body="brandRegistrationSid" type="string" required>
+  The Twilio Brand Registration SID to check.
+</ParamField>
+
+### Response
+
+<ResponseField name="brandStatus" type="string">
+  Current Twilio brand registration status.
+</ResponseField>
+
+<ResponseField name="isSuccessful" type="boolean">
+  Whether `brandStatus` is `APPROVED`.
+</ResponseField>
+
+<ResponseField name="lastUpdated" type="string">
+  Timestamp of the latest Twilio status update.
+</ResponseField>
+
+<ResponseField name="identityStatus" type="string">
+  Current Twilio identity verification status.
+</ResponseField>
+
+<ResponseField name="issues" type="array">
+  Registration or identity statuses that still require attention.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "brandStatus": "APPROVED",
+  "isSuccessful": true,
+  "lastUpdated": "2025-07-22T10:30:00.000Z",
+  "identityStatus": "VERIFIED",
+  "issues": []
+}
+```
+
+```json Brand Not Found
+{
+  "error": "Brand registration not found with SID: BNXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+}
+```
+</ResponseExample>
+
+The endpoint returns `400` for missing fields, `401` for invalid Twilio credentials, `404` when the registration does not exist, and `500` for other failures.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

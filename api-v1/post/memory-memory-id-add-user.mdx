@@ -4,11 +4,17 @@ api: "POST https://api.bland.ai/v1/memory/{memory_id}/add-user"
 description: "Add a new user/phone number to an existing memory."
 ---
 
+<Note>
+  This endpoint belongs to the legacy Memory Store API, which is maintained for existing customers. For new integrations, use the [contact-based Memory API](/api-v1/post/memory-contact). The Memory router allows 100 requests per 15 minutes. Further requests return HTTP `429`. Your organization role must be admin, owner, or operator.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+Your organization role must be admin, owner, or operator.
 
 ### Path Parameters
 
@@ -117,8 +123,8 @@ description: "Add a new user/phone number to an existing memory."
   "data": null,
   "errors": [
     {
-      "error": "MEMORY_ADD_USER_ERROR",
-      "message": "Failed to add user to memory."
+      "error": "INTERNAL_ERROR",
+      "message": "An unexpected error occurred"
     }
   ]
 }
@@ -126,7 +132,7 @@ description: "Add a new user/phone number to an existing memory."
 </ResponseExample>
 
 ### Notes
-- If the phone number already exists in the memory, this endpoint will error with a `MEMORY_ADD_USER_ERROR`
+- If the phone number already exists in the memory, the endpoint returns the error produced by the backing memory store.
 - Metadata can be any text string relevant to your use case
 - The summary will be enhanced over time as more calls are added to this user's record
 ---
