@@ -1,56 +1,82 @@
 ---
-title: "Get Organization Billing Information"  
-api: "GET https://api.bland.ai/v1/orgs/{org_id}/billing"  
-description: "Retrieve the current billing details for an organization."  
+title: "Get Organization Billing Information"
+api: "GET https://api.bland.ai/v1/orgs/{org_id}/billing"
+description: "Retrieve the current billing details for an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Any member of the organization can read this. A non-member caller gets a `500` response with error `ORG_BILLING_DATA_ERROR`, not a `403`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
 ### Response
 
-<ResponseField name="data" type="object">  
-  The billing details of the organization.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  The billing details of the organization.
+</ResponseField>
 
-<ResponseField name="data.current_balance" type="number">  
-  The current account balance of the organization.  
-</ResponseField>  
+<ResponseField name="data.current_balance" type="number">
+  The current account balance of the organization.
+</ResponseField>
 
-<ResponseField name="data.refill_amount" type="number | null">  
-  The amount to which the balance will be refilled, or `null` if refilling is not enabled.  
-</ResponseField>  
+<ResponseField name="data.refill_amount" type="string | null">
+  The amount to which the balance will be refilled, serialized as a decimal string (for example `"50"`), or `null` if refilling is not enabled.
+</ResponseField>
 
-<ResponseField name="data.refill_at" type="number | null">  
-  The threshold at which the account will be refilled, or `null` if refilling is not enabled.
-</ResponseField>  
+<ResponseField name="data.refill_at" type="string | null">
+  The balance threshold that triggers a refill, serialized as a decimal string, or `null` if refilling is not enabled.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="data.custom_alert_threshold_value" type="number | null">
+  The balance at which a low-balance alert is sent, or `null` if no custom threshold is set.
+</ResponseField>
 
-<ResponseExample>  
+<ResponseField name="data.zero_balance_alert_enabled" type="boolean">
+  Whether an alert is sent when the balance reaches zero.
+</ResponseField>
 
-```json Response  
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns `404 NOT_FOUND` when no billing record exists for the organization, and `500 ORG_BILLING_DATA_ERROR` for other failures.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
 {
   "data": {
     "current_balance": 20.711,
     "refill_amount": null,
-    "refill_at": null
+    "refill_at": null,
+    "custom_alert_threshold_value": null,
+    "zero_balance_alert_enabled": false
   },
   "errors": null
 }
 ```
-</ResponseExample> 
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Billing data not found."
+    }
+  ]
+}
+```
+</ResponseExample>
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

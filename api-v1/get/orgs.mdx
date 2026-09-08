@@ -1,94 +1,102 @@
 ---
-title: "Get Organization"  
-api: "GET https://api.bland.ai/v1/orgs/{org_id}"  
-description: "Retrieve details of an organization."  
+title: "Get Organization"
+api: "GET https://api.bland.ai/v1/orgs/{org_id}"
+description: "Retrieve details of an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Any member of the organization can read it. A non-member caller gets a `500` response with error `ORG_GET_FAILURE` and `message: "Error: Failed: You don't have permission in this organization."`, not a `403`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization to retrieve.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization to retrieve.
+</ParamField>
 
 ### Response
 
-<ResponseField name="data" type="object">  
-  The details of the organization.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  The details of the organization.
+</ResponseField>
 
-<ResponseField name="data.id" type="string">  
-  The unique identifier of the organization.  
-</ResponseField>  
+<ResponseField name="data.id" type="string">
+  The unique identifier of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_slug" type="string">  
-  The unique slug identifier of the organization.  
-</ResponseField>  
+<ResponseField name="data.org_slug" type="string">
+  The unique slug identifier of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_display_name" type="string">  
-  The display name of the organization.  
-</ResponseField>  
+<ResponseField name="data.org_display_name" type="string">
+  The display name of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_image_url" type="string | null">  
-  URL of the organization's image (if set).  
-</ResponseField>  
+<ResponseField name="data.org_image_url" type="string | null">
+  URL of the organization's image (if set).
+</ResponseField>
 
-<ResponseField name="data.org_plan" type="string">  
-  The organization's plan. Default: `"starter"`.  
-</ResponseField>  
+<ResponseField name="data.org_plan" type="string">
+  The organization's plan. Default: `"starter"`.
+</ResponseField>
 
-<ResponseField name="data.org_creation_date" type="string (ISO 8601)">  
-  The timestamp of when the organization was created.  
-</ResponseField>  
+<ResponseField name="data.org_creation_date" type="string (ISO 8601)">
+  The timestamp of when the organization was created.
+</ResponseField>
 
-<ResponseField name="data.kyc_level" type="integer">  
-  The KYC (Know Your Customer) verification level. Default: `0`.  
-</ResponseField>  
+<ResponseField name="data.kyc_level" type="integer">
+  The KYC (Know Your Customer) verification level. Default: `0`.
+</ResponseField>
 
-<ResponseField name="data.placement_group" type="string">  
-  The placement group of the organization. Default: `"blandshared"`.  
-</ResponseField>  
+<ResponseField name="data.placement_group" type="string">
+  The placement group of the organization. Default: `"blandshared"`.
+</ResponseField>
 
-<ResponseField name="data.is_deleted" type="boolean">  
-  Whether the organization is deleted. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_deleted" type="boolean">
+  Whether the organization is deleted. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.is_stripe_overdue" type="boolean">  
-  Whether the organization has overdue Stripe payments. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_stripe_overdue" type="boolean">
+  Whether the organization has overdue Stripe payments. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.is_suspended" type="boolean">  
-  Whether the organization is suspended. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_suspended" type="boolean">
+  Whether the organization is suspended. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.org_rate_limit" type="integer">  
-  The organization's request rate limit. Default: `5`.  
-</ResponseField>  
+<ResponseField name="data.org_rate_limit" type="integer">
+  The organization's request rate limit. Default: `5`.
+</ResponseField>
 
-<ResponseField name="data.org_type" type="string">  
-  The type of the organization. Default: `"normal"`.  
-</ResponseField>  
+<ResponseField name="data.org_type" type="string">
+  The type of the organization. Default: `"normal"`.
+</ResponseField>
 
-<ResponseField name="data.entitlements" type="array">  
-  A list of entitlements granted to the organization. Default: `[]`.  
-</ResponseField>  
+<ResponseField name="data.entitlements" type="array">
+  A list of entitlements granted to the organization. Default: `[]`.
+</ResponseField>
 
-<ResponseField name="data.preferences.use_bland_url" type="boolean">  
-  Whether the organization prefers to use the Bland URL. Default: `true`.  
-</ResponseField>  
+<ResponseField name="data.preferences" type="object">
+  Organization preferences. See [Update Organization Properties](/api-v1/patch/org_properties) for every key. New organizations start with `use_bland_url: true` and `recording_lifespan_days: 0`.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="data.paid" type="boolean">
+  Whether the organization is on a paid plan. Computed from `org_plan` and `org_rate_limit`.
+</ResponseField>
 
-<ResponseExample>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_GET_FAILURE"` and a `message`.
+</ResponseField>
 
-```json Response  
+<ResponseExample>
+
+```json Response
 {
   "data": {
     "id": "d122b4cf-1614-4124-aa28-15f81a09988f",
@@ -106,8 +114,10 @@ description: "Retrieve details of an organization."
     "org_type": "normal",
     "entitlements": [],
     "preferences": {
-      "use_bland_url": true
-    }
+      "use_bland_url": true,
+      "recording_lifespan_days": 0
+    },
+    "paid": false
   },
   "errors": null
 }

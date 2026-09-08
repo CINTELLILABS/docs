@@ -1,79 +1,83 @@
 ---
-title: "List Organization's Service Versions"  
-api: "GET https://api.bland.ai/v1/orgs/{org_id}/versions/{service}/list"  
-description: "Retrieve a list of available versions for a specified service within an organization."  
+title: "List Organization's Service Versions"
+api: "GET https://api.bland.ai/v1/orgs/{org_id}/versions/{service}/list"
+description: "Retrieve a list of available versions for a specified service within an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+This endpoint only validates that `org_id` is a UUID. The list is the same for every organization and does not check your membership.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
-<ParamField path="service" type="string" required>  
-  The name of the service whose versions you want to retrieve.  
-  <br/>Valid values: `"api_server"`, `"ws_server"`  
-</ParamField>  
+<ParamField path="service" type="string" required>
+  The name of the service whose versions you want to retrieve.
+  <br/>Valid values: `"api_server"`, `"ws_server"`
+</ParamField>
 
 ### Response
 
-<ResponseField name="data" type="object">  
-  Contains the list of available versions for the requested service.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  Contains the list of available versions for the requested service.
+</ResponseField>
 
-<ResponseField name="data.versions" type="array">  
-  An array of available versions.  
-</ResponseField>  
+<ResponseField name="data.versions" type="array">
+  An array of available versions.
+</ResponseField>
 
-<ResponseField name="data.versions[].id" type="string">  
-  The unique identifier of the version.  
-</ResponseField>  
+<ResponseField name="data.versions[].id" type="string">
+  The unique identifier of the version.
+</ResponseField>
 
-<ResponseField name="data.versions[].friendly_name" type="string">  
-  A human-readable name for the version.  
-</ResponseField>  
+<ResponseField name="data.versions[].friendly_name" type="string">
+  A human-readable name for the version.
+</ResponseField>
 
-<ResponseField name="data.versions[].created_at" type="string (ISO 8601)">  
-  The timestamp when the version was created.  
-</ResponseField>  
+<ResponseField name="data.versions[].created_at" type="string (ISO 8601)">
+  The timestamp when the version was created.
+</ResponseField>
 
-<ResponseField name="data.versions[].git_sha" type="string">  
-  The Git SHA hash of the version.  
-</ResponseField>  
+<ResponseField name="data.versions[].git_sha" type="string">
+  Always an empty string. The build hash is not exposed.
+</ResponseField>
 
-<ResponseField name="data.versions[].tags" type="array">  
-  Tags categorizing the version, e.g., `["latest"]`, `["stable"]`.  
-</ResponseField>  
+<ResponseField name="data.versions[].tags" type="array">
+  Tags categorizing the version, e.g., `["latest"]`, `["stable"]`.
+</ResponseField>
 
-<ResponseField name="data.versions[].currently_supported" type="boolean">  
-  Whether this version is currently supported.  
-</ResponseField>  
+<ResponseField name="data.versions[].currently_supported" type="boolean">
+  Always `true`. Unsupported versions are not returned.
+</ResponseField>
 
-<ResponseField name="data.versions[].recommended_upgrade_to" type="string | null">  
-  The recommended version to upgrade to, if applicable.  
-</ResponseField>  
+<ResponseField name="data.versions[].recommended_upgrade_to" type="string | null">
+  The recommended version to upgrade to, if applicable.
+</ResponseField>
 
-<ResponseField name="data.versions[].service" type="string">  
-  The name of the service this version belongs to.  
-</ResponseField>  
+<ResponseField name="data.versions[].service" type="string">
+  The name of the service this version belongs to.
+</ResponseField>
 
-<ResponseField name="data.versions[].placement_group" type="string">  
-  The placement group of this version.  
-</ResponseField>  
+<ResponseField name="data.versions[].placement_group" type="string">
+  The placement group of this version.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. An unknown `service` returns `500` with error `ORG_VERSION_LIST_LOOKUP_ERROR` and `message: "Invalid service target. Available: api_server,ws_server"`.
+</ResponseField>
 
-<ResponseExample>  
+<ResponseExample>
 
-```json Response  
+```json Response
 {
   "data": {
     "versions": [

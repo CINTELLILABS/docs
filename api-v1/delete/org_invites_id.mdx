@@ -1,0 +1,60 @@
+---
+title: "Revoke Organization Invite"
+api: "DELETE https://api.bland.ai/v1/orgs/{org_id}/invites/{invite_id}"
+description: "Cancel a pending invitation so it can no longer be redeemed."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Requires the `owner` or `admin` role. Callers with a lower role get `403 UNAUTHORIZED`. A caller who is not a member of the organization gets a `500` response with error `ORG_INVITE_DELETE_FAILURE` and the reason in `message`.
+</Note>
+
+### Path Parameters
+
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
+
+<ParamField path="invite_id" type="string" required>
+  The `id` of the invite, from [List Organization Invites](/api-v1/get/org_invites). The invite must belong to `org_id`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="null">
+  Always `null` upon successful revocation.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. `403 UNAUTHORIZED` for insufficient role. An `invite_id` that does not exist in this organization, or has already been redeemed or revoked, returns `500` with error `ORG_INVITE_DELETE_FAILURE`.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": null,
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "UNAUTHORIZED",
+      "message": "Insufficient permissions"
+    }
+  ]
+}
+```
+</ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)

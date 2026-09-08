@@ -1,94 +1,102 @@
 ---
-title: "Create Organization"  
-api: "POST https://api.bland.ai/v1/orgs/create"  
-description: "Create a new organization."  
+title: "Create Organization"
+api: "POST https://api.bland.ai/v1/orgs/create"
+description: "Create a new organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+The caller becomes the owner of the new organization. If the caller's current organization is an `enterprise` org, the new organization inherits its entitlements, placement group, and org type.
+</Note>
 
 ### Body
 
-<ParamField body="name" type="string" required>  
-  The name of the organization.  
-</ParamField>  
+<ParamField body="name" type="string" required>
+  The name of the organization.
+</ParamField>
 
 ### Response
 
-<ResponseField name="data" type="object">  
-  The created organization details.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  The created organization details.
+</ResponseField>
 
-<ResponseField name="data.id" type="string">  
-  A unique identifier for the organization.  
-</ResponseField>  
+<ResponseField name="data.id" type="string">
+  A unique identifier for the organization.
+</ResponseField>
 
-<ResponseField name="data.org_slug" type="string">  
-  A randomly generated unique slug for the organization.  
-</ResponseField>  
+<ResponseField name="data.org_slug" type="string">
+  A randomly generated unique slug for the organization.
+</ResponseField>
 
-<ResponseField name="data.org_display_name" type="string">  
-  The display name of the organization.  
-</ResponseField>  
+<ResponseField name="data.org_display_name" type="string">
+  The display name of the organization.
+</ResponseField>
 
-<ResponseField name="data.org_image_url" type="string | null">  
-  URL of the organization's image (if set).  
-</ResponseField>  
+<ResponseField name="data.org_image_url" type="string | null">
+  URL of the organization's image (if set).
+</ResponseField>
 
-<ResponseField name="data.org_plan" type="string">  
-  The organization's plan. Default: `"starter"`.  
-</ResponseField>  
+<ResponseField name="data.org_plan" type="string">
+  The organization's plan. Default: `"starter"`.
+</ResponseField>
 
-<ResponseField name="data.org_creation_date" type="string (ISO 8601)">  
-  The timestamp of when the organization was created.  
-</ResponseField>  
+<ResponseField name="data.org_creation_date" type="string (ISO 8601)">
+  The timestamp of when the organization was created.
+</ResponseField>
 
-<ResponseField name="data.kyc_level" type="integer">  
-  The KYC (Know Your Customer) verification level. Default: `0`.  
-</ResponseField>  
+<ResponseField name="data.kyc_level" type="integer">
+  The KYC (Know Your Customer) verification level. Default: `0`.
+</ResponseField>
 
-<ResponseField name="data.placement_group" type="string">  
-  The placement group of the organization. Default: `"blandshared"`.  
-</ResponseField>  
+<ResponseField name="data.placement_group" type="string">
+  The placement group of the organization. Default: `"blandshared"`.
+</ResponseField>
 
-<ResponseField name="data.is_deleted" type="boolean">  
-  Whether the organization is deleted. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_deleted" type="boolean">
+  Whether the organization is deleted. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.is_stripe_overdue" type="boolean">  
-  Whether the organization has overdue Stripe payments. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_stripe_overdue" type="boolean">
+  Whether the organization has overdue Stripe payments. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.is_suspended" type="boolean">  
-  Whether the organization is suspended. Default: `false`.  
-</ResponseField>  
+<ResponseField name="data.is_suspended" type="boolean">
+  Whether the organization is suspended. Default: `false`.
+</ResponseField>
 
-<ResponseField name="data.org_rate_limit" type="integer">  
-  The organization's request rate limit. Default: `5`.  
-</ResponseField>  
+<ResponseField name="data.org_rate_limit" type="integer">
+  The organization's request rate limit. Default: `5`.
+</ResponseField>
 
-<ResponseField name="data.org_type" type="string">  
-  The type of the organization. Default: `"normal"`.  
-</ResponseField>  
+<ResponseField name="data.org_type" type="string">
+  The type of the organization. Default: `"normal"`.
+</ResponseField>
 
-<ResponseField name="data.entitlements" type="array">  
-  A list of entitlements granted to the organization. Default: `[]`.  
-</ResponseField>  
+<ResponseField name="data.entitlements" type="array">
+  A list of entitlements granted to the organization. Default: `[]`.
+</ResponseField>
 
-<ResponseField name="data.preferences.use_bland_url" type="boolean">  
-  Whether the organization prefers to use the Bland URL. Default: `true`.  
-</ResponseField>  
+<ResponseField name="data.preferences" type="object">
+  Organization preferences. See [Update Organization Properties](/api-v1/patch/org_properties) for every key. New organizations start with `use_bland_url: true` and `recording_lifespan_days: 0`.
+</ResponseField>
 
-<ResponseField name="errors" type="null | array">  
-  Contains error details if the request fails.  
-</ResponseField>  
+<ResponseField name="data.paid" type="boolean">
+  Whether the organization is on a paid plan. Computed from `org_plan` and `org_rate_limit`.
+</ResponseField>
 
-<ResponseExample>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_CREATE_FAILURE"` and a `message` (status `500`).
+</ResponseField>
 
-```json Response  
+<ResponseExample>
+
+```json Response
 {
     "data": {
         "id": "00705195-d5f2-4483-829e-07bb34df3625",
@@ -106,8 +114,10 @@ description: "Create a new organization."
         "org_type": "normal",
         "entitlements": [],
         "preferences": {
-            "use_bland_url": true
-        }
+          "use_bland_url": true,
+          "recording_lifespan_days": 0
+        },
+        "paid": false
     },
     "errors": null
 }

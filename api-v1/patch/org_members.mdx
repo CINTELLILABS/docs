@@ -1,60 +1,87 @@
 ---
-title: "Update Organization Members"  
-api: "PATCH https://api.bland.ai/v1/orgs/{org_id}/members"  
-description: "Add or remove members from an organization."  
+title: "Update Organization Members"
+api: "PATCH https://api.bland.ai/v1/orgs/{org_id}/members"
+description: "Add or remove members from an organization."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Adding a member requires the `owner` or `admin` role. A non-member caller or a caller without the required role gets a `500` response with error `ORG_MEMBER_UPDATE_FAILURE` and the reason in `message` (for example `You don't have permission to perform this action`), not a `403`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
 ### Body
 
-<ParamField body="action" type="string" required>  
-  The action to perform.  
-  <br/>Valid values: `"add"`, `"remove"`  
-</ParamField>  
+<ParamField body="action" type="string" required>
+  The action to perform.
+  <br/>Valid values: `"add"`, `"remove"`
+</ParamField>
 
-<ParamField body="target" type="string" required>  
-  Who to add or remove. Accepts an existing user ID, a phone number (E.164 format, e.g. `+14155550123`), or an email address.  
-  <br/>When you pass a phone number or email that doesn't match an existing user, an invitation is created. Phone number invitees receive an SMS, and email invitees receive a sign-up link. Invitees are automatically added to the organization when they sign up with the same phone number or email.  
-</ParamField>  
+<ParamField body="target" type="string" required>
+  Who to add or remove. Accepts an existing user ID, a phone number (E.164 format, e.g. `+14155550123`), or an email address.
+  <br/>When you pass a phone number or email that doesn't match an existing user, an invitation is created instead. Phone number invitees receive an SMS, and email invitees receive a sign-up link. Invitees are automatically added to the organization when they sign up with the same phone number or email.
+  <br/>`"remove"` only works on current members. To cancel an invitation that has not been redeemed yet, use [Revoke Organization Invite](/api-v1/delete/org_invites_id).
+</ParamField>
 
-<ParamField body="permissions" type="string[]">  
-  A list of permissions to assign when adding a member.  
-  <br/>Required only when `action` is `"add"`.  
-  <br/>Valid values: `"owner"`, `"admin"`, `"operator"`, `"viewer"`  
-</ParamField>  
+<ParamField body="permissions" type="string[]">
+  The roles to assign when adding a member. Ignored for `"remove"`.
+  <br/>Valid values: `"owner"`, `"admin"`, `"operator"`, `"prompter"`, `"viewer"`
+  <br/>Defaults to the organization's `default_member_role` preference, or `["viewer"]` if none is set. Assigning `"owner"` here does not transfer ownership of the organization.
+</ParamField>
 
-<ParamField body="is_invite" type="boolean">  
-  Whether the removal applies to an invite instead of a full member.  
-  <br/>Required only when `action` is `"remove"`.  
-</ParamField>  
+### Constraints
+
+- Adding requires the caller to be an `owner` or `admin`.
+- Removing another member requires `owner` or `admin`. Any member can remove themselves (see also [Leave Organization](/api-v1/delete/org_leave_self_memberships_id)).
+- The organization owner cannot be removed.
+- A user cannot belong to more than 100 organizations.
+- Organizations with overdue payments cannot add members.
+- Removing a member also deletes their organization-scoped API keys.
 
 ### Response
 
-<ResponseField name="data" type="null">  
-  Always `null` upon successful update.  
-</ResponseField>  
+<ResponseField name="data" type="object">
+  The result of the update.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="data.isInvite" type="boolean">
+  `true` when `target` did not match an existing user and an invitation was created instead of a membership. Always `false` for `"remove"`.
+</ResponseField>
 
-<ResponseExample>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_MEMBER_UPDATE_FAILURE"` and a `message`. Status `400` for a missing `action` or `target` or an invalid `action`, `500` for every other failure.
+</ResponseField>
 
-```json Response  
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "isInvite": false
+  },
+  "errors": null
+}
+```
+
+```json Error Response
 {
   "data": null,
-  "errors": null
+  "errors": [
+    {
+      "error": "ORG_MEMBER_UPDATE_FAILURE",
+      "message": "Cannot remove the organization owner."
+    }
+  ]
 }
 ```
 </ResponseExample>

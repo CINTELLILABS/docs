@@ -1,40 +1,44 @@
 ---
-title: "Get Organization Billing Refill Information"  
-api: "GET https://api.bland.ai/v1/orgs/{org_id}/billing/refill"  
-description: "Retrieve the recharge amount for an organization's billing."  
+title: "Get Organization Billing Refill Information"
+api: "GET https://api.bland.ai/v1/orgs/{org_id}/billing/refill"
+description: "Retrieve the recharge amount for an organization's billing."
 ---
 
 ### Headers
 
-<ParamField header="authorization" type="string" required>  
-  Your API key for authentication.  
-</ParamField>  
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Any member of the organization can read this. A non-member caller, or an organization with no billing record, gets a `500` response with error `ORG_BILLING_DATA_ERROR`, not a `403` or `404`.
+</Note>
 
 ### Path Parameters
 
-<ParamField path="org_id" type="string" required>  
-  The unique identifier of the organization.  
-</ParamField>  
+<ParamField path="org_id" type="string" required>
+  The unique identifier of the organization. Must be a UUID, otherwise the request fails with `400 INVALID_UUID`.
+</ParamField>
 
 ### Response
 
-<ResponseField name="data" type="number | null">  
-  The amount to which the balance will be recharged, or `null` if refilling is not enabled.  
-</ResponseField>  
+<ResponseField name="data" type="string | null">
+  The amount to which the balance will be recharged, serialized as a decimal string (for example `"50"`), or `null` if refilling is not enabled.
+</ResponseField>
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
-</ResponseField>  
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure, `data` is `null` and `errors` contains one entry with `error: "ORG_BILLING_DATA_ERROR"` (status `500`).
+</ResponseField>
 
-<ResponseExample>  
+<ResponseExample>
 
-```json Response  
+```json Response
 {
-  "data": 50.00,
+  "data": "50",
   "errors": null
 }
 ```
-</ResponseExample> 
+</ResponseExample>
 ---
 
 Docs for agents: [llms.txt](/llms.txt)
