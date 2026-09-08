@@ -54,6 +54,14 @@ description: "Fetch one eval run and its current status and summary."
   The pinned workbench setup version, if any.
 </ResponseField>
 
+<ResponseField name="agent_id" type="string or null">
+  The voice agent attributed to this run, or `null` for an organization-wide run.
+</ResponseField>
+
+<ResponseField name="agent_version_id" type="string or null">
+  The voice agent version attributed to this run, or `null` when no version was provided.
+</ResponseField>
+
 <ResponseField name="resolved_call_count" type="integer">
   Number of calls resolved for the run.
 </ResponseField>
@@ -108,6 +116,58 @@ description: "Fetch one eval run and its current status and summary."
 
     <ResponseField name="overall_pass" type="boolean or null">
       Whether the run met its pass threshold, or `null` if no threshold was set.
+    </ResponseField>
+
+    <ResponseField name="analysis" type="object">
+      Optional post-run analysis. This field is omitted while the run is active, when there is not enough data to analyze, or when analysis does not complete.
+
+      <Expandable title="Analysis fields">
+        <ResponseField name="summary_md" type="string">
+          Markdown summary of the analysis.
+        </ResponseField>
+
+        <ResponseField name="failure_modes" type="array of objects">
+          Failure patterns found across the analyzed calls.
+
+          <Expandable title="Failure mode fields">
+            <ResponseField name="title" type="string">
+              Short name for the failure mechanism.
+            </ResponseField>
+
+            <ResponseField name="description_md" type="string">
+              Markdown description of the failure mechanism.
+            </ResponseField>
+
+            <ResponseField name="count" type="integer">
+              Number of analyzed calls that exhibited this failure mode.
+            </ResponseField>
+
+            <ResponseField name="failure_signals" type="array of string">
+              Lowercase `snake_case` signals that group the failure mode.
+            </ResponseField>
+
+            <ResponseField name="representative_call_ids" type="array of string">
+              Call IDs that best represent the failure mode.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="recommendations_md" type="string">
+          Markdown recommendations based on the analysis.
+        </ResponseField>
+
+        <ResponseField name="calls_analyzed" type="integer">
+          Number of calls included in the analysis.
+        </ResponseField>
+
+        <ResponseField name="calls_skipped" type="integer">
+          Number of candidate calls skipped during analysis.
+        </ResponseField>
+
+        <ResponseField name="analyzed_at" type="string">
+          ISO 8601 timestamp when the analysis completed.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -168,6 +228,8 @@ description: "Fetch one eval run and its current status and summary."
     ],
     "workbench_setup_id": null,
     "workbench_setup_version_id": null,
+    "agent_id": "44444444-aaaa-bbbb-cccc-dddddddddddd",
+    "agent_version_id": "55555555-aaaa-bbbb-cccc-dddddddddddd",
     "resolved_call_count": 2,
     "resolved_agent_count": 1,
     "resolved_atom_count": 2,
@@ -181,7 +243,23 @@ description: "Fetch one eval run and its current status and summary."
       "insufficient_evidence_count": 0,
       "target_match_count": 2,
       "pass_threshold_pct": 80,
-      "overall_pass": true
+      "overall_pass": true,
+      "analysis": {
+        "summary_md": "Most unsuccessful calls shared a webhook timeout after the customer confirmed the requested change.",
+        "failure_modes": [
+          {
+            "title": "Webhook timeout",
+            "description_md": "The confirmation webhook did not complete before the call moved on.",
+            "count": 1,
+            "failure_signals": ["webhook_timeout"],
+            "representative_call_ids": ["a1b2c3d4-0000-0000-0000-000000000002"]
+          }
+        ],
+        "recommendations_md": "Reduce the webhook response time or handle the update asynchronously.",
+        "calls_analyzed": 2,
+        "calls_skipped": 0,
+        "analyzed_at": "2026-05-27T10:02:00.000Z"
+      }
     },
     "billable_cost_usd": 0.04,
     "error_code": null,

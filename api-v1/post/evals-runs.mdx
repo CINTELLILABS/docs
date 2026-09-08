@@ -42,8 +42,8 @@ description: "Start a new eval run over a batch of calls."
   The scoring modality. One of `text`, `audio`, or `full`. Defaults to `text`.
 </ParamField>
 
-<ParamField body="pass_threshold_pct" type="number">
-  Percentage of evaluations that must pass for the run to be marked passing overall, 0-100. Omit to run without a threshold.
+<ParamField body="pass_threshold_pct" type="number or null">
+  Percentage of evaluations that must pass for the run to be marked passing overall, 0-100. Omit this field or set it to `null` to run without a threshold.
 </ParamField>
 
 <ParamField body="workbench_setup_id" type="string">
@@ -52,6 +52,18 @@ description: "Start a new eval run over a batch of calls."
 
 <ParamField body="workbench_setup_version_id" type="string">
   UUID of the pinned workbench setup version. The version's agent roster is used when `attached_agents` is omitted. Must be provided together with `workbench_setup_id`.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  UUID of the voice agent this run evaluates. This identifies the voice agent, not an eval agent used as a judge.
+</ParamField>
+
+<ParamField body="agent_version_id" type="string">
+  UUID of the specific voice agent version this run evaluates.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="true">
+  Whether judging may use delay-tolerant execution lanes. Set this to `false` only when you need synchronous judging within the background run workflow.
 </ParamField>
 
 <ParamField body="triggered_by" type="string">
@@ -63,10 +75,16 @@ description: "Start a new eval run over a batch of calls."
 </ParamField>
 
 <Note>
-  You must supply either a non-empty `attached_agents` array or a `workbench_setup_version_id` (whose pinned roster supplies the agents). If you provide `workbench_setup_id` or `workbench_setup_version_id`, both fields are required together. A valid billing record must be on file before a run can start.
+  You must supply either a non-empty `attached_agents` array or a `workbench_setup_version_id` (whose pinned roster supplies the agents). If you provide `workbench_setup_id` or `workbench_setup_version_id`, both fields are required together.
 </Note>
 
+<Warning>
+  A valid billing record must be on file before a run can start. The API returns `402 BILLING_RECORD_REQUIRED` when it cannot find one. It returns `402 BILLING_NOT_ALLOWED` when billing denies the run, including when a standard organization's balance is below -1, an enterprise organization's balance is below -5, or a metered billing account is blocked.
+</Warning>
+
 ### Response
+
+Returns `202 Accepted` after the run and its agent snapshots are created and the background workflow is started.
 
 <ResponseField name="id" type="string">
   Unique identifier for the newly created eval run.
@@ -102,6 +120,14 @@ description: "Start a new eval run over a batch of calls."
 
 <ResponseField name="workbench_setup_version_id" type="string or null">
   The pinned workbench setup version, if provided.
+</ResponseField>
+
+<ResponseField name="agent_id" type="string or null">
+  The voice agent attributed to this run, or `null` for an organization-wide run.
+</ResponseField>
+
+<ResponseField name="agent_version_id" type="string or null">
+  The voice agent version attributed to this run, or `null` when no version was provided.
 </ResponseField>
 
 <ResponseField name="resolved_call_count" type="integer">
@@ -158,7 +184,7 @@ description: "Start a new eval run over a batch of calls."
 
 <ResponseExample>
 
-```json Response
+```json Response (202 Accepted)
 {
   "data": {
     "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
@@ -180,6 +206,8 @@ description: "Start a new eval run over a batch of calls."
     ],
     "workbench_setup_id": null,
     "workbench_setup_version_id": null,
+    "agent_id": "44444444-aaaa-bbbb-cccc-dddddddddddd",
+    "agent_version_id": "55555555-aaaa-bbbb-cccc-dddddddddddd",
     "resolved_call_count": 2,
     "resolved_agent_count": 1,
     "resolved_atom_count": 2,

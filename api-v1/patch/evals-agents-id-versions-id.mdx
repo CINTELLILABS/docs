@@ -42,8 +42,17 @@ description: "Edit a draft version's prompt, levels, targets, or weight."
   Updated grading prompt for the judge LLM, in Markdown. Maximum 8000 characters.
 </ParamField>
 
+<ParamField body="judge_config" type="object">
+  Updated judge configuration. The object accepts these fields:
+
+  - `model_profile_key` (string): selectable model profile key.
+  - `temperature` (number or null): value from 0 to 2.
+  - `max_output_tokens` (integer or null): value from 1 to 64000.
+  - `context_sources` (array of strings): 1 to 21 unique evidence sources. Supported values are `transcript`, `call_metadata`, `pathway_logs`, `pathway_semantics`, `transfer_context`, `disposition_results`, `citation_variables`, `post_call_webhook`, `tool_logs`, `variables`, `analysis`, `call_metrics`, `call_config`, `agent_config`, `pathway_config`, `persona_config`, `contact_memory`, `call_notes`, `generated_call_log_files`, `full_call_log_data`, and `audio_recording`.
+</ParamField>
+
 <ParamField body="levels" type="array of objects">
-  Verdict levels for graded mode. Pass an empty array for pass/fail mode. Maximum 5 levels. Each level object requires:
+  Verdict levels for graded mode. Pass an empty array for pass/fail mode. Drafts support up to 5 levels. A publishable graded version requires 2 to 5 levels. Each level object requires:
 
   - `level_key` (string, 1-64 characters): unique key within this version.
   - `label` (string, 1-80 characters): display label shown in results.
@@ -101,8 +110,20 @@ description: "Edit a draft version's prompt, levels, targets, or weight."
   The grading prompt for the judge LLM, in Markdown.
 </ResponseField>
 
+<ResponseField name="data.judge_config" type="object">
+  Public judge configuration. When present, this object contains only `context_sources`, the evidence sources available to the judge. Model and sampling settings are omitted from responses.
+</ResponseField>
+
+<ResponseField name="data.judge_config.context_sources" type="array of strings">
+  Evidence sources available to the judge.
+</ResponseField>
+
 <ResponseField name="data.levels" type="array of objects">
   Updated verdict levels. Each level contains `level_key`, `label`, `prompt_md`, and optionally `color`.
+</ResponseField>
+
+<ResponseField name="data.levels[].color" type="string | null">
+  Optional display color. One of `rose`, `amber`, `gold`, `emerald`, `blue`, `indigo`, `violet`, or `fog`.
 </ResponseField>
 
 <ResponseField name="data.target_level_keys" type="array of strings">
@@ -145,6 +166,9 @@ description: "Edit a draft version's prompt, levels, targets, or weight."
     "modality": "audio",
     "system_prompt_md": "You are an expert call quality reviewer specializing in empathy.",
     "prompt_md": "Did the agent acknowledge and validate the caller's feelings? Review the full transcript and select the most appropriate verdict.",
+    "judge_config": {
+      "context_sources": ["audio_recording", "call_metadata", "transcript"]
+    },
     "levels": [
       {
         "level_key": "excellent",

@@ -66,8 +66,20 @@ description: "Fetch one version of an eval agent."
   The grading prompt for the judge LLM, in Markdown.
 </ResponseField>
 
+<ResponseField name="data.judge_config" type="object">
+  Public judge configuration. When present, this object contains only `context_sources`, the evidence sources available to the judge. Model and sampling settings are omitted from responses.
+</ResponseField>
+
+<ResponseField name="data.judge_config.context_sources" type="array of strings">
+  Evidence sources available to the judge.
+</ResponseField>
+
 <ResponseField name="data.levels" type="array of objects">
   Verdict levels for graded mode. Empty array for pass/fail mode. Each level contains `level_key`, `label`, `prompt_md`, and optionally `color`.
+</ResponseField>
+
+<ResponseField name="data.levels[].color" type="string | null">
+  Optional display color. One of `rose`, `amber`, `gold`, `emerald`, `blue`, `indigo`, `violet`, or `fog`.
 </ResponseField>
 
 <ResponseField name="data.target_level_keys" type="array of strings">
@@ -110,6 +122,9 @@ description: "Fetch one version of an eval agent."
     "modality": "audio",
     "system_prompt_md": "You are an expert call quality reviewer.",
     "prompt_md": "Did the agent express empathy when the caller described their problem?",
+    "judge_config": {
+      "context_sources": ["audio_recording", "call_metadata", "transcript"]
+    },
     "levels": [
       {
         "level_key": "excellent",

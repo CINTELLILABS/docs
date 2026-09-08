@@ -50,6 +50,10 @@ description: "Fetch one eval agent and its current draft version."
   ID of the published version experiments run against, or `null` if never published.
 </ResponseField>
 
+<ResponseField name="data.agent.agent_id" type="string | null">
+  ID of the voice agent this eval agent is attributed to, or `null` for an organization-wide eval agent.
+</ResponseField>
+
 <ResponseField name="data.agent.metadata" type="object">
   Key-value metadata associated with the eval agent. Values are strings.
 </ResponseField>
@@ -110,8 +114,20 @@ description: "Fetch one eval agent and its current draft version."
   The grading prompt for the judge LLM, in Markdown.
 </ResponseField>
 
+<ResponseField name="data.current_version.judge_config" type="object">
+  Public judge configuration. When present, this object contains only `context_sources`, the evidence sources available to the judge. Model and sampling settings are omitted from responses.
+</ResponseField>
+
+<ResponseField name="data.current_version.judge_config.context_sources" type="array of strings">
+  Evidence sources available to the judge.
+</ResponseField>
+
 <ResponseField name="data.current_version.levels" type="array of objects">
   Verdict levels for graded mode. Empty array for pass/fail mode. Each level contains `level_key`, `label`, `prompt_md`, and optionally `color`.
+</ResponseField>
+
+<ResponseField name="data.current_version.levels[].color" type="string | null">
+  Optional display color. One of `rose`, `amber`, `gold`, `emerald`, `blue`, `indigo`, `violet`, or `fog`.
 </ResponseField>
 
 <ResponseField name="data.current_version.target_level_keys" type="array of strings">
@@ -152,6 +168,7 @@ description: "Fetch one eval agent and its current draft version."
       "description": "Grades how empathetic the agent sounds during difficult conversations.",
       "current_version_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
       "active_version_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "agent_id": "7f8e9d0c-b1a2-3456-cdef-789012345678",
       "metadata": {},
       "created_at": "2026-03-01T09:00:00.000Z",
       "updated_at": "2026-05-20T14:00:00.000Z",
@@ -168,6 +185,9 @@ description: "Fetch one eval agent and its current draft version."
       "modality": "audio",
       "system_prompt_md": "You are an expert call quality reviewer.",
       "prompt_md": "Did the agent express empathy when the caller described their problem?",
+      "judge_config": {
+        "context_sources": ["audio_recording", "call_metadata", "transcript"]
+      },
       "levels": [
         {
           "level_key": "excellent",
