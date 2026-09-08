@@ -39,11 +39,11 @@ The request body accepts two payload types:
     </ParamField>
 
     <ParamField body="sender_id" type="string" required>
-      Identifier for the live agent sending the message. This can be used to distinguish between different agents in the conversation.
+      UUID identifying the live agent sending the message. Stored on the message as `sender_id` so you can distinguish between agents in the thread. Must be a valid UUID; any other string fails with a `500`.
     </ParamField>
 
     <ParamField body="created_at" type="string">
-      Optional ISO 8601 timestamp for the message. Defaults to the current time if not provided.
+      Accepted as an ISO 8601 timestamp but not used. The message timestamp is always the time the request is received.
     </ParamField>
   </Tab>
   <Tab title="END_CONVERSATION">
@@ -54,19 +54,15 @@ The request body accepts two payload types:
     </ParamField>
 
     <ParamField body="sender_id" type="string">
-      Optional identifier for the agent ending the conversation.
+      Optional identifier for the agent ending the conversation. Not stored.
     </ParamField>
   </Tab>
 </Tabs>
 
 ### Response
 
-<ResponseField name="status" type="number">
-  HTTP status code (200 for success).
-</ResponseField>
-
 <ResponseField name="data" type="object">
-  For `MESSAGE` requests, returns the created message object. For `END_CONVERSATION` requests, returns the updated thread object with `ended_at` timestamp.
+  For `MESSAGE` requests, returns the created message object (`sender_type` is always `LIVE_AGENT`). If the thread language is not English, `content` holds the translated text and `original_content` the text you sent. For `END_CONVERSATION` requests, returns the updated thread object with `ended_at` set.
 </ResponseField>
 
 <ResponseField name="errors" type="array | null">
@@ -79,7 +75,7 @@ The request body accepts two payload types:
 |--------|-------|-------------|
 | 400 | `INVALID_PARAMETER` | Request body validation failed. |
 | 400 | `THREAD_ENDED` | The thread has already been ended. |
-| 404 | `NOT_FOUND` | Thread not found with the given ID. |
+| 404 | `NOT_FOUND` | Widget or thread not found with the given ID. |
 
 <RequestExample>
 ```bash Send Message
@@ -89,7 +85,7 @@ curl -X POST "https://api.bland.ai/v1/widget/{widget_id}/threads/{thread_id}/web
   -d '{
     "type": "MESSAGE",
     "content": "Hi! I am a live agent. How can I help you today?",
-    "sender_id": "agent_123"
+    "sender_id": "49e6e820-f5b7-4fb1-8aa8-7fb162fbcf91"
   }'
 ```
 
@@ -99,7 +95,7 @@ curl -X POST "https://api.bland.ai/v1/widget/{widget_id}/threads/{thread_id}/web
   -H "Content-Type: application/json" \
   -d '{
     "type": "END_CONVERSATION",
-    "sender_id": "agent_123"
+    "sender_id": "49e6e820-f5b7-4fb1-8aa8-7fb162fbcf91"
   }'
 ```
 </RequestExample>
@@ -117,7 +113,9 @@ curl -X POST "https://api.bland.ai/v1/widget/{widget_id}/threads/{thread_id}/web
     "pathway_session_id": null,
     "sender_type": "LIVE_AGENT",
     "sender_id": "49e6e820-f5b7-4fb1-8aa8-7fb162fbcf91",
-    "content": "You have a great day too!"
+    "content": "You have a great day too!",
+    "original_content": null,
+    "custom_component_data": null
   },
   "errors": null
 }

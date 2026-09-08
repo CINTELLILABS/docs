@@ -13,18 +13,38 @@ description: "Deletes a specific custom component by ID."
 ### Path Parameters
 
 <ParamField path="id" type="string" required>
-  UUID of the custom component to update.
+  UUID of the custom component to delete.
 </ParamField>
-
 
 ### Response
 
-<ResponseField name="status" type="number">
-  HTTP status code (204 for success).
-</ResponseField>
+Returns `204 No Content` with an empty body. The component is soft-deleted and no longer appears in listings.
+
+### Error Codes
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 500 | `SERVER_ERROR` | Unexpected failure. An unknown component ID, or one belonging to another organization, currently returns this status rather than 404. |
+
+<RequestExample>
+```bash Request
+curl -X DELETE "https://api.bland.ai/v1/widget/custom_components/{id}" \
+  -H "Authorization: YOUR_API_KEY"
+```
+</RequestExample>
 
 <ResponseExample>
-
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SERVER_ERROR",
+      "message": "Error deleting custom widget components"
+    }
+  ]
+}
+```
 </ResponseExample>
 
 ---

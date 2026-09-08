@@ -1,11 +1,11 @@
 ---
 title: "Delete Persona"
 api: "DELETE https://api.bland.ai/v1/personas/{persona_id}"
-description: "Delete a persona."
+description: "Soft-delete a persona and detach its inbound phone numbers."
 ---
 
 <Warning>
-  Deleting a persona will remove all versions and configuration data permanently. Any phone numbers currently using this persona will need to be reconfigured with a different persona or direct configuration.
+  This endpoint soft-deletes the persona and immediately detaches every inbound number assigned to it. Persona versions remain stored. The endpoint does not accept a `force` parameter and does not reject personas that are in use.
 </Warning>
 
 ### Headers
@@ -18,12 +18,6 @@ description: "Delete a persona."
 
 <ParamField path="persona_id" type="string" required>
   The unique identifier of the persona to delete.
-</ParamField>
-
-### Query Parameters
-
-<ParamField query="force" type="boolean" default="false">
-  Force deletion even if persona is currently in use by phone numbers. When false, deletion will fail if persona is actively being used.
 </ParamField>
 
 ### Response
@@ -41,9 +35,17 @@ description: "Delete a persona."
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="string">
-  Any errors that occurred (null if none).
+<ResponseField name="errors" type="array | null">
+  `null` on success, or a list of error objects.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `MISSING_PERSONA_ID` | The path ID is missing |
+| 404 | `PERSONA_NOT_FOUND` | No active persona with that ID belongs to your organization |
+| 500 | `INTERNAL_SERVER_ERROR` | Unexpected failure |
 
 <ResponseExample>
 ```json Success Response
@@ -56,36 +58,13 @@ description: "Delete a persona."
 }
 ```
 
-```json Error Response (Persona in Use)
-{
-  "data": null,
-  "errors": [
-    {
-      "error": "PERSONA_IN_USE",
-      "message": "Cannot delete persona that is currently in use by phone numbers",
-      "details": {
-        "persona_id": "12345678-1234-1234-1234-123456789012",
-        "phone_numbers_using": [
-          "+15551234567",
-          "+15551234568"
-        ],
-        "suggestion": "Remove persona from all phone numbers first, or use force=true parameter"
-      }
-    }
-  ]
-}
-```
-
 ```json Error Response (Not Found)
 {
   "data": null,
   "errors": [
     {
       "error": "PERSONA_NOT_FOUND",
-      "message": "Persona not found",
-      "details": {
-        "persona_id": "12345678-1234-1234-1234-123456789012"
-      }
+      "message": "Persona not found"
     }
   ]
 }

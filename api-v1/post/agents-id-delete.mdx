@@ -1,8 +1,12 @@
 ---
-title: "Delete Web Agent"  
+title: "Delete Web Agent"
 api: "POST https://api.bland.ai/v1/agents/{agent_id}/delete"
 description: "Delete a web agent."
 ---
+
+<Note>
+  Web Agents are the legacy inbound-based agent model, maintained for existing customers. They remain the voice backend for the [Web Chat Widget](/tutorials/chat-widget) (`agent_id` on [Create Widget](/api-v1/post/widget)). For phone calls, use [Send Call](/api-v1/post/calls) with a pathway or persona instead.
+</Note>
 
 ### Headers
 
@@ -18,19 +22,20 @@ description: "Delete a web agent."
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="agent_id" type="string">
+  The ID of the deleted agent.
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  A message saying whether the deletion succeeded, or a helpful message describing why it failed.
-</ResponseField>
+### Error Codes
+
+| Status | Body | Description |
+|--------|------|-------------|
+| 500 | `{"status": "error", "message": "Internal server error"}` | Unknown `agent_id` (there is no 404), or unexpected failure. |
 
 <ResponseExample>
-```json
+```json Response
 {
-  "status": "success",
-  "message": "Successfully deleted agent 2c565dc7-f41f-43db-a99f-e4c8ba9d7d18"
+  "agent_id": "2c565dc7-f41f-43db-a99f-e4c8ba9d7d18"
 }
 ```
 </ResponseExample>

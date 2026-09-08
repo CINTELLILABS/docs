@@ -1,8 +1,12 @@
 ---
-title: "Authorize a Web Agent Call"  
+title: "Authorize a Web Agent Call"
 api: "POST https://api.bland.ai/v1/agents/{agent_id}/authorize"
 description: "Create a single-use session token for a client to talk with your web agent."
 ---
+
+<Note>
+  Web Agents are the legacy inbound-based agent model, maintained for existing customers. They remain the voice backend for the [Web Chat Widget](/tutorials/chat-widget) (`agent_id` on [Create Widget](/api-v1/post/widget)). For phone calls, use [Send Call](/api-v1/post/calls) with a pathway or persona instead.
+</Note>
 
 ### Headers
 
@@ -36,8 +40,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 <ParamField path="agent_id" type="string" required>
   The web agent to authorize a call for.
-
-  Special note: While in Beta, this request must be made to the `api.bland.ai` domain.
 </ParamField>
 
 ### Body
@@ -60,16 +62,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   The single-use session token that can be sent to the client.
 </ResponseField>
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
-</ResponseField>
+### Error Codes
 
-<ResponseField name="message" type="string">
-  A message saying whether the token creation succeeded, or a helpful message describing why it failed.
-</ResponseField>
+| Status | Body | Description |
+|--------|------|-------------|
+| 400 | `{"error": "Agent ID is required"}` | Missing `agent_id`. |
+| 404 | `{"error": "Agent Not Found"}` | No agent with that ID in your account, or `request_data` failed validation. |
+| 500 | `{"status": "error", "message": "Internal server error"}` | Unexpected failure. |
 
 <ResponseExample>
-```json
+```json Response
 {
   "token": "22480c52-0ff1-4214-bcb7-50649b508432"
 }

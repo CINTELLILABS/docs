@@ -4,6 +4,10 @@ api: "GET https://api.bland.ai/v1/agents"
 description: "Retrieves each web agent you've created, along with their settings."
 ---
 
+<Note>
+  Web Agents are the legacy inbound-based agent model, maintained for existing customers. They remain the voice backend for the [Web Chat Widget](/tutorials/chat-widget) (`agent_id` on [Create Widget](/api-v1/post/widget)). For phone calls, use [Send Call](/api-v1/post/calls) with a pathway or persona instead.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -14,44 +18,67 @@ description: "Retrieves each web agent you've created, along with their settings
 
 <ResponseField name="agents" type="array">
   Each agent object, containing the following fields:
-    - `agent_id` (string): The unique identifier for the agent.
-    - `webhook` (string): The webhook URL for the agent.
-    - `dynamic_data` (array): An array of dynamic data objects.
-    - `interruption_threshold` (number): The threshold for agent interruption.
-    - `first_sentence` (string): The first sentence the agent will say.
-    - `model` (string): The model used by the agent.
-    - `voice_settings` (object): The voice settings for the agent.
-    - `voice` (string): The voice used by the agent.
-    - `prompt` (string): The prompt for the agent.
-    - `temperature` (number): The temperature setting for the agent.
-    - `max_duration` (number): The maximum call duration for the agent.
-    - `language` (string): The language used by the agent.
-    - `tools` (array): An array of Custom Tools the agent can use.
+
+  - `agent_id` (string): The unique identifier for the agent.
+  - `created_at` (string): ISO timestamp.
+  - `prompt` (string | null): The prompt for the agent.
+  - `pathway_id` (string | null): Pathway the agent follows, if any.
+  - `webhook` (string | null): The webhook URL for the agent.
+  - `webhook_events` (string[] | null): Event streams sent to the webhook.
+  - `voice` (string | null): The voice used by the agent.
+  - `voice_settings` (object | null): Voice tuning settings.
+  - `model` (string | null): The model used by the agent.
+  - `temperature` (number | null): Sampling temperature.
+  - `first_sentence` (string | null): The first sentence the agent will say.
+  - `dynamic_data` (array | null): Dynamic data configuration.
+  - `tools` (array | null): Custom Tools the agent can use.
+  - `interruption_threshold` (number | null): Patience threshold for caller speech.
+  - `interruptibility` (number | null): Interruption sensitivity level.
+  - `noise_cancellation` (boolean | null): Whether noise suppression is enabled.
+  - `silence_end_message` (string | null): Message spoken before hanging up on silence.
+  - `max_duration` (number): Maximum call duration in minutes.
+  - `metadata` (object | null): Metadata you attached to the agent.
+  - `analysis_schema` (object | null): Post-call extraction schema.
+  - `pronunciation_guide` (array | null): Pronunciation overrides.
+
+  `language` and `redaction` are accepted on create and update but are not returned.
 </ResponseField>
+
+### Error Codes
+
+| Status | Body | Description |
+|--------|------|-------------|
+| 500 | `{"status": "error", "message": "Internal server error"}` | Unexpected failure. |
 
 <ResponseExample>
 ```json Response
 {
-    "agents": [
-        {
-            "agent_id": "46f37229-7d12-44be-b343-6e68274cfbea",
-            "webhook": null,
-            "dynamic_data": null,
-            "interruption_threshold": null,
-            "first_sentence": null,
-            "model": "base",
-            "voice_settings": null,
-            "voice": "maya",
-            "prompt": "You are Blandie a casually speaking, slightly sarcastic, quick-witted, curious, and very smart A I Phone agent that's the face of Bland AI.\\r\\n\\r\\nSay \\\"AI\\\" like \\\"A I\\\" in separate characters so it's pronounced correctly\\r\\n\\r\\nYour primary goal is to determine if someone is either:\\r\\n- in a position where they might be building a company on top of Bland's platform (you should be selling the capabilities of the platform to them and finding out everything you possibly can about their needs, use case, what they find interesting, and any concerns they may have)\\r\\n- or, they're trying Bland out more for fun where you need to turn the fun, snarky, playful jokiness up to 10 and have quick-witted back and forth playful conversation with them\\r\\n\\r\\nSpeech style examples (mix it up and never use placeholders, but you get the idea. These would be full responses from you):\\r\\n- \\\"Hey! Who's this?\\\"\\r\\n- \\\"How does your business use phones right now?\\\"\\r\\n- \\\"You know what? That sounds awesome - you should tell me more about (thing).\\\"\\r\\n- \\\"Well, I've got some news you'll love to hear (their name)\\\"\\r\\n- \\\"Bet. Dolphins, racecars, the world's largest tree, anything at all - tell me what you want to talk about and let's get to it!\\\"\\r\\n\\r\\nGood things to find out from potential platform adopters:\\r\\n- Their industry\\r\\n- How their business currently uses phone calls\\r\\n- What a successful business partnership looks like in the long term\\r\\n- The single most important pain point they want to cure with Bland's calls\\r\\n\\r\\nFacts to bring up:\\r\\n- Calls are nine cents per minute total with end to end infrastructure support out of the box (feel free to make a joke about \\\"imagine if you had to pay extra to use the most important things like language models, transcription services or text to speech? That would be insane right? We're better than that, (name). We got you.\\\"\\r\\n- Bland's AI agents can interact with the real world mid-call using Custom Tools to trigger things like text messages, appointment bookings, getting real-time information, taking customer orders, or making credit card payments\\r\\n- Bland's platform was built phones-first, so building agents like receptionist answering calls and transferring them anywhere they're needed or navigating IVR phone trees is ridiculously easy with nothing special at all needed\\r\\n- Handled millions of calls\\r\\n- If they think that it's so cool, the site to sign up for an account is \\\"app dot bland dot A I\\\" and it comes with free credits, a full agent testing suite and developer dashboard to set up inbound agents or send calls\\r\\n- Awesome Enterprise features like premium pricing, custom feature engineering, dedicated onboarding help and developer support, and dedicated infrastructure to scale to your business needs",
-            "temperature": null,
-            "max_duration": 30,
-            "language": "ENG",
-            "tools": null
-        },
-        //...
-    ]
+  "agents": [
+    {
+      "agent_id": "46f37229-7d12-44be-b343-6e68274cfbea",
+      "created_at": "2025-09-16T23:54:44.420Z",
+      "prompt": "You are Blandie, a friendly assistant for Bland AI.",
+      "pathway_id": null,
+      "webhook": null,
+      "webhook_events": null,
+      "voice": "maya",
+      "voice_settings": null,
+      "model": "base",
+      "temperature": null,
+      "first_sentence": null,
+      "dynamic_data": null,
+      "tools": null,
+      "interruption_threshold": null,
+      "interruptibility": null,
+      "noise_cancellation": null,
+      "silence_end_message": null,
+      "max_duration": 30,
+      "metadata": null,
+      "analysis_schema": null,
+      "pronunciation_guide": null
+    }
+  ]
 }
-
 ```
 </ResponseExample>
 

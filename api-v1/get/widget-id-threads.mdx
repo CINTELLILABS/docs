@@ -32,82 +32,80 @@ description: "Retrieves all conversation threads for a specific widget. Returns 
 
 ### Response
 
-<ResponseField name="status" type="number">
-  HTTP status code (200 for success).
-</ResponseField>
-
 <ResponseField name="data" type="object">
   - `threads` (array): Array of thread objects, each containing:
     - `id` (string): Thread UUID
     - `created_at` (string): ISO timestamp
     - `ended_at` (string | null): ISO timestamp of when the thread ended
     - `live_agent_handoff_at` (string | null): ISO timestamp of when the thread was handed off to a live agent
-    - `visitor_id` (string | null): UUID of visitor (if available)
+    - `visitor_id` (string | null): Visitor UUID, if available
     - `messages` (array): Array of message objects, each containing:
       - `id` (string): Message UUID
-      - `sender_type` (string): Either "USER" or "ASSISTANT"
+      - `sender_type` (string): `USER`, `ASSISTANT`, or `LIVE_AGENT`. System messages are not returned.
       - `created_at` (string): ISO timestamp
-      - `content` (string): Message content
-      - `original_content` (string | null): Original message content before any modifications
+      - `content` (string | null): Message content, translated to the thread language when applicable
+      - `original_content` (string | null): Untranslated content, when the message was translated
   - `total` (number): Total number of threads matching the query (useful for calculating total pages)
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  `null` on success, or a list of `{error, message}` objects.
 </ResponseField>
 
 <Note>
 This endpoint does not return 404 if no threads exist; it returns an empty array instead.
 </Note>
 
+### Error Codes
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 404 | `NOT_FOUND` | No widget with that ID in your organization. |
+
 <ResponseExample>
 ```json Response
 {
-  "status": 200,
   "data": {
     "threads": [
       {
-        "id": "thread_550e8400-e29b-41d4-a716-446655440000",
+        "id": "f5ff280b-b0d8-4261-a1ed-b74003e733a2",
         "created_at": "2024-01-15T14:30:00Z",
         "ended_at": null,
         "live_agent_handoff_at": null,
-        "visitor_id": "visitor_123456789",
+        "visitor_id": "ec14ee83-fa2b-493a-b009-0e29414a1e97",
         "messages": [
           {
-            "id": "msg_001",
+            "id": "30a3e35d-9ffb-4810-aef7-2600346107e6",
             "sender_type": "USER",
             "created_at": "2024-01-15T14:30:00Z",
             "content": "Hello, I need help with my order",
             "original_content": null
           },
           {
-            "id": "msg_002",
+            "id": "5b1c7d2e-8f3a-4c6b-9d0e-1f2a3b4c5d6e",
             "sender_type": "ASSISTANT",
             "created_at": "2024-01-15T14:30:15Z",
             "content": "I'd be happy to help you with your order! Can you please provide your order number?",
-            "original_content": null
-          },
-          {
-            "id": "msg_003",
-            "sender_type": "USER",
-            "created_at": "2024-01-15T14:30:45Z",
-            "content": "It's order #12345",
             "original_content": null
           }
         ]
       },
       {
-        "id": "thread_660f9511-f3ac-52e5-b827-557766551111",
+        "id": "660f9511-f3ac-42e5-b827-557766551111",
         "created_at": "2024-01-15T13:15:00Z",
         "ended_at": "2024-01-15T13:20:00Z",
         "live_agent_handoff_at": null,
         "visitor_id": null,
         "messages": [
           {
-            "id": "msg_101",
+            "id": "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d",
             "sender_type": "USER",
             "created_at": "2024-01-15T13:15:00Z",
             "content": "What are your business hours?",
             "original_content": null
           },
           {
-            "id": "msg_102",
+            "id": "9c0d1e2f-3a4b-4c5d-9e6f-7a8b9c0d1e2f",
             "sender_type": "ASSISTANT",
             "created_at": "2024-01-15T13:15:05Z",
             "content": "Our business hours are Monday through Friday, 9 AM to 6 PM EST.",
