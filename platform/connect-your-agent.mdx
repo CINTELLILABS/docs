@@ -116,7 +116,7 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 </Steps>
 
 <Note>
-**The device flow is region-bound.** Start and poll must target the same API host the owner's dashboard uses. For most accounts that is `https://api.bland.ai`, paired with `https://app.bland.ai`. Regional dashboards pair with their own API host, so `eu.app.bland.ai` goes with `eu.api.bland.ai`. If poll returns `expired` right after the owner told you they approved, check the host pairing first.
+**The device flow is region-bound.** Start and poll must target the same API host the owner's dashboard uses. For most accounts that is `https://api.bland.ai`, paired with `https://app.bland.ai`. Regional dashboards pair with a regional API host: `eu.app.bland.ai` with `eu.api.bland.ai`, `ca.app.bland.ai` with `ca.api.bland.ai`, and both `asia.app.bland.ai` and `au.app.bland.ai` with `asia.api.bland.ai`. If poll returns `expired` right after the owner told you they approved, check the host pairing first.
 </Note>
 
 ## Try it with a client
@@ -160,6 +160,7 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 | `CODE_NOT_FOUND` | 404 | `/approve` (browser) | The code doesn't exist or already expired. |
 | `CODE_ALREADY_USED` | 409 | `/approve` (browser) | The code was already approved. |
 | `ORG_CONTEXT_REQUIRED` | 403 | `/approve` (browser) | The signed-in account isn't acting as an org, so it can't approve a device code. |
+| `INVALID_ORIGIN` | 403 | `/approve` (browser) | The approve request did not come from the Bland dashboard. |
 
 The `/approve` codes happen in the owner's browser during signup, your bot only ever sees their effect: `poll` staying `pending` for longer than expected, or eventually returning `expired`.
 
@@ -168,6 +169,7 @@ The `/approve` codes happen in the owner's browser during signup, your bot only 
 - **Codes expire in 15 minutes.** If the owner doesn't finish in time, start over with a new `/start` call.
 - **Codes are single-use.** The first successful `poll` after approval returns the `api_key` and consumes the code. Any poll after that returns `expired`.
 - **The API key is scoped to that org** and can be revoked at any time from **Settings > API Keys** in the dashboard, without affecting any other keys on the account.
+- **Each approval mints a new key.** Running onboarding again for the same org creates another org key rather than reusing one, so the list in Settings > API Keys grows by one per connected agent. Revoke the ones you no longer use.
 - Treat the returned `api_key` like a password: store it in your bot's secret storage, not in logs or chat transcripts.
 
 <Note>

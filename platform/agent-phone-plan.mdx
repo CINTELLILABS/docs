@@ -25,17 +25,19 @@ The Agent Phone Plan is a self-serve tier. It isn't available to Enterprise or c
 
 | Limit | Value |
 | --- | --- |
-| Concurrent calls | 1 (inbound and outbound combined) |
-| Calls per hour | 60 |
-| Calls per day | 500 |
-| Max call length | 60 minutes |
+| Concurrent calls | 1, counted across your whole account, inbound and outbound |
+| Calls per hour | 20 |
+| Calls per day | 50 |
+| Call minutes per day | 1,000, inbound and outbound combined |
+| Max call length | 60 minutes, applied to outbound calls at dispatch |
 | Call, transfer, and SMS destinations | US and Canada only |
 
 A few things follow from that:
 
-- If a call is already in progress on your agent number, a new inbound call gets a busy signal and a new outbound dispatch is rejected until the first call ends.
-- If you set `max_duration` above 60 minutes on a call using the agent number, it's automatically clamped to 60.
-- Calls, transfers, and SMS to destinations outside the US and Canada are blocked on this plan.
+- **Concurrency is account-wide.** The limit counts every call on your account, inbound or outbound, on any number, not just the agent number. While one call is live, a new inbound call hears a busy message and a new outbound dispatch is rejected with error code `CALL_RL_PLAN_CONCURRENCY` until the first call ends.
+- **Call minutes are capped per day.** Inbound and outbound minutes count together, and each call's minutes are added when it ends. When the day's total reaches 1,000, a new outbound dispatch is rejected with HTTP 429 and error code `CALL_RL_PLAN_DAILY_MINUTES`, and a new inbound call hears a busy message. The allowance resets at midnight UTC.
+- **Max call length applies at dispatch.** If you set `max_duration` above 60 minutes on an outbound call, it is clamped to 60 when the call is dispatched. Inbound calls keep the `max_duration` configured on the number. The plan does not change it.
+- **Destinations are limited.** Calls, transfers, and SMS to destinations outside the US and Canada are blocked on this plan.
 
 ## Subscribe
 
