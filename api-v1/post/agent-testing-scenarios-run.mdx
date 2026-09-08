@@ -26,26 +26,31 @@ description: "Execute a single test scenario. Returns immediately with a run ID 
   Override the scenario's `request_data` for this run. Any keys provided here will replace the corresponding keys in the scenario's default request data.
 </ParamField>
 
-<ParamField body="webhook_url" type="string">
-  URL to receive a webhook when the run completes. The webhook payload will include the full run result.
-</ParamField>
-
 ### Response
 
-<ResponseField name="run_id" type="string">
+Returns `202 Accepted`.
+
+<ResponseField name="data.run_id" type="string">
   The unique identifier for the test run.
 </ResponseField>
 
-<ResponseField name="status" type="string">
+<ResponseField name="data.status" type="string">
   The current status of the run. Will be `RUNNING` immediately after creation.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
 
 ```json Response
 {
-  "run_id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
-  "status": "RUNNING"
+  "data": {
+    "run_id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+    "status": "RUNNING"
+  },
+  "errors": null
 }
 ```
 
@@ -54,6 +59,10 @@ description: "Execute a single test scenario. Returns immediately with a run ID 
 <Note>
   This endpoint is rate limited per organization. If you need to run multiple scenarios at once, consider using the [Batch Run](/api-v1/post/agent-testing-batch-run) endpoint instead.
 </Note>
+
+<Warning>
+  This endpoint does not support a completion webhook on its primary execution path. Poll [Get Test Run](/api-v1/get/agent-testing-runs-id), or use [Batch Run](/api-v1/post/agent-testing-batch-run) with `webhook_url`.
+</Warning>
 
 ---
 

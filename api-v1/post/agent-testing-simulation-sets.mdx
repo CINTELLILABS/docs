@@ -1,8 +1,10 @@
 ---
 title: "Create Simulation Set"
 api: "POST https://api.bland.ai/v1/agent-testing/simulation-sets"
-description: "Create a simulation set that runs each scenario multiple times to detect flaky behavior. Returns immediately while simulations execute asynchronously."
+description: "Run each test scenario several times to detect inconsistent behavior."
 ---
+
+Creates an asynchronous simulation set. Each scenario runs the requested number of times.
 
 ### Headers
 
@@ -10,62 +12,55 @@ description: "Create a simulation set that runs each scenario multiple times to 
   Your API key for authentication.
 </ParamField>
 
-### Body
+### Body Parameters
 
-<ParamField body="scenario_ids" type="array of strings" required>
-  Scenario IDs to include. All scenario IDs must belong to your organization.
+<ParamField body="scenario_ids" type="string[]" required>
+  Non-empty scenario IDs owned by your organization.
 </ParamField>
 
 <ParamField body="simulations_per_scenario" type="integer" required>
-  Number of times to run each scenario. Must be >= 1.
+  Number of runs for each scenario. Must be at least 1.
 </ParamField>
 
 <ParamField body="pathway_id" type="string">
-  The pathway ID.
+  Optional pathway scope stored on the simulation set.
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  The persona ID.
+  Optional persona scope stored on the simulation set.
 </ParamField>
 
 <ParamField body="version_number" type="integer">
   Pathway version to test.
 </ParamField>
 
-<Note>
-This endpoint is rate limited. All `scenario_ids` must belong to your organization.
-</Note>
-
 ### Response
 
-<ResponseField name="simulation_set_id" type="string">
-  The unique identifier for the newly created simulation set.
+Returns `202 Accepted`.
+
+<ResponseField name="data.simulation_set_id" type="string">
+  New simulation set UUID.
 </ResponseField>
 
-<ResponseField name="status" type="string">
-  The initial status of the simulation set. Will be `PENDING` upon creation.
+<ResponseField name="data.batch_ids" type="string[]">
+  Batch IDs created for the simulations.
 </ResponseField>
 
-<ResponseField name="simulations_per_scenario" type="integer">
-  The number of simulations that will be run per scenario.
-</ResponseField>
-
-<ResponseField name="total_scenarios" type="integer">
-  The total number of scenarios included in this set.
-</ResponseField>
-
-<ResponseField name="created_at" type="string">
-  ISO 8601 timestamp of when the simulation set was created.
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns `403` if any scenario is missing or belongs to another organization.
 </ResponseField>
 
 <ResponseExample>
-```json Response
+```json 202
 {
-  "simulation_set_id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
-  "status": "PENDING",
-  "simulations_per_scenario": 5,
-  "total_scenarios": 3,
-  "created_at": "2026-04-14T10:00:00.000Z"
+  "data": {
+    "simulation_set_id": "d4e5f6a7-89ab-4def-8123-4567890abcde",
+    "batch_ids": [
+      "40b2c3d4-8f9b-4a1e-b5c6-d7e8f9a0b1c2",
+      "51c3d4e5-9a0c-4b2f-c6d7-e8f9a0b1c2d3"
+    ]
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

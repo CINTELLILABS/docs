@@ -4,6 +4,10 @@ api: "PATCH https://api.bland.ai/v1/alarms/{id}"
 description: "Update an alarm configuration."
 ---
 
+<Note>
+  The Alarms API is available to Enterprise organizations only. Requests from other organizations return `403` with the error code `ENTERPRISE_REQUIRED`.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -17,6 +21,8 @@ description: "Update an alarm configuration."
 </ParamField>
 
 ### Body Parameters
+
+`metric_type` is immutable. If you include it (or `id`, `org_id`, `created_at`, `updated_at`) in the body it is ignored. Create a new alarm to monitor a different metric.
 
 <ParamField body="threshold" type="number">
   Updated positive numeric threshold.
@@ -86,7 +92,7 @@ description: "Update an alarm configuration."
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
-  `null` on success, otherwise an array of error objects.
+  `null` on success. Validation failures return `400` with `INVALID_THRESHOLD`, `INVALID_WEBHOOK_CONFIG`, `INVALID_EMAIL`, or `INVALID_SMS_NUMBER`. An unknown alarm returns `404` with `ALARM_NOT_FOUND`.
 </ResponseField>
 
 <ResponseExample>

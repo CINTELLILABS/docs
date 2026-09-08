@@ -1,0 +1,73 @@
+---
+title: "List Alert Bindings"
+api: "GET https://api.bland.ai/v1/triage/issues/{id}/alert-bindings"
+description: "List the alerts linked to a triage issue."
+---
+
+Returns the alerts linked to an issue, newest first.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Internal UUID of the issue.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Number of bindings to return. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Opaque cursor returned as `next_cursor` from a previous page.
+</ParamField>
+
+## Response
+
+<ResponseField name="data.items" type="array">
+  Alert bindings. Each item contains `id`, `issue_id`, `org_id`, `active_alert_id`, `alert_config_id`, `alert_name`, `current_severity`, `status`, `binding_mode`, `created_at`, and `updated_at`.
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Cursor for the next page, or `null`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the issue does not exist or belongs to another organization.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "items": [
+      {
+        "id": "923b8cbb-c794-4a40-90dd-45030615403d",
+        "issue_id": "9bbe5547-d5b1-4b83-9f80-87c4af7c6b34",
+        "org_id": "f5b40b9e-bc05-4b8a-9af1-d8f6a8a3a201",
+        "active_alert_id": "alert-1492",
+        "alert_config_id": "config-38",
+        "alert_name": "Elevated failed transfer rate",
+        "current_severity": "warning",
+        "status": "active",
+        "binding_mode": "manual",
+        "created_at": "2026-09-07T16:10:00.000Z",
+        "updated_at": "2026-09-07T16:10:00.000Z"
+      }
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

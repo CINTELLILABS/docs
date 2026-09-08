@@ -1,0 +1,82 @@
+---
+title: "Get Simulation Run Results"
+api: "GET https://api.bland.ai/v1/agent-testing/simulation-runs/{id}/results"
+description: "Get scores, assertion results, and conversation logs for a simulation run."
+---
+
+Use the simulation set ID returned by [Simulate Test Scenario](/api-v1/post/agent-testing-scenarios-id-simulate) as `{id}`. While scoring is starting, this endpoint returns a `RUNNING` summary with empty `assertions` and `logs` arrays.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The simulation set ID.
+</ParamField>
+
+## Response
+
+<ResponseField name="data.summary" type="object">
+  Contains `simulation_set_id`, `eval_run_id`, `status`, `score`, `passed`, `total_calls`, `passed_count`, `failed_count`, and `created_at`.
+</ResponseField>
+
+<ResponseField name="data.assertions" type="array">
+  One result per attached eval agent. Each item contains `eval_agent_id`, `name`, `mode`, `score`, `passed`, `weight`, and an optional `breakdown` array of level labels and percentages.
+</ResponseField>
+
+<ResponseField name="data.logs" type="array">
+  One item per simulated conversation. Each item contains `run_id`, `conversation_id`, `case_name`, `duration_seconds`, `score`, and `passed`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 404 if the simulation set does not exist or belongs to another organization.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "summary": {
+      "simulation_set_id": "793a68d7-a6fa-481a-9992-91d1ceba4175",
+      "eval_run_id": "2cc01952-f83a-469f-a985-22c8d991442d",
+      "status": "COMPLETE",
+      "score": 92.5,
+      "passed": true,
+      "total_calls": 1,
+      "passed_count": 1,
+      "failed_count": 0,
+      "created_at": "2026-09-07T16:10:00.000Z"
+    },
+    "assertions": [
+      {
+        "eval_agent_id": "a7abc09a-191b-4db6-bd68-46e6e7435415",
+        "name": "Polite closing",
+        "mode": "passfail",
+        "score": 92.5,
+        "passed": true,
+        "weight": 1
+      }
+    ],
+    "logs": [
+      {
+        "run_id": "0aad3f91-dcb6-4314-85b0-6da824721ae6",
+        "conversation_id": "0aad3f91-dcb6-4314-85b0-6da824721ae6",
+        "case_name": "Successful booking",
+        "duration_seconds": 43.2,
+        "score": 92.5,
+        "passed": true
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

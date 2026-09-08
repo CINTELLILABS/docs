@@ -1,7 +1,7 @@
 ---
 title: "Create Test Scenario"
 api: "POST https://api.bland.ai/v1/agent-testing/scenarios"
-description: "Create a new test scenario with assertions for a pathway or persona."
+description: "Create a new test scenario with assertions for a pathway, persona, or voice agent."
 ---
 
 ### Headers
@@ -13,11 +13,15 @@ description: "Create a new test scenario with assertions for a pathway or person
 ### Body Parameters
 
 <ParamField body="pathway_id" type="string">
-  The pathway to test. Either `pathway_id` or `persona_id` is required.
+  The pathway to test. Provide exactly one of `pathway_id`, `persona_id`, or `agent_id`.
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  The persona to test. Either `pathway_id` or `persona_id` is required.
+  The persona to test. Provide exactly one target field.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  The voice agent to test. Provide exactly one target field.
 </ParamField>
 
 <ParamField body="name" type="string" required>
@@ -76,6 +80,10 @@ description: "Create a new test scenario with assertions for a pathway or person
   Arbitrary metadata to attach to the scenario.
 </ParamField>
 
+<ParamField body="tags" type="string[]">
+  Tags to attach to the scenario.
+</ParamField>
+
 <ParamField body="assertions" type="array">
   Array of assertion definitions.
 
@@ -103,6 +111,11 @@ description: "Create a new test scenario with assertions for a pathway or person
 
 ### Response
 
+Returns `201 Created` in the standard envelope.
+
+<ResponseField name="data" type="object">
+  <Expandable title="Scenario fields">
+
 <ResponseField name="id" type="string">
   Unique identifier for the created scenario.
 </ResponseField>
@@ -117,6 +130,10 @@ description: "Create a new test scenario with assertions for a pathway or person
 
 <ResponseField name="persona_id" type="string">
   The persona ID being tested (null if testing a pathway).
+</ResponseField>
+
+<ResponseField name="agent_id" type="string | null">
+  The voice agent ID being tested.
 </ResponseField>
 
 <ResponseField name="name" type="string">
@@ -179,6 +196,10 @@ description: "Create a new test scenario with assertions for a pathway or person
   Arbitrary metadata.
 </ResponseField>
 
+<ResponseField name="tags" type="string[]">
+  Scenario tags.
+</ResponseField>
+
 <ResponseField name="assertions" type="array">
   Array of assertion objects.
 
@@ -210,14 +231,22 @@ description: "Create a new test scenario with assertions for a pathway or person
 <ResponseField name="created_at" type="string">
   ISO 8601 timestamp of when the scenario was created.
 </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. A request that does not provide exactly one target returns `400`.
+</ResponseField>
 
 <ResponseExample>
 ```json Response
 {
+  "data": {
   "id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
   "org_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
   "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
   "persona_id": null,
+  "agent_id": null,
   "name": "Angry Caller Test",
   "description": "Tests the agent's ability to de-escalate an angry caller",
   "category": "ANGRY_CALLER",
@@ -233,6 +262,7 @@ description: "Create a new test scenario with assertions for a pathway or person
   "input_messages": null,
   "advanced_instructions": null,
   "metadata": null,
+  "tags": ["regression"],
   "assertions": [
     {
       "id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
@@ -249,6 +279,8 @@ description: "Create a new test scenario with assertions for a pathway or person
     }
   ],
   "created_at": "2026-04-14T00:00:00.000Z"
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

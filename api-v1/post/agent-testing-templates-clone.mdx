@@ -1,7 +1,7 @@
 ---
 title: "Clone Test Template"
 api: "POST https://api.bland.ai/v1/agent-testing/templates/{id}/clone"
-description: "Clone a template to create a new scenario bound to your pathway or persona."
+description: "Clone a template to create a new scenario bound to a pathway, persona, or voice agent."
 ---
 
 ### Headers
@@ -19,11 +19,15 @@ description: "Clone a template to create a new scenario bound to your pathway or
 ### Body
 
 <ParamField body="pathway_id" type="string">
-  The pathway to bind the cloned scenario to. Either `pathway_id` or `persona_id` is required.
+  The pathway to bind the cloned scenario to. Provide one of `pathway_id`, `persona_id`, or `agent_id`.
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  The persona to bind the cloned scenario to. Either `pathway_id` or `persona_id` is required.
+  The persona to bind the cloned scenario to.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  The voice agent to bind the cloned scenario to.
 </ParamField>
 
 <ParamField body="name" type="string">
@@ -60,7 +64,9 @@ description: "Clone a template to create a new scenario bound to your pathway or
 
 ### Response
 
-<ResponseField name="scenario" type="object">
+Returns `201 Created`.
+
+<ResponseField name="data" type="object">
   The newly created scenario object cloned from the template.
     - `id` (string): The unique identifier for the new scenario.
     - `name` (string): The scenario name.
@@ -82,10 +88,14 @@ description: "Clone a template to create a new scenario bound to your pathway or
     - `created_at` (string): ISO 8601 timestamp of when the scenario was created.
 </ResponseField>
 
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
 <ResponseExample>
 ```json Response
 {
-    "scenario": {
+    "data": {
         "id": "scn_8f2a1b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
         "name": "Voicemail Detection",
         "description": "Simulates a voicemail greeting to verify the agent correctly detects and handles voicemail.",
@@ -94,6 +104,7 @@ description: "Clone a template to create a new scenario bound to your pathway or
         "tester_persona_name": "Voicemail System",
         "pathway_id": "pw_abc123",
         "persona_id": null,
+        "agent_id": null,
         "max_turns": 4,
         "request_data": {},
         "start_node_id": null,
@@ -114,7 +125,8 @@ description: "Clone a template to create a new scenario bound to your pathway or
             }
         ],
         "created_at": "2026-04-14T18:30:00.000Z"
-    }
+    },
+    "errors": null
 }
 ```
 </ResponseExample>

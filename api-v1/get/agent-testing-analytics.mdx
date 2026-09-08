@@ -13,75 +13,97 @@ description: "Get basic testing analytics for a pathway over a time window."
 ### Path Parameters
 
 <ParamField path="pathwayId" type="string" required>
-  The pathway ID.
+  The pathway ID (UUID v4).
 </ParamField>
 
 ### Query Parameters
 
 <ParamField query="days" type="integer" default="30">
-  Number of days to look back. Maximum value is 365.
+  Number of days to look back. Clamped to the range 1 to 365.
 </ParamField>
 
 ### Response
 
-<ResponseField name="total_runs" type="integer">
-  Total number of test runs in the time window.
+Only runs with status `PASSED` or `FAILED` in the window are counted. Runs still in progress or in `ERROR` are excluded.
+
+<ResponseField name="data" type="object">
+  <Expandable title="data object">
+    <ResponseField name="total_runs" type="integer">
+      Number of completed test runs in the time window.
+    </ResponseField>
+    <ResponseField name="passed" type="integer">
+      Number of test runs that passed.
+    </ResponseField>
+    <ResponseField name="failed" type="integer">
+      Number of test runs that failed.
+    </ResponseField>
+    <ResponseField name="pass_rate" type="number">
+      Pass rate as a decimal from 0 to 1.
+    </ResponseField>
+    <ResponseField name="avg_score" type="number">
+      Average `overall_score` across all runs, from 0 to 1.
+    </ResponseField>
+    <ResponseField name="runs" type="array">
+      The runs that were counted, oldest first. Each entry contains `id`, `status`, `overall_score`, `created_at`, `nodes_visited`, `bland_tone_score`, `metadata`, `scenario` (`name`, `category`), and `assertion_results` (each with `status` and `assertion` containing `name` and `type`).
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="passed" type="integer">
-  Number of test runs that passed.
-</ResponseField>
-
-<ResponseField name="failed" type="integer">
-  Number of test runs that failed.
-</ResponseField>
-
-<ResponseField name="pass_rate" type="number">
-  Pass rate as a decimal from 0 to 1.
-</ResponseField>
-
-<ResponseField name="avg_score" type="number">
-  Average score across all runs, from 0 to 1.
-</ResponseField>
-
-<ResponseField name="runs" type="array">
-  Individual run summaries for the time window.
+<ResponseField name="errors" type="array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
-  "total_runs": 48,
-  "passed": 39,
-  "failed": 9,
-  "pass_rate": 0.8125,
-  "avg_score": 0.84,
-  "runs": [
-    {
-      "id": "run_a1b2c3d4-5678-9abc-def0-1234567890ab",
-      "scenario_id": "scn_f0e1d2c3-b4a5-9687-7856-342109876543",
-      "scenario_name": "Happy Path - Appointment Booking",
-      "status": "passed",
-      "score": 0.95,
-      "created_at": "2026-04-13T14:22:00.000Z"
-    },
-    {
-      "id": "run_b2c3d4e5-6789-abcd-ef01-234567890abc",
-      "scenario_id": "scn_e1d2c3b4-a596-8778-5634-210987654321",
-      "scenario_name": "Angry Caller De-escalation",
-      "status": "failed",
-      "score": 0.42,
-      "created_at": "2026-04-13T14:18:00.000Z"
-    },
-    {
-      "id": "run_c3d4e5f6-789a-bcde-f012-34567890abcd",
-      "scenario_id": "scn_d2c3b4a5-9687-7856-3421-098765432109",
-      "scenario_name": "Voicemail Detection",
-      "status": "passed",
-      "score": 1.0,
-      "created_at": "2026-04-12T09:45:00.000Z"
-    }
-  ]
+  "data": {
+    "total_runs": 2,
+    "passed": 1,
+    "failed": 1,
+    "pass_rate": 0.5,
+    "avg_score": 0.685,
+    "runs": [
+      {
+        "id": "a3f1b2c4-5d6e-4f8a-9b0c-1d2e3f4a5b6c",
+        "status": "PASSED",
+        "overall_score": 0.95,
+        "created_at": "2026-04-12T09:45:00.000Z",
+        "nodes_visited": ["greeting", "identify_intent", "confirm_booking"],
+        "bland_tone_score": null,
+        "metadata": null,
+        "scenario": {
+          "name": "Happy Path - Appointment Booking",
+          "category": "HAPPY_PATH"
+        },
+        "assertion_results": [
+          {
+            "status": "PASSED",
+            "assertion": { "name": "Reached confirmation", "type": "NODE_REACHED" }
+          }
+        ]
+      },
+      {
+        "id": "b4c2d3e5-6f7a-4b9c-8d1e-2f3a4b5c6d7e",
+        "status": "FAILED",
+        "overall_score": 0.42,
+        "created_at": "2026-04-13T14:18:00.000Z",
+        "nodes_visited": ["greeting", "escalation_handler"],
+        "bland_tone_score": null,
+        "metadata": null,
+        "scenario": {
+          "name": "Angry Caller De-escalation",
+          "category": "ANGRY_CALLER"
+        },
+        "assertion_results": [
+          {
+            "status": "FAILED",
+            "assertion": { "name": "De-escalation", "type": "LLM_JUDGE" }
+          }
+        ]
+      }
+    ]
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

@@ -69,6 +69,22 @@ Opens a new triage issue, optionally with the calls, SMS conversations, or files
   - `client`, created by a client integration on the user's behalf
 </ParamField>
 
+<ParamField body="agent_id" type="string">
+  ID of the agent the issue is about. Stored on the issue and available as a filter on [List Issues](/api-v1/get/triage-issues).
+</ParamField>
+
+<ParamField body="agent_version_id" type="string">
+  ID of the specific agent version the issue is about.
+</ParamField>
+
+<ParamField body="dispatch_id" type="string">
+  ID of the dispatch that surfaced the issue, if any.
+</ParamField>
+
+<ParamField body="skill_id" type="string">
+  ID of the skill the issue is about, if any.
+</ParamField>
+
 <ParamField body="owner_id" type="string">
   User ID of the person ultimately accountable for the issue.
 </ParamField>
@@ -129,10 +145,20 @@ Returns `201 Created` with the newly created issue.
       One of `manual`, `automated`, `client`.
     </ResponseField>
     <ResponseField name="category" type="string" />
+    <ResponseField name="agent_id" type="string | null" />
+    <ResponseField name="agent_version_id" type="string | null" />
+    <ResponseField name="dispatch_id" type="string | null" />
+    <ResponseField name="dispatch_name" type="string | null">
+      Display name resolved for `dispatch_id`. `null` when unresolved.
+    </ResponseField>
+    <ResponseField name="skill_id" type="string | null" />
+    <ResponseField name="skill_name" type="string | null">
+      Display name resolved for `skill_id`. `null` when unresolved.
+    </ResponseField>
     <ResponseField name="owner_id" type="string | null" />
     <ResponseField name="assignee_id" type="string | null" />
     <ResponseField name="author_id" type="string">
-      User ID of the caller that created the issue.
+      User ID of the caller that created the issue. For API key requests this is the user the key belongs to.
     </ResponseField>
     <ResponseField name="external_link" type="object | null">
       External system link (for example a GitHub issue) bound to this triage issue, if any.
@@ -145,6 +171,9 @@ Returns `201 Created` with the newly created issue.
     </ResponseField>
     <ResponseField name="relation_count" type="number">
       Number of related issues linked to this one.
+    </ResponseField>
+    <ResponseField name="linked_alert_count" type="number">
+      Number of alerts bound to this issue.
     </ResponseField>
     <ResponseField name="latest_agent_session" type="object | null">
       The most recent Norm session bound to this issue, including its run state and any draft pathway version Norm is working against. `null` if Norm has never been prompted for this issue.
@@ -168,8 +197,13 @@ Returns `201 Created` with the newly created issue.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed.
+  `null` on success. Returns 400 with `{ "error": "bad_request" }` if a field fails validation or the body contains an unknown key. Returns 404 if a `resource_links` entry cannot be found in your org.
 </ResponseField>
+
+<Note>
+  Actor fields (`author_id`, `attached_by_id`, `created_by_id`, `actor.id`) and the per-user view state behind `has_unread_activity` are keyed to the user the API key belongs to, so every request made with the same key acts as that one user.
+</Note>
+
 
 <ResponseExample>
 ```json Response
@@ -185,6 +219,12 @@ Returns `201 Created` with the newly created issue.
     "severity": "high",
     "source": "manual",
     "category": "Routing",
+    "dispatch_id": null,
+    "dispatch_name": null,
+    "skill_id": null,
+    "skill_name": null,
+    "agent_id": null,
+    "agent_version_id": null,
     "owner_id": null,
     "assignee_id": "beed099d-e493-4142-a68b-af13bd72c035",
     "author_id": "4d5ac1b5-1f24-46d3-8355-5debfd029a65",
@@ -195,6 +235,7 @@ Returns `201 Created` with the newly created issue.
     "resource_count": 1,
     "flag_count": 0,
     "relation_count": 0,
+    "linked_alert_count": 0,
     "latest_agent_session": null,
     "is_processing": false,
     "has_unread_activity": false

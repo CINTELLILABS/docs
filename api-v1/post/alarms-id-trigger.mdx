@@ -4,6 +4,14 @@ api: "POST https://api.bland.ai/v1/alarms/{id}/trigger"
 description: "Manually trigger alarm evaluation with current data."
 ---
 
+<Note>
+  The Alarms API is available to Enterprise organizations only. Requests from other organizations return `403` with the error code `ENTERPRISE_REQUIRED`.
+</Note>
+
+### Rate limit
+
+This endpoint is limited to 5 requests per 5 minutes per organization. Requests over the limit return `429` with the error code `TOO_MANY_REQUESTS`.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -46,6 +54,10 @@ description: "Manually trigger alarm evaluation with current data."
   Configured threshold for comparison.
 </ResponseField>
 
+<ResponseField name="errors" type="null|array">
+  `null` on success. Returns `404` with `ALARM_NOT_FOUND` for an unknown alarm and `503` with `SYSTEM_UNHEALTHY` when the alarm evaluation system is unavailable.
+</ResponseField>
+
 <ResponseExample>
 ```json Success
 {
@@ -70,6 +82,18 @@ description: "Manually trigger alarm evaluation with current data."
     "message": "Not enough recent data available. Please wait until there is more data to trigger an alarm."
   },
   "errors": null
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many alarm trigger requests. Please wait a few minutes and try again."
+    }
+  ]
 }
 ```
 </ResponseExample>

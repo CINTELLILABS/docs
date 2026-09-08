@@ -77,6 +77,26 @@ Lists triage issues for your org. Items have the same shape as [Create Issue](/a
 
 ### Scope filters
 
+<ParamField query="agent_id" type="string">
+  Only return issues stored with this `agent_id`.
+</ParamField>
+
+<ParamField query="agent_version_id" type="string">
+  Only return issues stored with this `agent_version_id`.
+</ParamField>
+
+<ParamField query="dispatch_id" type="string">
+  Only return issues stored with this `dispatch_id`.
+</ParamField>
+
+<ParamField query="skill_id" type="string">
+  Only return issues stored with this `skill_id`.
+</ParamField>
+
+<ParamField query="has_alert" type="boolean">
+  Pass `true` to return only issues with at least one bound alert, or `false` for issues with none.
+</ParamField>
+
 <ParamField query="owner_id" type="string">
   Only return issues with this owner.
 </ParamField>
@@ -113,8 +133,12 @@ Lists triage issues for your org. Items have the same shape as [Create Issue](/a
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success.
+  `null` on success. Returns 400 with `{ "error": "bad_request" }` if `sort`, `order`, `date_field`, `date_range`, `resource_type`, or `limit` is outside its allowed values, or the query contains an unknown parameter.
 </ResponseField>
+
+<Note>
+  Actor fields (`author_id`, `attached_by_id`, `created_by_id`, `actor.id`) and the per-user view state behind `has_unread_activity` are keyed to the user the API key belongs to, so every request made with the same key acts as that one user.
+</Note>
 
 <ResponseExample>
 ```json Response
@@ -132,6 +156,12 @@ Lists triage issues for your org. Items have the same shape as [Create Issue](/a
         "severity": "high",
         "source": "manual",
         "category": "Routing",
+        "dispatch_id": null,
+        "dispatch_name": null,
+        "skill_id": null,
+        "skill_name": null,
+        "agent_id": null,
+        "agent_version_id": null,
         "owner_id": null,
         "assignee_id": "6e6c4e2f-ec3f-4582-bd95-6fa2d6375234",
         "author_id": "4fa8878d-4091-4c19-849a-1c64a79609da",
@@ -142,6 +172,7 @@ Lists triage issues for your org. Items have the same shape as [Create Issue](/a
         "resource_count": 3,
         "flag_count": 1,
         "relation_count": 0,
+        "linked_alert_count": 0,
         "latest_agent_session": null,
         "is_processing": false,
         "has_unread_activity": true
@@ -157,6 +188,12 @@ Lists triage issues for your org. Items have the same shape as [Create Issue](/a
         "severity": "high",
         "source": "automated",
         "category": "Routing",
+        "dispatch_id": null,
+        "dispatch_name": null,
+        "skill_id": null,
+        "skill_name": null,
+        "agent_id": null,
+        "agent_version_id": null,
         "owner_id": null,
         "assignee_id": null,
         "author_id": "4fa8878d-4091-4c19-849a-1c64a79609da",
@@ -167,6 +204,7 @@ Lists triage issues for your org. Items have the same shape as [Create Issue](/a
         "resource_count": 1,
         "flag_count": 0,
         "relation_count": 0,
+        "linked_alert_count": 0,
         "latest_agent_session": null,
         "is_processing": false,
         "has_unread_activity": false
