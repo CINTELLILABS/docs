@@ -1,0 +1,49 @@
+---
+title: "Update Call Participant"
+api: "PATCH https://api.bland.ai/v1/calls/{call_id}/participants/{participant_id}"
+description: "Mute, hold, or deafen a participant on a live call."
+---
+
+<Note>
+  Live participant management currently supports calls on the carrier-direct media path. Other telephony providers return `UNSUPPORTED_PROVIDER`.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of an active call owned by your organization.
+</ParamField>
+
+<ParamField path="participant_id" type="string" required>
+  The participant's call SID.
+</ParamField>
+
+### Body
+
+<ParamField body="muted" type="boolean">
+  Whether the participant's audio is muted.
+</ParamField>
+
+<ParamField body="hold" type="boolean">
+  Whether the participant is on hold.
+</ParamField>
+
+<ParamField body="deaf" type="boolean">
+  Whether the participant hears no conference audio. This is independent of `muted`.
+</ParamField>
+
+### Response
+
+Returns `{data, errors}`. `data` contains `participant_id`, `call_id`, `label`, `muted`, `hold`, `deaf`, and `status`.
+
+Errors include `UNSUPPORTED_PROVIDER` (400), `NOT_FOUND` (404), `CALL_ENDED` (409), and `PARTICIPANT_UPDATE_FAILED` (502).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

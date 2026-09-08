@@ -19,6 +19,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 <ParamField header="encrypted_key" type="string">
   A special key for using a BYOT (Bring Your Own Twilio) account. Only required for sending calls from your own Twilio account.
 
+  Also accepted as the `encrypted-key` header or as an `encrypted_key` field in the request body.
+
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
 
@@ -29,10 +31,12 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 ### Basic Parameters
 
 <ParamField body="phone_number" type="string" required>
-  The phone number to call. Must be a valid phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format.
+  The phone number to call. Must be a valid phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format. Numbers without a country code are treated as US (+1).
+
+  For calls placed over a SIP trunk, a SIP user-part identity (a DID, extension, or alphanumeric alias) is accepted as-is.
 </ParamField>
 
-<ParamField body="voice" type="string">
+<ParamField body="voice" type="string" default="mason">
   The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets.
 
   Default voices can be referenced directly by their name instead of an id.
@@ -64,12 +68,14 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 </ParamField>
 
-<ParamField body="pathway_version" type="integer">
-  The version number of the pathway to use for the call. Defaults to the production version.
+<ParamField body="pathway_version" type="integer | string">
+  The version of the pathway to use for the call: a version number, or the string `"production"` or `"staging"`. Defaults to the production version.
 </ParamField>
 
-<ParamField body="task" type="string" required>
-  Note: Do not specify if using a pathway.
+<ParamField body="task" type="string">
+  Required unless you pass `pathway_id`, `persona_id`, or `agent_id`. Do not specify if using a pathway or an agent.
+
+  Maximum 30,000 characters (100,000 with the `LONGER_CONTEXT` entitlement).
 
   Provide instructions, relevant information, and examples of the ideal conversation flow.
 
@@ -95,6 +101,22 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   When using a persona_id, any parameters specified in your request body will override the corresponding parameters from the persona's configuration.
 
   You can access your persona IDs by clicking the "Personas" button at the bottom of the Send Call page, and then "Use and Manage".
+</ParamField>
+
+<ParamField body="persona_version" type="string" default="production">
+  Which version of the persona to apply: `production` or `draft`.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  The UUID of an agent created in the dashboard. The agent's compiled version drives the call, so `task` is not required. Cannot be combined with `pathway_id` or `persona_id`, and `tools` cannot be passed on agent calls (the agent version's own tools are used).
+</ParamField>
+
+<ParamField body="agent_version" type="string" default="production">
+  Which version of the agent to run. Requires `agent_id`. Accepts a semantic version such as `"1.2.0"`, `"branch:<name>"`, or one of `dev`, `latest`, `staging`, `production`. Defaults to the production pin when omitted.
+</ParamField>
+
+<ParamField body="start_node_id" type="string">
+  Start the pathway at a specific node instead of its start node. Requires `pathway_id`.
 </ParamField>
 
 ### Model Parameters
@@ -164,6 +186,14 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   </Accordion>
 </ParamField>
 
+<ParamField body="language_detection_period" type="integer">
+  How long, in seconds, to run automatic language detection at the start of the call (1 to 100). Use with `language_detection_options`.
+</ParamField>
+
+<ParamField body="language_detection_options" type="string[]">
+  The languages the caller may speak, as language codes (for example `["en", "es"]`). When language detection runs, the transcription switches to the detected language from this list.
+</ParamField>
+
 <ParamField body="wait_for_greeting" default="false" type="boolean">
   By default, the agent starts talking as soon as the call connects.
 
@@ -191,15 +221,17 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   ```
 
   <Accordion title="Object Parameters">
-    - `word` — the word you want to guide the LLM on how to pronounce
-    - `pronunciation` — how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
-    - `case_sensitive` — whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
-    - `spaced` — whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
+    - `word`: the word you want to guide the LLM on how to pronounce
+    - `pronunciation`: how the AI should pronounce the word, using syllables or space-separated characters. For example, `"A P I"` ensures each letter is spoken clearly rather than read as a word.
+    - `case_sensitive`: whether or not to consider case. Particularly useful with names. EG: 'Max' the name versus 'max' the word. Defaults to false. `Not required`.
+    - `spaced`: whether to match whole words only. When true, "high" will match "high" but not "hightop". When false, it will match any word that contains "high". Defaults to true. `Not required`.
   </Accordion>
 </ParamField>
 
-<ParamField body="temperature" default={0.7} type="float">
+<ParamField body="temperature" type="float">
   A value between 0 and 1 that controls the randomness of the LLM. 0 will cause more deterministic outputs while 1 will cause more random.
+
+  Defaults to the model's own setting when omitted: `0.5` for `enhanced`, `0.3` for `base` and `turbo`.
 
   Example Values: "0.9", "0.3", "0.5"
 </ParamField>
@@ -217,6 +249,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   - `1`: Difficult. Harder to interrupt.
   - `2`: Balanced (default).
   - `3`: Easy. The AI stops quickly when the caller begins speaking.
+  - `4`: Always. Every caller utterance interrupts; backchannel suppression is disabled.
 </ParamField>
 
 ### Dispatch Parameters
@@ -264,12 +297,28 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   By default, Bland will choose a US-based number from our own pool of numbers.
 </ParamField>
 
-<ParamField body="timezone" default="America/Los_Angeles" type="string">
-  Set the timezone for the call. Handled automatically for calls in the US.
+<ParamField body="timezone" type="string">
+  Set the timezone for the call, as a TZ database identifier such as `America/Los_Angeles`. Not set by default.
+
+  Pass `"auto"` to resolve the timezone from the dialed number's area code (US numbers). This is also the timezone used to interpret `dispatch_hours`.
 
   This helps significantly with use cases that rely on appointment setting, scheduling, or behaving differently based on the time of day.
+</ParamField>
 
-  Timezone options are here in the TZ identifier column.
+<ParamField body="dispatch_hours" type="object">
+  Only dispatch the call within a daily time window. If the call is sent outside the window it is scheduled for the next window. Both keys are required.
+
+  - `start` (string): Start of the window, for example `"9:00am"` or `"09:00"`.
+  - `end` (string): End of the window, for example `"5:00pm"` or `"17:00"`. An end before the start wraps to the next day.
+
+  Times are interpreted in `timezone` (use `"auto"` to derive it from the dialed number). Accepted formats: `h:mma`, `ha`, `H:mm`, `HH:mm`, `HH:mm:ss`.
+
+  ```json
+  {
+    "timezone": "auto",
+    "dispatch_hours": { "start": "9:00am", "end": "5:00pm" }
+  }
+  ```
 </ParamField>
 
 <ParamField body="start_time" type="string">
@@ -356,7 +405,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   - none - Minimizes background noise
 </ParamField>
 
-<ParamField body="noise_cancellation" default="false" type="boolean">
+<ParamField body="noise_cancellation" default="true" type="boolean">
   Toggles noise filtering or suppression in the audio stream to filter out background noise.
 </ParamField>
 
@@ -383,6 +432,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     - `"hangup"`: Immediately end the call without leaving a message.
     - `"leave_message"`: Play the `message` and then end the call.
     - `"ignore"`: Continue the call as if no voicemail was detected (used for IVRs or special routing).
+    - `"leave_sms"`: End the call and send the `sms` message.
+    - `"leave_message_and_sms"`: Play the `message`, end the call, and send the `sms` message.
 
   <br />
 
@@ -438,13 +489,15 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
   This option controls the live stream only. To receive the post-transfer transcript in the post-call webhook, subscribe with `"post_transfer_transcript"` in `webhook_events`. The two are independent: you can use either one or both.
 
+  The legacy name `include_post_transfer_transcript` is accepted as a synonym.
+
   <Note>
     This feature is in limited rollout. If it is not enabled for your organization, the option has no effect.
   </Note>
 </ParamField>
 
 <ParamField body="post_call_evals" type="object">
-  Attach an [evals workbench](/tutorials/evals) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call — no separate eval-run submission needed.
+  Attach an [evals workbench](/tutorials/evals) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call. No separate eval-run submission is needed.
 
   Provide at least one of:
 
@@ -464,6 +517,22 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
   }
   ```
+</ParamField>
+
+<ParamField body="analysis_prompt" type="string">
+  A custom prompt that guides the post-call analysis. Maximum 5,000 characters.
+</ParamField>
+
+<ParamField body="analysis_schema" type="object">
+  A JSON object describing the fields to extract from the call after it ends. The result is returned as `analysis` in the call details and post-call webhook. An empty object is ignored.
+</ParamField>
+
+<ParamField body="analysis_preset" type="string">
+  The ID of a saved analysis preset to run after the call.
+</ParamField>
+
+<ParamField body="disposition_ids" type="string[]">
+  An array of outcome IDs to run against this call when it ends. See [Outcomes](/tutorials/outcomes).
 </ParamField>
 
 ### Post Call Parameters
@@ -486,7 +555,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   Takes in the following parameters:
 
   - `wait` (integer): The delay in seconds before the call is retried.
-  - `voicemail_action` (enum): The action to take when the call goes to voicemail. Options: `hangup`, `leave_message`, `ignore`.
+  - `voicemail_action` (enum): The action to take when the call goes to voicemail. Options: `hangup`, `leave_message`, `ignore`, `leave_sms`, `leave_message_and_sms`.
   - `voicemail_message` (string): The message to leave when the call goes to voicemail.
 
   Example:
@@ -540,8 +609,22 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 ### Advanced Parameters
 
+<ParamField body="redaction" type="string[]">
+  Compliance regimes to redact from the stored call data (transcripts, recordings, variables). Any combination of `pii`, `phi`, `pci`, and `medical`. Empty or omitted means no redaction.
+
+  ```json
+  {
+    "redaction": ["pii", "pci"]
+  }
+  ```
+</ParamField>
+
+<ParamField body="memory_id" type="string">
+  Attach a [memory store](/api-v1/post/memory-create) to the call so the agent shares context with previous conversations with this contact. Passing a `memory_id` enables memory for the call even when the pathway does not have memory turned on.
+</ParamField>
+
 <ParamField body="request_data" type="object">
-  Custom key-value data you send with the call. This information is available as variables inside your prompt, pathway, or tools — but only if the call is answered.
+  Custom key-value data you send with the call. This information is available as variables inside your prompt, pathway, or tools, but only if the call is answered.
 
   ```json
     {
@@ -834,7 +917,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     }
   ```
 
-  For stronger keyword boosts, you can place a colon then a boost factor after the word. The default boost factor is 2.
+  For stronger keyword boosts, you can place a colon then an integer boost factor after the word. The default boost factor is 1. At most 20 keywords, each under 100 characters.
 
   ```json
     {
@@ -844,7 +927,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 </ParamField>
 
 <ParamField body="ignore_button_press" default="false" type="boolean">
-  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency) — the tones generated when a user presses keys on their phone keypad (e.g., 0-9, \*, #).\
+  When `true`, the system will ignore DTMF input (Dual-Tone Multi-Frequency), the tones generated when a user presses keys on their phone keypad (e.g., 0-9, \*, #).\
   This disables any in-call actions triggered by keypad input, such as menu navigation or transfers.\
   Useful when your agent should handle the entire call conversationally, without responding to button presses.
 </ParamField>
@@ -963,6 +1046,10 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 <ResponseField name="batch_id" type="string">
   The batch ID of the call (present only if status is `success`).
+</ResponseField>
+
+<ResponseField name="max_duration_notice" type="object">
+  Present only when Bland shortened the call's `max_duration` because the account has not completed a purchase. Contains `requested_max_duration` (integer), `max_duration` (integer, the minutes the call will actually run), `reason` (string code), and `message` (string). Buy credits or turn on auto-recharge to lift the limit.
 </ResponseField>
 
 <ResponseField name="errors" type="array">
@@ -1131,7 +1218,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     ```json
     {
       "status": "error",
-      "message": "Invalid voicemail action. Must be one of: hangup, leave_message, ignore"
+      "message": "Invalid voicemail_action. Options are: hangup, leave_message, ignore, leave_sms, leave_message_and_sms."
     }
     ```
   </ResponseField>
@@ -1204,16 +1291,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     {
       "status": "error",
       "message": "Invalid phone number format in transfer list"
-    }
-    ```
-  </ResponseField>
-  <ResponseField name="400 - Additional Properties Not Allowed" type="object">
-    Request contains fields that are not allowed in the schema.
-
-    ```json
-    {
-      "status": "error", 
-      "message": "Additional properties are not allowed"
     }
     ```
   </ResponseField>

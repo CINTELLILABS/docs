@@ -18,25 +18,57 @@ description: "Retrieve stream of events that occurred during the call."
 
 ### Response
 
-<ResponseField name="level" type="string">
-    The level of the event - `queue` or `call`
+<ResponseField name="status" type="string">
+  `success` when the events were retrieved.
 </ResponseField>
 
 <ResponseField name="message" type="string">
+  A human-readable result message.
+</ResponseField>
+
+<ResponseField name="event_stream_data" type="array">
+  The events recorded for the call.
+</ResponseField>
+
+<ResponseField name="event_stream_data[].level" type="string">
+    The level of the event - `queue` or `call`
+</ResponseField>
+
+<ResponseField name="event_stream_data[].message" type="string">
     The message of the event.
 </ResponseField>
 
-<ResponseField name="category" type="string">
+<ResponseField name="event_stream_data[].category" type="string">
     The category of the event - `info`, `performance` or `error`.
 </ResponseField>
 
-<ResponseField name="call_id" type="string">
+<ResponseField name="event_stream_data[].call_id" type="string">
     The unique identifier for the call.
 </ResponseField>
 
-<ResponseField name="timestamp" type="string">
+<ResponseField name="event_stream_data[].timestamp" type="string">
 When the event occurred.
 </ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Successfully fetched event stream data",
+  "event_stream_data": [
+    {
+      "level": "call",
+      "message": "Call connected",
+      "category": "info",
+      "call_id": "8dd6f762-6c67-4546-aaad-3e59f5e4a09c",
+      "timestamp": "2026-09-07T18:30:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+Errors return a flat `{ "status": "error", "message": "..." }` body with status `403`, `404`, or `500`.
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

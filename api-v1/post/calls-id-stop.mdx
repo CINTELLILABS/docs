@@ -1,9 +1,10 @@
 ---
 title: "Stop Active Call"
 api: "POST https://api.bland.ai/v1/calls/{call_id}/stop"
-description: "End an active phone call by call_id. This endpoint can also be used to cancel scheduled calls.
-"
+description: "End an active phone call by call_id. This endpoint can also be used to cancel scheduled calls."
 ---
+
+Ends a call that is in progress, or cancels a call that is still queued (for example a scheduled call that has not dialed yet). A cancelled queued call is marked complete with `status: "canceled"` in call details.
 
 ### Headers
 
@@ -17,25 +18,65 @@ description: "End an active phone call by call_id. This endpoint can also be use
   The unique identifier for the call you want to end.
 </ParamField>
 
+### Body
+
+<ParamField body="call_id" type="string">
+  Optional. When present, overrides the `call_id` in the path.
+</ParamField>
+
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="message" type="string">
+      `"Stopped call successfully."`
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  If the status is `success`, the message will say "Call ended successfully." Otherwise, if the status is `error`, the message will say "SID not found for the given c\_id." or "Internal server error."
+<ResponseField name="errors" type="null | array">
+  `null` on success. On failure `data` is `null` and `errors` contains one entry with `error` and `message`:
+
+  | Status | `error` | When |
+  |---|---|---|
+  | `400` | `VALIDATION_ERROR` | `call_id` is missing or empty. |
+  | `404` | `NOT_FOUND` | No call with that ID belongs to your organization (`"Call not found."`), or the call is neither live nor queued, so there is nothing to end (`"SID not found for the given c_id."`). |
+  | `500` | `INTERNAL_SERVER_ERROR` | The call could not be ended (`"Error stopping call."`). |
 </ResponseField>
 
 <ResponseExample>
-
-```json
+```json Response
 {
-  "status": "success",
-  "message": "Call ended successfully."
+  "data": {
+    "message": "Stopped call successfully."
+  },
+  "errors": null
 }
 ```
 
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Call not found."
+    }
+  ]
+}
+```
+
+```json Server Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INTERNAL_SERVER_ERROR",
+      "message": "Error stopping call."
+    }
+  ]
+}
+```
 </ResponseExample>
 
 ---

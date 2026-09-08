@@ -4,9 +4,9 @@ api: "GET https://api.bland.ai/v1/custom-dialing-pools/{pool_id}"
 description: "Retrieve a specific custom dialing pool by its ID."
 ---
 
-<Info>
-  **Enterprise Feature** - Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
+</Note>
 
 Retrieve details for a specific custom dialing pool using its unique identifier.
 
@@ -26,12 +26,8 @@ Retrieve details for a specific custom dialing pool using its unique identifier.
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
-</ResponseField>
-
 <ResponseField name="data" type="object">
-  The custom dialing pool object (present only if status is `success`).
+  The custom dialing pool object.
   
   <Expandable title="data properties">
     <ResponseField name="id" type="string">
@@ -45,9 +41,17 @@ Retrieve details for a specific custom dialing pool using its unique identifier.
     <ResponseField name="phone_numbers" type="array">
       Array of phone numbers in the pool.
     </ResponseField>
+
+    <ResponseField name="phone_numbers_count" type="number">
+      Number of phone numbers in the pool.
+    </ResponseField>
     
     <ResponseField name="encrypted_key" type="string">
       UUID of associated Twilio credentials (or null if none).
+    </ResponseField>
+
+    <ResponseField name="credentials_name" type="string | null">
+      Twilio account SID associated with the credentials, or `null`.
     </ResponseField>
     
     <ResponseField name="created_at" type="string">
@@ -56,8 +60,8 @@ Retrieve details for a specific custom dialing pool using its unique identifier.
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array">
-  Array of error objects (present only if status is `error`).
+<ResponseField name="errors" type="array | null">
+  `null` on success. On failure, contains error objects.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">
@@ -109,12 +113,13 @@ print(response.json())
 
 ```json Success Response
 {
-  "status": "success",
   "data": {
     "id": "550e8400-e29b-41d4-a716-446655440001",
     "owner_id": "550e8400-e29b-41d4-a716-446655440002",
     "phone_numbers": ["+12345678901", "+19876543210", "+15551234567"],
+    "phone_numbers_count": 3,
     "encrypted_key": "550e8400-e29b-41d4-a716-446655440000",
+    "credentials_name": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "created_at": "2024-01-15T10:30:00Z"
   },
   "errors": null
@@ -123,38 +128,11 @@ print(response.json())
 
 ```json Error Response - Pool Not Found
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
       "error": "POOL_NOT_FOUND",
       "message": "Geospatial dialing pool not found"
-    }
-  ]
-}
-```
-
-```json Error Response - Invalid Pool ID
-{
-  "status": "error",
-  "data": null,
-  "errors": [
-    {
-      "error": "INVALID_POOL_ID",
-      "message": "Pool ID must be a valid UUID"
-    }
-  ]
-}
-```
-
-```json Error Response - Unauthorized
-{
-  "status": "error",
-  "data": null,
-  "errors": [
-    {
-      "error": "UNAUTHORIZED",
-      "message": "Invalid API key or insufficient permissions"
     }
   ]
 }

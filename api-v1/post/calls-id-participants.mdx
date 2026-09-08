@@ -1,0 +1,51 @@
+---
+title: "Add Call Participant"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/participants"
+description: "Dial a phone number or meeting bridge into a live call."
+---
+
+<Note>
+  Live participant management currently supports calls on the carrier-direct media path. Other telephony providers return `UNSUPPORTED_PROVIDER`.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of an active call owned by your organization.
+</ParamField>
+
+### Body
+
+Provide either `phone_number` or `dial_in.number`.
+
+<ParamField body="phone_number" type="string">
+  An E.164 phone number to add to the call.
+</ParamField>
+
+<ParamField body="dial_in" type="object">
+  A meeting bridge with required E.164 `number` and optional DTMF `pin`.
+</ParamField>
+
+<ParamField body="caller_id" type="string">
+  An E.164 caller ID owned by your organization. Omit it to use the call's default number.
+</ParamField>
+
+<ParamField body="label" type="string">
+  A human-readable participant label.
+</ParamField>
+
+### Response
+
+Returns `201` with `{data, errors}`. `data` contains `participant_id`, `call_id`, `label`, `muted`, `hold`, and `status`.
+
+Errors include `INVALID_PARAMETERS` (400), `UNSUPPORTED_PROVIDER` (400), `CALLER_ID_NOT_OWNED` (403), `NOT_FOUND` (404), `CALL_ENDED` (409), and `PARTICIPANT_ADD_FAILED` (502).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

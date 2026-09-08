@@ -4,9 +4,9 @@ api: "GET https://api.bland.ai/v1/custom-dialing-pools"
 description: "Retrieve all custom dialing pools for your organization."
 ---
 
-<Info>
-  **Enterprise Feature** - Custom dialing is only available on Enterprise plans.
-</Info>
+<Note>
+  Custom dialing is only available on Enterprise plans.
+</Note>
 
 Retrieve a list of all custom dialing pools that belong to your organization.
 
@@ -18,12 +18,8 @@ Retrieve a list of all custom dialing pools that belong to your organization.
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
-</ResponseField>
-
 <ResponseField name="data" type="array">
-  Array of custom dialing pool objects (present only if status is `success`).
+  Array of custom dialing pool objects.
   
   <Expandable title="pool object properties">
     <ResponseField name="id" type="string">
@@ -37,9 +33,17 @@ Retrieve a list of all custom dialing pools that belong to your organization.
     <ResponseField name="phone_numbers" type="array">
       Array of phone numbers in the pool.
     </ResponseField>
+
+    <ResponseField name="phone_numbers_count" type="number">
+      Number of phone numbers in the pool.
+    </ResponseField>
     
     <ResponseField name="encrypted_key" type="string">
       UUID of associated Twilio credentials (or null if none).
+    </ResponseField>
+
+    <ResponseField name="credentials_name" type="string | null">
+      Twilio account SID associated with the credentials, or `null`.
     </ResponseField>
     
     <ResponseField name="created_at" type="string">
@@ -48,8 +52,8 @@ Retrieve a list of all custom dialing pools that belong to your organization.
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array">
-  Array of error objects (present only if status is `error`).
+<ResponseField name="errors" type="array | null">
+  `null` on success. On failure, contains error objects.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">
@@ -99,20 +103,23 @@ print(response.json())
 
 ```json Success Response
 {
-  "status": "success",
   "data": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440001",
       "owner_id": "550e8400-e29b-41d4-a716-446655440002",
       "phone_numbers": ["+12345678901", "+19876543210", "+15551234567"],
+      "phone_numbers_count": 3,
       "encrypted_key": "550e8400-e29b-41d4-a716-446655440000",
+      "credentials_name": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       "created_at": "2024-01-15T10:30:00Z"
     },
     {
       "id": "550e8400-e29b-41d4-a716-446655440003",
       "owner_id": "550e8400-e29b-41d4-a716-446655440002",
       "phone_numbers": ["+13105551234", "+19175555678"],
+      "phone_numbers_count": 2,
       "encrypted_key": null,
+      "credentials_name": null,
       "created_at": "2024-01-16T14:45:00Z"
     }
   ],
@@ -122,22 +129,8 @@ print(response.json())
 
 ```json Empty Response
 {
-  "status": "success",
   "data": [],
   "errors": null
-}
-```
-
-```json Error Response
-{
-  "status": "error",
-  "data": null,
-  "errors": [
-    {
-      "error": "UNAUTHORIZED",
-      "message": "Invalid API key or insufficient permissions"
-    }
-  ]
 }
 ```
 

@@ -7,30 +7,68 @@ description: "Integrate your own Twilio account with Bland. See [Custom Twilio I
 ### Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The caller must hold the `owner` or `admin` role in the organization.
 </ParamField>
 
 ### Body
 
 <ParamField body="account_sid" type="string" required>
-    Your Twilio account SID.
+    Your Twilio account SID. Must match `^AC[0-9a-fA-F]{32}$`.
 </ParamField>
 
 <ParamField body="auth_token" type="string" required>
-    Your Twilio auth token.
+    Your Twilio auth token (max 1000 characters). Unless `restricted_account_sid` is set, Bland verifies the credentials live against the Twilio API before storing them: the account must exist, the token must be valid, and the account status must be `active`.
+</ParamField>
+
+<ParamField body="restricted_account_sid" type="string">
+    A Twilio API key SID to authenticate with instead of the account SID. Must match `^SK[0-9a-fA-F]{32}$`. When set, the live Twilio credential check is skipped.
+</ParamField>
+
+<ParamField body="s3_role_arn" type="string">
+    An AWS IAM role ARN Bland can assume to write recordings into your own S3 bucket. Must match `arn:aws:iam::<12-digit account id>:role/<role name>`. When set, the response includes an `s3_external_id` to configure in the role's trust policy.
 </ParamField>
 
 ### Response
 
-<ResponseField body="encrypted_key" type="string">
+<ResponseField name="status" type="string">
+    `success`.
+</ResponseField>
+
+<ResponseField name="encrypted_key" type="string">
     Your `encrypted_key` to store and use in future requests.
 </ResponseField>
 
+<ResponseField name="s3_external_id" type="string | null">
+    The external ID to add to your IAM role's trust policy. `null` unless `s3_role_arn` was provided.
+</ResponseField>
+
+### Errors
+
+Errors return `{ "data": null, "errors": [{ "error": "...", "message": "..." }] }`.
+
+| Status | `error` | Cause |
+|---|---|---|
+| `400` | `BYOT_INSERT_FAILED` | Validation failed. The message explains why, for example `Higher permissions required`, `Invalid Account SID`, `Invalid Auth Token`, `Invalid Restricted Account SID format`, `Invalid S3 Role ARN format`, `Invalid Twilio credentials`, `Twilio account not found`, `Twilio account is not active`, `Unable to validate Twilio credentials at this time`, or `Timed out validating Twilio credentials. Please retry.` |
+| `500` | `UNEXPECTED_ERROR` | Unexpected error. |
+
 <ResponseExample>
-```json
+```json Success
 {
     "status": "success",
-    "encrypted_key": "YOUR_ENCRYPTED_KEY"
+    "encrypted_key": "YOUR_ENCRYPTED_KEY",
+    "s3_external_id": null
+}
+```
+
+```json Error
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "BYOT_INSERT_FAILED",
+            "message": "Invalid Twilio credentials"
+        }
+    ]
 }
 ```
 </ResponseExample>

@@ -4,9 +4,9 @@ api: "POST https://api.bland.ai/v1/custom-dialing-pools/{pool_id}/update"
 description: "Update an existing custom dialing pool with new phone numbers or credentials."
 ---
 
-<Info>
-  **Enterprise Feature** - Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
+<Note>
+  Custom dialing is only available on Enterprise plans. Contact your Bland representative for access.
+</Note>
 
 Update an existing custom dialing pool by replacing its phone numbers and/or Twilio credentials. This operation will completely replace the existing phone numbers with the new ones provided.
 
@@ -26,10 +26,8 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
 
 ### Body
 
-<ParamField body="phone_numbers" type="array" required>
-  Array of phone numbers to replace the existing numbers in the pool. All numbers must be valid US phone numbers with +1 prefix.
-  
-  **Format**: Each phone number must be exactly 12 characters: `+1` followed by 10 digits.
+<ParamField body="phone_numbers" type="array">
+  Array of phone numbers to replace the existing numbers in the pool. Every number must be a valid US (`+1`) or UK (`+44`) number. Omit this field to leave the current numbers unchanged.
   
   **Example**: `["+12345678901", "+19876543210"]`
   
@@ -39,21 +37,17 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
 </ParamField>
 
 <ParamField body="encrypted_key" type="string">
-  Optional UUID of Twilio credentials to associate with this pool. If provided, must be valid credentials that belong to your account. To remove credentials, pass `null`.
+  Optional UUID of Twilio credentials to associate with this pool. If provided, the credentials must belong to your account. Omit this field to leave the current credentials unchanged.
   
-  **Format**: UUID format (e.g., `550e8400-e29b-41d4-a716-446655440000`) or `null`
+  **Format**: UUID format (e.g., `550e8400-e29b-41d4-a716-446655440000`)
 
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
-</ResponseField>
-
 <ResponseField name="data" type="object">
-  The updated custom dialing pool object (present only if status is `success`).
+  The updated custom dialing pool object.
   
   <Expandable title="data properties">
     <ResponseField name="id" type="string">
@@ -67,9 +61,17 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
     <ResponseField name="phone_numbers" type="array">
       Array of phone numbers in the pool (updated).
     </ResponseField>
+
+    <ResponseField name="phone_numbers_count" type="number">
+      Number of phone numbers in the pool.
+    </ResponseField>
     
     <ResponseField name="encrypted_key" type="string">
       UUID of associated Twilio credentials (or null if none).
+    </ResponseField>
+
+    <ResponseField name="credentials_name" type="string | null">
+      Twilio account SID associated with the credentials, or `null`.
     </ResponseField>
     
     <ResponseField name="created_at" type="string">
@@ -78,8 +80,8 @@ Update an existing custom dialing pool by replacing its phone numbers and/or Twi
   </Expandable>
 </ResponseField>
 
-<ResponseField name="errors" type="array">
-  Array of error objects (present only if status is `error`).
+<ResponseField name="errors" type="array | null">
+  `null` on success. Validation errors include `error`, `message`, and, when applicable, `field`.
   
   <Expandable title="error object properties">
     <ResponseField name="error" type="string">
@@ -146,12 +148,13 @@ print(response.json())
 
 ```json Success Response
 {
-  "status": "success",
   "data": {
     "id": "550e8400-e29b-41d4-a716-446655440001",
     "owner_id": "550e8400-e29b-41d4-a716-446655440002",
     "phone_numbers": ["+12345678901", "+19876543210", "+15551234567", "+17775551234"],
+    "phone_numbers_count": 4,
     "encrypted_key": "550e8400-e29b-41d4-a716-446655440000",
+    "credentials_name": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "created_at": "2024-01-15T10:30:00Z"
   },
   "errors": null
@@ -160,7 +163,6 @@ print(response.json())
 
 ```json Error Response - Pool Not Found
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
@@ -173,12 +175,11 @@ print(response.json())
 
 ```json Error Response - Invalid Phone Numbers
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
       "error": "INVALID_PHONE_NUMBERS",
-      "message": "All phone numbers must be valid US numbers with +1 prefix"
+      "message": "All phone numbers must be valid US (+1) or UK (+44) numbers"
     }
   ]
 }
@@ -186,7 +187,6 @@ print(response.json())
 
 ```json Error Response - Invalid Credentials
 {
-  "status": "error",
   "data": null,
   "errors": [
     {
@@ -199,16 +199,6 @@ print(response.json())
 
 </ResponseExample>
 
-## Removing Credentials
-
-To remove Twilio credentials from a pool, set `encrypted_key` to `null`:
-
-```json
-{
-  "phone_numbers": ["+12345678901", "+19876543210"],
-  "encrypted_key": null
-}
-``` 
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

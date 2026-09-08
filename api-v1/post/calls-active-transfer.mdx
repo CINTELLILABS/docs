@@ -10,6 +10,8 @@ Transfers an active call to a different phone number while the call is in progre
 
 Only calls in `queue_status: "started"` are eligible. Once transferred, the call record's `transferred_to` field is updated so the new number appears in call details.
 
+Transfers to international numbers are blocked for non-enterprise accounts and return `403 FORBIDDEN`. Enterprise organizations bypass this check.
+
 ---
 
 ## Headers
@@ -27,7 +29,7 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 </ParamField>
 
 <ParamField body="transfer_number" type="string" required>
-  Destination phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format (for example `+12223334444`). Parsed against the US region by default, so 10-digit US numbers also work.
+  Destination phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format (for example `+12223334444`). Parsed against the US region by default, so 10-digit US numbers also work. A number that cannot be parsed returns `500`.
 </ParamField>
 
 ---
@@ -39,7 +41,14 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success.
+  `null` on success. On failure `data` is `null` and `errors` contains one entry:
+
+  | Status | `error` | When |
+  |---|---|---|
+  | `400` | `VALIDATION_ERROR` | `call_id` or `transfer_number` is missing. |
+  | `400` | `NOT_FOUND` | The call does not belong to your organization or is not in progress. |
+  | `403` | `FORBIDDEN` | International transfer blocked for your account type. |
+  | `500` | `INTERNAL_SERVER_ERROR` | The transfer failed (`"Error transferring call"`). |
 </ResponseField>
 
 <ResponseExample>
@@ -52,7 +61,7 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 }
 ```
 
-```json Validation Error
+```json Validation Error (400)
 {
   "data": null,
   "errors": [
@@ -64,7 +73,7 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 }
 ```
 
-```json Not Found
+```json Not Found (400)
 {
   "data": null,
   "errors": [
@@ -76,7 +85,7 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 }
 ```
 
-```json Forbidden
+```json Forbidden (403)
 {
   "data": null,
   "errors": [

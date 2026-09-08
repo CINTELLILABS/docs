@@ -7,35 +7,46 @@ description: "Disable an encrypted key for a Twilio account integration. See [Cu
 ### Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. The caller must hold the `owner` or `admin` role in the organization.
 </ParamField>
 
 <ParamField header="encrypted_key" type="string" required>
-  The `encrypted_key` to delete.
+  The `encrypted_key` to delete. Also accepted as the `encrypted-key` header or as an `encrypted_key` field in the JSON body.
   
   Learn more about BYOT [here](/tutorials/custom-twilio).
 </ParamField>
 
 ### Response
 
-<ResponseField body="status" type="string">
-    The status of the request.
-
-    - `success` - The encrypted key was successfully deleted.
-    - `error` - There was an error deleting the encrypted key.
+<ResponseField name="status" type="string">
+    `success` when the encrypted key was deleted.
 </ResponseField>
 
-<ResponseField body="message" type="string">
-    Special messages:
-    - `Error deleting Twilio credentials` - The encrypted key could not be deleted or already has been deleted.
-    - `Missing encrypted key` - The `encrypted_key` parameter is missing.
-    - none - The encrypted key was successfully deleted.
-</ResponseField>
+### Errors
+
+Errors return `{ "data": null, "errors": [{ "error": "...", "message": "..." }] }`.
+
+| Status | `error` | Cause |
+|---|---|---|
+| `400` | `BYOT_DELETION_FAILED` | The key could not be deleted. The message explains why: `Invalid encrypted_key` (missing), `Invalid ID` (not a valid key format), `Credentials not found`, or a message explaining that the key does not belong to your organization or that your role lacks permission. |
+| `500` | `UNEXPECTED_ERROR` | Unexpected error. |
 
 <ResponseExample>
-```json
+```json Success
 {
     "status": "success"
+}
+```
+
+```json Error
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "BYOT_DELETION_FAILED",
+            "message": "Invalid encrypted_key"
+        }
+    ]
 }
 ```
 </ResponseExample>

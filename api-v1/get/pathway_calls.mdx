@@ -1,7 +1,7 @@
 ---
 title: "Get Pathway Call Events"
 api: "GET https://api.bland.ai/v1/pathway_calls/{call_id}"
-description: "Retrieve the pathway event timeline for a call — transcripts, node transitions, webhooks, tools, variable extraction, and every other side effect."
+description: "Retrieve the pathway event timeline for a call, including transcripts, node transitions, webhooks, tools, and variable extraction."
 ---
 
 ### Headers
@@ -18,13 +18,15 @@ description: "Retrieve the pathway event timeline for a call — transcripts, no
 
 ### Query Parameters
 
-<ParamField query="v" type="string" required>
-  Set to `2` to receive the pathway events format documented here. Omitting it returns the deprecated legacy log format, which is being phased out — always pass `v=2`.
+<ParamField query="v" type="string">
+  Set to `2` to receive the pathway events format documented here. Omitting it returns the deprecated legacy log format, which may be an empty array during the rollout. Always pass `v=2` for new integrations.
 </ParamField>
 
 ### Response
 
 The response is a JSON array of event objects, one per event in the call, ordered by `sequence`. See [Pathway Call Events](/tutorials/pathway-call-events) for the full catalog of event types and per-type payload shapes.
+
+The array may be empty when the call cannot be attributed to a pathway. Events are capped by the service limit and redaction rules are applied before they are returned. A failure to fetch `v=2` events returns `500`.
 
 <ResponseField name="conversation_id" type="string">
   The call id. All events for one call share it.

@@ -1,0 +1,35 @@
+---
+title: "List Call Participants"
+api: "GET https://api.bland.ai/v1/calls/{call_id}/participants"
+description: "Retrieve the participant roster for a live call."
+---
+
+<Note>
+  Live participant management currently supports calls on the carrier-direct media path. Other telephony providers return `UNSUPPORTED_PROVIDER`.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of an active call owned by your organization.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.participants" type="array">
+  Participant resources. Each entry includes `participant_id`, `call_id`, `label`, `muted`, `hold`, and `status`. Event-backed entries may also include `deaf`, `number`, `is_agent`, `is_web`, `joined_at`, and `left_at`.
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  `null` on success. Errors include `UNSUPPORTED_PROVIDER` (400), `NOT_FOUND` (404), `CALL_ENDED` (409), and `PARTICIPANT_LIST_FAILED` (502).
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

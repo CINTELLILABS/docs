@@ -11,23 +11,29 @@ description: "Returns a set of metadata for each call dispatched by your account
 </ParamField>
 
 <ParamField header="encrypted_key" type="string">
-  Use your own Twilio account and only return inbound numbers associated with that account sid (optional).
-  
+  The `encrypted_key` of a Twilio account you connected through BYOT. It selects the Twilio client used to sync call status and recording URLs for the returned calls. When a BYOT account is selected, each call also includes its `sid` and `twilio_account_sid`.
+
   Learn more about BYOT [here](/tutorials/custom-twilio).
-</ParamField> 
+</ParamField>
 
 ### Query Parameters
+
+All parameters are optional. A value that fails validation (for example `limit` above 1000, or a value outside an enum) returns `400 INVALID_PARAMETER`.
 
 <ParamField query="from_number" type="string">
   Filter calls by the number they were dispatched from.
 
-  The number that initiated the call - the user's phone number for inbound calls, or the number your AI Agent called from for outbound calls.
+  The number that initiated the call: the user's phone number for inbound calls, or the number your AI Agent called from for outbound calls.
 </ParamField>
 
 <ParamField query="to_number" type="string">
   Filter calls by the number they were dispatched to.
 
-  The number that answered the call - the user's phone number for outbound calls, or your AI Agent's number for inbound calls.
+  The number that answered the call: the user's phone number for outbound calls, or your AI Agent's number for inbound calls.
+</ParamField>
+
+<ParamField query="call_id" type="string">
+  Return only the call with this ID.
 </ParamField>
 
 <ParamField query="from" type="int">
@@ -35,23 +41,27 @@ description: "Returns a set of metadata for each call dispatched by your account
 </ParamField>
 
 <ParamField query="to" type="int">
-  The ending index for the range of calls to retrieve. This tells the API where to stop returning data. For example, from=150 and to=200 returns 50 results, starting from the 101st result and ending just before the 151st.
+  The ending index for the range of calls to retrieve. When both `from` and `to` are set, the number of calls returned is `min(limit, to - from)`. For example, from=150 and to=200 returns 50 results.
 </ParamField>
 
 <ParamField query="limit" type="int" default="1000">
-  The maximum number of calls to return in the response.
+  The maximum number of calls to return in the response. Must be between 0 and 1000. The API never returns more than 1000 calls per request, regardless of `from`, `to`, and `limit`.
 </ParamField>
 
 <ParamField query="ascending" type="boolean" default="false">
-  Whether to sort the calls in ascending order of their creation time.
+  Whether to sort the calls in ascending order.
 </ParamField>
 
 <ParamField query="sort_by" type="string" default="created_at">
   Field to sort the results by. Available options are `created_at` (default) and `updated_at`.
+
+  `created_at` orders by insertion order (the internal row ID), which matches creation order.
 </ParamField>
 
 <ParamField query="start_date" type="string">
-  Get calls including and after a specific date.
+  Get calls that started including and after a specific date.
+
+  Filters on `started_at` (the time the call connected), not `created_at`. Calls that never connected, and therefore have no `started_at`, are excluded when this parameter is set.
 
   Accepts either a date (`YYYY-MM-DD`) or a full ISO 8601 datetime with timezone offset (e.g. `2026-02-19T00:00:00-05:00`).
 
@@ -59,7 +69,9 @@ description: "Returns a set of metadata for each call dispatched by your account
 </ParamField>
 
 <ParamField query="end_date" type="string">
-  Get calls including and before a specific date.
+  Get calls that started including and before a specific date.
+
+  Filters on `started_at`, with the same behavior as `start_date`.
 
   Accepts either a date (`YYYY-MM-DD`) or a full ISO 8601 datetime with timezone offset (e.g. `2026-02-19T23:59:59-05:00`).
 
@@ -67,13 +79,13 @@ description: "Returns a set of metadata for each call dispatched by your account
 </ParamField>
 
 <ParamField query="created_at" type="string">
-  Get calls for a specific date. Can't be used with `end_date` or `start_date`.
+  Get calls created on a specific date. Can't be used with `end_date` or `start_date` (returns `400 INVALID_PARAMETER`).
 
   Format: `YYYY-MM-DD`. Dates are interpreted as UTC unless the `timezone` parameter is provided.
 </ParamField>
 
 <ParamField query="timezone" type="string">
-  IANA timezone name (e.g. `America/Toronto`, `America/Los_Angeles`, `UTC`).
+  IANA timezone name (e.g. `America/Toronto`, `America/Los_Angeles`, `UTC`). An unknown timezone returns `400 INVALID_PARAMETER`.
 
   When provided, date-only values in `start_date`, `end_date`, and `created_at` are interpreted in this timezone instead of UTC. This ensures calls are attributed to the correct local calendar day.
 
@@ -98,13 +110,32 @@ description: "Returns a set of metadata for each call dispatched by your account
   Get calls from a specific batch.
 </ParamField>
 
+<ParamField query="campaign_id" type="string">
+  Get calls for a specific campaign id.
+</ParamField>
+
 <ParamField query="answered_by" type="string">
-  Filter by answered_by type.
-  Example: human
+  Filter by who answered the call. One of `human`, `machine`, `unknown`, or `voicemail`.
+</ParamField>
+
+<ParamField query="call_ended_by" type="string">
+  Filter by who ended the call. One of `USER` or `ASSISTANT`.
 </ParamField>
 
 <ParamField query="inbound" type="boolean">
   Whether to filter based on inbound or not.
+</ParamField>
+
+<ParamField query="record" type="boolean">
+  Filter by whether the call was recorded.
+</ParamField>
+
+<ParamField query="is_simulation" type="boolean">
+  Filter by whether the call was a simulation.
+</ParamField>
+
+<ParamField query="error_message" type="string">
+  Return only calls whose `error_message` exactly matches this value.
 </ParamField>
 
 <ParamField query="duration_gt" type="float">
@@ -117,12 +148,41 @@ description: "Returns a set of metadata for each call dispatched by your account
   Example: 0.5 (This would be equal to half a minute)
 </ParamField>
 
-<ParamField query="campaign_id" type="string">
-  Get calls for a specific campaign id.
+<ParamField query="cost_gt" type="float">
+  Return only calls whose `price` (USD) is greater than or equal to this value.
 </ParamField>
 
+<ParamField query="cost_lt" type="float">
+  Return only calls whose `price` (USD) is less than or equal to this value.
+</ParamField>
+
+<ParamField query="twilio_account_sid" type="string">
+  Return only calls placed through this Twilio account SID (BYOT).
+</ParamField>
+
+<ParamField query="agent_experiment_id" type="string">
+  Return only calls that ran under this agent A/B experiment. Must be a UUID.
+</ParamField>
+
+<ParamField query="analysis_schema" type="string">
+  A JSON string with a single key and value, e.g. `{"appointment_booked": true}`. Returns calls whose post-call `analysis` object has that key equal to that value. Invalid JSON is ignored.
+</ParamField>
+
+<ParamField query="variables" type="string">
+  A JSON string with a single key and value, e.g. `{"customer_id": "123"}`. Returns calls whose stored `variables` contain that key with that exact value. Invalid JSON is ignored.
+</ParamField>
+
+<ParamField query="exclude_fields" type="string | string[]">
+  Call fields to omit from each returned call, e.g. `exclude_fields=variables&exclude_fields=metadata`. Use this to reduce response size.
+
+  A name that is not a call column, or one of the fields the API needs internally (`c_id`, `price`, `sid`, `twilio_account_sid`, `recording_url`, `recording_id`, `completed`, `created_at`, `citation_schema_ids`, `started_at`, `record`, `call_length`, `status`, `redaction`), returns `400 INVALID_PARAMETER`.
+</ParamField>
 
 ### Response
+
+<ResponseField name="status" type="string">
+  Always `success` on a 200 response.
+</ResponseField>
 
 <ResponseField name="total_count" type="integer">
   The total number of calls that match the query filters. This number may be greater than the number of calls returned in the response.
@@ -130,6 +190,8 @@ description: "Returns a set of metadata for each call dispatched by your account
   For example:
   - If you have 10,000 calls, and don't include any filters, the `total_count` will be 10,000.
   - If you have 10,000 calls and 9,000 of them match the query, the `total_count` will be 9,000 regardless of the number of calls returned in the response.
+
+  Without `start_date`, `end_date`, or `created_at`, this count may be capped at 10,000 in high-volume regions.
 </ResponseField>
 
 <ResponseField name="count" type="integer">
@@ -137,41 +199,100 @@ description: "Returns a set of metadata for each call dispatched by your account
 </ResponseField>
 
 <ResponseField name="calls" type="array">
-  An array of call data objects. See the [Call](/api-v1/get/calls-id) section for details.
+  An array of call objects. Transcripts, `pathway_logs`, and `request_data` are not included due to their size; use [Call Details](/api-v1/get/calls-id) for those.
 
-  Note: Individual call transcripts are not included due to their size.
+  Each call contains the following fields (unless removed with `exclude_fields`):
+
+  - `call_id`, `c_id`: the call's unique identifier (both carry the same value).
+  - `created_at`, `updated_at`, `started_at`, `start_time`: timestamps for the call record, its last update, and when the call connected.
+  - `call_length`: length of the call in minutes.
+  - `to`, `from`, `inbound`.
+  - `completed`, `queue_status`, `status`, `error_message`, `answered_by`, `call_ended_by`.
+  - `max_duration`, `local_dialing`, `record`, `recording_url`, `recording_expiration`.
+  - `price`: cost of the call in USD, or `null` if not yet priced.
+  - `variables`: object of call variables. For calls with `redaction` enabled, values are masked to their shape (for example `"string:12"`).
+  - `metadata`, `summary`, `analysis`, `analysis_schema`.
+  - `transferred_to`, `transferred_at`.
+  - `batch_id`, `pathway_id`, `pathway_tags`, `citation_schema_ids`, `disposition_ids`, `agent_experiment_id`, `agent_version_id`.
+  - `redaction`: the redaction categories enabled for the call (`pii`, `phi`, `pci`, `medical`), or `null`.
+  - `warm_transfer_call`: `{ proxy_agent_calls, state }` if the call was part of a warm transfer, otherwise `null`. See [Call Details](/api-v1/get/calls-id) for the structure.
+  - `citations`: only for enterprise organizations. Citations extracted for the call, or `[]`.
+  - `sid`, `twilio_account_sid`: only when a BYOT account is selected via `encrypted_key`.
 </ResponseField>
 
 <ResponseExample>
-```json Response
+```json 200
 {
-    "count": 784,
+    "status": "success",
+    "total_count": 784,
+    "count": 1,
     "calls": [
         {
             "call_id": "c1234567-89ab-cdef-0123-456789abcdef",
+            "c_id": "c1234567-89ab-cdef-0123-456789abcdef",
+            "redaction": null,
             "created_at": "2023-12-21T23:25:14.801193+00:00",
-            "call_length": 0.834, // minutes
+            "updated_at": "2023-12-21T23:26:30.112000+00:00",
+            "call_length": 0.834,
             "to": "5551234567",
             "from": "+15551234567",
+            "inbound": false,
+            "max_duration": 30,
+            "metadata": {},
+            "variables": {
+                "phone_number": "5551234567",
+                "call_id": "c1234567-89ab-cdef-0123-456789abcdef"
+            },
+            "start_time": null,
             "completed": true,
             "queue_status": "complete",
             "error_message": null,
             "answered_by": "human",
             "batch_id": "b1234567-89ab-cdef-0123-gen-batch",
-        },
-        //... Additional call objects
+            "started_at": "2023-12-21T23:25:20+00:00",
+            "record": false,
+            "recording_url": null,
+            "summary": "The caller confirmed their appointment.",
+            "local_dialing": false,
+            "price": 0.075,
+            "call_ended_by": "ASSISTANT",
+            "analysis": null,
+            "analysis_schema": null,
+            "transferred_to": null,
+            "transferred_at": null,
+            "pathway_tags": [],
+            "status": "completed",
+            "recording_expiration": null,
+            "pathway_id": null,
+            "citation_schema_ids": null,
+            "disposition_ids": null,
+            "agent_experiment_id": null,
+            "agent_version_id": null,
+            "warm_transfer_call": null
+        }
+    ]
+}
+```
+
+```json 400
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "INVALID_PARAMETER",
+            "message": "Invalid exclude_fields: c_id"
+        }
     ]
 }
 ```
 </ResponseExample>
 
+### Errors
 
+Errors use the `{ "data": null, "errors": [...] }` envelope shown above.
 
-
-
-
-
-
+- `400 INVALID_PARAMETER`: a query parameter failed validation, `created_at` was combined with `start_date`/`end_date`, `timezone` is not a valid IANA name, or `exclude_fields` names a non-excludable field.
+- `500 INTERNAL_SERVER_ERROR`: the query failed (including the 60 second statement timeout on very large result sets).
 
 ---
 

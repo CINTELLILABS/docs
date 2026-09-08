@@ -22,6 +22,12 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   The unique identifier of the call for which you want to retrieve detailed information.
 </ParamField>
 
+### Query Parameters
+
+<ParamField query="v" type="string">
+  Set to `2` to return `pathway_logs` in the current pathway events format. Without `v=2`, the legacy pathway log may be returned as an empty array with `pathway_logs_message` when the legacy format is unavailable.
+</ParamField>
+
 ### Response
 
 <ResponseField name="transcripts" type="array of objects">
@@ -35,7 +41,7 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   - `user` (can be `user`, `assistant`, `robot`, or `agent-action`)
 </ResponseField>
 
-<ResponseField name="call_id" type="number">
+<ResponseField name="call_id" type="string">
   The unique identifier for the call.
 </ResponseField>
 
@@ -61,10 +67,6 @@ description: "Retrieve detailed information, metadata and transcripts for a call
 
 <ResponseField name="from" type="string">
   The phone number that made the call.
-</ResponseField>
-
-<ResponseField name="request_data" type="object">
-  Details about parameters in the original api request.
 </ResponseField>
 
 <ResponseField name="completed" type="boolean">
@@ -109,10 +111,6 @@ description: "Retrieve detailed information, metadata and transcripts for a call
 
   If at any point an error occurs, it will be recorded in the `error_message` field.
   </Accordion>
-</ResponseField>
-
-<ResponseField name="endpoint_url" type="string">
-  The url of the deployment that the call was handled on. Will always be "api.prod.bland.ai" unless the call was handled on a custom Enterprise deployment.
 </ResponseField>
 
 <ResponseField name="max_duration" type="number">
@@ -186,8 +184,8 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   The unique identifier for a conversational pathway.
 </ResponseField>
 
-<ResponseField name="pathway_logs" type="string">
-  Pathways calls will have extra logs here that have much more detailed information about the chosen nodes and internal reasoning throughout the flow.
+<ResponseField name="pathway_logs" type="array | null">
+  Pathway events or legacy logs for the call. Pass `v=2` to receive the current pathway events format. During the legacy format rollout this may be an empty array and `pathway_logs_message` explains the deprecation.
 </ResponseField>
 
 <ResponseField name="pathway_version" type="number">
@@ -260,7 +258,7 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ResponseField>
 
-<ResponseField name="warm_transfer_call" type="object">
+<ResponseField name="warm_transfer_calls" type="object">
   Information about warm transfer calls if the call was part of a warm transfer. Contains details about proxy agent calls and transfer state.
 
   <Expandable title="Structure">
@@ -270,6 +268,74 @@ description: "Retrieve detailed information, metadata and transcripts for a call
     - `phone_number`: The phone number used for the proxy agent call
   - `state`: The overall state of the warm transfer (`STARTED`, `TIMED_OUT`, `CANCELLED`, `MERGED`, `NO_ANSWER`)
   </Expandable>
+</ResponseField>
+
+<ResponseField name="c_id" type="string">
+  The call ID as stored internally. This is the same identifier as `call_id`.
+</ResponseField>
+
+<ResponseField name="redaction" type="array | null">
+  Redaction policies applied to the stored call data.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  The timestamp when the call record was last updated.
+</ResponseField>
+
+<ResponseField name="start_time" type="string | null">
+  The requested dispatch time, if one was set.
+</ResponseField>
+
+<ResponseField name="analysis_schema" type="object | null">
+  The schema used to produce `analysis`.
+</ResponseField>
+
+<ResponseField name="pathway_tags" type="array | null">
+  Tags produced while the pathway ran.
+</ResponseField>
+
+<ResponseField name="recording_expiration" type="string | null">
+  The timestamp when the stored recording expires.
+</ResponseField>
+
+<ResponseField name="disposition_ids" type="array | null">
+  Outcome IDs evaluated for the call.
+</ResponseField>
+
+<ResponseField name="agent_experiment_id" type="string | null">
+  The agent experiment associated with the call.
+</ResponseField>
+
+<ResponseField name="agent_version_id" type="string | null">
+  The compiled agent version used for the call.
+</ResponseField>
+
+<ResponseField name="persona_id" type="string | null">
+  The persona used for the call.
+</ResponseField>
+
+<ResponseField name="contact_id" type="string | null">
+  The contact associated with the call.
+</ResponseField>
+
+<ResponseField name="dispositions" type="array">
+  Outcome results attached to the call.
+</ResponseField>
+
+<ResponseField name="total_transferred_call_duration" type="number | null">
+  Total duration of transferred call legs, in seconds.
+</ResponseField>
+
+<ResponseField name="live_translation_transcript" type="array | null">
+  Live translation transcript entries, when translation was enabled.
+</ResponseField>
+
+<ResponseField name="sid" type="string">
+  The telephony provider call SID. Present for BYOT calls.
+</ResponseField>
+
+<ResponseField name="twilio_account_sid" type="string">
+  The Twilio account SID. Present for BYOT calls.
 </ResponseField>
 
 <ResponseField name="is_proxy_agent_call" type="boolean">
@@ -292,16 +358,10 @@ description: "Retrieve detailed information, metadata and transcripts for a call
     "batch_id": null,
     "to": "+12223334444",
     "from": "+17163511654",
-    "request_data": {
-        "phone_number": "+12223334444",
-        "wait": true,
-        "language": "ENG"
-    },
     "completed": true,
     "created_at": "2024-04-27T23:51:18.025251+00:00",
     "inbound": false,
     "queue_status": "completed",
-    "endpoint_url": "api.prod.bland.ai",
     "max_duration": 30,
     "error_message": null,
     "variables": {
@@ -343,18 +403,14 @@ description: "Retrieve detailed information, metadata and transcripts for a call
             "created_at": "2024-04-27T23:51:28.568385+00:00",
             "text": "Hello?",
             "user": "user",
-            "c_id": "12345678-1234-1234-1234-123456789012",
-            "status": null,
-            "transcript_id": null
+            "user": "user"
         },
         {
             "id": 7395698,
             "created_at": "2024-04-27T23:51:30.689815+00:00",
             "text": "Hi there! I'm calling from the hotel booking service. I'd love to help you with your reservation. Could you let me know what day you'd like to book your hotel for and how many rooms you'll need?",
             "user": "assistant",
-            "c_id": "12345678-1234-1234-1234-123456789012",
-            "status": null,
-            "transcript_id": "12345678-1234-1234-1234-123456789014"
+            "user": "assistant"
         },
         //...
     ],
@@ -362,7 +418,7 @@ description: "Retrieve detailed information, metadata and transcripts for a call
     "corrected_duration": "45",
     "end_at": "2024-04-27T23:52:10.000Z",
     "voice_id": "745fbef5-f445-44fa-91ba-93f89803e1ce",
-    "warm_transfer_call": {
+    "warm_transfer_calls": {
         "proxy_agent_calls": [
             {
                 "state": "MERGED",
@@ -377,6 +433,8 @@ description: "Retrieve detailed information, metadata and transcripts for a call
 }
 ```
 </ResponseExample>
+
+Errors use a flat `{ "status": "error", "message": "..." }` body with status `400`, `404`, or `500`.
 
 
 
