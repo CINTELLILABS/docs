@@ -1,5 +1,5 @@
 ---
-title: "Create Pathway" 
+title: "Create Pathway"
 api: "POST https://api.bland.ai/v1/pathway/create"
 description: "Create a new conversational pathway"
 ---
@@ -9,6 +9,11 @@ description: "Create a new conversational pathway"
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Body
 
 <ParamField body="name" type="string" required>
@@ -19,36 +24,86 @@ description: "Create a new conversational pathway"
     A description of the conversational pathway you want to create
 </ParamField>
 
+<ParamField body="nodes" type="object[]">
+  Optional initial nodes. Uses the same node structure as [Update Pathway](/api-v1/post/update_pathways). If omitted, the pathway is created empty.
+</ParamField>
+
+<ParamField body="edges" type="object[]">
+  Optional initial edges. Uses the same edge structure as [Update Pathway](/api-v1/post/update_pathways). Provide `nodes` and `edges` together.
+</ParamField>
+
+<ParamField body="execution_mode" type="string">
+  `rigid` (default) or `flex`. In flex mode the router may move between nodes inside the same flex group without following an explicit edge.
+</ParamField>
+
+<ParamField body="flex_groups" type="object[]">
+  Flex groups for `execution_mode: "flex"`. Each item is `{ "ids": ["node_id", ...], "color": "#hex" }`. Group ids that do not match a node are dropped and reported in `warnings`.
+</ParamField>
+
+<ParamField body="analysis_options" type="object">
+  Analysis settings to store with the pathway. The object may contain `execution_mode` and `flex_groups`; the top-level fields above take precedence when provided.
+</ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+Returns `201 Created`.
+
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="pathway_id" type="string">
+      A unique identifier for the new pathway.
+    </ResponseField>
+
+    <ResponseField name="warnings" type="string[]">
+      Present only when the supplied nodes, edges, or flex groups were adjusted during validation.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="pathway_id" type="string">
-  A unique identifier for the pathway (present only if status is `success`).
+<ResponseField name="errors" type="null | array">
+  `null` on success. Otherwise a list of `{ "error": "CODE", "message": "..." }` objects.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `MISSING_NAME` | `name` was not provided. |
+| `400` | `PATHWAY_VALIDATION_ERROR` | The supplied `nodes` or `edges` failed validation. `message` explains why. |
+| `403` | `UNAUTHORIZED` | The caller's org role cannot edit pathways. |
+| `500` | `PATHWAY_CREATION_ERROR` | The pathway could not be saved. |
+
+<RequestExample>
+```json Request
+{
+  "name": "Reservation Line",
+  "description": "Books tables for the Bland Bistro"
+}
+```
+</RequestExample>
 
 <ResponseExample>
-
 ```json Response
 {
-  "status": "success",
-  "pathway_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1"
+  "data": {
+    "pathway_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1"
+  },
+  "errors": null
 }
 ```
 
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MISSING_NAME",
+      "message": "Missing name"
+    }
+  ]
+}
+```
 </ResponseExample>
-
-
-
-
-
-
-
-
-
 
 ---
 

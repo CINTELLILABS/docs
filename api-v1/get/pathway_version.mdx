@@ -1,7 +1,7 @@
 ---
 title: "Get Specific Pathway Version"
 api: "GET https://api.bland.ai/v1/pathway/{pathway_id}/version/{version_id}"
-description: "Retrieves a specific version of a pathway, including its name, nodes, edges, version number, and latest status."
+description: "Retrieves a specific version of a pathway, or the live production or staging graph, including its nodes, edges, and post-call configuration."
 ---
 
 ### Headers
@@ -17,24 +17,24 @@ description: "Retrieves a specific version of a pathway, including its name, nod
 </ParamField>
 
 <ParamField path="version_id" type="string" required>
-  The ID of the version to retrieve. Use 0 for the live pathway.
+  Which graph to return:
+
+  - A version number (for example `3`) returns that version. A version number that does not exist falls back to the production graph.
+  - `production` or `0` returns the live production graph.
+  - `staging` returns the version currently promoted to staging.
 </ParamField>
 
 ### Response
-
-<ResponseField name="name" type="string">
-  The name of the pathway version.
-</ResponseField>
 
 <ResponseField name="nodes" type="array of objects">
   Data about all the nodes in the pathway version.
 
   <Accordion title="Node Object Parameters">
-    - `id` — Unique identifier of the node
-    - `type` — Type of the node (e.g., "Default", "End Call", "Webhook")
-    - `data` — Object containing node-specific data
-      - `name` — Name of the node
-      - `text` or `prompt` — Text or prompt associated with the node
+    - `id`: Unique identifier of the node
+    - `type`: Type of the node (e.g., "Default", "End Call", "Webhook")
+    - `data`: Object containing node-specific data
+      - `name`: Name of the node
+      - `text` or `prompt`: Text or prompt associated with the node
       - Other properties specific to the node type
   </Accordion>
 </ResponseField>
@@ -43,25 +43,52 @@ description: "Retrieves a specific version of a pathway, including its name, nod
   Data about all the edges in the pathway version.
 
   <Accordion title="Edge Object Parameters">
-    - `id` — Unique identifier of the edge
-    - `source` — ID of the source node
-    - `target` — ID of the target node
-    - `label` — Label for this edge
+    - `id`: Unique identifier of the edge
+    - `source`: ID of the source node
+    - `target`: ID of the target node
+    - `data.label`: Label for this edge
+    - `data.description`: Optional description of the transition
   </Accordion>
 </ResponseField>
 
-<ResponseField name="version_number" type="integer">
-  The version number of this pathway version.
+<ResponseField name="post_call_actions" type="object | null">
+  Post-call actions configured on this version.
 </ResponseField>
 
-<ResponseField name="is_latest" type="boolean">
-  Indicates whether this is the latest version of the pathway.
+<ResponseField name="revision_number" type="integer | null">
+  Incremented each time the version is saved.
 </ResponseField>
+
+<ResponseField name="memory_enabled" type="boolean">
+  Whether memory is enabled for this version.
+</ResponseField>
+
+<ResponseField name="entity_schemas" type="object | null">
+  Entity schemas used by memory, if configured.
+</ResponseField>
+
+<ResponseField name="analysis_options" type="object | null">
+  Execution settings such as `execution_mode` and `flex_groups`.
+</ResponseField>
+
+<ResponseField name="version_number" type="integer">
+  The version number requested. `0` when `version_id` is `production`. Omitted when `version_id` is `staging`.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Only present for the sentinel values: `"Production Pathway"` for `production`, `"Staging Pathway"` for `staging`. Numeric versions do not return a name; use [Get Pathway Versions](/api-v1/get/pathway_versions) for version names.
+</ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "Error fetching pathway versions"}` (also returned for `staging` when no version has been promoted to staging) |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
 
 <ResponseExample>
-```json Response
+```json Version 2
 {
-  "name": "Customer Support Flow v2",
   "nodes": [
     {
       "id": "1",
@@ -86,14 +113,35 @@ description: "Retrieves a specific version of a pathway, including its name, nod
       "id": "edge-1-2",
       "source": "1",
       "target": "2",
-      "label": "Issue resolved"
+      "data": {
+        "label": "Issue resolved"
+      }
     }
   ],
-  "version_number": 2,
-  "is_latest": true
+  "post_call_actions": null,
+  "revision_number": 4,
+  "memory_enabled": false,
+  "entity_schemas": null,
+  "analysis_options": null,
+  "version_number": 2
+}
+```
+
+```json production
+{
+  "nodes": [],
+  "edges": [],
+  "post_call_actions": null,
+  "revision_number": 1,
+  "memory_enabled": false,
+  "entity_schemas": null,
+  "analysis_options": null,
+  "name": "Production Pathway",
+  "version_number": 0
 }
 ```
 </ResponseExample>
+
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

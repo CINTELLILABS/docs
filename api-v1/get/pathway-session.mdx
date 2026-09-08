@@ -12,12 +12,16 @@ description: "Creates a new pathway session token for the authenticated user. Th
 
 ### Response
 
-<ResponseField name="token" type="string">
+<ResponseField name="data.token" type="string">
   The generated pathway session token.
 </ResponseField>
 
-<ResponseField name="expires_at" type="string">
+<ResponseField name="data.expires_at" type="string">
   ISO 8601 timestamp indicating when the token expires (1 hour from creation).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
 </ResponseField>
 
 ### Response Codes
@@ -38,13 +42,17 @@ description: "Creates a new pathway session token for the authenticated user. Th
 
 ```json Success Response
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_at": "2024-01-15T15:30:00.000Z"
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expires_at": "2024-01-15T15:30:00.000Z"
+  },
+  "errors": null
 }
 ```
 
 ```json Error Response (401)
 {
+  "data": null,
   "errors": [
     {
       "error": "UNAUTHORIZED",
@@ -56,6 +64,7 @@ description: "Creates a new pathway session token for the authenticated user. Th
 
 ```json Error Response (500)
 {
+  "data": null,
   "errors": [
     {
       "error": "TOKEN_CREATION_FAILED", 

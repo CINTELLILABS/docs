@@ -1,25 +1,50 @@
 ---
 title: "Delete Folder"
 api: "DELETE https://api.bland.ai/v1/pathway/folders/{folder_id}"
-description: "Deletes a specific folder for the authenticated user. The folder must be empty to be deleted."
+description: "Deletes a specific folder for the authenticated user. The folder must have no subfolders."
 ---
 
 ### Headers
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Path Parameters
 <ParamField path="folder_id" type="string" required>
   The ID of the folder to delete.
 </ParamField>
+
 ### Response
-<ResponseField name="folder_id" type="string">
+
+Only subfolders block deletion. Pathways inside the folder do not: they are moved to the root level when the folder is deleted.
+
+<ResponseField name="data.folder_id" type="string">
   The ID of the deleted folder.
 </ResponseField>
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `DELETE_FOLDER_NOT_EMPTY` | The folder still contains subfolders. |
+| `403` | `UNAUTHORIZED` | The caller's org role cannot edit pathways. |
+| `404` | `DELETE_FOLDER_NOT_FOUND` | The folder does not exist or belongs to another account. |
+| `500` | `DELETE_FOLDER_INTERNAL_SERVER_ERROR` | Unexpected failure. |
+
 <ResponseExample>
 ```json Response
 {
-  "folder_id": "deleted_folder_123"
+  "data": {
+    "folder_id": "deleted_folder_123"
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

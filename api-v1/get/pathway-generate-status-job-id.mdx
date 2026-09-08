@@ -18,10 +18,13 @@ description: "Poll pathway generation status and retrieve the generated pathway 
 
 ### How polling works
 
-- The first status request can return `ready: false` while the server begins processing.
+- The first status request starts processing and returns `ready: false`.
+- Processing starts for at most one job per account per minute. Status requests for other jobs during that window return `ready: false` and do not start them; keep polling.
 - Continue polling until `data.ready` is `true`.
 - On success, the response includes `pathway_id`.
 - On failure, the response includes `error`.
+
+The generate and status endpoints share an IP rate limit of 100 requests per 15 minutes. Requests over the limit return `429`.
 
 ### Response
 
@@ -75,13 +78,25 @@ description: "Poll pathway generation status and retrieve the generated pathway 
 }
 ```
 
-```json Error
+```json Error (404)
 {
   "data": null,
   "errors": [
     {
       "error": "PATHWAY_GENERATION_FAILED",
       "message": "Job not found"
+    }
+  ]
+}
+```
+
+```json Error (403)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "UNAUTHORIZED",
+      "message": "You don't have permission to access this job"
     }
   ]
 }

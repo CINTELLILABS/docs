@@ -10,6 +10,10 @@ description: "Updates the name of a specific folder for the authenticated user."
   Your API key for authentication.
 </ParamField>
 
+<Note>
+Org members need the `admin`, `owner`, `operator`, or `prompter` role. Members with the `viewer` role receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Path Parameters
 
 <ParamField path="folder_id" type="string" required>
@@ -22,22 +26,37 @@ description: "Updates the name of a specific folder for the authenticated user."
 </ParamField>
 
 ### Response
-<ResponseField name="folder_id" type="string">
+<ResponseField name="data.folder_id" type="string">
   The unique identifier of the updated folder.
 </ResponseField>
-<ResponseField name="name" type="string">
+<ResponseField name="data.name" type="string">
   The updated name of the folder.
 </ResponseField>
-<ResponseField name="parent_folder_id" type="string">
-  The ID of the parent folder, if applicable.
+<ResponseField name="data.parent_folder_id" type="string | null">
+  The ID of the parent folder, or `null` for a top-level folder.
 </ResponseField>
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `UPDATE_FOLDER_BAD_REQUEST` | `name` is missing. |
+| `403` | `UNAUTHORIZED` | The caller's org role cannot edit pathways. |
+| `404` | `UPDATE_FOLDER_NOT_FOUND` | The folder does not exist or belongs to another account. |
+| `500` | `UPDATE_FOLDER_INTERNAL_SERVER_ERROR` | Unexpected failure. |
 
 <ResponseExample>
 ```json Response
 {
-  "folder_id": "updated_folder_123",
-  "name": "Updated Folder Name",
-  "parent_folder_id": null
+  "data": {
+    "folder_id": "updated_folder_123",
+    "name": "Updated Folder Name",
+    "parent_folder_id": null
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

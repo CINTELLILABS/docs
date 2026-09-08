@@ -1,5 +1,5 @@
 ---
-title: "Delete Pathway" 
+title: "Delete Pathway"
 api: "DELETE https://api.bland.ai/v1/pathway/{pathway_id}"
 description: "Delete your conversational pathway."
 ---
@@ -10,6 +10,10 @@ description: "Delete your conversational pathway."
   Your API key for authentication.
 </ParamField>
 
+<Note>
+Org members need the `admin` or `owner` role. This is stricter than other pathway edits: `operator`, `prompter`, and `viewer` members receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
 ### Path Parameters
 
 <ParamField path="pathway_id" type="string" required>
@@ -18,32 +22,49 @@ description: "Delete your conversational pathway."
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Can be `success` or `error`.
+<ResponseField name="data" type="object">
+  <Expandable title="data properties">
+    <ResponseField name="message" type="string">
+      `"Graph deleted successfully"` on success.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="pathway_id" type="string">
-  A unique identifier for the pathway (present only if status is `success`).
+<ResponseField name="errors" type="null | array">
+  `null` on success. Otherwise a list of `{ "error": "CODE", "message": "..." }` objects.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `MISSING_PATHWAY_ID` | No pathway id in the path. |
+| `403` | `UNAUTHORIZED` | The pathway belongs to another account, or the caller's org role is not `admin` or `owner`. |
+| `404` | `PATHWAY_NOT_FOUND` | No pathway with that id. |
+| `500` | `INTERNAL_SERVER_ERROR` | The delete failed. |
 
 <ResponseExample>
-
 ```json Response
 {
-  "status": "success",
-  "message": "Pathway deleted successfully"
+  "data": {
+    "message": "Graph deleted successfully"
+  },
+  "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PATHWAY_NOT_FOUND",
+      "message": "Pathway not found"
+    }
+  ]
 }
 ```
 </ResponseExample>
-
-
-
-
-
-
-
-
-
 
 ---
 

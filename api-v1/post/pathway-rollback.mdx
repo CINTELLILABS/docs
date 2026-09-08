@@ -1,0 +1,69 @@
+---
+title: "Rollback Pathway"
+api: "POST https://api.bland.ai/v1/pathway/{pathway_id}/rollback"
+description: "Republish a previously published pathway version to production."
+---
+
+### Headers
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<Note>
+Org members need the `admin`, `owner`, or `operator` role. `prompter` and `viewer` members receive a `403` with error code `UNAUTHORIZED`.
+</Note>
+
+### Path
+
+<ParamField path="pathway_id" type="string" required>
+    The ID of the pathway to roll back.
+</ParamField>
+
+### Body
+
+<ParamField body="version_id" type="number" required>
+The version number to roll back to. It must be a version that was previously published to production. These are the versions flagged `is_prev_published` in [Get Pathway Versions](/api-v1/get/pathway_versions).
+</ParamField>
+
+### How it works
+
+A rollback is a production publish of an older snapshot. Like [Promote Pathway Version](/api-v1/post/pathway-promote), it copies the version's graph into the live pathway and creates a new snapshot version recording the publish.
+
+### Response
+
+<ResponseField name="status" type="string">
+    `success`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+    `"Pathway version rolled back successfully"`.
+</ResponseField>
+
+### Errors
+
+| Status | Body |
+|---|---|
+| `400` | `{"status": "error", "message": "Error fetching pathway version"}` when `version_id` does not exist for this pathway |
+| `400` | `{"status": "error", "message": "Cannot rollback to a version that was not previously published."}` |
+| `400` | `{"status": "error", "message": "Error while rolling back pathway version"}` when the publish fails |
+| `403` | `{"status": "error", "message": "Invalid pathway_id or you don't own this pathway"}` for an unknown id, or `"Unauthorized"` for a pathway you cannot access |
+
+<RequestExample>
+```json Request
+{
+  "version_id": 3
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "message": "Pathway version rolled back successfully"
+}
+```
+</ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)
