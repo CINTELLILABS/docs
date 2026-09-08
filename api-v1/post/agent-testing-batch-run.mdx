@@ -26,6 +26,11 @@ description: "Execute multiple test scenarios as a batch. Returns immediately wi
 
 ### Response
 
+Returns `202 Accepted`.
+
+<ResponseField name="data" type="object">
+  <Expandable title="Batch fields">
+
 <ResponseField name="batch_id" type="string">
   The unique identifier for the test batch.
 </ResponseField>
@@ -37,10 +42,18 @@ description: "Execute multiple test scenarios as a batch. Returns immediately wi
   - `scenario_id` - The scenario ID associated with this run.
 </ResponseField>
 
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns `403` if any scenario is missing or belongs to another organization.
+</ResponseField>
+
 <ResponseExample>
 
 ```json Response
 {
+  "data": {
   "batch_id": "e7a2c3d4-8f9b-4a1e-b5c6-d7e8f9a0b1c2",
   "runs": [
     {
@@ -52,13 +65,15 @@ description: "Execute multiple test scenarios as a batch. Returns immediately wi
       "scenario_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"
     }
   ]
+  },
+  "errors": null
 }
 ```
 
 </ResponseExample>
 
 <Note>
-  This endpoint is rate limited per organization. All `scenario_ids` must belong to your organization or the request will be rejected.
+  This endpoint is rate limited per organization. Each scenario consumes one execution from the per-minute allowance. All `scenario_ids` must belong to your organization.
 </Note>
 
 ---

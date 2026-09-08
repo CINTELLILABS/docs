@@ -66,10 +66,6 @@ description: "Update an existing citation schema's name, description, or schema 
 
 ### Response
 
-<ResponseField name="status" type="integer">
-  HTTP status code (200 for success).
-</ResponseField>
-
 <ResponseField name="data" type="object">
   The updated citation schema object.
 
@@ -106,18 +102,17 @@ description: "Update an existing citation schema's name, description, or schema 
 
 <ResponseField name="400 Bad Request">
   Returned when:
-  - The schema ID parameter is missing
-  - No update fields are provided in the request body
+  - The `id` query parameter is missing (error code `MISSING_SCHEMA_ID`)
+  - None of `name`, `description`, or `schema` is provided in the request body (error code `NO_UPDATES`)
 </ResponseField>
 
 <ResponseField name="404 Not Found">
-  Returned when the specified citation schema is not found or doesn't belong to your organization.
+  Returned when the specified citation schema is not found or doesn't belong to your organization (error code `SCHEMA_NOT_FOUND`).
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
-  "status": 200,
   "data": {
     "id": "3f4a2b1c-8e9d-4c7f-b2a1-5e8d9c7f6a2b",
     "name": "Enhanced Customer Information Extraction",
@@ -181,6 +176,18 @@ description: "Update an existing citation schema's name, description, or schema 
     "created_at": "2023-12-15T14:30:00.000Z"
   },
   "errors": null
+}
+```
+
+```json Error Response (No Updates)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NO_UPDATES",
+      "message": "No fields provided for update"
+    }
+  ]
 }
 ```
 </ResponseExample>

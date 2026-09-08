@@ -13,19 +13,44 @@ description: "Delete a test scenario and all related data."
 ### Path Parameters
 
 <ParamField path="id" type="string" required>
-  The scenario ID.
+  The scenario ID (UUID v4). Deleting a scenario also deletes its assertions, runs, and assertion results.
 </ParamField>
 
 ### Response
 
-<ResponseField name="deleted" type="boolean">
-  Whether the scenario was successfully deleted.
+Returns `200 OK`. Returns `404 Not Found` if the scenario does not exist or belongs to another organization.
+
+<ResponseField name="data" type="object">
+  <Expandable title="data object">
+    <ResponseField name="deleted" type="boolean">
+      Always `true` on success.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  `null` on success. On failure, an array of `{ "error": "CODE", "message": "..." }` objects.
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
-  "deleted": true
+  "data": {
+    "deleted": true
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Scenario not found"
+    }
+  ]
 }
 ```
 </ResponseExample>

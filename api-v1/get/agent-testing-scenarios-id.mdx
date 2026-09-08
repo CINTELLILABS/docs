@@ -13,162 +13,148 @@ description: "Retrieve a specific test scenario with its assertions."
 ### Path Parameters
 
 <ParamField path="id" type="string" required>
-  The scenario ID.
+  The scenario ID (UUID v4).
 </ParamField>
 
 ### Response
 
-<ResponseField name="id" type="string">
-  Unique identifier for the scenario.
-</ResponseField>
+Returns `404 Not Found` if the scenario does not exist or belongs to another organization.
 
-<ResponseField name="org_id" type="string">
-  Organization ID that owns this scenario.
-</ResponseField>
-
-<ResponseField name="pathway_id" type="string">
-  The pathway ID being tested (null if testing a persona).
-</ResponseField>
-
-<ResponseField name="persona_id" type="string">
-  The persona ID being tested (null if testing a pathway).
-</ResponseField>
-
-<ResponseField name="name" type="string">
-  Name of the scenario.
-</ResponseField>
-
-<ResponseField name="description" type="string">
-  Description of the scenario.
-</ResponseField>
-
-<ResponseField name="category" type="string">
-  Scenario category.
-</ResponseField>
-
-<ResponseField name="scenario_type" type="string">
-  Type of scenario.
-</ResponseField>
-
-<ResponseField name="tester_persona_prompt" type="string">
-  Prompt for the simulated caller.
-</ResponseField>
-
-<ResponseField name="tester_persona_name" type="string">
-  Display name for the tester persona.
-</ResponseField>
-
-<ResponseField name="max_turns" type="integer">
-  Maximum conversation turns.
-</ResponseField>
-
-<ResponseField name="request_data" type="object">
-  Custom request data.
-</ResponseField>
-
-<ResponseField name="start_node_id" type="string">
-  Starting node ID.
-</ResponseField>
-
-<ResponseField name="bland_tone_enabled" type="boolean">
-  Whether Bland Tone scoring is enabled.
-</ResponseField>
-
-<ResponseField name="is_required_for_promotion" type="boolean">
-  Whether this scenario is required for promotion.
-</ResponseField>
-
-<ResponseField name="enabled" type="boolean">
-  Whether the scenario is enabled.
-</ResponseField>
-
-<ResponseField name="input_messages" type="array">
-  Pre-seeded messages for replay scenarios.
-</ResponseField>
-
-<ResponseField name="advanced_instructions" type="string">
-  Additional instructions for test execution.
-</ResponseField>
-
-<ResponseField name="metadata" type="object">
-  Arbitrary metadata.
-</ResponseField>
-
-<ResponseField name="assertions" type="array">
-  Array of assertion objects.
-
-  <Expandable title="assertion object">
+<ResponseField name="data" type="object">
+  <Expandable title="data object">
     <ResponseField name="id" type="string">
-      Unique identifier for the assertion.
+      The scenario ID.
     </ResponseField>
-    <ResponseField name="type" type="string">
-      The assertion type.
+    <ResponseField name="org_id" type="string">
+      Organization that owns the scenario.
+    </ResponseField>
+    <ResponseField name="pathway_id" type="string">
+      The pathway under test, or `null`.
+    </ResponseField>
+    <ResponseField name="persona_id" type="string">
+      The persona under test, or `null`.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent under test, or `null`. Exactly one of `pathway_id`, `persona_id`, `agent_id` is set.
     </ResponseField>
     <ResponseField name="name" type="string">
-      Display name for the assertion.
+      Scenario name.
     </ResponseField>
-    <ResponseField name="config" type="object">
-      Type-specific configuration.
+    <ResponseField name="description" type="string">
+      Scenario description, or `null`.
     </ResponseField>
-    <ResponseField name="is_required" type="boolean">
-      Whether this assertion must pass.
+    <ResponseField name="category" type="string">
+      One of `CUSTOM`, `VOICEMAIL`, `VOICEMAIL_SCREENER`, `ANGRY_CALLER`, `BELLIGERENT_CALLER`, `CONFUSED_CALLER`, `CALL_SCREENER`, `HAPPY_PATH`, `EDGE_CASE`.
     </ResponseField>
-    <ResponseField name="weight" type="number">
-      Weight of this assertion in the overall score.
+    <ResponseField name="scenario_type" type="string">
+      One of `AGENT`, `REPLAY`, `HISTORICAL`.
     </ResponseField>
-    <ResponseField name="order" type="integer">
-      Evaluation order.
+    <ResponseField name="tester_persona_prompt" type="string">
+      Prompt for the simulated caller, or `null`.
+    </ResponseField>
+    <ResponseField name="tester_persona_name" type="string">
+      Display name for the simulated caller, or `null`.
+    </ResponseField>
+    <ResponseField name="max_turns" type="integer">
+      Maximum conversation turns.
+    </ResponseField>
+    <ResponseField name="request_data" type="object">
+      Request data passed to the agent, or `null`.
+    </ResponseField>
+    <ResponseField name="start_node_id" type="string">
+      Starting node ID, or `null`.
+    </ResponseField>
+    <ResponseField name="bland_tone_enabled" type="boolean">
+      Whether Bland Tone scoring runs.
+    </ResponseField>
+    <ResponseField name="is_template" type="boolean">
+      Always `false` for scenarios you own. Templates are listed by [List Test Templates](/api-v1/get/agent-testing-templates).
+    </ResponseField>
+    <ResponseField name="template_category" type="string">
+      Reserved for templates, `null` otherwise.
+    </ResponseField>
+    <ResponseField name="enabled" type="boolean">
+      Whether the scenario is enabled.
+    </ResponseField>
+    <ResponseField name="is_required_for_promotion" type="boolean">
+      Whether the scenario must pass before the pathway can be promoted.
+    </ResponseField>
+    <ResponseField name="input_messages" type="array">
+      Pre-seeded caller messages for `REPLAY` scenarios. Empty array when unused.
+    </ResponseField>
+    <ResponseField name="advanced_instructions" type="string">
+      Additional execution instructions, or `null`.
+    </ResponseField>
+    <ResponseField name="metadata" type="object">
+      Arbitrary metadata, or `null`.
+    </ResponseField>
+    <ResponseField name="tags" type="array">
+      String tags. Empty array when unused.
+    </ResponseField>
+    <ResponseField name="assertions" type="array">
+      Assertions in `order` ascending. Each has `id`, `scenario_id`, `type`, `config`, `name`, `is_required`, `weight`, `order`, `created_at`.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="created_at" type="string">
-  ISO 8601 timestamp of when the scenario was created.
-</ResponseField>
-
-<ResponseField name="updated_at" type="string">
-  ISO 8601 timestamp of when the scenario was last updated.
+<ResponseField name="errors" type="array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
-  "id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
-  "org_id": "b2c3d4e5-6789-abcd-ef01-234567890abc",
-  "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
-  "persona_id": null,
-  "name": "Angry Caller Test",
-  "description": "Tests the agent's ability to de-escalate an angry caller",
-  "category": "ANGRY_CALLER",
-  "scenario_type": "AGENT",
-  "tester_persona_prompt": "You are a frustrated customer who has been waiting on hold for 30 minutes. You are upset about a billing error on your account.",
-  "tester_persona_name": "Frustrated Customer",
-  "max_turns": 15,
-  "request_data": null,
-  "start_node_id": null,
-  "bland_tone_enabled": true,
-  "is_required_for_promotion": false,
-  "enabled": true,
-  "input_messages": null,
-  "advanced_instructions": null,
-  "metadata": null,
-  "assertions": [
-    {
-      "id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
-      "type": "LLM_JUDGE",
-      "name": "De-escalation",
-      "config": {
-        "prompt": "Did the agent successfully de-escalate the situation and address the customer's concerns?",
-        "output_type": "score",
-        "threshold": 0.7
-      },
-      "is_required": true,
-      "weight": 1.5,
-      "order": 0
-    }
-  ],
-  "created_at": "2026-04-10T12:00:00.000Z",
-  "updated_at": "2026-04-13T18:30:00.000Z"
+  "data": {
+    "id": "a1b2c3d4-5678-4abc-9ef0-1234567890ab",
+    "created_at": "2026-04-10T12:00:00.000Z",
+    "updated_at": "2026-04-13T18:30:00.000Z",
+    "pathway_id": "c3d4e5f6-789a-4cde-8012-34567890abcd",
+    "persona_id": null,
+    "agent_id": null,
+    "org_id": "b2c3d4e5-6789-4bcd-af01-234567890abc",
+    "name": "Angry Caller Test",
+    "description": "Tests the agent's ability to de-escalate an angry caller",
+    "category": "ANGRY_CALLER",
+    "scenario_type": "AGENT",
+    "tester_persona_prompt": "You are a frustrated customer who has been waiting on hold for 30 minutes. You are upset about a billing error on your account.",
+    "tester_persona_name": "Frustrated Customer",
+    "max_turns": 15,
+    "request_data": null,
+    "start_node_id": null,
+    "bland_tone_enabled": true,
+    "is_template": false,
+    "template_category": null,
+    "enabled": true,
+    "is_required_for_promotion": false,
+    "input_messages": [],
+    "advanced_instructions": null,
+    "metadata": null,
+    "tags": ["billing"],
+    "assertions": [
+      {
+        "id": "d4e5f6a7-89ab-4def-8123-4567890abcde",
+        "scenario_id": "a1b2c3d4-5678-4abc-9ef0-1234567890ab",
+        "type": "LLM_JUDGE",
+        "config": {
+          "prompt": "Did the agent successfully de-escalate the situation and address the customer's concerns?",
+          "output_type": "score",
+          "threshold": 0.7
+        },
+        "name": "De-escalation",
+        "is_required": true,
+        "weight": 1.5,
+        "order": 0,
+        "created_at": "2026-04-10T12:00:00.000Z"
+      }
+    ]
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

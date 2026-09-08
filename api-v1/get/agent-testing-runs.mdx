@@ -24,99 +24,105 @@ description: "List test runs with optional filtering and pagination."
   Filter runs by persona ID.
 </ParamField>
 
+<ParamField query="agent_id" type="string">
+  Filter runs by agent ID.
+</ParamField>
+
 <ParamField query="batch_id" type="string">
   Filter runs by batch ID.
 </ParamField>
 
+<ParamField query="simulation_set_id" type="string">
+  Filter runs by simulation set ID.
+</ParamField>
+
 <ParamField query="status" type="string">
-  Filter runs by status. Possible values: `PENDING`, `RUNNING`, `PASSED`, `FAILED`, `ERROR`, `CANCELLED`.
+  Filter runs by status. One of `PENDING`, `RUNNING`, `PASSED`, `FAILED`, `ERROR`, `CANCELLED`.
 </ParamField>
 
 <ParamField query="limit" type="integer" default="50">
-  Maximum number of results to return. Must be between 1 and 100.
+  Maximum number of results. Clamped to the range 1 to 100.
 </ParamField>
 
 <ParamField query="offset" type="integer" default="0">
-  Offset for pagination. Use in combination with `limit` to page through results.
+  Number of results to skip. Negative values are treated as 0.
 </ParamField>
 
 ### Response
 
-<ResponseField name="runs" type="array of objects">
-  An array of test run objects. Each run includes scenario information and assertion results.
+`data` is an array of runs, newest first. There is no total count; page until fewer than `limit` items come back.
+
+<ResponseField name="data" type="array">
+  Each run has the same fields as [Get Test Run](/api-v1/get/agent-testing-runs-id), except `scenario` contains only `name` and `category`, and each `assertion_results` entry's `assertion` contains `name`, `type`, and `is_required`.
 </ResponseField>
 
-<ResponseField name="total_count" type="integer">
-  The total number of runs matching the applied filters.
+<ResponseField name="errors" type="array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
-
 ```json Response
 {
-  "runs": [
+  "data": [
     {
-      "id": "a3f1b2c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
-      "scenario_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "id": "a3f1b2c4-5d6e-4f8a-9b0c-1d2e3f4a5b6c",
+      "created_at": "2026-04-14T10:30:00.000Z",
+      "completed_at": "2026-04-14T10:30:41.000Z",
+      "scenario_id": "1a2b3c4d-5e6f-4a8b-9c0d-1e2f3a4b5c6d",
+      "org_id": "b2c3d4e5-6789-4bcd-af01-234567890abc",
       "pathway_id": "b1693602-c05e-4b5c-b187-d0189a42aebf",
-      "persona_id": "c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f",
-      "batch_id": null,
+      "persona_id": null,
+      "agent_id": null,
+      "version_number": null,
       "status": "PASSED",
-      "overall_score": 0.92,
+      "triggered_by": "b2c3d4e5-6789-4bcd-af01-234567890abc",
+      "trigger_source": "manual",
+      "call_id": "9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
+      "chat_history": [
+        { "role": "assistant", "content": "Thanks for calling Acme Dental. How can I help?" },
+        { "role": "user", "content": "I'd like to book a cleaning next week." }
+      ],
+      "variables_extracted": { "service_type": "cleaning" },
+      "nodes_visited": ["greeting", "confirm_booking"],
+      "current_node_id": "confirm_booking",
       "turn_count": 8,
       "duration_ms": 14320,
-      "created_at": "2026-04-14T10:30:00.000Z",
-      "scenario": {
-        "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-        "name": "Appointment Booking - Happy Path"
-      },
-      "assertion_results": [
-        {
-          "assertion_id": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
-          "type": "contains",
-          "target": "transcript",
-          "expected": "appointment confirmed",
-          "passed": true
-        },
-        {
-          "assertion_id": "e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
-          "type": "node_visited",
-          "target": "nodes_visited",
-          "expected": "confirm_booking",
-          "passed": true
-        }
-      ]
-    },
-    {
-      "id": "b4c2d3e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
-      "scenario_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
-      "pathway_id": "b1693602-c05e-4b5c-b187-d0189a42aebf",
-      "persona_id": "c2d3e4f5-6a7b-8c9d-0e1f-2a3b4c5d6e7f",
+      "llm_eval_count": 0,
+      "overall_score": 0.92,
+      "bland_tone_score": null,
+      "error_message": null,
+      "metadata": null,
       "batch_id": null,
-      "status": "FAILED",
-      "overall_score": 0.45,
-      "turn_count": 12,
-      "duration_ms": 21050,
-      "created_at": "2026-04-14T10:28:00.000Z",
+      "simulation_set_id": null,
+      "simulation_index": null,
       "scenario": {
-        "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
-        "name": "Cancellation Flow - Angry Customer"
+        "name": "Appointment Booking - Happy Path",
+        "category": "HAPPY_PATH"
       },
       "assertion_results": [
         {
-          "assertion_id": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
-          "type": "contains",
-          "target": "transcript",
-          "expected": "cancellation confirmed",
-          "passed": false
+          "id": "7a8b9c0d-1e2f-4a4b-9c5d-6e7f8a9b0c1d",
+          "run_id": "a3f1b2c4-5d6e-4f8a-9b0c-1d2e3f4a5b6c",
+          "assertion_id": "e5f6a7b8-9c0d-4e2f-8a4b-5c6d7e8f9a0b",
+          "status": "PASSED",
+          "value": true,
+          "reasoning": null,
+          "score": 1,
+          "duration_ms": 3,
+          "error_message": null,
+          "created_at": "2026-04-14T10:30:40.000Z",
+          "assertion": {
+            "name": "Reached confirmation",
+            "type": "NODE_REACHED",
+            "is_required": true
+          }
         }
       ]
     }
   ],
-  "total_count": 2
+  "errors": null
 }
 ```
-
 </ResponseExample>
 
 ---

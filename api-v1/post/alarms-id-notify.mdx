@@ -4,6 +4,14 @@ api: "POST https://api.bland.ai/v1/alarms/{id}/notify"
 description: "Send a test alarm or recovery notification."
 ---
 
+<Note>
+  The Alarms API is available to Enterprise organizations only. Requests from other organizations return `403` with the error code `ENTERPRISE_REQUIRED`.
+</Note>
+
+### Rate limit
+
+This endpoint is limited to 5 requests per 5 minutes per organization. Requests over the limit return `429` with the error code `TOO_MANY_REQUESTS`.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -52,8 +60,18 @@ description: "Send a test alarm or recovery notification."
   Recipient list used for the test email.
 </ResponseField>
 
+<ResponseField name="data.results.sms.success" type="boolean">
+  Whether SMS delivery succeeded.
+</ResponseField>
+
+<ResponseField name="data.results.sms.sentTo" type="string[]">
+  Recipient list used for the test SMS.
+</ResponseField>
+
+Each channel result also carries an `error` string when that channel failed. Only channels configured on the alarm appear in `results`.
+
 <ResponseField name="errors" type="null|array">
-  `null` on success response, or an array with `NOTIFICATION_TEST_FAILED`.
+  `null` on success. When no channel succeeds (or the alarm has no notification methods configured), the response is `400` with `data` still populated and `errors` containing `NOTIFICATION_TEST_FAILED`.
 </ResponseField>
 
 <ResponseExample>
@@ -77,6 +95,22 @@ description: "Send a test alarm or recovery notification."
 }
 ```
 
+```json Test Failed
+{
+  "data": {
+    "success": false,
+    "results": {},
+    "message": "No notification methods configured for this alarm"
+  },
+  "errors": [
+    {
+      "error": "NOTIFICATION_TEST_FAILED",
+      "message": "No notification methods configured for this alarm"
+    }
+  ]
+}
+```
+
 ```json Error
 {
   "data": null,
@@ -84,6 +118,18 @@ description: "Send a test alarm or recovery notification."
     {
       "error": "INVALID_NOTIFICATION_TYPE",
       "message": "type must be either 'alarm' or 'recovery'"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many alarm notification tests. Please wait a few minutes and try again."
     }
   ]
 }

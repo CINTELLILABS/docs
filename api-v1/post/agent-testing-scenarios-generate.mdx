@@ -13,24 +13,43 @@ description: "Generate a test scenario from a historical call transcript using A
 ### Body
 
 <ParamField body="call_id" type="string" required>
-  The ID of the historical call to generate a scenario from. The call transcript will be analyzed by AI to extract a realistic test scenario.
+  UUID v4 of the historical call to generate a scenario from.
 </ParamField>
 
 <ParamField body="pathway_id" type="string">
-  The pathway to bind the generated scenario to. Either `pathway_id` or `persona_id` is required.
+  The pathway to bind the generated scenario to. At least one of `pathway_id`, `persona_id`, or `agent_id` is required.
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  The persona to bind the generated scenario to. Either `pathway_id` or `persona_id` is required.
+  The persona to bind the generated scenario to.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  The voice agent to bind the generated scenario to.
+</ParamField>
+
+<ParamField body="include_request_data" type="boolean" default="false">
+  Include safe request data extracted from the source call.
+</ParamField>
+
+<ParamField body="include_variable_assertions" type="boolean" default="false">
+  Add assertions for variables observed on the source call.
+</ParamField>
+
+<ParamField body="include_llm_persona" type="boolean" default="false">
+  Use an LLM to generate the tester persona. This option consumes one execution from the per-minute agent testing allowance.
 </ParamField>
 
 ### Response
 
-The response contains the generated scenario data. This data is **not yet saved** -- it is returned so you can review and use it to create a scenario.
+The response contains the generated scenario data. This data is **not yet saved**. Review it, then send it to [Create Test Scenario](/api-v1/post/agent-testing-scenarios).
 
 <Note>
   Sensitive data such as phone numbers, webhook URLs, and API keys is automatically stripped from the generated `request_data`.
 </Note>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Generated scenario fields">
 
 <ResponseField name="name" type="string">
   An AI-generated name summarizing the scenario.
@@ -60,13 +79,25 @@ The response contains the generated scenario data. This data is **not yet saved*
   The persona the scenario is bound to (if provided).
 </ResponseField>
 
+<ResponseField name="agent_id" type="string">
+  The voice agent the scenario is bound to (if provided).
+</ResponseField>
+
 <ResponseField name="request_data" type="object">
   Request data extracted from the call with sensitive fields automatically removed.
+</ResponseField>
+
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
 ```json Response
 {
+  "data": {
     "name": "Inbound Appointment Booking - Returning Customer",
     "description": "Simulates a returning customer calling to book a follow-up appointment. The caller provides their name and preferred time slot, and expects confirmation.",
     "category": "HAPPY_PATH",
@@ -74,11 +105,14 @@ The response contains the generated scenario data. This data is **not yet saved*
     "tester_persona_name": "Sarah Chen",
     "pathway_id": "pw_abc123",
     "persona_id": null,
+    "agent_id": null,
     "request_data": {
         "customer_name": "Sarah Chen",
         "account_id": "cust_92841",
         "appointment_type": "follow_up"
     }
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

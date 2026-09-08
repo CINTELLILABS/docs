@@ -1,7 +1,7 @@
 ---
-title: "List Alarm Events"
-api: "GET https://api.bland.ai/v1/alarms/history"
-description: "Get recent alarm events across all alarms in your organization."
+title: "Get Alarm History"
+api: "GET https://api.bland.ai/v1/alarms/{id}/history"
+description: "Get the event history for a single alarm."
 ---
 
 <Note>
@@ -14,20 +14,22 @@ description: "Get recent alarm events across all alarms in your organization."
   Your API key for authentication.
 </ParamField>
 
-### Query Parameters
+### Path Parameters
 
-<ParamField query="metric_type" type="string">
-  Optional metric filter. Allowed values: `latency`, `api_errors`, `call_length`.
+<ParamField path="id" type="string" required>
+  Alarm configuration ID.
 </ParamField>
 
+### Query Parameters
+
 <ParamField query="limit" type="integer" default="50">
-  Number of events to return. Must be between `1` and `200`.
+  Must be between `1` and `200`. Values outside this range return `400` with `INVALID_LIMIT`.
 </ParamField>
 
 ### Response
 
 <ResponseField name="data.events" type="array">
-  Recent alarm event entries.
+  Alarm event entries for this alarm, oldest first.
 </ResponseField>
 
 <ResponseField name="data.events[].id" type="string">
@@ -54,8 +56,8 @@ description: "Get recent alarm events across all alarms in your organization."
   Threshold in effect for this event.
 </ResponseField>
 
-<ResponseField name="data.events[].alarm_id" type="string|null">
-  Correlation ID for alarm/recovery pairing when present.
+<ResponseField name="data.events[].alarm_id" type="string">
+  The alarm this event belongs to.
 </ResponseField>
 
 <ResponseField name="data.events[].event_type" type="string|null">
@@ -66,11 +68,26 @@ description: "Get recent alarm events across all alarms in your organization."
   ISO timestamp when the event was recorded.
 </ResponseField>
 
+<ResponseField name="errors" type="null|array">
+  `null` on success. An unknown alarm returns `404` with `ALARM_NOT_FOUND`.
+</ResponseField>
+
 <ResponseExample>
 ```json Success
 {
   "data": {
     "events": [
+      {
+        "id": "2f0c1b8e-6d4a-4f0b-9c1e-3a5d7b9e1f22",
+        "metric_type": "latency",
+        "previous_state": "NORMAL",
+        "new_state": "ALARM",
+        "deviation": 1.8,
+        "threshold": 1,
+        "alarm_id": "8b90c6df-5a47-4db5-9ab3-d7f1da30da6e",
+        "event_type": "deviation_detected",
+        "created_at": "2026-03-12T00:45:01.118Z"
+      },
       {
         "id": "41a53fc5-a9f7-4e6f-a89a-b12e0f9f4c43",
         "metric_type": "latency",
@@ -85,6 +102,18 @@ description: "Get recent alarm events across all alarms in your organization."
     ]
   },
   "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ALARM_NOT_FOUND",
+      "message": "Alarm configuration not found"
+    }
+  ]
 }
 ```
 </ResponseExample>

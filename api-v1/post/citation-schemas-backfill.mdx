@@ -11,14 +11,14 @@ The backfill endpoint allows you to apply citation schemas to calls and SMS conv
 - Need to re-analyze calls or conversations with updated schemas
 - Want to extract data from multiple calls or conversations at scale
 
-Call backfill operations are **asynchronous** — you'll receive a `workflow_id` immediately and can poll the status endpoint to check progress. SMS conversation backfill is **synchronous** — results are returned directly in the response.
+Call backfill operations are **asynchronous**: you receive a `workflow_id` immediately and poll the [status endpoint](/api-v1/get/citation-schemas-backfill-status) to check progress. SMS conversation backfill is **synchronous**: results are returned directly in the response.
 
 <Info>
   This is an **Enterprise-only feature**. Contact your Bland representative or reach out to sales to enable this functionality.
 </Info>
 
 <Warning>
-  Backfilling will update citation variables for the specified call(s) and schema(s). Variables are merged with existing data - only the variables defined in the schema being backfilled will be updated.
+  Backfilling will update citation variables for the specified call(s) and schema(s). Variables are merged with existing data: only the variables defined in the schema being backfilled will be updated. Set `preview: true` to extract without storing anything.
 </Warning>
 
 ---
@@ -70,14 +70,34 @@ Call backfill operations are **asynchronous** — you'll receive a `workflow_id`
 </ParamField>
 
 <ParamField body="conversation_ids" type="string[]">
-  An array of SMS conversation IDs to analyze. Maximum 50 conversations per request. All schemas will be applied to each conversation. Processed synchronously.
+  An array of SMS conversation IDs to analyze. Maximum 50 conversations per request (counting `conversation_id` too); larger requests fail with `400 TOO_MANY_CONVERSATIONS`. All schemas will be applied to each conversation. Processed synchronously.
+</ParamField>
+
+#### Recording URL
+
+<ParamField body="recording_url" type="string">
+  A publicly fetchable URL of a dual-channel WAV recording to analyze synchronously with the inline `schema`. Nothing is stored: the response contains the extracted variables directly. Requires `schema`; `schema_id` and `schema_ids` are ignored on this path. Cannot be combined with call or conversation IDs. Returns `400 INVALID_CHANNELS` for mono recordings.
+</ParamField>
+
+#### Options
+
+<ParamField body="candidate_model" type="boolean" default="false">
+  When `true`, use the candidate citation extraction model for call backfills.
+</ParamField>
+
+<ParamField body="preview" type="boolean" default="false">
+  When `true`, extract variables but do not write them to the call or conversation. Use this to test a schema against real data without mutating stored citation variables. Echoed back as `preview` in the response.
+</ParamField>
+
+<ParamField body="higher_accuracy_citations" type="boolean" default="false">
+  When `true`, calls are extracted one variable at a time instead of in a single batch. Slower and more expensive, but more accurate on long transcripts or large schemas. Applies to calls only.
 </ParamField>
 
 ---
 
 ## Response
 
-Returns `202 Accepted` when calls are included (async processing), or `200 OK` when only SMS conversations are included (sync processing).
+Returns `202 Accepted` when calls are included (async processing), or `200 OK` when only SMS conversations are included (sync processing). All fields below live under the `data` key of the standard `{ "data": ..., "errors": null }` envelope.
 
 <ResponseField name="status" type="string">
   `"processing"` when calls are being processed asynchronously, or `"complete"` when only SMS conversations were processed.
@@ -99,19 +119,23 @@ Returns `202 Accepted` when calls are included (async processing), or `200 OK` w
   Number of schemas being applied.
 </ResponseField>
 
+<ResponseField name="preview" type="boolean">
+  Whether this was a preview run (nothing stored).
+</ResponseField>
+
 <ResponseField name="total_combinations" type="integer">
-  Total number of call+schema extractions that will be performed (`call_count × schema_count`). Only present when calls are included.
+  Total number of call+schema extractions that will be performed (`call_count * schema_count`). Only present when calls are included.
 </ResponseField>
 
 <ResponseField name="conversations" type="array">
   Results for SMS conversation backfill. Only present when conversations are included. Each entry contains:
-  - `conversation_id` — the conversation that was analyzed
-  - `status` — `"success"`, `"skipped"`, or `"error"`
-  - `variables_extracted` — count of unique variable names extracted across all schemas (same definition as `result.calls[].variables_extracted_count`)
-  - `previous_variables` — the conversation's citation variables **before** this backfill operation
-  - `newly_extracted_variables` — variables that were extracted or updated by **this backfill** operation
-  - `final_variables` — the conversation's citation variables **after** this backfill operation (complete merged state)
-  - `error` — error message if the extraction failed
+  - `conversation_id`: the conversation that was analyzed
+  - `status`: `"success"` (all schemas succeeded), `"partial"` (some schemas failed), `"failed"` (all schemas failed), `"skipped"` (no messages), or `"error"`
+  - `variables_extracted`: count of unique variable names extracted across all schemas (same definition as `result.calls[].variables_extracted_count`)
+  - `previous_variables`: the conversation's citation variables **before** this backfill operation
+  - `newly_extracted_variables`: variables that were extracted or updated by **this backfill** operation
+  - `final_variables`: the conversation's citation variables **after** this backfill operation (complete merged state)
+  - `error`: error message if the extraction failed
 </ResponseField>
 
 <ResponseField name="message" type="string">
@@ -122,82 +146,7 @@ Returns `202 Accepted` when calls are included (async processing), or `200 OK` w
 
 ## Checking Status
 
-Use the workflow ID to poll the status endpoint:
-
-```bash
-GET https://api.bland.ai/v1/citation_schemas/backfill/status/{workflow_id}
-```
-
-### Status Response
-
-<ResponseField name="workflow_id" type="string">
-  The workflow ID you're querying.
-</ResponseField>
-
-<ResponseField name="status" type="string">
-  Current workflow status:
-  - `RUNNING`: Still processing
-  - `COMPLETED`: Finished successfully (may have partial failures)
-  - `FAILED`: Workflow encountered an error
-  - `TERMINATED`: Manually stopped
-  - `TIMED_OUT`: Exceeded maximum execution time
-</ResponseField>
-
-<ResponseField name="result" type="object">
-  Only present when `status` is `COMPLETED`. Contains the full backfill results.
-</ResponseField>
-
-### Result Object (When Completed)
-
-<ResponseField name="result.status" type="string">
-  Overall result status:
-  - `success`: All extractions succeeded
-  - `partial`: Some extractions succeeded, some failed
-  - `failed`: All extractions failed
-</ResponseField>
-
-<ResponseField name="result.calls" type="array">
-  Array of results, one entry per call processed.
-</ResponseField>
-
-<ResponseField name="result.calls[].call_id" type="string">
-  The call that was analyzed.
-</ResponseField>
-
-<ResponseField name="result.calls[].status" type="string">
-  Status for this call: `success`, `partial`, or `failed`.
-</ResponseField>
-
-<ResponseField name="result.calls[].schemas_processed" type="array">
-  Details about each schema extraction for this call.
-</ResponseField>
-
-<ResponseField name="result.calls[].variables_extracted_count" type="integer">
-  Total number of unique variables extracted across all schemas for this call.
-</ResponseField>
-
-<ResponseField name="result.calls[].previous_variables" type="object">
-  The call's citation variables **before** this backfill operation.
-</ResponseField>
-
-<ResponseField name="result.calls[].newly_extracted_variables" type="object">
-  Variables that were extracted or updated by **this backfill** operation.
-</ResponseField>
-
-<ResponseField name="result.calls[].final_variables" type="object">
-  The call's citation variables **after** this backfill operation (complete state).
-</ResponseField>
-
-<ResponseField name="result.summary" type="object">
-  Aggregate statistics across all calls and schemas:
-  - `total_calls`: Number of calls processed
-  - `successful_calls`: Calls where all schemas succeeded
-  - `partial_calls`: Calls where some schemas failed
-  - `failed_calls`: Calls where all schemas failed
-  - `total_schemas_processed`: Total schema extractions attempted
-  - `successful_schema_extractions`: Schema extractions that succeeded
-  - `failed_schema_extractions`: Schema extractions that failed
-</ResponseField>
+Poll [Get Backfill Status](/api-v1/get/citation-schemas-backfill-status) with the `workflow_id` until `status` is `COMPLETED`, `FAILED`, `TERMINATED`, or `TIMED_OUT`. The completed response carries the full per-call `result` object.
 
 ---
 
@@ -205,7 +154,7 @@ GET https://api.bland.ai/v1/citation_schemas/backfill/status/{workflow_id}
 
 1. **Send backfill request** and receive `workflow_id`
 2. **Poll the status endpoint** periodically (every 5-10 seconds)
-3. **When status is `COMPLETED`**, retrieve results from `result` field
+3. **When status is `COMPLETED`**, retrieve results from the `result` field of the status response
 4. **Review the results** to see what was extracted for each call
 
 ---
@@ -226,12 +175,17 @@ curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
 
 ```json Response (202 Accepted)
 {
-  "status": "processing",
-  "workflow_id": "backfill:call-123:1760635265843",
-  "call_count": 1,
-  "schema_count": 1,
-  "total_combinations": 1,
-  "message": "Citation backfill workflow started for 1 call(s) with 1 schema(s)..."
+  "data": {
+    "status": "processing",
+    "call_count": 1,
+    "conversation_count": 0,
+    "schema_count": 1,
+    "preview": false,
+    "workflow_id": "backfill:call-123:1760635265843",
+    "total_combinations": 1,
+    "message": "Citation backfill workflow started for 1 call(s) with 1 schema(s). Use the workflow_id to check status at GET /v1/citation_schemas/backfill/status/backfill:call-123:1760635265843"
+  },
+  "errors": null
 }
 ```
 
@@ -249,12 +203,17 @@ curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
 
 ```json Response (202 Accepted)
 {
-  "status": "processing",
-  "workflow_id": "backfill:batch:671b7623-f9ac-46db-95f1-9b504fe59a06:1760635265843",
-  "call_count": 3,
-  "schema_count": 2,
-  "total_combinations": 6,
-  "message": "Citation backfill workflow started for 3 call(s) with 2 schema(s)..."
+  "data": {
+    "status": "processing",
+    "call_count": 3,
+    "conversation_count": 0,
+    "schema_count": 2,
+    "preview": false,
+    "workflow_id": "backfill:batch:671b7623-f9ac-46db-95f1-9b504fe59a06:1760635265843",
+    "total_combinations": 6,
+    "message": "Citation backfill workflow started for 3 call(s) with 2 schema(s). Use the workflow_id to check status at GET /v1/citation_schemas/backfill/status/backfill:batch:671b7623-f9ac-46db-95f1-9b504fe59a06:1760635265843"
+  },
+  "errors": null
 }
 ```
 
@@ -272,43 +231,47 @@ curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
 
 ```json Response (200 OK)
 {
-  "status": "complete",
-  "call_count": 0,
-  "conversation_count": 2,
-  "schema_count": 1,
-  "conversations": [
-    {
-      "conversation_id": "conv-123",
-      "status": "success",
-      "variables_extracted": 2,
-      "previous_variables": {
-        "customer_name": "Jane"
+  "data": {
+    "status": "complete",
+    "call_count": 0,
+    "conversation_count": 2,
+    "schema_count": 1,
+    "preview": false,
+    "conversations": [
+      {
+        "conversation_id": "conv-123",
+        "status": "success",
+        "variables_extracted": 2,
+        "previous_variables": {
+          "customer_name": "Jane"
+        },
+        "newly_extracted_variables": {
+          "intent": "support",
+          "resolved": true
+        },
+        "final_variables": {
+          "customer_name": "Jane",
+          "intent": "support",
+          "resolved": true
+        }
       },
-      "newly_extracted_variables": {
-        "intent": "support",
-        "resolved": true
-      },
-      "final_variables": {
-        "customer_name": "Jane",
-        "intent": "support",
-        "resolved": true
+      {
+        "conversation_id": "conv-456",
+        "status": "success",
+        "variables_extracted": 2,
+        "previous_variables": {},
+        "newly_extracted_variables": {
+          "intent": "billing",
+          "resolved": false
+        },
+        "final_variables": {
+          "intent": "billing",
+          "resolved": false
+        }
       }
-    },
-    {
-      "conversation_id": "conv-456",
-      "status": "success",
-      "variables_extracted": 2,
-      "previous_variables": {},
-      "newly_extracted_variables": {
-        "intent": "billing",
-        "resolved": false
-      },
-      "final_variables": {
-        "intent": "billing",
-        "resolved": false
-      }
-    }
-  ]
+    ]
+  },
+  "errors": null
 }
 ```
 
@@ -338,88 +301,6 @@ curl -X POST https://api.bland.ai/v1/citation_schemas/backfill \
   }'
 ```
 
-### Checking Status
-
-```bash Request
-curl https://api.bland.ai/v1/citation_schemas/backfill/status/backfill:call-123:1760635265843 \
-  -H "authorization: YOUR_API_KEY"
-```
-
-```json Response (Status: RUNNING)
-{
-  "workflow_id": "backfill:call-123:1760635265843",
-  "status": "RUNNING",
-  "run_id": "0199ee0a-2343-7d98-8fbb-8d5c2d46ed4c",
-  "start_time": "2025-10-16T17:21:05.859Z"
-}
-```
-
-```json Response (Status: COMPLETED)
-{
-  "workflow_id": "backfill:call-123:1760635265843",
-  "status": "COMPLETED",
-  "run_id": "0199ee0a-2343-7d98-8fbb-8d5c2d46ed4c",
-  "start_time": "2025-10-16T17:21:05.859Z",
-  "close_time": "2025-10-16T17:21:39.019Z",
-  "result": {
-    "status": "success",
-    "calls": [
-      {
-        "call_id": "call-123",
-        "status": "success",
-        "schemas_processed": [
-          {
-            "schema_id": "schema-abc",
-            "status": "success",
-            "variables_extracted": 5
-          }
-        ],
-        "variables_extracted_count": 5,
-        "previous_variables": {
-          "customer_name": "John Doe"
-        },
-        "newly_extracted_variables": {
-          "order_id": "ORD-789456",
-          "issue_type": "shipping",
-          "products": [
-            {
-              "name": "Wireless Headphones",
-              "issue": "damaged packaging",
-              "quantity": 1
-            }
-          ],
-          "customer_satisfied": true,
-          "resolution": "refund_issued"
-        },
-        "final_variables": {
-          "customer_name": "John Doe",
-          "order_id": "ORD-789456",
-          "issue_type": "shipping",
-          "products": [
-            {
-              "name": "Wireless Headphones",
-              "issue": "damaged packaging",
-              "quantity": 1
-            }
-          ],
-          "customer_satisfied": true,
-          "resolution": "refund_issued"
-        }
-      }
-    ],
-    "summary": {
-      "total_calls": 1,
-      "successful_calls": 1,
-      "partial_calls": 0,
-      "failed_calls": 0,
-      "total_schemas_processed": 1,
-      "successful_schema_extractions": 1,
-      "failed_schema_extractions": 0
-    }
-  }
-}
-```
-
 ---
 
 ## Error Responses
@@ -431,12 +312,13 @@ Returned when:
 - No identifier parameter provided (`call_id`, `call_ids`, `conversation_id`, `conversation_ids`, or `recording_url` required)
 - Invalid parameter combinations (e.g., `schema_ids` with inline `schema`)
 - Empty arrays provided
-- More than 50 SMS conversations in a single request
+- More than 50 SMS conversations in a single request (`TOO_MANY_CONVERSATIONS`)
+- `recording_url` points at a mono recording (`INVALID_CHANNELS`) or an unreadable file (`INVALID_RECORDING`)
 
 ### 403 Forbidden
 
 Returned when:
-- Account does not have enterprise features enabled
+- Account does not have enterprise features enabled (`ENTERPRISE_REQUIRED`)
 - Attempting to access another organization's calls, conversations, or schemas
 
 ### 404 Not Found
@@ -461,6 +343,7 @@ Returned when an unexpected error occurs starting the workflow.
 - Poll every **10-30 seconds** for batch operations
 - Implement exponential backoff if polling for extended periods
 - Stop polling once status is `COMPLETED`, `FAILED`, `TERMINATED`, or `TIMED_OUT`
+- Batches over 250 calls return `result.summary` plus `failed_call_ids` / `partial_call_ids` only, without per-call detail
 
 ### Batch Processing
 
@@ -472,7 +355,7 @@ Returned when an unexpected error occurs starting the workflow.
 
 - Check the `result.calls[].status` field for per-call results
 - Review `schemas_processed` array to see which schemas succeeded/failed
-- Use `error_summary` field for quick diagnosis of partial failures
+- Use the `result.calls[].error_summary` field for quick diagnosis of partial failures
 - Failed extractions don't prevent successful ones from being stored
 
 ### Variable Management

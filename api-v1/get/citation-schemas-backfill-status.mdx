@@ -1,0 +1,195 @@
+---
+title: "Get Backfill Status"
+api: "GET https://api.bland.ai/v1/citation_schemas/backfill/status/{workflow_id}"
+description: "Check the progress of a call citation backfill and retrieve its results once complete."
+---
+
+<Info>
+  This is an **Enterprise-only feature**. Contact your Bland representative or reach out to sales to enable this functionality.
+</Info>
+
+Use the `workflow_id` returned by [Backfill Citation Schema](/api-v1/post/citation-schemas-backfill) to poll a call backfill. SMS-only backfills run synchronously and have no workflow to poll.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="workflow_id" type="string" required>
+  The workflow ID from the backfill response. Always starts with `backfill:`.
+</ParamField>
+
+### Response
+
+All fields live under the `data` key of the standard `{ "data": ..., "errors": null }` envelope.
+
+<ResponseField name="workflow_id" type="string">
+  The workflow ID you queried.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current workflow status:
+  - `RUNNING`: Still processing
+  - `COMPLETED`: Finished (may contain partial failures, see `result.status`)
+  - `FAILED`: Workflow encountered an error
+  - `TERMINATED`: Manually stopped
+  - `TIMED_OUT`: Exceeded maximum execution time
+</ResponseField>
+
+<ResponseField name="run_id" type="string">
+  The workflow run identifier.
+</ResponseField>
+
+<ResponseField name="start_time" type="string">
+  ISO 8601 timestamp of when the workflow started.
+</ResponseField>
+
+<ResponseField name="close_time" type="string">
+  ISO 8601 timestamp of when the workflow finished. Only present once `status` is no longer `RUNNING`.
+</ResponseField>
+
+<ResponseField name="result" type="object">
+  The backfill results. Present when `status` is `COMPLETED`, and on `FAILED` when error details were captured.
+
+  <ResponseField name="status" type="string">
+    Overall result: `success` (all extractions succeeded), `partial` (some failed), or `failed` (all failed).
+  </ResponseField>
+
+  <ResponseField name="summary" type="object">
+    Aggregate statistics: `total_calls`, `successful_calls`, `partial_calls`, `failed_calls`, `total_schemas_processed`, `successful_schema_extractions`, `failed_schema_extractions`.
+  </ResponseField>
+
+  <ResponseField name="calls" type="array">
+    Per-call detail, present for batches of 250 calls or fewer. Each entry contains:
+    - `call_id`: the call that was analyzed
+    - `status`: `success`, `partial`, or `failed`
+    - `schemas_processed`: one entry per schema with `schema_id`, `status`, `variables_extracted`, and `error_message` on failure
+    - `variables_extracted_count`: unique variables extracted across all schemas
+    - `previous_variables`: the call's citation variables before this backfill
+    - `newly_extracted_variables`: variables extracted or updated by this backfill
+    - `final_variables`: the call's citation variables after this backfill
+    - `error_summary`: present when `status` is `partial` or `failed`
+  </ResponseField>
+
+  <ResponseField name="failed_call_ids" type="string[]">
+    For batches over 250 calls, the IDs of calls that failed. Replaces `calls`.
+  </ResponseField>
+
+  <ResponseField name="partial_call_ids" type="string[]">
+    For batches over 250 calls, the IDs of calls where some schemas failed. Replaces `calls`.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="result_error" type="string">
+  Present when the workflow completed but its result is no longer retrievable (for example, it was archived).
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Present when the workflow failed and no error details are available.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 Bad Request">
+  Returned when `workflow_id` does not start with `backfill:` (error code `INVALID_WORKFLOW_ID`).
+</ResponseField>
+
+<ResponseField name="403 Forbidden">
+  Returned when your organization does not have enterprise features enabled (`ENTERPRISE_REQUIRED`) or the workflow belongs to another organization (`FORBIDDEN`).
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Returned when no workflow exists with that ID (error code `WORKFLOW_NOT_FOUND`).
+</ResponseField>
+
+<RequestExample>
+```bash Request
+curl https://api.bland.ai/v1/citation_schemas/backfill/status/backfill:call-123:1760635265843 \
+  -H "authorization: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (RUNNING)
+{
+  "data": {
+    "workflow_id": "backfill:call-123:1760635265843",
+    "status": "RUNNING",
+    "run_id": "0199ee0a-2343-7d98-8fbb-8d5c2d46ed4c",
+    "start_time": "2025-10-16T17:21:05.859Z"
+  },
+  "errors": null
+}
+```
+
+```json Response (COMPLETED)
+{
+  "data": {
+    "workflow_id": "backfill:call-123:1760635265843",
+    "status": "COMPLETED",
+    "run_id": "0199ee0a-2343-7d98-8fbb-8d5c2d46ed4c",
+    "start_time": "2025-10-16T17:21:05.859Z",
+    "close_time": "2025-10-16T17:21:39.019Z",
+    "result": {
+      "status": "success",
+      "summary": {
+        "total_calls": 1,
+        "successful_calls": 1,
+        "partial_calls": 0,
+        "failed_calls": 0,
+        "total_schemas_processed": 1,
+        "successful_schema_extractions": 1,
+        "failed_schema_extractions": 0
+      },
+      "calls": [
+        {
+          "call_id": "call-123",
+          "status": "success",
+          "schemas_processed": [
+            {
+              "schema_id": "schema-abc",
+              "status": "success",
+              "variables_extracted": 3
+            }
+          ],
+          "variables_extracted_count": 3,
+          "previous_variables": {
+            "customer_name": "John Doe"
+          },
+          "newly_extracted_variables": {
+            "order_id": "ORD-789456",
+            "issue_type": "shipping",
+            "resolution": "refund_issued"
+          },
+          "final_variables": {
+            "customer_name": "John Doe",
+            "order_id": "ORD-789456",
+            "issue_type": "shipping",
+            "resolution": "refund_issued"
+          }
+        }
+      ]
+    }
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Not Found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "WORKFLOW_NOT_FOUND",
+      "message": "Workflow backfill:call-999:1760635265843 not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)

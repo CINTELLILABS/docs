@@ -1,8 +1,10 @@
 ---
 title: "Start Tornado Session"
 api: "POST https://api.bland.ai/v1/agent-testing/tornado/start"
-description: "Start an iterative fix loop that runs tests, analyzes failures, applies fixes, and retests until all scenarios pass. Returns immediately while the loop executes asynchronously."
+description: "Start an asynchronous pathway test, analysis, and repair loop."
 ---
+
+Tornado mode runs scenarios, analyzes failures, applies pathway fixes, and retests until all scenarios pass or the session reaches a limit. Persona-only repair is not supported.
 
 ### Headers
 
@@ -10,71 +12,60 @@ description: "Start an iterative fix loop that runs tests, analyzes failures, ap
   Your API key for authentication.
 </ParamField>
 
-### Body
+### Body Parameters
 
 <ParamField body="pathway_id" type="string" required>
-  The pathway to fix.
+  Pathway to test and repair. A request containing only `persona_id` returns `400`.
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  The persona ID.
+  Optional persona scope for selecting scenarios.
 </ParamField>
 
-<ParamField body="scenario_ids" type="array of strings">
-  Specific scenarios to test. If omitted, runs all enabled scenarios for the pathway. Maximum 50 scenarios.
+<ParamField body="scenario_ids" type="string[]">
+  Specific scenarios to test. Maximum 50. If omitted or empty, all enabled scenarios in scope are used.
 </ParamField>
 
 <ParamField body="version_number" type="integer">
   Pathway version to start from.
 </ParamField>
 
-<ParamField body="max_iterations" type="integer">
-  Maximum fix iterations. Default `5`.
+<ParamField body="max_iterations" type="integer" default="5">
+  Maximum repair iterations. Values above 10 are clamped to 10.
 </ParamField>
 
-<ParamField body="timeout_ms" type="integer">
-  Timeout in milliseconds. Default `900000` (15 minutes).
+<ParamField body="timeout_ms" type="integer" default="900000">
+  Session timeout in milliseconds. Values above 1,800,000 are clamped to 1,800,000.
 </ParamField>
 
 <Note>
-Only one tornado session can be active per pathway. Returns `409 Conflict` if a session is already running.
+  Only one tornado session can run for the same pathway and persona scope. A conflicting request returns `409`.
 </Note>
 
 ### Response
 
-<ResponseField name="session_id" type="string">
-  The unique identifier for the tornado session.
+Returns `202 Accepted`.
+
+<ResponseField name="data.session_id" type="string">
+  New tornado session UUID.
 </ResponseField>
 
-<ResponseField name="status" type="string">
-  The initial status of the session. Will be `RUNNING` upon creation.
+<ResponseField name="data.status" type="string">
+  `RUNNING`.
 </ResponseField>
 
-<ResponseField name="pathway_id" type="string">
-  The pathway being tested and fixed.
-</ResponseField>
-
-<ResponseField name="max_iterations" type="integer">
-  The maximum number of fix iterations configured.
-</ResponseField>
-
-<ResponseField name="timeout_ms" type="integer">
-  The timeout configured for this session in milliseconds.
-</ResponseField>
-
-<ResponseField name="created_at" type="string">
-  ISO 8601 timestamp of when the session was created.
+<ResponseField name="errors" type="null | array">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
-```json Response
+```json 202
 {
-  "session_id": "e1f2a3b4-5678-9cde-f012-3456789abcde",
-  "status": "RUNNING",
-  "pathway_id": "c3d4e5f6-789a-bcde-f012-34567890abcd",
-  "max_iterations": 5,
-  "timeout_ms": 900000,
-  "created_at": "2026-04-14T10:15:00.000Z"
+  "data": {
+    "session_id": "e1f2a3b4-5678-4cde-9012-3456789abcde",
+    "status": "RUNNING"
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

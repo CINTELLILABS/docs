@@ -1,0 +1,72 @@
+---
+title: "List Scenario Simulation Runs"
+api: "GET https://api.bland.ai/v1/agent-testing/scenarios/{id}/simulation-runs"
+description: "List the 20 most recent simulation runs for a test scenario."
+---
+
+Returns up to 20 simulation runs, newest first.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="array">
+  Simulation run summaries.
+
+  <Expandable title="Summary fields">
+    <ResponseField name="simulation_set_id" type="string" />
+    <ResponseField name="eval_run_id" type="string | null" />
+    <ResponseField name="status" type="string" />
+    <ResponseField name="score" type="number | null">
+      Aggregate score from 0 to 100.
+    </ResponseField>
+    <ResponseField name="passed" type="boolean | null" />
+    <ResponseField name="total_calls" type="integer" />
+    <ResponseField name="passed_count" type="integer">
+      Conversations that completed successfully. This is an execution count, not a threshold verdict count.
+    </ResponseField>
+    <ResponseField name="failed_count" type="integer">
+      Conversations that failed or had insufficient evidence.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" />
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "simulation_set_id": "793a68d7-a6fa-481a-9992-91d1ceba4175",
+      "eval_run_id": "2cc01952-f83a-469f-a985-22c8d991442d",
+      "status": "COMPLETE",
+      "score": 92.5,
+      "passed": true,
+      "total_calls": 5,
+      "passed_count": 5,
+      "failed_count": 0,
+      "created_at": "2026-09-07T16:10:00.000Z"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

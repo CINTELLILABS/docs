@@ -1,0 +1,71 @@
+---
+title: "Delete Citation Schema"
+api: "DELETE https://api.bland.ai/v1/citation_schemas/"
+description: "Permanently delete a citation schema and remove it from every phone number and channel that references it."
+---
+
+<Warning>
+  Deleting a schema is permanent. The schema ID is also stripped from any inbound number, SMS config, or iMessage config that referenced it, so calls and conversations on those channels stop extracting citations for it. Citation variables already stored on past calls are not changed.
+</Warning>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="id" type="string" required>
+  The unique identifier of the citation schema to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Confirmation of the deletion.
+
+  <ResponseField name="id" type="string">
+    The ID of the deleted citation schema.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be null for successful requests.
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="400 Bad Request">
+  Returned when the `id` query parameter is missing (error code `MISSING_SCHEMA_ID`).
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Returned when the specified citation schema is not found or doesn't belong to your organization (error code `SCHEMA_NOT_FOUND`).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  "errors": null
+}
+```
+
+```json Error Response (Not Found)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SCHEMA_NOT_FOUND",
+      "message": "Citation schema not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+---
+
+Docs for agents: [llms.txt](/llms.txt)

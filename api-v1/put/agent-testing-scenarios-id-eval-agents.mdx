@@ -1,0 +1,94 @@
+---
+title: "Replace Scenario Eval Agents"
+api: "PUT https://api.bland.ai/v1/agent-testing/scenarios/{id}/eval-agents"
+description: "Replace every eval agent attached to a test scenario."
+---
+
+Replaces the scenario's full eval agent roster in one operation. Send an empty array to remove all attachments.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+## Body Parameters
+
+Send either an array of attachment objects or an object with an `eval_agents` array.
+
+<ParamField body="eval_agents" type="array" required>
+  The complete replacement roster. Duplicate `eval_agent_id` values are rejected.
+
+  <Expandable title="Eval agent fields">
+    <ParamField body="eval_agent_id" type="string" required>
+      Eval agent UUID.
+    </ParamField>
+    <ParamField body="eval_agent_version_id" type="string">
+      Eval agent version UUID. Defaults to the agent's current version.
+    </ParamField>
+    <ParamField body="weight" type="number">
+      Non-negative scoring weight. Defaults to the selected version's weight.
+    </ParamField>
+    <ParamField body="target_level_keys" type="string[]">
+      Target level keys. Defaults to the selected version's targets.
+    </ParamField>
+    <ParamField body="order" type="integer">
+      Display and scoring order. Defaults to the item's array position.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="array">
+  The saved attachments. Each item contains `id`, `scenario_id`, `eval_agent_id`, `eval_agent_version_id`, `weight`, `target_level_keys`, `order`, and `created_at`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Returns 400 for invalid or duplicate attachments and 404 for missing resources.
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "eval_agents": [
+    {
+      "eval_agent_id": "a7abc09a-191b-4db6-bd68-46e6e7435415",
+      "weight": 1,
+      "target_level_keys": ["pass"],
+      "order": 0
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "287de234-e27a-45ad-a595-062b453ea6fd",
+      "scenario_id": "f4386505-d48e-457e-8f32-9d27c1f99d17",
+      "eval_agent_id": "a7abc09a-191b-4db6-bd68-46e6e7435415",
+      "eval_agent_version_id": "dc0f1a0e-a3d9-4010-ad73-c09371f9675a",
+      "weight": 1,
+      "target_level_keys": ["pass"],
+      "order": 0,
+      "created_at": "2026-09-07T16:10:00.000Z"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

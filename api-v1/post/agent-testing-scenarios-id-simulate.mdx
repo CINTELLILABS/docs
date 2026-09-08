@@ -1,0 +1,78 @@
+---
+title: "Simulate Test Scenario"
+api: "POST https://api.bland.ai/v1/agent-testing/scenarios/{id}/simulate"
+description: "Run simulated conversations and score them with the scenario's eval agents."
+---
+
+Starts simulated conversations for one scenario and scores them with its attached eval agents. The request returns immediately while the simulations run asynchronously.
+
+<Note>
+  Attach at least one eval agent before calling this endpoint.
+</Note>
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="simulations_count" type="integer" default="5">
+  Number of conversations to generate. Must be positive. Values above 50 are limited to 50.
+</ParamField>
+
+<ParamField body="version_number" type="integer">
+  Pathway version to test. Defaults to the current production version.
+</ParamField>
+
+## Response
+
+Returns `202 Accepted`.
+
+<ResponseField name="data.simulation_set_id" type="string">
+  Simulation set ID. Use it with [Get Simulation Run Results](/api-v1/get/agent-testing-simulation-runs-id-results).
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  `RUNNING` when the request is accepted.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "simulations_count": 5,
+  "version_number": 3
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "simulation_set_id": "793a68d7-a6fa-481a-9992-91d1ceba4175",
+    "status": "RUNNING"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+<Note>
+  This endpoint uses organization-level execution rate limits based on the number of conversations requested.
+</Note>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
