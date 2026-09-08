@@ -4,7 +4,7 @@ api: "PUT https://api.bland.ai/v1/knowledge/{knowledge_base_id}"
 description: "Updates a knowledge base's name and/or description."
 ---
 
-Updates the metadata (name and description) of an existing knowledge base. This endpoint does not modify the content of the knowledge base, only its descriptive information.
+Updates the name, description, and retrieval configuration of an existing knowledge base. This endpoint does not modify the content of the knowledge base.
 
 ### Headers
 
@@ -25,11 +25,31 @@ Updates the metadata (name and description) of an existing knowledge base. This 
 ### Body Parameters
 
 <ParamField body="name" type="string">
-  New name for the knowledge base. If not provided, the current name is retained.
+  New name for the knowledge base. If omitted or empty, the current name is retained.
 </ParamField>
 
 <ParamField body="description" type="string">
   New description for the knowledge base. Pass `null` to remove the description entirely.
+</ParamField>
+
+<ParamField body="ranking_config" type="object | null">
+  Per-source retrieval configuration for anchor-based cascade retrieval. Pass `null` to return to default hybrid retrieval; omit to leave unchanged. An invalid config returns `400`.
+
+  <ParamField body="ranking_config.csv" type="object">
+    `anchor_columns` and `ignored_columns` (string arrays) for CSV sources.
+  </ParamField>
+
+  <ParamField body="ranking_config.json" type="object">
+    `anchor_paths`, `ignored_paths` (JSONPath string arrays), and optional `list_path` for JSON sources.
+  </ParamField>
+
+  <ParamField body="ranking_config.web" type="object">
+    `use_page_title` and `use_meta_description` (booleans) for web sources.
+  </ParamField>
+
+  <ParamField body="ranking_config.cascade_threshold" type="number">
+    Stage 1 confidence threshold. A top result above it wins; below it, retrieval falls back to hybrid search.
+  </ParamField>
 </ParamField>
 
 ### Response
@@ -54,15 +74,43 @@ Updates the metadata (name and description) of an existing knowledge base. This 
   </ResponseField>
 
   <ResponseField name="data.type" type="string">
-    Type of knowledge base: `"FILE"`, `"WEB_SCRAPE"`, or `"TEXT"`.
+    Type of knowledge base: `"FILE"`, `"WEB_SCRAPE"`, `"TEXT"`, or `"INTEGRATION"`.
   </ResponseField>
 
   <ResponseField name="data.source_urls" type="string">
-    Source URLs for web scrape type (comma-separated).
+    For web scrape type: the scraped URLs as a JSON-encoded array string.
   </ResponseField>
 
   <ResponseField name="data.base_url" type="string">
     Base URL for web scrape type.
+  </ResponseField>
+
+  <ResponseField name="data.metadata" type="object">
+    Source metadata recorded during ingestion. May be `null`.
+  </ResponseField>
+
+  <ResponseField name="data.current_version_id" type="string">
+    ID of the content version currently served.
+  </ResponseField>
+
+  <ResponseField name="data.chunk_count" type="number">
+    Number of indexed chunks. `null` until processing completes.
+  </ResponseField>
+
+  <ResponseField name="data.sync_enabled" type="boolean">
+    Whether scheduled re-sync is enabled (web scrape and integration sources).
+  </ResponseField>
+
+  <ResponseField name="data.last_sync_at" type="string">
+    ISO timestamp of the last sync, or `null`.
+  </ResponseField>
+
+  <ResponseField name="data.persona_id" type="string">
+    Set on persona-owned knowledge bases. Always `null` for knowledge bases you created.
+  </ResponseField>
+
+  <ResponseField name="data.ranking_config" type="object">
+    Per-source retrieval configuration, or `null` for default hybrid retrieval.
   </ResponseField>
 
   <ResponseField name="data.created_at" type="string">
@@ -98,10 +146,14 @@ Updates the metadata (name and description) of an existing knowledge base. This 
   Will be `null` on successful update.
 </ResponseField>
 
+<Note>
+An unknown knowledge base ID, or one owned by another organization, currently returns `500` with `"Failed to update KB"` rather than `404`.
+</Note>
+
 <RequestExample>
 
 ```bash Update Name Only
-curl -X PUT https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
+curl -X PUT https://api.bland.ai/v1/knowledge/3f1c2a9e-7b4d-4c1e-9a2b-1d5e6f7a8b9c \
   -H "authorization: YOUR_API_KEY" \
   -H "content-type: application/json" \
   -d '{
@@ -130,13 +182,23 @@ curl -X PUT https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
 ```json Success Response
 {
   "data": {
-    "id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T",
+    "id": "3f1c2a9e-7b4d-4c1e-9a2b-1d5e6f7a8b9c",
     "name": "Updated Company FAQs",
     "description": "Updated frequently asked questions and company policies for 2025",
     "status": "COMPLETED",
     "type": "FILE",
+    "source_urls": null,
+    "base_url": null,
+    "metadata": null,
+    "current_version_id": "8c7d6e5f-4a3b-4c2d-9e1f-0a1b2c3d4e5f",
     "created_at": "2025-01-15T10:30:00Z",
     "updated_at": "2025-01-15T15:45:00Z",
+    "error_message": null,
+    "chunk_count": 42,
+    "sync_enabled": false,
+    "last_sync_at": null,
+    "persona_id": null,
+    "ranking_config": null,
     "file": {
       "file_name": "company_faqs.pdf",
       "file_size": 2048576,
@@ -144,6 +206,30 @@ curl -X PUT https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
     }
   },
   "errors": null
+}
+```
+
+```json Invalid Ranking Config (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "ranking_config.cascade_threshold must be a number between 0 and 1"
+    }
+  ]
+}
+```
+
+```json Unknown Knowledge Base (500)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Failed to update KB"
+    }
+  ]
 }
 ```
 

@@ -12,15 +12,21 @@ description: "Retrieve a list of all batches created by your organization."
 
 ### Query Parameters
 
-<ParamField query="take" type="integer">
-  Optional. The number of results to return.
+<ParamField query="take" type="integer" default="10">
+  Number of batches to return. Clamped to the range 1 to 100.
 </ParamField>
 
 <ParamField query="skip" type="integer">
-  Optional. The number of results to skip (used for pagination).
+  Number of batches to skip (used for pagination).
+</ParamField>
+
+<ParamField query="agent_id" type="string">
+  Only return batches created with this `global.agent_id`. Must be a UUID, otherwise the request fails with `BATCH_V2_LIST_VALIDATION_ERROR`.
 </ParamField>
 
 ### Response
+
+Batches are returned newest first. Each entry is the stored batch row.
 
 <ResponseField name="data" type="array">
   A list of batches created by your organization.
@@ -35,24 +41,72 @@ description: "Retrieve a list of all batches created by your organization."
 </ResponseField>
 
 <ResponseField name="data[].base_prompt" type="string">
-  A JSON string representing the global call properties used in the batch.
+  A JSON string of the `global` object the batch was created with.
 </ResponseField>
 
 <ResponseField name="data[].created_at" type="string (ISO 8601)">
   The timestamp when the batch was created.
 </ResponseField>
 
-<ResponseField name="data[].call_objects" type="array">
-  A preview of the call objects included in the batch.
+<ResponseField name="data[].call_objects" type="array | null">
+  The full `call_objects` array the batch was created with. `null` for batches created from a `file_id`.
 </ResponseField>
 
 <ResponseField name="data[].description" type="string">
   A human-readable description of the batch.
 </ResponseField>
 
+<ResponseField name="data[].batch_status" type="string | object">
+  `"initializing"` until the batch starts dispatching, then an object with `calls_requested`, `calls_in_progress`, `calls_completed`, `calls_failed`, and `calls_failed_errors`.
+</ResponseField>
+
+<ResponseField name="data[].calls_in_retry" type="array">
+  Call IDs currently being retried.
+</ResponseField>
+
+<ResponseField name="data[].label" type="string | null">
+  A JSON string of the `column_mapping` used for file batches, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="data[].agent_id" type="string | null">
+  The `global.agent_id` the batch was created with, if any.
+</ResponseField>
+
+<ResponseField name="data[].campaign_id" type="string | null">
+  Always `null` for batches created through this API.
+</ResponseField>
+
+<ResponseField name="data[].call_params" type="string | null">
+  Unused by v2 batches. Always `null`.
+</ResponseField>
+
+<ResponseField name="data[].call_data" type="string | null">
+  Unused by v2 batches. Always `null`.
+</ResponseField>
+
+<ResponseField name="data[].endpoint_code" type="string">
+  Always `"api"`.
+</ResponseField>
+
 <ResponseField name="errors" type="null">
   Always `null` on success.
 </ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `BATCH_V2_LIST_VALIDATION_ERROR` | `agent_id` is not a valid UUID |
+| 500 | `BATCH_V2_LIST_ERROR` | Unexpected failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v2/batches/list?take=10&skip=0" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
 
 <ResponseExample>
 
@@ -62,15 +116,29 @@ description: "Retrieve a list of all batches created by your organization."
     {
       "id": "652ad643-9gca-477c-97c3-9d8e6t74d7af",
       "user_id": "64602f94-d670-43d2-8474-bcdcb9522c4f",
+      "campaign_id": null,
+      "call_params": null,
       "base_prompt": "{\"record\":true,\"task\":\"Say hello to the user\"}",
+      "endpoint_code": "api",
       "created_at": "2025-05-08T19:28:12.627Z",
+      "label": null,
+      "call_data": null,
+      "batch_status": {
+        "calls_requested": 1,
+        "calls_in_progress": [],
+        "calls_completed": ["a24616b4-be8f-42e4-be29-4c5ec005756c"],
+        "calls_failed": 0,
+        "calls_failed_errors": []
+      },
+      "calls_in_retry": [],
       "call_objects": [
         {
           "task": "Say hello to the user",
           "phone_number": "+1234567890"
         }
       ],
-      "description": "My first batch"
+      "description": "My first batch",
+      "agent_id": null
     }
   ],
   "errors": null

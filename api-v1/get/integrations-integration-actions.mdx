@@ -1,0 +1,154 @@
+---
+title: "List Integration Actions"
+api: "GET https://api.bland.ai/v1/integrations/{integration}/actions"
+description: "List the actions an integration exposes, with their input and output schemas."
+---
+
+Returns every action for one integration. Use an action's `key` as the `action` value when you [create a tool](/api-v2/post/tools), and its `schema` to see which inputs the action accepts.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="integration" type="string" required>
+  Integration key from [List Integrations](/api-v1/get/integrations), for example `slack`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.integration" type="string">
+    The integration key you requested.
+  </ResponseField>
+
+  <ResponseField name="data.actions" type="array">
+    Regular actions followed by context actions.
+
+    <ResponseField name="data.actions[].key" type="string">
+      Action key to pass as `action` when creating a tool.
+    </ResponseField>
+
+    <ResponseField name="data.actions[].name" type="string">
+      Display name.
+    </ResponseField>
+
+    <ResponseField name="data.actions[].description" type="string">
+      What the action does.
+    </ResponseField>
+
+    <ResponseField name="data.actions[].type" type="string">
+      `"action"` for actions a tool can run during a call, `"context"` for read-only lookups used to populate dashboard pickers.
+    </ResponseField>
+
+    <ResponseField name="data.actions[].schema" type="object">
+      JSON Schema for the action's inputs. May include an `output` sub-schema.
+    </ResponseField>
+
+    <ResponseField name="data.actions[].output" type="object">
+      Output schema (regular actions only). Present when the action declares one.
+    </ResponseField>
+
+    <ResponseField name="data.actions[].fields" type="object">
+      Dashboard field hints (regular actions only).
+    </ResponseField>
+
+    <ResponseField name="data.actions[].dynamicSchema" type="object">
+      Present when part of the schema is resolved at runtime from another field (regular actions only).
+    </ResponseField>
+
+    <ResponseField name="data.actions[].returns" type="object">
+      Return schema (context actions only).
+    </ResponseField>
+  </ResponseField>
+
+  <ResponseField name="data.metadata" type="object">
+    `key`, `name`, `displayName`, `description`, `actionCount`, and `contextActionCount` for the integration.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `INVALID_PARAMETER` | `integration` is empty |
+| 404 | `INTEGRATION_NOT_FOUND` | No integration with that key is registered |
+| 500 | `GET_INTEGRATION_ACTIONS_ERROR` | Unexpected failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.bland.ai/v1/integrations/slack/actions \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "integration": "slack",
+    "actions": [
+      {
+        "key": "send_message",
+        "name": "Send Message",
+        "description": "Send a message to a Slack channel.",
+        "type": "action",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "channel": { "type": "string" },
+            "text": { "type": "string" }
+          },
+          "required": ["channel", "text"]
+        },
+        "fields": {}
+      },
+      {
+        "key": "list_channels",
+        "name": "List Channels",
+        "description": "Fetch data for UI components",
+        "type": "context",
+        "schema": { "type": "object", "properties": {} },
+        "returns": { "type": "array" }
+      }
+    ],
+    "metadata": {
+      "key": "slack",
+      "name": "Slack",
+      "displayName": "Slack",
+      "description": "Send messages and interact with Slack workspaces.",
+      "actionCount": 1,
+      "contextActionCount": 1
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INTEGRATION_NOT_FOUND",
+      "message": "Integration 'foo' not found or not loaded"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

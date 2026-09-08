@@ -1,0 +1,99 @@
+---
+title: "Submit Knowledge Base Feedback"
+api: "POST https://api.bland.ai/v1/knowledge/feedback"
+description: "Add a corrected question and answer pair to a knowledge base as feedback."
+---
+
+Add a corrected question and answer pair to a knowledge base. The pair is stored as a `FEEDBACK` suggestion and indexed for future retrieval.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="knowledge_base_id" type="string" required>
+  ID of the knowledge base to improve.
+</ParamField>
+
+<ParamField body="question" type="string" required>
+  The question that should retrieve the corrected answer.
+</ParamField>
+
+<ParamField body="answer" type="string" required>
+  The corrected answer to index.
+</ParamField>
+
+<ParamField body="chunk_id" type="string">
+  Accepted for compatibility. The current implementation does not store this value.
+</ParamField>
+
+<ParamField body="confidence_score" type="number">
+  Accepted for compatibility. The current implementation does not store this value.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.success" type="boolean">
+  `true` when the feedback was stored and indexed.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  `"Suggestion created successfully"`.
+</ResponseField>
+
+<ResponseField name="data.suggestion_id" type="string">
+  ID of the new feedback suggestion.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Always `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `KB_ERROR` | `question`, `answer`, or `knowledge_base_id` is missing |
+| 500 | `KB_ERROR` | The knowledge base cannot be found or the feedback cannot be stored or indexed |
+| 500 | `KB_FEEDBACK_ERROR` | Unexpected failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/feedback \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "knowledge_base_id": "6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c",
+    "question": "How long is the refund window?",
+    "answer": "The refund window is 30 days."
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Suggestion created successfully",
+    "suggestion_id": "a3d1e5f7-9b2c-4d6e-8f01-23456789abcd"
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

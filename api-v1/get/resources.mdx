@@ -1,0 +1,121 @@
+---
+title: "List Resources"
+api: "GET https://api.bland.ai/v1/resources"
+description: "List your organization's connected integration accounts (resources) with filtering and pagination."
+---
+
+A resource is a connected account for an integration. Pass a resource's `id` as `resource_id` when you [create a tool](/api-v2/post/tools). Resources are connected from the dashboard; this endpoint only lists them.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+Unknown query parameters are rejected with a 400 `INVALID_PARAMETER`.
+
+<ParamField query="page" type="integer" default="1">
+  Page number, starting at 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Results per page, 1 to 100.
+</ParamField>
+
+<ParamField query="integration" type="string">
+  Only return resources for this integration key.
+</ParamField>
+
+<ParamField query="is_active" type="boolean">
+  Filter by active state.
+</ParamField>
+
+<ParamField query="orderBy" type="string">
+  Only `created_at` is supported.
+</ParamField>
+
+<ParamField query="orderDirection" type="string" default="desc">
+  `asc` or `desc`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.status" type="string">
+    Always `"success"`.
+  </ResponseField>
+
+  <ResponseField name="data.resources" type="array">
+    Resources on this page. Each entry has `id`, `integration`, `name`, `description`, `config`, `tags`, `status`, `status_message`, `is_active`, `last_used_at`, `last_validated_at`, `metadata`, `created_at`, and `updated_at`. `auth`, `user_id`, and `org_id` are only returned by [Get Resource](/api-v1/get/resources-id).
+  </ResponseField>
+
+  <ResponseField name="data.page" type="integer">
+    Current page.
+  </ResponseField>
+
+  <ResponseField name="data.totalPages" type="integer">
+    Total number of pages.
+  </ResponseField>
+
+  <ResponseField name="data.totalCount" type="integer">
+    Total resources matching the filters.
+  </ResponseField>
+
+  <ResponseField name="data.hasMore" type="boolean">
+    `true` when a later page exists.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success. A 500 returns `LIST_RESOURCES_ERROR`.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v1/resources?integration=slack&is_active=true&limit=20" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "status": "success",
+    "resources": [
+      {
+        "id": "3f1c2a7e-8d41-4b6a-9c0e-2b7d1f5a6e90",
+        "integration": "slack",
+        "name": "Acme Workspace",
+        "description": null,
+        "config": {},
+        "tags": [],
+        "status": "connected",
+        "status_message": null,
+        "is_active": true,
+        "last_used_at": "2025-06-01T12:00:00.000Z",
+        "last_validated_at": null,
+        "metadata": {},
+        "created_at": "2025-05-08T19:28:12.627Z",
+        "updated_at": "2025-06-01T12:00:00.000Z"
+      }
+    ],
+    "page": 1,
+    "totalPages": 1,
+    "totalCount": 1,
+    "hasMore": false
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

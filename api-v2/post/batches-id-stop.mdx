@@ -26,12 +26,40 @@ description: "Stop a batch that is currently running or scheduled."
   `null` if the batch was successfully stopped.
 </ResponseField>
 
+### Errors
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `BATCH_V2_STOP_ERROR_NOT_FOUND` | The batch does not exist, belongs to another organization, or has already stopped |
+| 500 | `BATCH_V2_STOP_ERROR` | Unexpected failure |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v2/batches/a9a033b7-44d8-40c6-aaec-42cd43106273/stop \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
 <ResponseExample>
 
 ```json Response
 {
   "data": null,
   "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BATCH_V2_STOP_ERROR_NOT_FOUND",
+      "message": "The requested batch has stopped already, or does not exist."
+    }
+  ]
 }
 ```
 </ResponseExample>

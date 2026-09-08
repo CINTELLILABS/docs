@@ -1,0 +1,104 @@
+---
+title: "Replace Knowledge Base File"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/replace"
+description: "Uploads a new file for a file-based knowledge base and re-embeds it as a new version."
+---
+
+Swap the source file of a `FILE` knowledge base. The upload becomes a new version, the knowledge base's status moves to `PROCESSING`, and re-embedding starts in the background. Previous versions stay available through [List Versions](/api-v1/get/knowledge-id-versions) and can be restored.
+
+<Note>
+  Only `FILE` knowledge bases can be replaced. For `WEB_SCRAPE` knowledge bases use [Replace Knowledge Base URLs](/api-v1/post/knowledge-id-replace-urls). This endpoint does not count against the plan cap on knowledge base count and does not use the 10 second creation cooldown.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `multipart/form-data`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The knowledge base to replace the file for.
+</ParamField>
+
+### Body Parameters (multipart/form-data)
+
+<ParamField body="file" type="file" required>
+  The new source file. Maximum 20 MB.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.success" type="boolean">
+    `true` when the new version was created and re-embedding was requested.
+  </ResponseField>
+
+  <ResponseField name="data.version_id" type="string">
+    ID of the new version. It is already the current version.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    `"File replaced successfully. Re-embedding in progress."`
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | Code | Message |
+|---|---|---|
+| 400 | `NO_FILE` | `No file uploaded` |
+| 404 | `KB_ERROR` | `KB not found or type not supported for replacement` |
+| 409 | `KB_ERROR` | `Source is still indexing. Wait until it completes.` (another replace, restore, or reindex is in progress) |
+| 413 | `FILE_TOO_LARGE` | File exceeds 20 MB |
+| 500 | `REPLACE_FILE_ERROR` | `Failed to replace file` |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c/replace \
+  -H "authorization: YOUR_API_KEY" \
+  -F "file=@company_faqs_v2.pdf"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "version_id": "a3d1e5f7-9b2c-4d6e-8f01-23456789abcd",
+    "message": "File replaced successfully. Re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json Conflict Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Source is still indexing. Wait until it completes."
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -15,15 +15,17 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 <ParamField body="name" type="string" required>
   The name the AI will see when deciding to use this tool. Must be at least 1 character.
 
-  Avoid names that conflict with reserved internal tools: `input`, `speak`, `transfer`, `switch`, `wait`, `finish`, `press`, `button`, `say`, `pause`, `record`, `play`, `dial`, `hang`.
+  The name must not contain any of these reserved words, even as a substring of a longer word (the check is case-insensitive, so `DisplayOrder` is rejected because it contains `play`): `input`, `speak`, `transfer`, `switch`, `wait`, `finish`, `press`, `button`, `say`, `pause`, `record`, `play`, `dial`, `hang`. Returns `400 RESERVED_TOOL_NAME`.
 </ParamField>
 
 <ParamField body="description" type="string" required>
-  Description of what the tool does. Shown to the AI to help it decide when to use this tool.
+  Description of what the tool does. Shown to the AI to help it decide when to use this tool. Maximum 5000 characters.
 </ParamField>
 
 <ParamField body="integration" type="string" required>
-  The integration key to use. Must be one of: `bland-sms`, `custom-code`, `slack`, `salesforce`, `rest_api`, `hubspot`, `calendly`, `cal-com-v2`, `notion`.
+  The integration key to use. Must be one of: `bland`, `bland-sms`, `custom-code`, `slack`, `salesforce`, `rest_api`, `hubspot`, `calendly`, `cal-com-v2`, `notion`. Call `GET /v1/integrations` for the current list. Returns `400 INTEGRATION_NOT_FOUND` if the key is not registered.
+
+  This endpoint only creates integration tools. Custom HTTP tools (a `url` plus `method` and `headers`) are created with the legacy [Create Custom Tool](/api-v1/post/tools) endpoint. Sending those keys here returns `400 INVALID_PARAMETER`.
 </ParamField>
 
 <ParamField body="action" type="string" required>
@@ -31,7 +33,7 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 </ParamField>
 
 <ParamField body="input_schema" type="object">
-  Must be a valid OpenAI function calling parameter schema. Defines the parameters the AI will fill in when invoking this tool.
+  Must be a valid JSON Schema (validated with AJV in strict mode). Defines the parameters the AI will fill in when invoking this tool. Returns `400 INVALID_INPUT_SCHEMA` if the schema does not compile.
 
   ```json
   {
@@ -47,6 +49,8 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 
 <ParamField body="body" type="string | object">
   Request body template sent to the integration. Supports prompt variables from `input_schema` (e.g. `"{{input.channel}}"`).
+
+  For `custom-code` tools with the `run_snippet` action, `body.timeout` is the snippet timeout in seconds and must be an integer from 1 to 60. Returns `400 INVALID_PARAMETER` otherwise.
 </ParamField>
 
 <ParamField body="speech" type="string">
@@ -89,6 +93,22 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
   UUID of a connected resource (e.g. a Slack workspace or Salesforce org) to scope this tool to. The resource must be active and belong to your account. Returns `404` if the ID is invalid or inactive. To list available resource IDs for an integration, call `GET /v1/integrations/{integration}/resources`.
 </ParamField>
 
+<ParamField body="extractVarSettings" type="object">
+  Controls how the AI extracts the tool's input variables.
+
+  <Expandable title="extractVarSettings">
+    <ParamField body="useAudio" type="boolean">
+      Extract variables from the call audio instead of the transcript.
+    </ParamField>
+    <ParamField body="ignorePrevious" type="boolean">
+      Ignore values extracted earlier in the conversation.
+    </ParamField>
+    <ParamField body="audioVariables" type="string[]">
+      Names of `input_schema` properties to extract from audio.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
 <ParamField body="public" type="boolean">
   Whether this tool is publicly visible. Defaults to `false`.
 </ParamField>
@@ -97,20 +117,45 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
   Optional human-readable label for this tool.
 </ParamField>
 
+<ParamField body="staging_tool" type="object">
+  A draft version of the tool definition (same fields as the tool itself: `name`, `description`, `integration`, `action`, and the optional fields above). Stored beside the live definition and used when you run the tool with `?staging=true`.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  UUID of the agent this tool belongs to. Omit for an org-wide tool. Returns `400 INVALID_PARAMETER` if the value is not a UUID.
+</ParamField>
+
+<Note>
+  The body is validated strictly. Any key not listed above returns `400 INVALID_PARAMETER`.
+</Note>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  `"success"` on success, `"error"` on failure.
-</ResponseField>
+Returns `200` with the new tool's ID.
 
 <ResponseField name="data.id" type="string">
-  The ID of the newly created tool.
+  The ID of the newly created tool (a UUID, without the `TL-` prefix).
 </ResponseField>
 
-<ResponseField name="errors" type="null|array">
-  `null` on success, or a list of error objects if the request failed.
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of `{ error, message }` objects if the request failed.
 </ResponseField>
+
+### Errors
+
+All errors return `data: null`. Each entry in `errors` has an `error` code and a `message`.
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `INVALID_PARAMETER` | Body fails schema validation (unknown key, wrong type, out of range value, malformed `agent_id`, or bad custom-code timeout). |
+| 400 | `MISSING_REQUIRED_FIELDS` | `name`, `description`, `integration`, or `action` is missing. |
+| 400 | `RESERVED_TOOL_NAME` | `name` contains a reserved word. |
+| 400 | `INVALID_INPUT_SCHEMA` | `input_schema` is not a valid JSON Schema. |
+| 400 | `INTEGRATION_NOT_FOUND` | `integration` is not registered. |
+| 400 | `ACTION_NOT_FOUND` | `action` does not exist for the integration. |
+| 400 | `TOOL_V2_CREATE_VALIDATION_ERROR` | The assembled tool definition fails validation. |
+| 404 | `RESOURCE_NOT_FOUND` | `resource_id` is unknown, inactive, or not yours. |
+| 500 | `CREATE_INTERNAL_SERVER_ERROR` | Unexpected server error. |
 
 <ResponseExample>
 ```json Request
@@ -134,33 +179,32 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
 
 ```json Response (Success)
 {
-  "status": "success",
   "data": {
-    "id": "abc123def456"
+    "id": "8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f"
   },
   "errors": null
 }
 ```
 
-```json Error (INVALID_PARAMETER)
+```json Error (MISSING_REQUIRED_FIELDS)
 {
   "data": null,
   "errors": [
     {
-      "code": "INVALID_PARAMETER",
-      "message": "name is required"
+      "error": "MISSING_REQUIRED_FIELDS",
+      "message": "Required fields: name, description, integration, action"
     }
   ]
 }
 ```
 
-```json Error (INVALID_TOOL_TYPE)
+```json Error (RESERVED_TOOL_NAME)
 {
   "data": null,
   "errors": [
     {
-      "code": "INVALID_TOOL_TYPE",
-      "message": "The specified tool type is not supported"
+      "error": "RESERVED_TOOL_NAME",
+      "message": "Tool name 'DisplayOrder' contains reserved word 'play'. Avoid using: input, speak, transfer, switch, wait, finish, press, button, say, pause, record, play, dial, hang"
     }
   ]
 }
@@ -171,8 +215,8 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
   "data": null,
   "errors": [
     {
-      "code": "INTEGRATION_NOT_FOUND",
-      "message": "Integration 'my_integration' is not available. Available integrations: bland-sms, custom-code, slack, salesforce, rest_api, hubspot, calendly, cal-com-v2, notion"
+      "error": "INTEGRATION_NOT_FOUND",
+      "message": "Integration 'my_integration' is not available. Available integrations: bland-sms, bland, custom-code, slack, salesforce, rest_api, hubspot, calendly, cal-com-v2, notion"
     }
   ]
 }
@@ -183,7 +227,7 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
   "data": null,
   "errors": [
     {
-      "code": "ACTION_NOT_FOUND",
+      "error": "ACTION_NOT_FOUND",
       "message": "Action 'my_action' not found for integration 'slack'. Available actions: send_message, create_channel"
     }
   ]
@@ -195,8 +239,8 @@ description: "Create a new tool. Tools connect to built-in integrations (e.g. Sl
   "data": null,
   "errors": [
     {
-      "code": "RESOURCE_NOT_FOUND",
-      "message": "Resource not found or is inactive"
+      "error": "RESOURCE_NOT_FOUND",
+      "message": "Resource 8f4c1d2e-6b7a-4c3d-9e0f-1a2b3c4d5e6f not found, inactive, or you don't have access to it"
     }
   ]
 }

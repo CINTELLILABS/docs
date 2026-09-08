@@ -1,0 +1,96 @@
+---
+title: "List Integrations"
+api: "GET https://api.bland.ai/v1/integrations"
+description: "List the built-in integrations you can connect tools to."
+---
+
+Returns metadata for every integration registered on the platform. Use the `integration` key from this list as the `integration` value when you [create a tool](/api-v2/post/tools), and with [List Integration Actions](/api-v1/get/integrations-integration-actions) to see what each one can do. No organization data is returned.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.integrations" type="array">
+    One entry per registered integration.
+
+    <ResponseField name="data.integrations[].integration" type="string">
+      Integration key, for example `slack`, `salesforce`, `hubspot`, `calendly`, `cal-com-v2`, `notion`, `rest_api`, `custom-code`, `bland`, `bland-sms`.
+    </ResponseField>
+
+    <ResponseField name="data.integrations[].actionCount" type="number">
+      Number of actions the integration exposes.
+    </ResponseField>
+
+    <ResponseField name="data.integrations[].totalActionCount" type="number">
+      Same value as `actionCount`.
+    </ResponseField>
+
+    <ResponseField name="data.integrations[].available" type="boolean">
+      Always `true` for registered integrations.
+    </ResponseField>
+
+    <ResponseField name="data.integrations[].metadata" type="object">
+      Display metadata: `key`, `name`, `displayName`, `menuLabel`, `parentIntegration`, `description`, `logoUrl`, `eligibilityCheck`, `isEnterprise`, `authTypes` (for example `["nango"]` or `["api_key", "bearer", "none"]`), and `isNative`. Integrations with `isEnterprise: true` can only be used by enterprise organizations.
+    </ResponseField>
+  </ResponseField>
+
+  <ResponseField name="data.count" type="number">
+    Number of integrations returned.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success. A 500 returns `LIST_INTEGRATIONS_ERROR`.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.bland.ai/v1/integrations \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "integrations": [
+      {
+        "integration": "slack",
+        "actionCount": 4,
+        "totalActionCount": 4,
+        "available": true,
+        "metadata": {
+          "key": "slack",
+          "name": "Slack",
+          "displayName": "Slack",
+          "menuLabel": null,
+          "parentIntegration": null,
+          "description": "Send messages and interact with Slack workspaces.",
+          "logoUrl": "/Integration_logos/slack/Slack_Symbol_0.svg",
+          "eligibilityCheck": null,
+          "isEnterprise": false,
+          "authTypes": ["nango"],
+          "isNative": false
+        }
+      }
+    ],
+    "count": 1
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

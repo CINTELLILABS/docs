@@ -4,6 +4,10 @@ api: "POST https://api.bland.ai/v1/tools"
 description: "Create a Custom Tool that can take AI input and call external APIs."
 ---
 
+<Note>
+Custom Tools v1 is a legacy API maintained for existing customers. Built-in integration tools are created and managed with the [v2 Tools API](/api-v2/post/tools). Custom HTTP tools that call your own URL are still created through this v1 endpoint: `POST /v2/tools` only accepts integration tools and rejects custom tools.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -33,7 +37,7 @@ description: "Create a Custom Tool that can take AI input and call external APIs
     - `dial`
     - `hang`
     
-    Choosing too similar of names to the default tools could cause the AI to select the wrong one, so decriptive two to three-word names are preferred.
+    Choosing too similar of names to the default tools could cause the AI to select the wrong one, so descriptive two to three-word names are preferred.
 </ParamField>
 
 <ParamField body="description" type="string" required>
@@ -294,9 +298,26 @@ description: "Create a Custom Tool that can take AI input and call external APIs
     To always wait for a response, set the timeout to an extremely high value like 99999999.
 </ParamField>
 
+<ParamField body="public" type="boolean" default="false">
+    Whether the tool is visible to other organizations. Stored on the tool record, not inside the tool definition.
+</ParamField>
+
+<ParamField body="staging_tool" type="object">
+    A draft version of the tool definition, stored alongside the live definition. Omit to leave it empty.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+    UUID of a web agent to attribute the tool to. Returns 400 `INVALID_PARAMETER` when it is not a valid UUID. Omit for an organization-wide tool.
+</ParamField>
+
+<Note>
+Apart from `agent_id` and the custom-code `timeout` range, the body is stored as sent. The required flags, the `https://` rule, the `GET`/`POST` list, and the reserved words above are not validated at create time. A definition that breaks them is saved and fails when the agent tries to use it.
+</Note>
+
 ### Response
+
 <ResponseField name="status" type="string">
-    Whether the tool creation succeeded.
+    `"success"` when the tool was created.
 </ResponseField>
 
 <ResponseField name="tool_id" type="string">
@@ -313,15 +334,49 @@ description: "Create a Custom Tool that can take AI input and call external APIs
     ```
 </ResponseField>
 
+<ResponseField name="data" type="null">
+    Always `null` on this endpoint. The result is carried in the top-level fields above.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+    `null` on success. On failure, an array of `{ error, message }` objects.
+</ResponseField>
+
 <ResponseExample>
-```json
+```json Success
 {
     "status": "success",
-    "tool_id": "TL-1234567890"
+    "tool_id": "TL-5da8347d-0ab7-415d-b156-a7fc5c6074dc",
+    "data": null,
+    "errors": null
+}
+```
+
+```json Invalid agent_id (400)
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "INVALID_PARAMETER",
+            "message": "agent_id: Invalid UUID format"
+        }
+    ]
+}
+```
+
+```json Server error (500)
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "CREATE_INTERNAL_SERVER_ERROR",
+            "message": "Internal Server Error"
+        }
+    ],
+    "error": "Internal Server Error"
 }
 ```
 </ResponseExample>
-    
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

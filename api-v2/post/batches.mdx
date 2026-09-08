@@ -18,8 +18,10 @@ description: "Create a new batch of calls using direct input."
 
 ### Body
 
+Provide recipients either inline with `call_objects` or from an uploaded file with `file_id`. Omitting both returns a 400. The body is validated strictly: any key other than `call_objects`, `file_id`, `column_mapping`, `global`, `description`, and `status_webhook` is rejected with `BATCH_V2_CREATE_VALIDATION_ERROR` (put per-call keys such as `campaign_id` inside `global` or a call object).
+
 <ParamField body="call_objects" type="array">
-  A list of individual call objects to include in the batch. Each object follows the same schema as `/v1/calls`.
+  A list of individual call objects to include in the batch. Each object follows the same schema as [Send Call](/api-v1/post/calls).
 
   ```json Example
   "call_objects": [
@@ -43,12 +45,20 @@ description: "Create a new batch of calls using direct input."
   ```
 </ParamField>
 
+<ParamField body="file_id" type="string">
+  ID of a recipient file uploaded with [Attach File](/api-v1/post/files-attach) (`usage: "batches"`). Use this instead of `call_objects` for large lists. Each row becomes one call object; the file must contain a `phone_number` column.
+</ParamField>
+
+<ParamField body="column_mapping" type="object">
+  Only used with `file_id`. Maps a column name in your file to a [Send Call](/api-v1/post/calls) property, for example `{"customer_phone": "phone_number", "script": "task"}`. Every value must be a valid call property or the request fails with `BATCH_V2_CREATE_VALIDATION_ERROR`.
+</ParamField>
+
 <ParamField body="global" type="object" required>
   Global call properties to apply to all `call_objects`, unless overridden per entry. \
   \
   **Required keys:**
 
-  - Must include at least one of: `"task"` or `"pathway_id"`. \
+  - Must include at least one of: `"task"`, `"pathway_id"`, or `"persona_id"`. \
     \
     **Forbidden keys:**
   - `"phone_number"` is **not allowed** in the global object.
@@ -63,6 +73,10 @@ description: "Create a new batch of calls using direct input."
     // /v1/call properties
   }
   ```
+</ParamField>
+
+<ParamField body="global.agent_id" type="string">
+  UUID of an agent to staff every call in the batch. Requires an organization API key. Cannot be combined with `pathway_id` or `persona_id` in `global`. Batches created with an agent can be filtered with the `agent_id` query parameter on [List Batches](/api-v2/get/batches).
 </ParamField>
 
 <ParamField body="description" type="string">
@@ -87,6 +101,19 @@ description: "Create a new batch of calls using direct input."
   Always `null` on success.
 </ResponseField>
 
+### Errors
+
+All errors return `{"data": null, "errors": [{"error", "message"}]}`.
+
+| Status | `error` | When |
+| --- | --- | --- |
+| 400 | `BATCH_V2_CREATE_VALIDATION_ERROR` | Body fails schema validation, neither `file_id` nor `call_objects` is present, `column_mapping` targets an unknown property, `global.phone_number` is set, or `global` has none of `task`, `pathway_id`, `persona_id` |
+| 400 | `AGENT_ID_INVALID` | `global.agent_id` is not a UUID |
+| 400 | `AGENT_PARAM_CONFLICT` | `global.agent_id` combined with `pathway_id` or `persona_id` |
+| 400 | `AGENT_ORG_REQUIRED` | `global.agent_id` used with a key that is not an organization API key |
+| 400 | `AGENT_NOT_FOUND` | No agent with that ID in your organization |
+| 500 | `BATCH_V2_CREATE_ERROR` | Unexpected failure |
+
 <ResponseExample>
 
 ```json Response
@@ -95,6 +122,18 @@ description: "Create a new batch of calls using direct input."
     "batch_id": "8b8e8c57-9e6e-4e4d-84d2-9826b2268c22"
   },
   "errors": null
+}
+```
+
+```json Validation Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BATCH_V2_CREATE_VALIDATION_ERROR",
+      "message": "Either a file_id or call_objects must be provided."
+    }
+  ]
 }
 ```
 

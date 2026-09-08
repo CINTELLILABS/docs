@@ -1,0 +1,84 @@
+---
+title: "Download Knowledge Base File"
+api: "GET https://api.bland.ai/v1/knowledge/{knowledge_base_id}/download"
+description: "Streams the original source file of a knowledge base."
+---
+
+Download the file a knowledge base was created from. The response body is the raw file, not a JSON envelope. Web scrape knowledge bases have no file and return a 404.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The knowledge base whose file you want.
+</ParamField>
+
+### Response
+
+On success the endpoint streams the file with these headers:
+
+| Header | Value |
+|---|---|
+| `Content-Type` | The stored MIME type, or `application/octet-stream` |
+| `Content-Disposition` | `attachment; filename="<original file name>"` |
+| `Content-Length` | File size in bytes, when known |
+
+### Rate limit
+
+One download per organization at a time. A second request while a download is streaming (or within 5 seconds of it starting) returns `429`.
+
+### Errors
+
+Error responses use the standard JSON envelope.
+
+| Status | Code | Message |
+|---|---|---|
+| 404 | `KB_ERROR` | `KB not found` |
+| 404 | `KB_ERROR` | `No file associated with this KB` |
+| 429 | `KB_DOWNLOAD_RATE_LIMITED` | `Too many concurrent downloads. Please wait a moment and try again.` |
+| 500 | `KB_DOWNLOAD_ERROR` | `Failed to download KB file` |
+| 500 | `DOWNLOAD_STREAM_ERROR` | `Error streaming file` (only if the stream fails before any bytes are sent) |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.bland.ai/v1/knowledge/6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c/download \
+  -H "authorization: YOUR_API_KEY" \
+  -O -J
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text Success Response
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="company_faqs.pdf"
+Content-Length: 2048576
+
+<binary file body>
+```
+
+```json Rate Limited Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_DOWNLOAD_RATE_LIMITED",
+      "message": "Too many concurrent downloads. Please wait a moment and try again."
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

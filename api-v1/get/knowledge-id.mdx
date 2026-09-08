@@ -40,15 +40,43 @@ Returns detailed information about a specific knowledge base, including its curr
   </ResponseField>
 
   <ResponseField name="data.type" type="string">
-    Type of knowledge base: `"FILE"`, `"WEB_SCRAPE"`, or `"TEXT"`.
+    Type of knowledge base: `"FILE"`, `"WEB_SCRAPE"`, `"TEXT"`, or `"INTEGRATION"`.
   </ResponseField>
 
   <ResponseField name="data.source_urls" type="string">
-    Source URLs for web scrape type (comma-separated).
+    For web scrape type: the scraped URLs as a JSON-encoded array string.
   </ResponseField>
 
   <ResponseField name="data.base_url" type="string">
     Base URL for web scrape type.
+  </ResponseField>
+
+  <ResponseField name="data.metadata" type="object">
+    Source metadata recorded during ingestion. May be `null`.
+  </ResponseField>
+
+  <ResponseField name="data.current_version_id" type="string">
+    ID of the content version currently served.
+  </ResponseField>
+
+  <ResponseField name="data.chunk_count" type="number">
+    Number of indexed chunks. `null` until processing completes.
+  </ResponseField>
+
+  <ResponseField name="data.sync_enabled" type="boolean">
+    Whether scheduled re-sync is enabled (web scrape and integration sources).
+  </ResponseField>
+
+  <ResponseField name="data.last_sync_at" type="string">
+    ISO timestamp of the last sync, or `null`.
+  </ResponseField>
+
+  <ResponseField name="data.persona_id" type="string">
+    Set on persona-owned knowledge bases. Always `null` for knowledge bases you created.
+  </ResponseField>
+
+  <ResponseField name="data.ranking_config" type="object">
+    Per-source retrieval configuration, or `null` for default hybrid retrieval.
   </ResponseField>
 
   <ResponseField name="data.created_at" type="string">
@@ -61,6 +89,22 @@ Returns detailed information about a specific knowledge base, including its curr
 
   <ResponseField name="data.error_message" type="string">
     Error message if status is `"FAILED"`.
+  </ResponseField>
+
+  <ResponseField name="data.current_version" type="object">
+    Summary of the current version: `id`, `source_file_id`, `markdown_file_id`, `source_urls`, `created_at`.
+  </ResponseField>
+
+  <ResponseField name="data.processing" type="object">
+    Live conversion progress, present only while `status` is `"PROCESSING"`: `state`, `attempts`, `max_attempts`, `pages_done`, `total_pages`, `percent`, `eta_seconds`, `last_error`.
+  </ResponseField>
+
+  <ResponseField name="data.query_count_30d" type="number">
+    Queries against this knowledge base in the last 30 days. Companion counters: `gap_count_30d`, `covered_count_30d`, `coverage_pct_30d`, `updated_coverage_pct_30d`, `seen_in_playground`, `seen_in_api`.
+  </ResponseField>
+
+  <ResponseField name="data.kb_item_scopes" type="object">
+    Personas and pathway nodes that reference this knowledge base. Omitted when unavailable.
   </ResponseField>
 
   <ResponseField name="data.file" type="object">
@@ -87,7 +131,7 @@ Returns detailed information about a specific knowledge base, including its curr
 <RequestExample>
 
 ```bash cURL
-curl -X GET https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
+curl -X GET https://api.bland.ai/v1/knowledge/3f1c2a9e-7b4d-4c1e-9a2b-1d5e6f7a8b9c \
   -H "authorization: YOUR_API_KEY"
 ```
 
@@ -98,18 +142,44 @@ curl -X GET https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
 ```json Success Response
 {
   "data": {
-    "id": "kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T",
+    "id": "3f1c2a9e-7b4d-4c1e-9a2b-1d5e6f7a8b9c",
     "name": "Company FAQs",
     "description": "Frequently asked questions and policies",
     "status": "COMPLETED",
     "type": "FILE",
+    "source_urls": null,
+    "base_url": null,
+    "metadata": null,
+    "current_version_id": "8c7d6e5f-4a3b-4c2d-9e1f-0a1b2c3d4e5f",
     "created_at": "2025-01-15T10:30:00Z",
     "updated_at": "2025-01-15T10:32:00Z",
+    "error_message": null,
+    "chunk_count": 42,
+    "sync_enabled": false,
+    "last_sync_at": null,
+    "persona_id": null,
+    "ranking_config": null,
     "file": {
       "file_name": "company_faqs.pdf",
       "file_size": 2048576,
       "file_type": "application/pdf"
-    }
+    },
+    "current_version": {
+      "id": "8c7d6e5f-4a3b-4c2d-9e1f-0a1b2c3d4e5f",
+      "source_file_id": "0d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a",
+      "markdown_file_id": "1e2f3a4b-5c6d-4e7f-9a0b-1c2d3e4f5a6b",
+      "source_urls": null,
+      "created_at": "2025-01-15T10:30:00Z"
+    },
+    "kb_item_scopes": { "personas": [], "pathway_nodes": [] },
+    "query_count_30d": 128,
+    "gap_count_30d": 3,
+    "covered_count_30d": 125,
+    "coverage_pct_30d": 0.9765625,
+    "updated_coverage_pct_30d": 0.984375,
+    "seen_in_playground": true,
+    "seen_in_api": true,
+    "kb_service_capabilities": { "anchor_retrieval": true }
   },
   "errors": null
 }
@@ -121,7 +191,7 @@ curl -X GET https://api.bland.ai/v1/knowledge/kb_01H8X9QK5R2N7P3M6Z8W4Y1V5T \
   "errors": [
     {
       "error": "KB_ERROR",
-      "message": "KB not found or access denied"
+      "message": "KB not found"
     }
   ]
 }

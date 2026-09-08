@@ -1,11 +1,17 @@
 ---
 title: 'Upload Media'
-api: 'POST  https://api.bland.ai/v1/knowledgebases/upload-media'
+api: 'POST https://api.bland.ai/v1/knowledgebases/upload-media'
 description: 'Upload a media file as a new knowledge base'
 contentType: 'multipart/form-data'
 ---
 
+<Warning>
+This endpoint belongs to the legacy Vector Knowledge Bases API. It is maintained for existing customers only. Use the current [Knowledge Bases API](/api-v1/post/knowledge-learn-file) for new work.
+</Warning>
+
 Upload media files along with optional metadata like name and description.
+
+This route proxies to the legacy knowledge base service. Any upstream failure returns a 500 with `errors[].error` set to `KB_UPLOAD_MEDIA_FAILURE`.
 
 ### Headers
 
@@ -13,10 +19,14 @@ Upload media files along with optional metadata like name and description.
   Your API key for authentication.
 </ParamField>
 
+<ParamField header="x-bland-hash-key" type="string">
+  Optional unique key forwarded to the knowledge base service with the upload.
+</ParamField>
+
 ### Body
 
 <ParamField body="file" type="file" required>
-  The media file to be uploaded. Must be an .mp3 or .mp4 file. 
+  The media file to be uploaded, such as an .mp3 or .mp4 file. Maximum size is 20 MB (413 `FILE_TOO_LARGE` when exceeded).
 </ParamField>
 
 <ParamField body="name" type="string">
@@ -26,6 +36,33 @@ Upload media files along with optional metadata like name and description.
 <ParamField body="description" type="string">
   Description for the uploaded media file
 </ParamField>
+
+### Rate limits
+
+Uploads are limited to 3 requests per 10 seconds per organization. Requests over the limit return a 429.
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.vector_id" type="string">
+    The unique identifier for the knowledge base. Will start with "KB-".
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "vector_id": "KB-55e64dae-1585-4632-ae97-c909c288c6bc"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

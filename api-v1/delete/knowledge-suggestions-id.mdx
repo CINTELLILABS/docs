@@ -1,0 +1,89 @@
+---
+title: "Delete Suggestion"
+api: "DELETE https://api.bland.ai/v1/knowledge/suggestions/{suggestion_id}"
+description: "Permanently removes a suggestion from a knowledge base and its search index."
+---
+
+Deletes a question and answer pair. The entry is removed from the search index first, then from the database, so a failed request never leaves a ghost result behind.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. When the key belongs to an organization, the calling member must have the `owner` or `admin` role.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="suggestion_id" type="string" required>
+  The suggestion ID. Must be a UUID.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.success" type="boolean">
+    `true` when the suggestion was deleted.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    `"Suggestion deleted successfully"`
+  </ResponseField>
+
+  <ResponseField name="data.suggestion_id" type="string">
+    The deleted suggestion ID.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | Code | Message |
+|---|---|---|
+| 400 | `KB_ERROR` | `QA pair ID must be a valid UUID` |
+| 403 | `KB_ERROR` | `You do not have permission to delete QA pairs` |
+| 404 | `KB_ERROR` | `QA pair not found or access denied` |
+| 503 | `KB_ERROR` | `Failed to remove suggestion from search index. Please try again.` |
+| 500 | `SUGGESTION_DELETE_ERROR` | `Failed to delete suggestion` |
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.bland.ai/v1/knowledge/suggestions/5b8d2f1a-7c3e-4a9b-8d6f-1e2a3b4c5d6e \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "message": "Suggestion deleted successfully",
+    "suggestion_id": "5b8d2f1a-7c3e-4a9b-8d6f-1e2a3b4c5d6e"
+  },
+  "errors": null
+}
+```
+
+```json Forbidden Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "You do not have permission to delete QA pairs"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

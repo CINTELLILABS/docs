@@ -1,8 +1,12 @@
 ---
-title: "Create a Knowledge Base" 
+title: "Create a Knowledge Base"
 api: "POST https://api.bland.ai/v1/knowledgebases"
 description: "Create a new knowledge base."
 ---
+
+<Warning>
+This endpoint belongs to the legacy Vector Knowledge Bases API. It is maintained for existing customers only. Use the current [Knowledge Bases API](/api-v1/post/knowledge-learn-text) for new work.
+</Warning>
 
 Usage: Pass the `vector_id` into your agent's `tools` to enable the agent to use the vector store.
 ```json
@@ -10,6 +14,8 @@ Usage: Pass the `vector_id` into your agent's `tools` to enable the agent to use
     "KB-55e64dae-1585-4632-ae97-c909c288c6bc"
 ]
 ```
+
+This route proxies to the legacy knowledge base service. Any upstream failure returns a 500 with `errors[].error` set to `KB_CREATE_EMBEDDING_FAILURE`.
 
 ### Headers
 
@@ -35,16 +41,25 @@ Usage: Pass the `vector_id` into your agent's `tools` to enable the agent to use
 
 ### Response
 
-<ResponseField name="vector_id" type="string">
-  The unique identifier for the knowledge base.
+<ResponseField name="data" type="object">
+  <ResponseField name="data.vector_id" type="string">
+    The unique identifier for the knowledge base.
 
-  Will start with "KB-".
+    Will start with "KB-".
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success.
 </ResponseField>
 
 <ResponseExample>
-```json
+```json Response
 {
-  "vector_id": "KB-55e64dae-1585-4632-ae97-c909c288c6bc"
+  "data": {
+    "vector_id": "KB-55e64dae-1585-4632-ae97-c909c288c6bc"
+  },
+  "errors": null
 }
 ```
 </ResponseExample>

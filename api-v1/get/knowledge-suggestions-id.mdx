@@ -1,0 +1,115 @@
+---
+title: "Get Suggestion"
+api: "GET https://api.bland.ai/v1/knowledge/suggestions/{suggestion_id}"
+description: "Retrieves a single knowledge base suggestion by ID."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="suggestion_id" type="string" required>
+  The suggestion ID, from [List Suggestions](/api-v1/get/knowledge-id-suggestions) or [Create Suggestion](/api-v1/post/knowledge-improve).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.id" type="string">
+    Suggestion ID.
+  </ResponseField>
+
+  <ResponseField name="data.knowledge_base_id" type="string">
+    The knowledge base the suggestion belongs to.
+  </ResponseField>
+
+  <ResponseField name="data.question" type="string">
+    The question.
+  </ResponseField>
+
+  <ResponseField name="data.answer" type="string">
+    The answer.
+  </ResponseField>
+
+  <ResponseField name="data.created_at" type="string">
+    ISO timestamp of creation.
+  </ResponseField>
+
+  <ResponseField name="data.updated_at" type="string">
+    ISO timestamp of last update.
+  </ResponseField>
+
+  <ResponseField name="data.kb" type="object">
+    The parent knowledge base.
+
+    <ResponseField name="data.kb.id" type="string">
+      Knowledge base ID.
+    </ResponseField>
+
+    <ResponseField name="data.kb.name" type="string">
+      Knowledge base name.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | Code | Message |
+|---|---|---|
+| 404 | `KB_ERROR` | `Suggestion not found` |
+| 500 | `SUGGESTION_GET_ERROR` | `Failed to fetch suggestion` |
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.bland.ai/v1/knowledge/suggestions/5b8d2f1a-7c3e-4a9b-8d6f-1e2a3b4c5d6e \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "id": "5b8d2f1a-7c3e-4a9b-8d6f-1e2a3b4c5d6e",
+    "knowledge_base_id": "6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c",
+    "question": "What is the warranty period for your products?",
+    "answer": "All our products come with a 2-year manufacturer warranty.",
+    "created_at": "2025-01-15T16:30:00.000Z",
+    "updated_at": "2025-01-15T16:30:00.000Z",
+    "kb": {
+      "id": "6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c",
+      "name": "Company FAQs"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Suggestion not found"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

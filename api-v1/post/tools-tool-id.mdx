@@ -4,6 +4,14 @@ api: "POST https://api.bland.ai/v1/tools/{tool_id}"
 description: "Change your Custom Tool's parameters and characteristics."
 ---
 
+<Note>
+Custom Tools v1 is a legacy API maintained for existing customers. Built-in integration tools are updated with the [v2 Tools API](/api-v2/post/tools-tool-id). Custom HTTP tools that call your own URL are still managed through this v1 endpoint: the v2 update endpoint rejects them with `INVALID_TOOL_TYPE`.
+</Note>
+
+<Warning>
+This is a full replace, not a partial update. The body you send becomes the tool's entire definition. Any field you omit is removed, and `staging_tool` is reset to `null` unless you send it again. Fetch the current definition with [Custom Tool Details](/api-v1/get/tools-tool-id) and send the complete object.
+</Warning>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -12,7 +20,7 @@ description: "Change your Custom Tool's parameters and characteristics."
 
 ### Path Parameters
 <ParamField path="tool_id" type="string" required>
-    The ID of the Custom Tool you want to update.
+    The ID of the Custom Tool you want to update, with or without the `TL-` prefix. Tools owned by another organization return 404 `TOOL_NOT_FOUND`.
 </ParamField>
 
 ### Body
@@ -38,7 +46,7 @@ description: "Change your Custom Tool's parameters and characteristics."
     - `dial`
     - `hang`
     
-    Choosing too similar of names to the default tools could cause the AI to select the wrong one, so decriptive two to three-word names are preferred.
+    Choosing too similar of names to the default tools could cause the AI to select the wrong one, so descriptive two to three-word names are preferred.
 </ParamField>
 
 <ParamField body="description" type="string" required>
@@ -299,34 +307,55 @@ description: "Change your Custom Tool's parameters and characteristics."
     To always wait for a response, set the timeout to an extremely high value like 99999999.
 </ParamField>
 
+<ParamField body="staging_tool" type="object">
+    A draft version of the tool definition. Omitting it clears any existing draft.
+</ParamField>
+
+<Note>
+Apart from the custom-code `timeout` range, the body is stored as sent. The required flags, the `https://` rule, the `GET`/`POST` list, and the reserved words above are not validated. Keys such as `public` or `agent_id` are saved inside the tool definition on update and do not change the tool's visibility or agent attribution.
+</Note>
+
 ### Response
+
 <ResponseField name="status" type="string">
-    Whether the tool creation succeeded.
+    `"success"` when the tool was updated.
 </ResponseField>
 
 <ResponseField name="tool_id" type="string">
-    A tool id that you can use to reference the tool in the future.
+    The `tool_id` you passed in the path.
+</ResponseField>
 
-    In a Send Call request, you could pass this tool id in instead of the full Custom Tool object like so:
+<ResponseField name="data" type="null">
+    Always `null` on this endpoint.
+</ResponseField>
 
-    ```json
-    {
-        "tools": [
-            "TL-1234567890" // tool_id (instead of the full Custom Tool object)
-        ]
-    }
-    ```
+<ResponseField name="errors" type="null">
+    `null` on success. On failure, an array of `{ error, message }` objects.
 </ResponseField>
 
 <ResponseExample>
-```json
+```json Success
 {
     "status": "success",
-    "tool_id": "TL-1234567890"
+    "tool_id": "TL-5da8347d-0ab7-415d-b156-a7fc5c6074dc",
+    "data": null,
+    "errors": null
+}
+```
+
+```json Not found (404)
+{
+    "data": null,
+    "errors": [
+        {
+            "error": "TOOL_NOT_FOUND",
+            "message": "Tool not found"
+        }
+    ],
+    "error": "Tool not found"
 }
 ```
 </ResponseExample>
-    
 ---
 
 Docs for agents: [llms.txt](/llms.txt)

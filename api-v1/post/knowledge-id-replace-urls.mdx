@@ -1,0 +1,116 @@
+---
+title: "Replace Knowledge Base URLs"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/replace_urls"
+description: "Replaces the URL list of a web scrape knowledge base and re-scrapes it as a new version."
+---
+
+Replace the full URL list of a `WEB_SCRAPE` knowledge base. The new list becomes a new version, the status moves to `PROCESSING`, and re-scraping plus re-embedding start in the background. The list is not merged: URLs you omit are dropped.
+
+<Note>
+  Only `WEB_SCRAPE` knowledge bases accept this endpoint. For `FILE` knowledge bases use [Replace Knowledge Base File](/api-v1/post/knowledge-id-replace).
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The web scrape knowledge base to update.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="urls" type="string[]" required>
+  The complete list of URLs to scrape. Must be non-empty and every entry must be an absolute URL. Maximum 100 URLs, or 2000 for enterprise organizations.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <ResponseField name="data.success" type="boolean">
+    `true` when the new version was created and scraping was requested.
+  </ResponseField>
+
+  <ResponseField name="data.version_id" type="string">
+    ID of the new version. It is already the current version.
+  </ResponseField>
+
+  <ResponseField name="data.urls_count" type="number">
+    Number of URLs in the new version.
+  </ResponseField>
+
+  <ResponseField name="data.message" type="string">
+    `"URLs replaced successfully. Re-scraping and re-embedding in progress."`
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Will be `null` on success.
+</ResponseField>
+
+### Errors
+
+| Status | Code | Message |
+|---|---|---|
+| 400 | `KB_ERROR` | `urls must be a non-empty array` |
+| 400 | `KB_ERROR` | `Maximum 100 URLs allowed` (2000 for enterprise) |
+| 400 | `KB_ERROR` | `Invalid URL: <value>` |
+| 404 | `KB_ERROR` | `Knowledge base not found or not a web scraping type` |
+| 409 | `KB_ERROR` | `Source is still indexing. Wait until it completes.` |
+| 500 | `REPLACE_URLS_ERROR` | `Failed to replace URLs` |
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/knowledge/6f1c2a0e-3b8d-4f9a-9c21-0d4e5f6a7b8c/replace_urls \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "urls": [
+      "https://example.com/pricing",
+      "https://example.com/faq"
+    ]
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success Response
+{
+  "data": {
+    "success": true,
+    "version_id": "a3d1e5f7-9b2c-4d6e-8f01-23456789abcd",
+    "urls_count": 2,
+    "message": "URLs replaced successfully. Re-scraping and re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json Error Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "KB_ERROR",
+      "message": "Knowledge base not found or not a web scraping type"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

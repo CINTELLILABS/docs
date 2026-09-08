@@ -4,20 +4,68 @@ api: "GET https://api.bland.ai/v1/tools"
 description: "Retrieve Custom Tools you've created."
 ---
 
+<Note>
+Custom Tools v1 is a legacy API maintained for existing customers. Built-in integration tools are listed with the [v2 Tools API](/api-v2/get/tools). Custom HTTP tools that call your own URL are still created and listed through v1.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
 
+### Query Parameters
+
+Unknown query parameters return 400 `INVALID_PARAMETER`.
+
+<ParamField query="limit" type="integer" default="50">
+  Number of tools to return, from 1 to 1000.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Cursor for the next page. Pass the `nextCursor` value from the previous response. Must be a UUID.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Filter by tool name, description, or label. Matching results are re-ranked by relevance (exact name match first).
+</ParamField>
+
+<ParamField query="agent_id" type="string">
+  Return only tools attributed to this web agent (UUID). Omit for the organization-wide list.
+</ParamField>
+
+<ParamField query="orderBy" type="string" default="created_at">
+  Sort field. `created_at` is the only accepted value.
+</ParamField>
+
+<ParamField query="orderDirection" type="string" default="desc">
+  `asc` or `desc`.
+</ParamField>
+
 ### Response
 
 <ResponseField name="status" type="string">
-    Whether the requet succeeded or failed.
+    Whether the request succeeded or failed.
 </ResponseField>
 
 <ResponseField name="tools" type="array">
-    An array of your available tools.
+    An array of your available tools. Each row has `tool_id` (prefixed `TL-`), `label`, `tool` (the definition object), `public`, `user_id`, `resource_id`, `is_active`, `is_draft`, `staging_tool`, `agent_id`, and `created_at`.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string">
+    Cursor for the next page, or `null` when there are no more results.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+    Whether more tools exist beyond this page.
+</ResponseField>
+
+<ResponseField name="data" type="null">
+    Always `null` on this endpoint.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+    `null` on success.
 </ResponseField>
 
 <ResponseExample>
@@ -57,14 +105,23 @@ description: "Retrieve Custom Tools you've created."
                     "confirmation_message": "$.message"
                 }
             },
-            "public": false
-        },
-        ...
-    ]
+            "public": false,
+            "user_id": "8a1f0c2e-3b4d-4e5f-9a6b-7c8d9e0f1a2b",
+            "resource_id": null,
+            "is_active": true,
+            "is_draft": false,
+            "staging_tool": null,
+            "agent_id": null,
+            "created_at": "2024-03-16T18:22:10.000Z"
+        }
+    ],
+    "nextCursor": null,
+    "hasMore": false,
+    "data": null,
+    "errors": null
 }
 ```
 </ResponseExample>
-
 
 ---
 
