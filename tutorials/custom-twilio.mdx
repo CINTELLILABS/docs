@@ -5,7 +5,7 @@ description: "Connect Bland to your own Twilio account"
 
 ## Overview
 
-Users can connect their own Twilio account to Bland, easily bring over your existing phone numbers to use within the platform.
+Connect your own Twilio account to Bland and bring over your existing phone numbers to use within the platform. You can connect an account, import its numbers, monitor each imported number's connection status, and remove imported numbers from the **Phone numbers** page in the [Bland Dashboard](https://app.bland.ai/dashboard/phone-numbers).
 
 Pre-requisites:
 
@@ -17,10 +17,11 @@ Pre-requisites:
 2. Copy your Account SID (starts with "AC", 34 characters) and Auth Token (32 characters).
 3. Make sure the phone number(s) you want to use are active in that Twilio account.
 
-### Step 2: Generate an Encrypted Key in Bland
+### Step 2: Connect your Twilio account
 
-1. In the [Bland Dashboard](https://app.bland.ai/dashboard), go to Add-ons → BYOT and generate a new key using your Twilio Account SID and Auth Token.
-2. Save the`encrypted_key`immediately as it is only shown once. If you lose it, you'll need to generate a new one.
+1. In the [Bland Dashboard](https://app.bland.ai/dashboard/phone-numbers), go to **Phone numbers** and select **Connect Twilio**.
+2. Enter your Twilio Account SID and Auth Token, then connect the account.
+3. Bland generates an `encrypted_key` for the account. Copy and save it immediately. It is only shown once. If you lose it, you'll need to generate a new one.
 
 ### Step 3: Import your Twilio numbers
 
@@ -28,17 +29,18 @@ You can import your Twilio numbers in two different ways: through the dashboard 
 
 **UI**
 
-1. After the key is generated, your Twilio numbers will appear under **Add-ons → BYOT.**
-2. Select the number (s) you want to import and complete the import.
+1. After connecting your account, select **Import numbers** in the drawer. You can also reopen the import view later from **Connect Twilio**.
+2. If you have connected more than one Twilio account, pick the account you want to import from.
+3. Search for and select the number(s) you want to import, then select **Import numbers**. Numbers that are already imported are marked **Imported** and can't be selected again.
 
 **API**
 
-You can also generate your`encrypted_key`directly via API using the [Create Encrypted Key endpoint](https://docs.bland.ai/api-v1/post/accounts):
+You can also generate your `encrypted_key` directly via API using the [Create Encrypted Key endpoint](/api-v1/post/accounts):
 
 Required body params:
 
 - `account_sid` - Your Twilio Account SID
-- `auth token`- Your Twilio Auth Token
+- `auth token` - Your Twilio Auth Token
 
 Required header:
 
@@ -60,11 +62,20 @@ curl --request POST \
 
 **Note:**
 
-To disable an`encrypted_key`, use the [Delete Encrypted Key](https://docs.bland.ai/api-v1/post/accounts-delete) endpoint.
+To disable an `encrypted_key`, use the [Delete Encrypted Key](/api-v1/post/accounts-delete) endpoint.
 
-### **Step 4: Use your imported number**
+### Step 4: Manage your imported numbers
 
-For outbound calls, include`encrypted_key`in the header (in addition to the `Authorization` header) of your [send call API requests](https://docs.bland.ai/api-v1/post/calls#param-encrypted-key), and set to your imported Twilio number (s) as the `from` number.
+Imported numbers appear in the table on the **Phone numbers** page alongside numbers purchased from Bland:
+
+- The **Source** column shows **Your Twilio** for imported numbers.
+- The **Status** column shows each imported number's live connection status. **Active** means the number is still connected to Bland through your Twilio account. **Configuration error** means the connection is broken, for example because the number was released or reconfigured in Twilio.
+
+To remove an imported number, select the trash icon on its row and confirm. Removing a number deletes its Bland configuration, which cannot be recovered. The number itself stays in your Twilio account.
+
+### Step 5: Use your imported number
+
+For outbound calls, include `encrypted_key` in the header (in addition to the `Authorization` header) of your [send call API requests](/api-v1/post/calls#param-encrypted-key), and set to your imported Twilio number (s) as the `from` number.
 
 For example:
 
@@ -77,10 +88,10 @@ curl --location 'https://api.bland.ai/v1/calls' \
   "from": "+1234567890",
   "phone_number": "+10987654321",
   "task": "Ask the user how their day is going"
-}
+}'
 ```
 
-If`encrypted_key`is included but`from` is omitted, Bland will automatically select one of the imported numbers from that Twilio account, if one exists.
+If `encrypted_key` is included but `from` is omitted, Bland will automatically select one of the imported numbers from that Twilio account, if one exists.
 
 ## **Geo-Permissions**
 
@@ -90,6 +101,6 @@ International calling permissions for imported numbers are inherited from the Tw
 
 **Note:**
 
-Any future updates to imported BYOT numbers **MUST** include the`encrypted_key`, or the request may fail.
+Any future updates to imported BYOT numbers **MUST** include the `encrypted_key`, or the request may fail.
 
 Docs for agents: [llms.txt](/llms.txt)
