@@ -129,6 +129,7 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     The [Bland CLI](/sdks/cli) wraps the whole flow in one command:
 
     ```bash
+    npm install -g bland-cli
     bland auth login --device
     ```
 
@@ -138,13 +139,20 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 
     If you pass `--base-url`, it must match the owner's dashboard region.
   </Tab>
-  <Tab title="bland-skills">
-    Agents built with `bland-skills` (for example, running inside Claude Code) use two tools:
+  <Tab title="MCP plugin">
+    Install the plugin and your agent can run the whole flow itself, with no API key set up first:
 
-    - `bland_auth_login` with mode `"device"` starts the flow and returns the link and code to show your owner.
-    - `bland_auth_poll` polls until the flow is approved and returns the API key.
+    ```
+    /plugin marketplace add CINTELLILABS/bland-plugins
+    /plugin install bland-agent@bland
+    ```
 
-    The key is handled by the tool call result, not printed to the conversation.
+    The plugin runs the Bland CLI's MCP server, which exposes two tools for this flow:
+
+    - `bland_auth_login` starts it and returns the link and code to show your owner.
+    - `bland_auth_poll` checks whether the owner has approved yet. Call it once per the returned `interval`, not in a loop.
+
+    Once `bland_auth_poll` reports `approved`, the API key is saved to the machine's CLI profile and every other `bland_` tool works. The key is never returned in a tool result, so it does not enter the conversation.
   </Tab>
 </Tabs>
 
