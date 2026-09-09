@@ -1,0 +1,154 @@
+---
+title: "Agent quickstart"
+description: "Place a call, learn how it ended, and read the transcript: the call lifecycle an autonomous agent needs, in three requests."
+---
+
+## Overview
+
+A voice call is asynchronous. You dispatch it, it runs for a minute or two without you, and then there is an outcome to collect. This page is the shortest complete path through that lifecycle: place a call, learn how it ended, read what was said.
+
+Authentication is a separate story. If your agent already has an API key, you are ready. If it does not have one and there is no human around to paste one in, see [Connect your AI agent](/platform/connect-your-agent) first.
+
+<Note>
+Send your key as `Authorization: Bearer YOUR_API_KEY`. A bare `Authorization: YOUR_API_KEY` with no prefix is also accepted. `x-api-key` is not read and does not authenticate.
+</Note>
+
+## Prerequisites
+
+- A Bland API key, exported as `BLAND_API_KEY`.
+- A phone number to call, in [E.164](https://en.wikipedia.org/wiki/E.164) format (`+15551234567`).
+- Optionally, a URL Bland can reach, if you want the outcome pushed to you instead of polling for it.
+
+## The lifecycle
+
+<Steps>
+  <Step title="Place the call">
+    `POST /v1/calls` dispatches the call and returns immediately with a `call_id`. It does not wait for the call to finish.
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/calls \
+      -H "Authorization: Bearer $BLAND_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "phone_number": "+15551234567",
+        "task": "Call Rossi Hardware and ask whether they carry 10mm hex keys. Thank them and end the call.",
+        "voice": "maya",
+        "max_duration": 5,
+        "keywords": ["Rossi Hardware"]
+      }'
+    ```
+
+    ```json Response
+    {
+      "status": "success",
+      "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1"
+    }
+    ```
+
+    `max_duration` (in minutes) bounds how long you can be waiting. Set it deliberately: it is the upper bound on your own wait loop.
+  </Step>
+
+  <Step title="Learn how it ended">
+    Two ways, and you should pick one on purpose rather than defaulting to the second.
+
+    **Push.** Add a `webhook` to the request body. When the call ends, Bland POSTs the full call object to that URL, transcript included. Nothing to poll.
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/calls \
+      -H "Authorization: Bearer $BLAND_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "phone_number": "+15551234567",
+        "task": "Ask whether they carry 10mm hex keys.",
+        "webhook": "https://your-agent.example.com/bland-webhook",
+        "webhook_events": ["call"]
+      }'
+    ```
+
+    `webhook` alone gives you the post-call payload. `webhook_events` is optional on top of it, and streams progress *during* the call (`call` covers connected, transferred, and ended). See [Post call webhooks](/tutorials/post-call-webhooks) for the payload shape and [Webhook signing](/tutorials/webhook-signing) for verifying it is really us.
+
+    **Poll.** If you have no URL Bland can reach, `GET /v1/calls/{call_id}` returns the current state of the call.
+
+    ```bash
+    curl https://api.bland.ai/v1/calls/$CALL_ID \
+      -H "Authorization: Bearer $BLAND_API_KEY"
+    ```
+
+    Poll on a fixed interval (5 seconds is plenty) and stop when `completed` is `true`. Do not tighten the loop hoping to finish sooner: the call takes as long as the call takes.
+
+    The fields that tell you what happened:
+
+    | Field | What it tells you |
+    | --- | --- |
+    | `completed` | `true` once the call is over. This is your loop's exit condition. |
+    | `status` | `completed`, `failed`, `busy`, `no-answer`, `canceled`, or `unknown`. |
+    | `answered_by` | `human`, `voicemail`, `unknown`, or `no-answer`. A completed call that reached voicemail is still `status: completed`. |
+    | `error_message` | Populated when `status` is `failed`. Read it before retrying. |
+    | `call_ended_by` | `ASSISTANT` or `USER`. |
+
+    <Warning>
+    A completed call is not automatically a successful one. Check `answered_by` and `error_message` too: a call that went to voicemail, or that a carrier blocked as spam, still comes back `completed`.
+    </Warning>
+  </Step>
+
+  <Step title="Read the transcript">
+    Same endpoint, once `completed` is `true`. If you took the push path, this payload already arrived at your webhook and you can skip the request entirely.
+
+    ```bash
+    curl https://api.bland.ai/v1/calls/$CALL_ID \
+      -H "Authorization: Bearer $BLAND_API_KEY" | jq '{
+        summary,
+        concatenated_transcript,
+        answered_by,
+        call_length
+      }'
+    ```
+
+    - `concatenated_transcript` is the whole conversation as one string. Use it when you are going to feed the call to a model.
+    - `transcripts` is the same content as an array of turns, each with `text`, `user` (`user`, `assistant`, `robot`, or `agent-action`), and `created_at`. Use it when you need turn boundaries or timing.
+    - `summary` is a short model-written recap generated when the call ends.
+    - `recording_url` is present only if you passed `record: true`.
+
+    Post-call fields can take up to a minute after hangup to settle while the audio is processed, so a transcript that looks short immediately after `completed` flips may still be filling in.
+  </Step>
+</Steps>
+
+## Push or poll?
+
+<CardGroup cols={2}>
+  <Card title="Poll" icon="arrows-rotate">
+    You are a hosted agent with no inbound URL: a chat assistant, a sandboxed runtime, a laptop behind NAT. There is nowhere for Bland to deliver to, so `GET /v1/calls/{call_id}` on an interval is the right answer, not a workaround.
+  </Card>
+  <Card title="Subscribe" icon="webhook">
+    You have any reachable URL: a server, a serverless function, a tunnel. Set `webhook` and stop polling. You get the outcome the moment it exists instead of one poll interval later, and the payload already contains the transcript.
+  </Card>
+</CardGroup>
+
+Developing locally is the case that looks like it needs polling but does not. The [Bland CLI](/sdks/cli) forwards webhooks to a local port, so you can take the push path from your laptop with no tunnel to set up:
+
+```bash
+bland listen --forward-to http://localhost:3000/webhook
+```
+
+Point the call's `webhook` at the URL the forwarder prints, and your local handler receives the real post-call payload.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Call recipes for agents" icon="book" href="/platform/agent-call-recipes">
+    Voicemail, proper nouns, and escalating to a human.
+  </Card>
+  <Card title="Connect your AI agent" icon="key" href="/platform/connect-your-agent">
+    How a bot gets its own API key and phone number.
+  </Card>
+  <Card title="Send Call API reference" icon="code" href="/api-v1/post/calls">
+    Every parameter `POST /v1/calls` accepts.
+  </Card>
+  <Card title="Bland MCP Server" icon="plug" href="/integrations/mcp/overview">
+    The same operations as MCP tools, with nothing to install.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
