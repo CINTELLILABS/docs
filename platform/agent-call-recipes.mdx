@@ -53,6 +53,8 @@ Configure it with the `voicemail` object.
   <Tab title="Push through an IVR">
     `ignore` tells the agent to carry on as if nothing was detected. Use it when the "answering machine" is really a phone tree you intend to navigate, and do not pair it with a message.
 
+    If the callee is a phone menu rather than a person, prefer [`ivr_mode`](/api-v1/post/calls#param-ivr-mode): it sets this for you and also stops the agent responding on the conversational timing it uses with a human.
+
     ```json
     {
       "phone_number": "+15551234567",
@@ -71,12 +73,12 @@ Bland derives the effective action from the whole request, not from `action` alo
 
 | What you send | What actually runs |
 | --- | --- |
-| `amd: true`, with any `action` | `ignore`. Answering machine detection overrides the voicemail action entirely. |
+| `ivr_mode: true`, with any `action` | `ignore`. A phone menu has no voicemail, so IVR mode suppresses voicemail handling entirely. The legacy `amd` alias sets the same switch. |
 | A `message`, plus an `sms` config | `leave_message_and_sms` |
 | A `message`, with no `sms` config | `leave_message` |
-| No `message` and no `amd` | The `action` you passed |
+| No `message` and no `ivr_mode` | The `action` you passed |
 
-The practical rule: **supplying a message implies leaving one, and `amd` overrides the action entirely.** So `{"action": "hangup", "message": "..."}` leaves the message rather than hanging up, and `{"action": "ignore", "message": "..."}` abandons your IVR pushthrough. If you want `hangup` or `ignore`, send no message alongside it.
+The practical rule: **supplying a message implies leaving one, and `ivr_mode` overrides the action entirely.** So `{"action": "hangup", "message": "..."}` leaves the message rather than hanging up, and `{"action": "ignore", "message": "..."}` abandons your IVR pushthrough. If you want `hangup` or `ignore`, send no message alongside it.
 
 ### Retrying instead of leaving a message
 
