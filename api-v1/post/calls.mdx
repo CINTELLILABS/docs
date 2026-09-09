@@ -13,7 +13,9 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 ## Headers
 
 <ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+  Your API key for authentication. Send it as `Bearer YOUR_API_KEY`. A bare `Authorization: YOUR_API_KEY` with no prefix is also accepted, so older examples keep working. `x-api-key` is not read and does not authenticate.
+
+  Get a key from the [dashboard](https://app.bland.ai/dashboard/settings). An autonomous agent with no dashboard session can mint its own with [Connect your AI agent](/platform/connect-your-agent).
 </ParamField>
 
 <ParamField header="encrypted_key" type="string">
@@ -370,6 +372,18 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 ### Voicemail Parameters
 
+<ParamField body="ivr_mode" default="false" type="boolean">
+  Set to `true` when the number you are calling answers with a phone menu rather than a person.
+
+  IVR mode changes two things. The agent stops responding on the conversational timing it uses with a human, so it does not talk over a menu's prompts or fill its pauses. And voicemail handling is suppressed: the effective voicemail action becomes `"ignore"` no matter what you passed, because a phone tree has no voicemail to leave a message on.
+
+  Pair it with [`precall_dtmf_sequence`](/api-v1/post/calls#param-precall-dtmf-sequence) to play a fixed sequence of digits before the call starts, or leave the agent to navigate the menu from the `task`.
+
+  <Note>
+    `amd` is a legacy alias for this parameter. It sets the same switch, and passing `ivr_mode: true` sets `amd` for you. Prefer `ivr_mode`: the name says what it does.
+  </Note>
+</ParamField>
+
 <ParamField body="voicemail" type="object">
   Configuration for handling voicemails during outbound calls. This object controls how the AI behaves when it encounters a voicemail, including whether to leave a message, send an SMS notification, or detect voicemails more intelligently using AI.
 
@@ -382,18 +396,24 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   - `action` (enum): What the AI should do when it detects a voicemail. The default is `"hangup"`. Available options:
     - `"hangup"`: Immediately end the call without leaving a message.
     - `"leave_message"`: Play the `message` and then end the call.
+    - `"leave_message_and_sms"`: Play the `message`, end the call, and send the SMS configured in `sms`. Supply both `message` and `sms`: with no `sms` config this falls back to `leave_message`.
     - `"ignore"`: Continue the call as if no voicemail was detected (used for IVRs or special routing).
 
   <br />
 
   - `sms` (object): Optional. Configuration for sending an SMS notification when a voicemail is left. Contains:
-    - `to` (string): The phone number to send the SMS to (usually the same as the original callee).
-    - `from` (string): The phone number to send the SMS from (must be a number you own and have SMS permissions for).
-    - `message` (string): The body of the SMS message. Keep concise and clear.
+    - `message` (string): Required. The body of the SMS message. Keep concise and clear.
+    - `from` (string): Optional. The phone number to send the SMS from (must be a number you own and have SMS permissions for).
+
+    The destination is resolved by Bland rather than set on the request. There is no `to` field, and passing one has no effect.
 
   <br />
 
   - `sensitive` (boolean): When `true`, uses LLM-based analysis to detect frequent voicemails. The default is `false`.
+
+  <Note>
+    The effective action is derived from the whole request, not from `action` alone. Supplying a `message` implies leaving one, so `"action": "hangup"` sent alongside a `message` leaves the message. And [`ivr_mode`](/api-v1/post/calls#param-ivr-mode) forces `ignore` regardless of `action`, since a phone menu has no voicemail. See [Voicemail](/platform/agent-call-recipes#voicemail) for the full precedence.
+  </Note>
 
   Example:
 
@@ -403,7 +423,6 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
       "message": "Hi, just calling to follow up. Please call us back when you can.",
       "action": "leave_message",
       "sms": {
-        "to": "+18005550123",
         "from": "+18005550678",
         "message": "We just left you a voicemail. Call us back anytime!"
       },
@@ -486,7 +505,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
   Takes in the following parameters:
 
   - `wait` (integer): The delay in seconds before the call is retried.
-  - `voicemail_action` (enum): The action to take when the call goes to voicemail. Options: `hangup`, `leave_message`, `ignore`.
+  - `voicemail_action` (enum): The action to take when the call goes to voicemail. Options: `hangup`, `leave_message`, `leave_message_and_sms`, `ignore`.
   - `voicemail_message` (string): The message to leave when the call goes to voicemail.
 
   Example:
@@ -1131,7 +1150,7 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
     ```json
     {
       "status": "error",
-      "message": "Invalid voicemail action. Must be one of: hangup, leave_message, ignore"
+      "message": "Invalid voicemail action. Must be one of: hangup, leave_message, leave_message_and_sms, ignore"
     }
     ```
   </ResponseField>
