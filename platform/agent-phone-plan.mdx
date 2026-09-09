@@ -1,0 +1,91 @@
+---
+title: "Agent Phone Plan"
+description: "A $29.99/month plan built for autonomous agents and bots: one dedicated phone number, unlimited calling and texting in the US and Canada."
+---
+
+## Overview
+
+The Agent Phone Plan is a self-serve subscription for bots and autonomous agents that need their own phone number. For \$29.99/month, you get unlimited voice minutes and SMS to the US and Canada on a single dedicated number, no per-minute or per-message billing to track.
+
+It's built for one agent doing one thing at a time, not high-volume outbound campaigns. If your agent needs to run multiple calls in parallel or dial outside the US and Canada, use a [Build or Scale](/platform/billing#plan-tiers) plan instead.
+
+<Note>
+The Agent Phone Plan is a self-serve tier. It isn't available to Enterprise or custom-billed accounts.
+</Note>
+
+## What's included
+
+- **Unlimited voice minutes** to US and Canada destinations
+- **Unlimited SMS** to US and Canada destinations
+- **One US local number**, provisioned automatically when you subscribe
+
+## Limits
+
+"Unlimited" is bounded by fair use and a few hard caps so the plan stays priced for one agent's normal usage:
+
+| Limit | Value |
+| --- | --- |
+| Concurrent calls | 1, counted across your whole account, inbound and outbound |
+| Calls per hour | 20 |
+| Calls per day | 50 |
+| Call minutes per day | 1,000, inbound and outbound combined |
+| Max call length | 60 minutes, applied to outbound calls at dispatch |
+| Call, transfer, and SMS destinations | US and Canada only |
+
+A few things follow from that:
+
+- **Concurrency is account-wide.** The limit counts every call on your account, inbound or outbound, on any number, not just the agent number. While one call is live, a new inbound call hears a busy message and a new outbound dispatch is rejected with error code `CALL_RL_PLAN_CONCURRENCY` until the first call ends.
+- **Call minutes are capped per day.** Inbound and outbound minutes count together, and each call's minutes are added when it ends. When the day's total reaches 1,000, a new outbound dispatch is rejected with HTTP 429 and error code `CALL_RL_PLAN_DAILY_MINUTES`, and a new inbound call hears a busy message. The allowance resets at midnight UTC.
+- **Max call length applies at dispatch.** If you set `max_duration` above 60 minutes on an outbound call, it is clamped to 60 when the call is dispatched. Inbound calls keep the `max_duration` configured on the number. The plan does not change it.
+- **Destinations are limited.** Calls, transfers, and SMS to destinations outside the US and Canada are blocked on this plan.
+
+## Subscribe
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Steps>
+      <Step title="Open the billing page">
+        Go to [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) in your dashboard.
+      </Step>
+      <Step title="Choose Agent Phone Plan">
+        Select the Agent Phone Plan and confirm. Your card is charged \$29.99 immediately, there's no trial period.
+      </Step>
+      <Step title="Get your number">
+        A US local number is provisioned to your account automatically. You'll see it on the same page once activation completes.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Agent onboarding">
+    If a bot is setting up its own Bland account, it can subscribe as part of [agent onboarding](/platform/connect-your-agent): the owner signs up and subscribes once in the browser, and the bot receives an API key and phone number for an org that's already on the Agent Phone Plan. See [Connect your AI agent](/platform/connect-your-agent) for the full flow.
+  </Tab>
+</Tabs>
+
+## Cancel
+
+Cancel from the same [billing page](https://app.bland.ai/dashboard/pay?tab=plan). Canceling stops the \$29.99/month charge going forward.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What happens to my phone number if I cancel?">
+    Your number stays on your account. Canceling the Agent Phone Plan doesn't release the number.
+  </Accordion>
+  <Accordion title="Can I upgrade to Build or Scale?">
+    Yes. The Agent Phone Plan is scoped to a single agent number with light, predictable usage. If you need more concurrency, more numbers, or higher call volume, move to [Build or Scale](/platform/billing#plan-tiers).
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect your AI agent" icon="robot" href="/platform/connect-your-agent">
+    Let a bot sign itself up for the Agent Phone Plan and get an API key without a human pasting one in.
+  </Card>
+  <Card title="Billing & Plans" icon="credit-card" href="/platform/billing">
+    See how the Agent Phone Plan compares to Start, Build, and Scale.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
