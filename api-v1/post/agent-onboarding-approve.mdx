@@ -1,0 +1,164 @@
+---
+title: "Approve Agent Onboarding"
+api: "POST https://api.bland.ai/v1/agent/onboarding/approve"
+description: "Claim a device-authorization code after the owner signs up and subscribes in the browser. Called by the Bland dashboard, not by the bot."
+---
+
+### Overview
+
+This endpoint is called from the browser by the dashboard during the [agent onboarding](/platform/connect-your-agent) flow, after the owner signs up (or logs in) and subscribes to the [Agent Phone Plan](/platform/agent-phone-plan). It isn't called directly by the bot, the bot only ever sees its effect through `/v1/agent/onboarding/poll`.
+
+<Note>
+Requires an authenticated dashboard session for an org (not a personal account, and not an API key). The response never includes the `api_key`, only the bot's later `poll` call receives it.
+</Note>
+
+### Body Parameters
+
+<ParamField body="user_code" type="string" required>
+  The short code shown to the owner by `/v1/agent/onboarding/start`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Confirmation that the code was claimed for this org.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  `approved`.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  The org the code was claimed for.
+</ResponseField>
+
+<ResponseField name="data.phone_number" type="string">
+  The number provisioned for this org's Agent Phone Plan.
+</ResponseField>
+
+<ResponseField name="data.client_name" type="string">
+  The `client_name` the bot passed to `/start`, if any.
+</ResponseField>
+
+<ResponseField name="data.key_prefix" type="string">
+  The first 14 characters of the API key that will be issued to the bot, the same handle Settings > API Keys shows. Display only, never the key itself.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "status": "approved",
+    "org_id": "...",
+    "phone_number": "+15551234567",
+    "client_name": "my-bot",
+    "key_prefix": "org_3f9a1c7e2b"
+  },
+  "errors": null
+}
+```
+
+```json Invalid code (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_USER_CODE",
+      "message": "Enter the code your agent gave you."
+    }
+  ]
+}
+```
+
+```json Plan required (402)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PLAN_REQUIRED",
+      "message": "Start the Agent Phone Plan to connect your agent."
+    }
+  ]
+}
+```
+
+```json Number pending (409)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PLAN_NUMBER_PENDING",
+      "message": "Your number is still being set up. Try again in a moment."
+    }
+  ]
+}
+```
+
+```json Code not found (404)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CODE_NOT_FOUND",
+      "message": "That code is not valid. Ask your agent for a new one."
+    }
+  ]
+}
+```
+
+```json Code already used (409)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CODE_ALREADY_USED",
+      "message": "That code has already been used. Ask your agent for a new one."
+    }
+  ]
+}
+```
+
+```json Org context required (403)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ORG_CONTEXT_REQUIRED",
+      "message": "Switch to an organization to connect an agent."
+    }
+  ]
+}
+```
+
+```json Invalid origin (403)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_ORIGIN",
+      "message": "Approve this code from the Bland dashboard. This request did not come from it."
+    }
+  ]
+}
+```
+
+```json Too many requests (429)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many attempts. Wait a few minutes and try again."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
