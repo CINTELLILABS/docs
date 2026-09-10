@@ -163,6 +163,19 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
   </Tab>
 </Tabs>
 
+## Texting from the new number
+
+Outbound texts go through [`POST /v1/sms/send`](/api-v1/post/sms-send). Replies arrive at the same number and are answered automatically using the number's texting prompt, which starts out generic. Before starting a thread that has a goal, set the prompt for that goal with [Update SMS Configuration](/api-v1/post/sms-update):
+
+```bash
+curl -X POST https://api.bland.ai/v1/sms/number/update \
+  -H "authorization: $API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"phone_number": "+14155550123", "prompt": "You are booking a haircut for the owner. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation."}'
+```
+
+The prompt belongs to the number, not to one conversation. It applies to every text thread on that number until you change it, so set it before each new task.
+
 ## Error codes
 
 | Code | HTTP status | Where | Meaning |
