@@ -1,0 +1,49 @@
+---
+title: "Backfill All Contacts to CRM"
+api: "POST https://api.bland.ai/v1/contacts/crm-sync/backfill"
+description: "Kick off a background job that pushes every existing contact in your org to your connected CRMs. Use this once after connecting HubSpot or Salesforce."
+---
+
+When you first connect a CRM, use this endpoint to push everything Bland already knows — identities, summaries, entities, and deals — to that CRM. The job runs sequentially in the background to stay within CRM rate limits and updates each contact's sync status as it progresses.
+
+You can watch progress by polling [Get Contact CRM Sync Status](/api-v1/get/contacts-id-crm-sync) for individual contacts, or by refreshing the Contacts page in the dashboard.
+
+<Note>
+This endpoint returns immediately with HTTP `202 Accepted`. The backfill continues in the background — do not treat the response as a signal that all contacts have finished syncing.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Backfill acknowledgement.
+</ResponseField>
+
+<ResponseField name="data.accepted" type="boolean">
+  `true` when the backfill has been queued.
+</ResponseField>
+
+<ResponseField name="data.total" type="integer">
+  Total number of contacts scheduled for sync.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "accepted": true,
+    "total": 1284
+  },
+  "errors": null
+}
+```
+</ResponseExample>
