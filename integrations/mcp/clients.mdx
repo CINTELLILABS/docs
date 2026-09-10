@@ -1,6 +1,6 @@
 ---
 title: "MCP Clients"
-description: "Connect the Bland MCP server directly to VS Code, Windsurf, Gemini CLI, or any coding tool, or to Claude Code, Cursor, and Codex without the plugin"
+description: "Connect the Bland MCP server to Claude Code, Cursor, Codex, VS Code, Claude Desktop, Windsurf, Gemini CLI, or any coding tool"
 ---
 
 <Note>
@@ -9,191 +9,25 @@ description: "Connect the Bland MCP server directly to VS Code, Windsurf, Gemini
 
 For Claude Code, Claude Desktop, Cursor, and Codex, the recommended setup is the [Bland plugin](/integrations/mcp/norm): the MCP server plus skills for every part of the platform, `/bland:*` commands, and Norm, the agent builder. Start there.
 
-This page is for everything else: clients the plugin does not cover (VS Code, Windsurf, Gemini CLI, your own agent loop), and the four plugin hosts when you want the bare toolset with nothing layered on top.
+To connect the server directly, without the plugin, pick your client:
 
-## Prerequisites
+<Columns cols={4}>
+  <Card title="Claude Code" href="/integrations/mcp/clients/claude-code" horizontal />
+  <Card title="Cursor" href="/integrations/mcp/clients/cursor" horizontal />
+  <Card title="Codex" href="/integrations/mcp/clients/codex" horizontal />
+  <Card title="VS Code" href="/integrations/mcp/clients/vs-code" horizontal />
+  <Card title="Claude Desktop" href="/integrations/mcp/clients/claude-desktop" horizontal />
+  <Card title="Windsurf" href="/integrations/mcp/clients/windsurf" horizontal />
+  <Card title="Gemini CLI" href="/integrations/mcp/clients/gemini-cli" horizontal />
+  <Card title="Any client" href="/integrations/mcp/clients/other" horizontal />
+</Columns>
 
-- Your Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings)
-- For every client, the same two values:
-  - **URL:** `https://api.bland.ai/v1/mcp`
-  - **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
+Every client uses the same two values:
 
-<Tabs>
-  <Tab title="Claude Code">
-    Prefer the [Bland plugin](/integrations/mcp/norm) here; it does the most in Claude Code. For the server alone, add it in one command:
+- **URL:** `https://api.bland.ai/v1/mcp`
+- **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
 
-    ```bash
-    claude mcp add --transport http bland https://api.bland.ai/v1/mcp \
-      --header "Authorization: Bearer $BLAND_API_KEY"
-    ```
-
-    Verify the connection:
-
-    ```bash
-    claude mcp list
-    ```
-
-    <Frame>
-      <img src="/images/mcp/claude-mcp-list.png" alt="claude mcp list showing the bland server connected" />
-    </Frame>
-
-    Inside a session, run `/mcp` to see the server's tools, or just ask:
-
-    ```
-    > list my pathways and tell me which ones have no published version
-    > pull the transcript of my last call and explain where the agent went off script
-    > create a pathway that qualifies inbound leads and books a demo
-    ```
-
-    By default `claude mcp add` configures the server for the current project only. Add `--scope user` to make it available in every project.
-
-    <Frame>
-      <img src="/images/mcp/mcp-session.png" alt="A Claude Code session using the Bland MCP to list pathways and report which have a published production version" />
-    </Frame>
-  </Tab>
-  <Tab title="Cursor">
-    Prefer the [Bland plugin](/integrations/mcp/norm) from the Cursor marketplace. For the server alone, use the one-click install:
-
-    <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=bland&config=eyJ1cmwiOiAiaHR0cHM6Ly9hcGkuYmxhbmQuYWkvdjEvbWNwIiwgImhlYWRlcnMiOiB7IkF1dGhvcml6YXRpb24iOiAiQmVhcmVyIFlPVVJfQkxBTkRfQVBJX0tFWSJ9fQ==">Install in Cursor</a>
-
-    After installing, open **Cursor Settings → MCP** and replace `YOUR_BLAND_API_KEY` with your real key.
-
-    Or add it by hand to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` in your project:
-
-    ```json
-    {
-      "mcpServers": {
-        "bland": {
-          "url": "https://api.bland.ai/v1/mcp",
-          "headers": {
-            "Authorization": "Bearer YOUR_BLAND_API_KEY"
-          }
-        }
-      }
-    }
-    ```
-
-    Restart Cursor (or toggle the server in **Settings → MCP**) and the Bland tools appear in the agent's tool list.
-
-    <Warning>
-    Tools that place calls or publish agents have real-world side effects. Keep Cursor's tool-approval prompts on for the Bland server rather than auto-approving everything.
-    </Warning>
-  </Tab>
-  <Tab title="Codex">
-    Prefer the [Bland plugin](/integrations/mcp/norm), which installs into Codex from the same marketplace. For the server alone, add to `~/.codex/config.toml`:
-
-    ```toml
-    [mcp_servers.bland]
-    url = "https://api.bland.ai/v1/mcp"
-    bearer_token_env_var = "BLAND_API_KEY"
-    ```
-
-    Export `BLAND_API_KEY` in your shell profile, then restart Codex. If your Codex version has trouble with HTTP servers, use the stdio bridge in the **Any client** tab.
-  </Tab>
-  <Tab title="VS Code">
-    <a href="https://vscode.dev/redirect/mcp/install?name=bland&config=%7B%22name%22%3A%20%22bland%22%2C%20%22type%22%3A%20%22http%22%2C%20%22url%22%3A%20%22https%3A//api.bland.ai/v1/mcp%22%2C%20%22headers%22%3A%20%7B%22Authorization%22%3A%20%22Bearer%20%24%7Binput%3Abland-api-key%7D%22%7D%7D">Install in VS Code</a>, or add to `.vscode/mcp.json`:
-
-    ```json
-    {
-      "inputs": [
-        {
-          "type": "promptString",
-          "id": "bland-api-key",
-          "description": "Bland API key",
-          "password": true
-        }
-      ],
-      "servers": {
-        "bland": {
-          "type": "http",
-          "url": "https://api.bland.ai/v1/mcp",
-          "headers": {
-            "Authorization": "Bearer ${input:bland-api-key}"
-          }
-        }
-      }
-    }
-    ```
-
-    VS Code prompts for the key on first use and stores it securely. It never lands in the config file.
-  </Tab>
-  <Tab title="Claude Desktop">
-    Prefer the [Bland plugin](/integrations/mcp/norm), which installs into Claude Desktop and stores the key for you.
-
-    Without the plugin, Claude Desktop's custom connectors expect OAuth, so use the stdio bridge with your API key instead. Add to `claude_desktop_config.json` (**Settings → Developer → Edit Config**):
-
-    ```json
-    {
-      "mcpServers": {
-        "bland": {
-          "command": "npx",
-          "args": [
-            "-y", "mcp-remote", "https://api.bland.ai/v1/mcp",
-            "--header", "Authorization: Bearer ${BLAND_API_KEY}"
-          ],
-          "env": { "BLAND_API_KEY": "org_your_key_here" }
-        }
-      }
-    }
-    ```
-
-    Requires Node.js 18+. Restart Claude Desktop after saving.
-  </Tab>
-  <Tab title="Windsurf">
-    Add to `~/.codeium/windsurf/mcp_config.json`:
-
-    ```json
-    {
-      "mcpServers": {
-        "bland": {
-          "serverUrl": "https://api.bland.ai/v1/mcp",
-          "headers": {
-            "Authorization": "Bearer YOUR_BLAND_API_KEY"
-          }
-        }
-      }
-    }
-    ```
-  </Tab>
-  <Tab title="Gemini CLI">
-    Add to `~/.gemini/settings.json`:
-
-    ```json
-    {
-      "mcpServers": {
-        "bland": {
-          "httpUrl": "https://api.bland.ai/v1/mcp",
-          "headers": {
-            "Authorization": "Bearer YOUR_BLAND_API_KEY"
-          }
-        }
-      }
-    }
-    ```
-  </Tab>
-  <Tab title="Any client">
-    For clients not listed here (or your own agent loop), either:
-
-    **Native HTTP**: configure a streamable-HTTP MCP server with the URL and header above.
-
-    **Stdio bridge**: if the client only supports stdio servers, `mcp-remote` bridges any of them to the Bland endpoint:
-
-    ```bash
-    npx -y mcp-remote https://api.bland.ai/v1/mcp \
-      --header "Authorization: Bearer $BLAND_API_KEY"
-    ```
-
-    **Raw JSON-RPC**: the endpoint is plain HTTP POST, so you can drive it directly:
-
-    ```bash
-    curl -X POST https://api.bland.ai/v1/mcp \
-      -H "Authorization: Bearer $BLAND_API_KEY" \
-      -H "Content-Type: application/json" \
-      -H "Accept: application/json, text/event-stream" \
-      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-    ```
-  </Tab>
-</Tabs>
+Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Keep tool-approval prompts on for the Bland server: tools that place calls or publish agents have real-world side effects.
 
 ## Next steps
 
