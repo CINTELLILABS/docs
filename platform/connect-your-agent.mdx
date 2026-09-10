@@ -14,7 +14,7 @@ Agent onboarding solves this with a device-authorization flow, the same shape us
 At the end of the flow, the bot receives a dedicated API key and the phone number provisioned for it. The owner never sees or handles the key.
 
 <Note>
-This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-plan). If the owner already has a Bland account, they sign in and subscribe instead of creating a new one.
+By default this flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-plan). The owner can instead choose to connect without the plan: the agent runs on the org's free credits, calls leave from a shared Bland number, and no dedicated number or texting is included. If the owner already has a Bland account, they sign in instead of creating a new one.
 </Note>
 
 ## The flow
@@ -44,12 +44,14 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     ```
 
     `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). It's shown to the owner so they know which bot is asking.
+
+    You can also pass a `prefill` object (`name` or `first_name`/`last_name`, `email`, `phone`) with details you already know about your owner. Accepted fields ride in the URL fragment of `verification_url_complete` and pre-fill the sign-up form. They are never stored, and invalid fields are dropped rather than failing the request. See [Start Agent Onboarding](/api-v1/post/agent-onboarding-start) for the field rules.
   </Step>
 
   <Step title="Show the link and code to your owner">
     Display `verification_url_complete` (or `verification_url` plus `user_code` if you can't render a clickable link) wherever your owner will see it: a chat message, a terminal, a Slack DM.
 
-    The owner opens the link, signs up or logs in, enters the code if it isn't already pre-filled, and subscribes to the [Agent Phone Plan](/platform/agent-phone-plan). This happens once, in their browser. Your bot doesn't participate in it beyond polling for the result.
+    The owner opens the link, signs up or logs in, enters the code if it isn't already pre-filled, and either subscribes to the [Agent Phone Plan](/platform/agent-phone-plan) or connects without it on the org's free credits. This happens once, in their browser. Your bot doesn't participate in it beyond polling for the result.
   </Step>
 
   <Step title="Poll until approved">
@@ -66,7 +68,7 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     | `status` | Meaning |
     | --- | --- |
     | `pending` | Still waiting on the owner. Keep polling at the returned `interval`. |
-    | `approved` | Onboarding is complete. The response includes `api_key`, `org_id`, and `phone_number`. |
+    | `approved` | Onboarding is complete. The response includes `api_key`, `org_id`, and `phone_number` (`null` if the owner connected without the plan). |
     | `expired` | The code expired, or the `device_code` was never valid. These two cases aren't distinguished, so don't use `expired` to debug a typo, start over with a fresh `/start` call instead. |
 
     If you poll faster than `interval`, you get a `429` with error code `SLOW_DOWN` instead of a status:
@@ -114,6 +116,8 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     ```
 
     This is the only time `api_key` is returned. Store it immediately, the code is single-use, so polling again after this returns `expired`.
+
+    If the owner connected without the plan, `phone_number` is `null` and `plan.status` is `none`. The key works the same way, calls leave from a shared Bland number, and texting isn't available until the org subscribes.
   </Step>
 </Steps>
 
@@ -167,16 +171,21 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 
 ## Texting from the new number
 
-Outbound texts go through [`POST /v1/sms/send`](/api-v1/post/sms-send). Replies arrive at the same number and are answered automatically using the number's texting prompt, which starts out generic. Before starting a thread that has a goal, set the prompt for that goal with [Update SMS Configuration](/api-v1/post/sms-update):
+Outbound texts go through [`POST /v1/sms/send`](/api-v1/post/sms-send). Replies arrive at the same number and are answered automatically. When a thread has a goal, pass an `objective` on the send: replies in that conversation work toward it instead of the number's generic texting prompt.
 
 ```bash
-curl -X POST https://api.bland.ai/v1/sms/number/update \
+curl -X POST https://api.bland.ai/v1/sms/send \
   -H "authorization: $API_KEY" \
   -H "content-type: application/json" \
-  -d '{"phone_number": "+14155550123", "prompt": "You are booking a haircut for the owner. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation."}'
+  -d '{
+    "agent_number": "+14155550123",
+    "user_number": "+14155559876",
+    "agent_message": "Hi! I would like to book a haircut for next Tuesday afternoon. What times do you have?",
+    "objective": "You are booking a haircut for the owner. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation."
+  }'
 ```
 
-The prompt belongs to the number, not to one conversation. It applies to every text thread on that number until you change it, so set it before each new task.
+The objective belongs to that one conversation, so parallel threads on the same number can each carry their own. A later send with a new `objective` replaces it, and a send without one keeps it. Before your first text thread, configure SMS on the number once with [Update SMS Configuration](/api-v1/post/sms-update).
 
 ## Error codes
 
@@ -185,7 +194,7 @@ The prompt belongs to the number, not to one conversation. It applies to every t
 | `SLOW_DOWN` | 429 | `/poll` | Polling faster than `interval`. Back off and retry. |
 | `TOO_MANY_REQUESTS` | 429 | `/start`, `/poll`, `/approve` (browser) | Rate limited. Respect the `Retry-After` header and retry. |
 | `FEATURE_DISABLED` | 503 | `/start` | Agent onboarding is temporarily disabled. Retry later. |
-| `PLAN_REQUIRED` | 402 | `/approve` (browser) | The org doesn't have an active Agent Phone Plan subscription yet. |
+| `PLAN_REQUIRED` | 402 | `/approve` (browser) | The org doesn't have an active Agent Phone Plan subscription and didn't opt to connect without one. |
 | `PLAN_NUMBER_PENDING` | 409 | `/approve` (browser) | The plan is active but the phone number is still being provisioned. |
 | `CODE_NOT_FOUND` | 404 | `/approve` (browser) | The code doesn't exist or already expired. |
 | `CODE_ALREADY_USED` | 409 | `/approve` (browser) | The code was already approved. |
