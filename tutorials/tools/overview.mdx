@@ -188,6 +188,23 @@ Example: You extracted `customer_email` in a previous node. Now you select it fo
 
 **Linked Mode:** System variables like the caller's phone number and call ID are available automatically.
 
+### Required vs optional inputs
+
+Each input on a tool attached to a node can be marked **Required** or **Optional**. Use the toggle next to the input.
+
+- **Required:** the node won't let the tool run until the input is filled. Use this for fields the tool can't work without (like an email address for a booking).
+- **Optional:** the tool can run even if the input is empty. Use this for nice-to-have context (like a note or preferred time).
+
+This applies to both extracted variables on the node and the tool's own input fields.
+
+### Max tool calls
+
+Each tool on a node has a **Max tool calls** setting that caps how many times the tool can run during a single call. This prevents loops where the agent keeps retrying the same tool.
+
+- Default is a small limit (per tool).
+- Set to `0` to disable the limit and allow unlimited calls.
+- Once the limit is reached, the agent moves on without calling the tool again.
+
 ### Example
 
 1. Earlier node extracts `customer_email` and `customer_name` using Variable Extraction
@@ -198,16 +215,37 @@ Example: You extracted `customer_email` in a previous node. Now you select it fo
 
 ![Pathway Example with Tool](/tutorials/tutorials-assets/v2-tools/custom_tool_pathway_example_with_slack.jpeg)
 
-### Response Routing
+### Tool response routing
 
-Route your pathway based on tool results:
+By default, a node exits using its normal loop condition, even when a tool runs on it. Turn on **Tool response routing** on a node when you want the response from a specific tool to decide which node comes next.
 
-| If | Condition | Then Go To |
-|----|-----------|------------|
-| `ok` | equals `true` | Confirmation Node |
-| `ok` | equals `false` | Error Handler |
+**When to use it:** the node has one or more tools attached and the next step depends on what the tool returned (success vs. failure, a status field, a returned value).
 
-Available conditions: `==`, `!=`, `>`, `<`, `contains`, `is null`, `is not null`
+**How to set it up:**
+
+1. Attach at least one tool to the node.
+2. In the node drawer, open **Tool response routing** and select **Enable tool response routing**.
+3. Pick the **Tool to route from**. The node loops until that tool fires, then routes based on its response.
+4. Add one or more rows to the **Response router**. Each row matches a variable from the tool response against a value and sends the agent to a destination node.
+5. Set a **Fallback** destination for responses that don't match any row.
+
+Each row has four fields:
+
+| Field | Description |
+|----|----|
+| Variable | A field from the tool response (for example, `ok` or `status`). |
+| Condition | One of `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`, `!contains`, `is`. |
+| Value | The value to compare against. |
+| Destination | The node to go to when the row matches. Choose a pathway node, **Previous node**, or **Loop back on this node**. |
+
+Example:
+
+| Variable | Condition | Value | Destination |
+|----|----|----|----|
+| `ok` | `==` | `true` | Confirmation node |
+| `ok` | `==` | `false` | Error handler |
+
+If you remove the routed tool from the node later, the node shows a warning so you can either re-attach the tool or remove the routing. Tool response routing only applies while enabled — without it, the node exits using its normal loop condition.
 
 ---
 
