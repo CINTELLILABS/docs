@@ -52,11 +52,28 @@ The key is scoped to a new organization that belongs to you. You can revoke it a
 | Ask for | What happens |
 | --- | --- |
 | "Call +1 ... and ask ..." | Places an outbound call from the bot's number and returns the transcript and summary when it ends |
-| "Text +1 ... saying ..." | Sends an SMS from the bot's number |
+| "Text +1 ... saying ..." | Sends an SMS from the bot's number. Replies are answered automatically, so set the texting prompt first (below) |
 | "What did they say on my last call?" | Reads the call transcript and analysis |
 | "Create an agent that ..." | Builds a reusable pathway the bot can call with later |
 
-Calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per call. See [Limits](/platform/agent-phone-plan#limits).
+Calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
+
+## Two-way texting
+
+A text is a conversation. When the other side replies, Bland answers from the bot's number automatically, using the number's **texting prompt**. A new plan number starts with a generic prompt, so before asking the bot to run a text thread with a goal, have it set the prompt for that goal:
+
+```
+Set my number's texting prompt to: "You are booking a haircut for Spencer. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation." Then text the salon at +1 415 555 0123 to get it started.
+```
+
+The bot does this with one API call, [Update SMS Configuration](/api-v1/post/sms-update):
+
+```json
+POST https://api.bland.ai/v1/sms/number/update
+{ "phone_number": "+12765550123", "prompt": "You are booking a haircut for Spencer. ..." }
+```
+
+The prompt belongs to the number, not to one conversation, so it applies to every thread on that number until it is changed. Set it again for the next task.
 
 ## Troubleshooting
 
@@ -65,6 +82,7 @@ Calls and texts are limited to US and Canadian numbers, one call at a time, up t
 | Bot reports `PLAN_REQUIRED` or "not available" | The organization has no active Agent Phone Plan | Subscribe at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) |
 | Bot reports `CALL_PLAN_DESTINATION_BLOCKED` | The destination is outside the US and Canada | Use a US or Canadian number |
 | The approval link says the code expired | Codes last 15 minutes | Ask the bot to start again |
+| Text replies are generic and ignore the task | The number's texting prompt was not set for this task | Ask the bot to set the texting prompt, then start the thread again |
 | Approval page says the request did not come from the dashboard | The link was opened in an embedded browser | Open it in a normal browser tab |
 
 ## Next steps
