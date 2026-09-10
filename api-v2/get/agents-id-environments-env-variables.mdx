@@ -1,0 +1,104 @@
+---
+title: "List Agent Variables"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/variables"
+description: "List an environment's variables for an agent."
+---
+
+### Overview
+
+Returns the variables stored for one of the agent's environments, sorted by key. Agent configuration refers to a variable as `{{env.KEY}}`, and the environment a call runs as decides which set is substituted: `production` for normal calls, `staging` when calling the staging pin, and `dev` for dev, branch, or specific-version calls. Set values with [Set Agent Variable](/api-v2/put/agents-id-environments-env-variables-key).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  One of `dev`, `staging`, `production`. Any other value returns `400 INVALID_ENV`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of variable objects ordered by `variable_key` ascending. Empty when the environment has no variables.
+
+  <Expandable title="variable object">
+    <ResponseField name="variable_key" type="string">
+      The variable's key, as referenced by `{{env.KEY}}`.
+    </ResponseField>
+    <ResponseField name="value" type="any">
+      The stored value: any JSON value. For a variable saved with `is_secret`, this is the `{{SECRET.NAME}}` reference the server stored in place of the raw value; the secret itself is never returned.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last write.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "variable_key": "CRM_API_KEY",
+      "value": "{{SECRET.AGENT_8ffa3e15_b4fc_485d_b6cf_bded7a6ee070_PRODUCTION_43524d5f4150495f4b4559}}",
+      "updated_at": "2026-09-09T20:14:33.602Z"
+    },
+    {
+      "variable_key": "CRM_BASE_URL",
+      "value": "https://crm.example.com/api",
+      "updated_at": "2026-09-09T20:13:58.117Z"
+    },
+    {
+      "variable_key": "OFFICE_HOURS",
+      "value": {
+        "open": "08:00",
+        "close": "17:30",
+        "timezone": "America/Chicago"
+      },
+      "updated_at": "2026-09-10T11:47:05.940Z"
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Invalid Env
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_ENV",
+      "message": "env must be one of: dev, staging, production"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

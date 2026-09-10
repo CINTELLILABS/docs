@@ -1,0 +1,182 @@
+---
+title: "List Library Scenarios"
+api: "GET https://api.bland.ai/v2/agents/library/scenarios"
+description: "List reusable scenarios from your other agents."
+---
+
+### Overview
+
+Returns the top-level scenario and auth nodes from the newest saved version of each agent in your organization, grouped per agent, with the full node payload inline so you can insert one into another agent's graph and save it with [Create Agent Version](/api-v2/post/agents-id-versions). Only the 50 most recently updated agents are scanned, and agents with no saved version or no scenarios are omitted. For nodes you have retired from a canvas, see [List Archived Nodes](/api-v2/get/agents-library-archived-nodes).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="exclude_agent_id" type="string">
+  Skip this agent's scenarios, typically the agent you are currently editing. An empty value is ignored.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  One group per agent that has at least one library scenario, in order of most recently updated agent first.
+
+  <Expandable title="group object">
+    <ResponseField name="agent_id" type="string">
+      The agent the scenarios were read from.
+    </ResponseField>
+    <ResponseField name="agent_name" type="string">
+      The agent's display name.
+    </ResponseField>
+    <ResponseField name="scenarios" type="array">
+      The agent's top-level scenario and auth nodes. See the scenario object below.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data[].scenarios" type="array">
+  Scenario objects within a group.
+
+  <Expandable title="scenario object">
+    <ResponseField name="id" type="string">
+      The node's ID inside its source agent. Remap IDs before inserting the node into another graph.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The node's name, or `Untitled node` when it has none.
+    </ResponseField>
+    <ResponseField name="kind" type="string">
+      The node type. One of `scenario`, `complex-scenario`, `auth`, `complex-auth`, `auth-zone`.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      The first 160 characters of the node's rule or prompt, whitespace collapsed. `null` when the node has neither.
+    </ResponseField>
+    <ResponseField name="children" type="array">
+      Present only for container nodes (those with a nested `data.flow`). Each entry has `id`, `name`, and `kind` (the child step's node type). Start and end pills are excluded.
+    </ResponseField>
+    <ResponseField name="node" type="object">
+      The complete node as stored in the source agent's version snapshot (`id`, `type`, `position`, `data`, and for containers `data.flow`). Insertable as-is.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "agent_id": "b5154820-6f11-4886-8523-d896934528ae",
+      "agent_name": "Appointment reminders",
+      "scenarios": [
+        {
+          "id": "00fa3bcf-56f5-45b9-8996-427d57b091b7",
+          "name": "Reschedule appointment",
+          "kind": "scenario",
+          "description": "Help the caller move their appointment. Confirm the new date and time before ending.",
+          "node": {
+            "id": "00fa3bcf-56f5-45b9-8996-427d57b091b7",
+            "type": "scenario",
+            "position": { "x": -190, "y": 260 },
+            "data": {
+              "name": "Reschedule appointment",
+              "rule": "Help the caller move their appointment. Confirm the new date and time before ending.",
+              "target": { "kind": "dialogue", "label": "Reschedule" },
+              "loopWhile": "",
+              "variables": [
+                {
+                  "id": "7aeefed0-9806-400d-b2a7-96e6b58d1ac1",
+                  "key": "new_appointment_time",
+                  "value": "The date and time the caller agreed to",
+                  "type": "string",
+                  "accurateSpelling": false
+                }
+              ],
+              "entry": {
+                "mode": "llm",
+                "label": "Wants to reschedule",
+                "description": "",
+                "alwaysPick": false,
+                "conditions": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "agent_id": "2c5cbfa4-4d00-4b35-bd1b-195598f7d823",
+      "agent_name": "Billing support",
+      "scenarios": [
+        {
+          "id": "3c2be395-2d36-4437-833f-aacfc371a033",
+          "name": "Dispute a charge",
+          "kind": "complex-scenario",
+          "description": "Walk the caller through disputing a charge on their statement.",
+          "children": [
+            {
+              "id": "66cbecac-8007-4be8-981c-26264801320f",
+              "name": "Collect charge details",
+              "kind": "prompt"
+            }
+          ],
+          "node": {
+            "id": "3c2be395-2d36-4437-833f-aacfc371a033",
+            "type": "complex-scenario",
+            "position": { "x": 190, "y": 260 },
+            "data": {
+              "name": "Dispute a charge",
+              "rule": "Walk the caller through disputing a charge on their statement.",
+              "target": { "kind": "dialogue", "label": "Dispute" },
+              "entry": {
+                "mode": "llm",
+                "label": "Wants to dispute a charge",
+                "description": "",
+                "alwaysPick": false,
+                "conditions": []
+              },
+              "flow": {
+                "nodes": [
+                  { "id": "start", "type": "start", "position": { "x": 0, "y": 0 }, "data": {} },
+                  {
+                    "id": "66cbecac-8007-4be8-981c-26264801320f",
+                    "type": "prompt",
+                    "position": { "x": 0, "y": 160 },
+                    "data": {
+                      "name": "Collect charge details",
+                      "prompt": "Ask for the date and amount of the charge the caller wants to dispute.",
+                      "useStaticText": false,
+                      "loopWhile": "",
+                      "variables": [],
+                      "useAudioExtraction": false,
+                      "ignorePreviousExtractions": false,
+                      "settings": {}
+                    }
+                  },
+                  { "id": "end", "type": "end", "position": { "x": 0, "y": 320 }, "data": {} }
+                ],
+                "edges": [
+                  { "id": "e-start-collect", "source": "start", "target": "66cbecac-8007-4be8-981c-26264801320f" },
+                  { "id": "e-collect-end", "source": "66cbecac-8007-4be8-981c-26264801320f", "target": "end" }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,134 @@
+---
+title: "Get Disposition Extractor Version"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/extractors/{extractor_id}/versions/{version_id}"
+description: "Retrieve one version of an extractor."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns a single extractor version by id, whether it is the `editable` draft or an `archived` published version. Published versions are immutable, so this is the exact prompt and schema a disposition runs when it pins that version. Version ids come from `currentVersionId` and `activeVersionId` on [Get Disposition Extractor](/api-v2/get/agents-id-dispositions-extractors-extractor-id) and from `extractorVersionId` on [Get Extractor Catalog](/api-v2/get/agents-id-dispositions-extractor-catalog).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+<ParamField path="extractor_id" type="string" required>
+  The extractor's unique identifier. Must be organization-wide or scoped to this agent; otherwise returns `404` with the message `Disposition extractor not found`. A malformed id returns `400` with the message `extractorId must be a valid UUID`.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The version's unique identifier. Must belong to `extractor_id`; otherwise returns `404` with the message `Disposition extractor version not found`. A malformed id returns `400` with the message `versionId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The extractor version.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="extractorId" type="string">
+      The extractor this version belongs to.
+    </ResponseField>
+    <ResponseField name="versionNumber" type="integer">
+      Starts at `1` and increments on each publish.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      `editable` for the live draft, `archived` for a published version.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name at this version.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Description at this version.
+    </ResponseField>
+    <ResponseField name="systemPromptMd" type="string">
+      The system prompt. Empty string when none was set.
+    </ResponseField>
+    <ResponseField name="promptMd" type="string">
+      The extraction prompt.
+    </ResponseField>
+    <ResponseField name="outputSchema" type="object">
+      The value schema the extractor produces: a `kind` of `boolean`, `string`, `number`, `enum`, `array`, or `object` plus kind-specific fields. See [Create Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors) for the full shape.
+    </ResponseField>
+    <ResponseField name="inferenceConfig" type="object">
+      `modelProfileKey` (a `key` from [Get Model Profile Catalog](/api-v2/get/agents-id-dispositions-model-profile-catalog)), `contextSources` (the evidence the extractor reads), and, when set, `temperature`, `maxOutputTokens`, and `thinking`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "5d807088-411f-42b4-8193-a66f1949cd90",
+    "extractorId": "4edf5644-178b-4d7d-a434-a1b61beb3127",
+    "versionNumber": 1,
+    "state": "archived",
+    "name": "Callback window",
+    "description": "When the caller asked to be called back.",
+    "systemPromptMd": "You extract scheduling details from customer service calls.",
+    "promptMd": "Find the day and time window the caller asked for a callback. Leave fields empty if the caller did not ask for one.",
+    "outputSchema": {
+      "kind": "object",
+      "properties": {
+        "requested": { "kind": "boolean", "description": "Whether the caller asked for a callback." },
+        "window_start": { "kind": "string", "format": "date-time" },
+        "window_end": { "kind": "string", "format": "date-time" }
+      },
+      "required": ["requested"]
+    },
+    "inferenceConfig": {
+      "modelProfileKey": "high_accuracy",
+      "temperature": 0,
+      "maxOutputTokens": 600,
+      "thinking": "medium",
+      "contextSources": ["transcript"]
+    },
+    "createdAt": "2026-09-03T09:12:50.004Z",
+    "updatedAt": "2026-09-05T14:30:22.671Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition extractor version not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

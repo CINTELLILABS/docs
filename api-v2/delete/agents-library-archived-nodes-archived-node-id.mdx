@@ -1,0 +1,60 @@
+---
+title: "Delete Archived Node"
+api: "DELETE https://api.bland.ai/v2/agents/library/archived-nodes/{archived_node_id}"
+description: "Permanently remove an entry from the node archive."
+---
+
+### Overview
+
+Hard-deletes one archive entry. Archive entries are self-contained copies, so the agent the node came from is not affected. Find entry IDs with [List Archived Nodes](/api-v2/get/agents-library-archived-nodes).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="archived_node_id" type="string" required>
+  The archive entry's unique identifier. Returns `404 NOT_FOUND` if no entry with that ID exists in your organization.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  The deleted entry's ID.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "84ac6a8a-cdb6-421f-9111-e7b2a3da77bb"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Archived node not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

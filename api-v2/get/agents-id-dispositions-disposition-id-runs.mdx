@@ -1,0 +1,256 @@
+---
+title: "List Disposition Test Runs"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/runs"
+description: "List test runs for a disposition."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns the disposition's test runs, newest first, each with its frozen definition, progress counts, and a summary computed from its per-call rows. Start one with [Create Disposition Test Run](/api-v2/post/agents-id-dispositions-disposition-id-runs); read a single run's live state with [Get Disposition Test Run](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="25">
+  Maximum number of runs to return. Minimum `1`, maximum `100`. Values outside that range are clamped; a non-numeric value falls back to `25`. There is no cursor: the newest `limit` runs are returned.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.runs" type="array">
+  Test run objects ordered by `createdAt` descending.
+
+  <Expandable title="test run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the test run.
+    </ResponseField>
+    <ResponseField name="dispositionId" type="string">
+      The disposition this run belongs to.
+    </ResponseField>
+    <ResponseField name="target" type="string">
+      `draft` or `published`: which definition the run was started from. A replay keeps its source run's target.
+    </ResponseField>
+    <ResponseField name="configurationSource" type="string">
+      `draft`, `published`, or `frozen_run` (a replay of an earlier run's frozen snapshot).
+    </ResponseField>
+    <ResponseField name="executionSla" type="string">
+      `realtime` or `queued`.
+    </ResponseField>
+    <ResponseField name="replaySourceRunId" type="string | null">
+      The run this one replays, or `null`.
+    </ResponseField>
+    <ResponseField name="definition" type="object">
+      The immutable definition snapshot this run executes. Same shape as the `definition` body parameter of [Create Disposition](/api-v2/post/agents-id-dispositions).
+    </ResponseField>
+    <ResponseField name="population" type="object">
+      `{ "environment": "production", "requestedSize" }`. `requestedSize` is the sample size asked for, or the number of explicit call ids.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `queued`, `running`, `complete`, `partial` (finished with some failed calls), `failed`, or `cancelled`.
+    </ResponseField>
+    <ResponseField name="requestedSize" type="number">
+      Calls requested.
+    </ResponseField>
+    <ResponseField name="resolvedSize" type="number">
+      Calls admitted once the cohort resolved. `0` until execution starts.
+    </ResponseField>
+    <ResponseField name="completedSize" type="number">
+      Calls that finished successfully. Counted live from the per-call rows while `running`; the final tally afterwards.
+    </ResponseField>
+    <ResponseField name="failedSize" type="number">
+      Calls that failed or were cancelled. Counted live while `running`.
+    </ResponseField>
+    <ResponseField name="evalRunId" type="null">
+      Always `null`. Retained for compatibility.
+    </ResponseField>
+    <ResponseField name="mode" type="string">
+      `recent` (sampled) or `calls` (explicit call ids).
+    </ResponseField>
+    <ResponseField name="inputSetHash" type="null">
+      Always `null`. Retained for compatibility.
+    </ResponseField>
+    <ResponseField name="definitionHash" type="string">
+      SHA-256 hex digest of the definition snapshot. Runs with equal hashes executed identical definitions.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="number | null">
+      The draft revision the run was started from, or `null` for a published target.
+    </ResponseField>
+    <ResponseField name="dispositionVersionId" type="string | null">
+      The published version the run was started from, or `null` for a draft target.
+    </ResponseField>
+    <ResponseField name="summary" type="object">
+      Counts computed from the per-call rows: `caseCount` (calls with a row), `failedCaseCount`, `producedValueCount` (value results in state `produced`), `totalValueCount` (all value results), and `correctionCount` (correction revisions saved against the run).
+    </ResponseField>
+    <ResponseField name="error" type="object | null">
+      `{ "code", "message" }` when the run as a whole failed, otherwise `null`. Codes include `test_run_cancelled`, `test_run_stale`, `in_flight_cap_exceeded`, `empty_cohort`, `billing_not_allowed`, `test_run_execution_failed`, and `disposition_failed`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="startedAt" type="string | null">
+      When execution began, or `null` while queued.
+    </ResponseField>
+    <ResponseField name="completedAt" type="string | null">
+      When the run reached a final status, or `null`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "runs": [
+      {
+        "id": "429f5de4-ae9b-470f-be68-7390899af9b5",
+        "dispositionId": "dfe4e15d-01aa-4dfd-94d8-09e32fc6e875",
+        "target": "draft",
+        "configurationSource": "draft",
+        "executionSla": "realtime",
+        "replaySourceRunId": null,
+        "definition": {
+          "name": "Appointment outcome",
+          "description": "Did the caller book an appointment?",
+          "timing": "immediate",
+          "values": [
+            {
+              "id": "e3d3b96a-39d3-4e5e-9ba6-cdfaa0efb92b",
+              "key": "booked",
+              "label": "Appointment booked",
+              "schema": { "kind": "boolean" },
+              "source": {
+                "kind": "variable_extraction",
+                "variableKey": "appointment_booked",
+                "execution": { "reasoningEffort": "auto" }
+              }
+            }
+          ],
+          "transformation": {
+            "version": 1,
+            "root": { "kind": "value", "valueId": "e3d3b96a-39d3-4e5e-9ba6-cdfaa0efb92b" }
+          },
+          "postCallWebhook": { "mode": "emit_followup" }
+        },
+        "population": { "environment": "production", "requestedSize": 25 },
+        "status": "running",
+        "requestedSize": 25,
+        "resolvedSize": 25,
+        "completedSize": 11,
+        "failedSize": 1,
+        "evalRunId": null,
+        "mode": "recent",
+        "inputSetHash": null,
+        "definitionHash": "a5d6152e751530b817c530df32d908ea058ad72769c1eacccbf0eb42517e1efa",
+        "draftRevision": 6,
+        "dispositionVersionId": null,
+        "summary": {
+          "caseCount": 25,
+          "failedCaseCount": 1,
+          "producedValueCount": 11,
+          "totalValueCount": 11,
+          "correctionCount": 0
+        },
+        "error": null,
+        "createdAt": "2026-09-10T19:12:44.902Z",
+        "startedAt": "2026-09-10T19:12:46.130Z",
+        "completedAt": null
+      },
+      {
+        "id": "ef1c2354-dc5b-4993-8bcd-283836c23e69",
+        "dispositionId": "dfe4e15d-01aa-4dfd-94d8-09e32fc6e875",
+        "target": "published",
+        "configurationSource": "published",
+        "executionSla": "realtime",
+        "replaySourceRunId": null,
+        "definition": {
+          "name": "Appointment outcome",
+          "description": "Did the caller book an appointment?",
+          "timing": "immediate",
+          "values": [
+            {
+              "id": "e3d3b96a-39d3-4e5e-9ba6-cdfaa0efb92b",
+              "key": "booked",
+              "label": "Appointment booked",
+              "schema": { "kind": "boolean" },
+              "source": {
+                "kind": "variable_extraction",
+                "variableKey": "appointment_booked",
+                "execution": { "reasoningEffort": "auto" }
+              }
+            }
+          ],
+          "transformation": {
+            "version": 1,
+            "root": { "kind": "value", "valueId": "e3d3b96a-39d3-4e5e-9ba6-cdfaa0efb92b" }
+          },
+          "postCallWebhook": { "mode": "emit_followup" }
+        },
+        "population": { "environment": "production", "requestedSize": 50 },
+        "status": "complete",
+        "requestedSize": 50,
+        "resolvedSize": 50,
+        "completedSize": 50,
+        "failedSize": 0,
+        "evalRunId": null,
+        "mode": "recent",
+        "inputSetHash": null,
+        "definitionHash": "7a0e4daae110c7411448abc7a83a2066b5f3f553b6b67b0d2d9cd0a29a5c634e",
+        "draftRevision": null,
+        "dispositionVersionId": "d16bf596-21c7-4acb-8d72-2dced2790181",
+        "summary": {
+          "caseCount": 50,
+          "failedCaseCount": 0,
+          "producedValueCount": 48,
+          "totalValueCount": 50,
+          "correctionCount": 3
+        },
+        "error": null,
+        "createdAt": "2026-09-09T12:01:08.417Z",
+        "startedAt": "2026-09-09T12:01:09.655Z",
+        "completedAt": "2026-09-09T12:09:51.208Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,80 @@
+---
+title: "Delete Agent Variable"
+api: "DELETE https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/variables/{key}"
+description: "Delete an environment variable from an agent."
+---
+
+### Overview
+
+Removes one variable from one of the agent's environments. If the variable was saved with `is_secret`, the stored secret is deleted with it. The request succeeds even when no variable with that key exists. Calls that run as this environment and still reference `{{env.KEY}}` fail until the variable is set again with [Set Agent Variable](/api-v2/put/agents-id-environments-env-variables-key).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  One of `dev`, `staging`, `production`. Any other value returns `400 INVALID_ENV`.
+</ParamField>
+
+<ParamField path="key" type="string" required>
+  The variable key to remove, matched exactly after trimming surrounding whitespace.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.deleted" type="boolean">
+  Always `true` on success, whether or not a variable with that key existed.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "deleted": true
+  },
+  "errors": null
+}
+```
+
+```json Invalid Env
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_ENV",
+      "message": "env must be one of: dev, staging, production"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,206 @@
+---
+title: "Rebase Agent Branch"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/branches/{branch_id}/rebase"
+description: "Rebase a branch onto the dev head with resolutions."
+---
+
+### Overview
+
+Rebases the branch onto the dev head you previewed against: re-runs the three-way merge, applies your conflict resolutions, saves the merged configuration as a new version on the branch, and moves the branch's base to that dev head. Run [Preview Agent Branch Rebase](/api-v2/post/agents-id-branches-branch-id-rebase-preview) first to get `dev_head_version_id` and the conflict IDs. Once the rebase succeeds, [Merge Agent Branch](/api-v2/post/agents-id-branches-branch-id-merge) fast-forwards.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="branch_id" type="string" required>
+  The branch's unique identifier. Must be an open branch on this agent.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="dev_head_version_id" type="string | null" required>
+  The `dev_head_version_id` returned by the preview, passed unchanged (including `null` when the preview returned `null`). If dev has gained a version since, the request returns `409 REBASE_STALE`; preview again and retry. Omitting the field is treated as `null` and fails the same way whenever dev has any version.
+</ParamField>
+
+<ParamField body="resolutions" type="object">
+  Map from conflict `id` (as reported by the preview) to how to settle it. Each value is one of:
+
+  - `"ours"`: keep the branch's value.
+  - `"theirs"`: take dev's value.
+  - `{ "value": ... }`: write this value in place of both. Any JSON value is accepted; the merged configuration is validated as a whole before it is saved.
+
+  Any other shape returns `400 INVALID_RESOLUTIONS` and nothing is written. Every conflict the merge finds must be covered, or the request returns `400 UNRESOLVED_CONFLICTS` with the remaining conflicts in `data.conflicts`. Omit when the preview reported no conflicts.
+
+  ```json
+  {
+    "setting:systemPrompt": "theirs",
+    "node:ae527fa3-25f4-4dbb-ba79-fe7b6aa6b075#data.rule": {
+      "value": "Confirm the caller's name, then ask for the account number."
+    }
+  }
+  ```
+</ParamField>
+
+### Response
+
+<ResponseField name="data.version" type="object">
+  The new branch version holding the merged configuration. When the branch is already based on dev's head, nothing is written and the branch's current head version is returned instead.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the version belongs to.
+    </ResponseField>
+    <ResponseField name="branch_id" type="string">
+      The branch the version was saved to. Matches `{branch_id}`.
+    </ResponseField>
+    <ResponseField name="snapshot" type="object">
+      The merged agent configuration: `behavior` (nodes and edges), `settings`, `contact`, and `knowledge` when present. Same shape as the `snapshot` on any saved version.
+    </ResponseField>
+    <ResponseField name="name" type="null">
+      Always `null`; rebase versions are unnamed.
+    </ResponseField>
+    <ResponseField name="created_via" type="string">
+      Always `manual` for a rebase version.
+    </ResponseField>
+    <ResponseField name="revision" type="integer">
+      Rewrite counter for the row. `0` on a newly written version.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who ran the rebase, or `null` when run with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "version": {
+      "id": "f9b3ef64-22f7-4189-8a90-2a08a2e233fa",
+      "org_id": "739122d8-a8fb-4b92-b65c-718b25b73431",
+      "agent_id": "4f2abf11-7131-4935-9b8a-aa92cc4447c8",
+      "branch_id": "69e0956d-561e-4c3a-8b6b-d60a84c928b4",
+      "snapshot": {
+        "behavior": {
+          "nodes": [
+            {
+              "id": "39645cd3-c7a3-4261-9b62-4fbc8155fd76",
+              "position": { "x": 240, "y": 120 },
+              "data": {
+                "name": "Verify account",
+                "rule": "Confirm the caller's name, then ask for the account number."
+              }
+            }
+          ],
+          "edges": []
+        },
+        "settings": {
+          "displayName": "Front desk",
+          "systemPrompt": "You are the front desk assistant for Northwind Dental. Keep answers under two sentences.",
+          "voice": "maya",
+          "languages": ["en-US"]
+        },
+        "contact": {
+          "inboundNumbers": []
+        }
+      },
+      "name": null,
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "435b84b8-7237-4007-a95c-a9e4515d1255",
+      "created_at": "2026-09-10T18:02:37.518Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Unresolved Conflicts
+{
+  "data": {
+    "conflicts": [
+      {
+        "id": "setting:systemPrompt",
+        "kind": "setting",
+        "key": "systemPrompt",
+        "path": "",
+        "path_labels": [],
+        "label": "systemPrompt",
+        "base": "You are the front desk assistant for Northwind Dental.",
+        "theirs": "You are the front desk assistant for Northwind Dental. Keep answers under two sentences.",
+        "ours": "You are the scheduling assistant for Northwind Dental. Always offer the next two open slots."
+      }
+    ]
+  },
+  "errors": [
+    {
+      "error": "UNRESOLVED_CONFLICTS",
+      "message": "Every conflict needs a resolution"
+    }
+  ]
+}
+```
+
+```json Stale
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "REBASE_STALE",
+      "message": "Development changed since the preview — preview again"
+    }
+  ]
+}
+```
+
+```json Invalid Resolutions
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_RESOLUTIONS",
+      "message": "resolutions must map conflict ids to 'ours', 'theirs', or { value }"
+    }
+  ]
+}
+```
+
+```json Merge In Progress
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MERGE_IN_PROGRESS",
+      "message": "Another merge or rebase is in progress for this agent, please retry"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

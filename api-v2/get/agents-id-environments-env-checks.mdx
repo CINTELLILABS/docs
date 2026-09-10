@@ -1,0 +1,154 @@
+---
+title: "Get Checks"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/checks"
+description: "Retrieve an environment's check config."
+---
+
+### Overview
+
+Returns the judges and test scenarios configured as pre-promotion checks for one environment, or `null` when none are configured. Set the config with [Set Checks](/api-v2/put/agents-id-environments-env-checks) and run it with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  `staging` or `production`. Checks do not attach to `dev`. Any other value returns `400 BAD_REQUEST`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object | null">
+  The environment's check config, or `null` when no checks are configured.
+
+  <Expandable title="check config object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the check config.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the config belongs to.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      The environment the config gates: `staging` or `production`.
+    </ResponseField>
+    <ResponseField name="enabled" type="boolean">
+      Whether check runs can be started for this environment. A disabled config is kept but cannot be run.
+    </ResponseField>
+    <ResponseField name="scenario_ids" type="array">
+      IDs of the agent's test scenarios that each run drives conversations from.
+    </ResponseField>
+    <ResponseField name="scenario_names" type="array">
+      Display names for `scenario_ids`, in the same order. Falls back to the ID when a scenario's name cannot be resolved.
+    </ResponseField>
+    <ResponseField name="simulations_count" type="integer">
+      Conversations generated per scenario on each run.
+    </ResponseField>
+    <ResponseField name="evals" type="array">
+      The judges attached to the config. See `data.evals` below.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.evals" type="array">
+  One entry per judge, in the order they were attached.
+
+  <Expandable title="eval object">
+    <ResponseField name="eval_agent_id" type="string">
+      The judge's unique identifier.
+    </ResponseField>
+    <ResponseField name="eval_agent_version_id" type="string">
+      The judge version pinned when the config was saved.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The judge's display name. Omitted when the name cannot be resolved.
+    </ResponseField>
+    <ResponseField name="target_level_keys" type="array">
+      The grade levels counted as passing. Empty for pass/fail judges.
+    </ResponseField>
+    <ResponseField name="required" type="boolean">
+      `true` when a failing verdict from this judge fails the run. `false` makes the judge informational only.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "a9803aa7-4185-42d8-91ed-6e20acaaf00c",
+    "agent_id": "73237018-be24-4b18-a511-15229010ed10",
+    "env_type": "production",
+    "enabled": true,
+    "scenario_ids": [
+      "96f9f8b4-8bef-4a6a-9678-1eb5f6b9d368",
+      "b1e42393-9f35-42b1-b60b-26910da451fc"
+    ],
+    "scenario_names": [
+      "Reschedule an appointment",
+      "Caller asks for a human"
+    ],
+    "simulations_count": 5,
+    "evals": [
+      {
+        "eval_agent_id": "61085de3-2ec3-404e-92f4-58b49a5c54b0",
+        "eval_agent_version_id": "88546c14-d434-4c41-b376-e35f123bd7c8",
+        "name": "Resolution quality",
+        "target_level_keys": ["good", "excellent"],
+        "required": true
+      },
+      {
+        "eval_agent_id": "0284f93e-1d87-46eb-8e4d-8a774b78fa1e",
+        "eval_agent_version_id": "242a6ae3-ae74-4088-b878-63aecdc50717",
+        "name": "No policy violations",
+        "target_level_keys": [],
+        "required": false
+      }
+    ],
+    "created_at": "2026-09-08T16:20:11.402Z",
+    "updated_at": "2026-09-10T09:05:47.918Z"
+  },
+  "errors": null
+}
+```
+
+```json No Config
+{
+  "data": null,
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

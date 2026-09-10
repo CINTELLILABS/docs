@@ -1,0 +1,164 @@
+---
+title: "Align Disposition Test Run"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/runs/{run_id}/align"
+description: "Propose definition edits from a test run's corrections."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Reads the corrections saved on a finished test run and proposes rewritten prompt or description text for each corrected value, returned as before-and-after diffs with a rationale. Nothing is written: apply a proposal yourself by editing the extractor, the draft definition, or the judge. The run must be in a terminal status (`complete`, `partial`, or `failed`) and have at least one correction from [Correct Test Run Value](/api-v2/put/agents-id-dispositions-disposition-id-runs-run-id-cases-call-id-annotations-value-id). Each corrected value costs one inference call; an organization may make at most 30 align requests per hour.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+<ParamField path="run_id" type="string" required>
+  The test run's unique identifier. Must be a UUID; otherwise returns `400` with the message `runId must be a valid UUID`. Returns `404 Test run not found` if it does not belong to this disposition.
+</ParamField>
+
+### Body Parameters
+
+The body is optional; an empty object aligns every corrected value with no extra guidance. Unknown fields return `400 BAD_REQUEST` with the message `Invalid request body`.
+
+<ParamField body="valueIds" type="array">
+  Restrict alignment to these value ids: 1 to 50 UUIDs. Every id must exist in the run's definition snapshot, otherwise `404` with the message `Disposition value not found in this run`. Values in the list that have no corrections are silently ignored.
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  Free-text guidance added to every value's proposal request, up to 2000 characters after trimming. Use it to steer tone or emphasis (for example, "keep prompts under 80 words").
+</ParamField>
+
+### Response
+
+<ResponseField name="data.proposals" type="array">
+  One entry per corrected value that produced a usable proposal. A value whose corrections suggest no change appears with an empty `changes` array.
+
+  <Expandable title="proposal object">
+    <ResponseField name="valueId" type="string">
+      The definition value.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      The value's `key`.
+    </ResponseField>
+    <ResponseField name="kind" type="string">
+      `structured_extraction`, `variable_extraction`, or `judge`. `custom_code` values are never proposed against.
+    </ResponseField>
+    <ResponseField name="changes" type="array">
+      Up to 12 field-level edits, each `{ "field", "before", "after", "rationale" }`. `field` is `promptMd` or `systemPromptMd` (structured extraction and judge), `description` (variable extraction, the value schema's description), or `levels.` followed by an existing judge level key and `.promptMd` (a judge level prompt). `before` is the current text, read by the server from the run's frozen definition or the pinned judge version, never from the proposal. `after` is the full replacement text, up to 20,000 characters. `rationale` explains the change in up to 1000 characters. No-op edits and duplicate fields are dropped.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.skipped" type="array">
+  Corrected values that received no proposal, each `{ "valueId", "reason" }`. `reason` is `custom_code` (code values have no editable text), `no_editable_fields` (an unfrozen extraction source or a judge whose pinned version is gone), `proposal_invalid` (no usable proposal after two attempts), or `brief_too_large` (the value's text and corrections exceed the per-request size budget even after trimming).
+</ResponseField>
+
+<ResponseField name="data.truncatedCorrections" type="number">
+  How many corrections were dropped, oldest first, to fit the request within its size budget. `0` when every correction was considered.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "proposals": [
+      {
+        "valueId": "f4b706ec-43cc-4373-b4a5-a06130fddbbf",
+        "key": "booked",
+        "kind": "judge",
+        "changes": [
+          {
+            "field": "promptMd",
+            "before": "Decide whether the caller booked an appointment during this call.",
+            "after": "Decide whether the caller booked an appointment during this call. Treat a verbal agreement to a specific day and time as booked, even if the agent did not read back a confirmation number.",
+            "rationale": "Three corrections flipped the verdict from not booked to booked on calls where the caller agreed to a slot but no confirmation number was read back."
+          }
+        ]
+      }
+    ],
+    "skipped": [
+      {
+        "valueId": "d2dc9bf3-d842-44f9-8002-dea791ff0ad4",
+        "reason": "custom_code"
+      }
+    ],
+    "truncatedCorrections": 0
+  },
+  "errors": null
+}
+```
+
+```json Not Ready
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "DISPOSITION_ALIGN_NOT_READY",
+      "message": "Aligning requires a terminal test run"
+    }
+  ]
+}
+```
+
+```json No Corrections
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "DISPOSITION_ALIGN_NOT_READY",
+      "message": "Correct at least one value on this run before aligning"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many disposition align requests for this organization — please wait before requesting more."
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition value not found in this run"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

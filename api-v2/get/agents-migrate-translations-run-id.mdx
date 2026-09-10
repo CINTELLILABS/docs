@@ -1,0 +1,304 @@
+---
+title: "Get Pathway Translation Run"
+api: "GET https://api.bland.ai/v2/agents/migrate/translations/{run_id}"
+description: "Poll the status and result of a translation job."
+---
+
+### Overview
+
+Returns the current state of a job started with [Start Pathway Translation](/api-v2/post/agents-migrate-translations). While the job runs, the record carries status and progress counters only; the full result appears once the status is terminal (`COMPLETE`, `FAILED`, or `CANCELLED`). A run that has not finished after 11 hours is marked `FAILED` with `TRANSLATION_TIMED_OUT` the next time it is read.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="run_id" type="string" required>
+  The run's unique identifier. Returns `400 INVALID_RUN_ID` if it is not a UUID and `404 TRANSLATION_RUN_NOT_FOUND` if no run with that ID exists in your organization.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.run" type="object">
+  The run record.
+
+  <Expandable title="run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the run.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      One of `PENDING` (queued), `RUNNING` (pathways being processed), `FINALIZING` (all pathways done, agent being created; can no longer be cancelled), `COMPLETE`, `FAILED`, `CANCELLED`. The last three are terminal.
+    </ResponseField>
+    <ResponseField name="total_pathways" type="integer">
+      Number of pathways in the job.
+    </ResponseField>
+    <ResponseField name="completed_pathways" type="integer">
+      Pathways processed so far.
+    </ResponseField>
+    <ResponseField name="result" type="object | null">
+      `null` until the run is terminal. On `COMPLETE`, see the result object below. Also `null` on `FAILED` or `CANCELLED` unless a result had already been written.
+    </ResponseField>
+    <ResponseField name="error_code" type="string | null">
+      Set on `FAILED` or `CANCELLED`, for example `TRANSLATION_CANCELLED`, `TRANSLATION_TIMED_OUT`, or `TRANSLATION_START_FAILED`. `null` otherwise.
+    </ResponseField>
+    <ResponseField name="error_message" type="string | null">
+      Human-readable failure reason, safe to show to users. `null` unless `error_code` is set.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the run was created.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      ISO 8601 timestamp of when the run reached a terminal state, or `null` while it is still active.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.run.result" type="object | null">
+  The terminal result. Which of `scenarios` or `agent` and `version` is present depends on the job's `create` flag.
+
+  <Expandable title="result object">
+    <ResponseField name="per_pathway" type="array">
+      One entry per pathway, in job order. Each has `pathway_id`, `mode` (`one_to_one` or `translate`), `pathway_name`, `scenario_names` (the scenarios produced from it), `warnings` (strings), and, for `translate` entries only, `report` (the planner's accounting: `architectureSummary`, `dispositions`, `droppedOrApproximated`, `openQuestions`).
+    </ResponseField>
+    <ResponseField name="scenarios" type="array">
+      Present when the job was started with `create: false`. The combined scenario nodes from every pathway, each with `id`, `type` (`scenario` or `complex-scenario`), `position`, and `data`, ready to add to an existing agent with [Create Agent Version](/api-v2/post/agents-id-versions).
+    </ResponseField>
+    <ResponseField name="warnings" type="array">
+      All pathways' warnings combined, plus job-level notes such as a global prompt that was not carried over.
+    </ResponseField>
+    <ResponseField name="lint" type="object">
+      Structural checks on the combined result: `errors` and `warnings` (arrays of strings).
+    </ResponseField>
+    <ResponseField name="agent" type="object">
+      Present when the job created an agent. The agent record: `id`, `org_id`, `name`, `created_by` (`string | null`), `created_at`, `updated_at`, `deleted_at` (`null`).
+    </ResponseField>
+    <ResponseField name="version" type="object">
+      Present when the job created an agent. Its first version: `id`, `org_id`, `agent_id`, `branch_id` (`null`), `snapshot` (the full agent configuration, abbreviated in the example below), `name`, `created_via` (`manual`), `revision` (`0`), `created_by`, `created_at`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "run": {
+      "id": "182405af-c7b3-4640-adea-42f3f91d70dd",
+      "status": "COMPLETE",
+      "total_pathways": 2,
+      "completed_pathways": 2,
+      "result": {
+        "per_pathway": [
+          {
+            "pathway_id": "8c2c2ec5-d8d5-42a0-9b38-0bfb7d2b2e65",
+            "mode": "translate",
+            "pathway_name": "Order status",
+            "scenario_names": ["Look up order"],
+            "warnings": [],
+            "report": {
+              "architectureSummary": "Three lookup nodes merged into one scenario with a webhook tool.",
+              "dispositions": [
+                {
+                  "nodeIds": ["4ee8cecb-df73-4883-a0c8-965bfb9e0077", "2c8026a9-5dc3-4e3e-83e5-b306e4d4369b"],
+                  "disposition": "Became scenario \"Look up order\"",
+                  "rationale": "Collect-then-fetch sequence with no branching."
+                }
+              ],
+              "droppedOrApproximated": [],
+              "openQuestions": []
+            }
+          },
+          {
+            "pathway_id": "7aa67804-b77a-414c-86de-06497b7dc2c5",
+            "mode": "one_to_one",
+            "pathway_name": "Returns",
+            "scenario_names": ["Returns"],
+            "warnings": []
+          }
+        ],
+        "warnings": [],
+        "lint": {
+          "errors": [],
+          "warnings": []
+        },
+        "agent": {
+          "id": "09ffd40f-cf55-448e-ab85-ad5c2cff650b",
+          "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+          "name": "Migrated pathways",
+          "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+          "created_at": "2026-09-10T20:14:52.301Z",
+          "updated_at": "2026-09-10T20:14:52.301Z",
+          "deleted_at": null
+        },
+        "version": {
+          "id": "bc44cc7d-d822-4d0b-9661-b7916c4277a5",
+          "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+          "agent_id": "09ffd40f-cf55-448e-ab85-ad5c2cff650b",
+          "branch_id": null,
+          "snapshot": {
+            "behavior": {
+              "nodes": [
+                {
+                  "id": "inbound",
+                  "type": "inbound",
+                  "position": { "x": 360, "y": -180 },
+                  "data": { "number": "" }
+                },
+                {
+                  "id": "agent",
+                  "type": "agent",
+                  "position": { "x": 192, "y": 0 },
+                  "data": {
+                    "prompt": "Greet the caller and find out what they need.\n\n## Routing\n\nAfter each user turn, enter the scenario that matches where the conversation is now. The scenarios you can enter:\n\n- \"Look up order\": the caller wants the status of an order\n- \"Returns\": the caller wants to return an item",
+                    "loopWhile": "",
+                    "variables": []
+                  }
+                },
+                {
+                  "id": "a732a5dd-5430-460e-8fab-cf5576a34b41",
+                  "type": "scenario",
+                  "position": { "x": -190, "y": 260 },
+                  "data": {
+                    "name": "Look up order",
+                    "rule": "Ask for the order number, look it up, and read back the shipping status.",
+                    "target": { "kind": "dialogue", "label": "Look up order" },
+                    "loopWhile": "",
+                    "variables": [],
+                    "entry": {
+                      "mode": "llm",
+                      "label": "Order status",
+                      "description": "The caller wants the status of an order",
+                      "alwaysPick": false,
+                      "conditions": []
+                    }
+                  }
+                },
+                {
+                  "id": "bb0041fb-8077-41eb-aec9-57c1d477a70d",
+                  "type": "complex-scenario",
+                  "position": { "x": 190, "y": 260 },
+                  "data": {
+                    "name": "Returns",
+                    "rule": "The caller wants to return an item",
+                    "target": { "kind": "dialogue", "label": "Returns" },
+                    "entry": {
+                      "mode": "llm",
+                      "label": "Returns",
+                      "description": "The caller wants to return an item",
+                      "alwaysPick": false,
+                      "conditions": []
+                    },
+                    "flow": {
+                      "nodes": [
+                        { "id": "start", "type": "start", "position": { "x": 0, "y": 0 }, "data": {} },
+                        {
+                          "id": "4fce61ee-3bfa-4def-bcad-7198b04bf853",
+                          "type": "prompt",
+                          "position": { "x": 0, "y": 160 },
+                          "data": {
+                            "name": "Reason for return",
+                            "prompt": "Ask why the caller is returning the item.",
+                            "useStaticText": false,
+                            "loopWhile": "",
+                            "variables": [],
+                            "useAudioExtraction": false,
+                            "ignorePreviousExtractions": false,
+                            "settings": {}
+                          }
+                        },
+                        { "id": "end", "type": "end", "position": { "x": 0, "y": 320 }, "data": {} }
+                      ],
+                      "edges": [
+                        { "id": "e-start-reason", "source": "start", "target": "4fce61ee-3bfa-4def-bcad-7198b04bf853" },
+                        { "id": "e-reason-end", "source": "4fce61ee-3bfa-4def-bcad-7198b04bf853", "target": "end" }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "edges": [
+                { "id": "e-inbound-agent", "source": "inbound", "target": "agent" },
+                {
+                  "id": "e-agent-lookup",
+                  "source": "agent",
+                  "target": "a732a5dd-5430-460e-8fab-cf5576a34b41",
+                  "data": { "mode": "llm", "label": "Order status", "description": "The caller wants the status of an order", "alwaysPick": false, "conditions": [] }
+                },
+                {
+                  "id": "e-agent-returns",
+                  "source": "agent",
+                  "target": "bb0041fb-8077-41eb-aec9-57c1d477a70d",
+                  "data": { "mode": "llm", "label": "Returns", "description": "The caller wants to return an item", "alwaysPick": false, "conditions": [] }
+                }
+              ]
+            },
+            "settings": {
+              "displayName": "Migrated pathways",
+              "systemPrompt": "You help customers of Acme Outdoor.",
+              "voice": "",
+              "languages": ["english"],
+              "enableMemory": false,
+              "interruptionSensitivity": 350,
+              "backgroundNoise": "off"
+            },
+            "contact": { "inboundNumbers": [] }
+          },
+          "name": "Migrated from 2 pathway(s)",
+          "created_via": "manual",
+          "revision": 0,
+          "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+          "created_at": "2026-09-10T20:14:52.301Z"
+        }
+      },
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-09-10T20:01:12.530Z",
+      "completed_at": "2026-09-10T20:14:52.418Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json In Progress
+{
+  "data": {
+    "run": {
+      "id": "182405af-c7b3-4640-adea-42f3f91d70dd",
+      "status": "RUNNING",
+      "total_pathways": 2,
+      "completed_pathways": 1,
+      "result": null,
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-09-10T20:01:12.530Z",
+      "completed_at": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TRANSLATION_RUN_NOT_FOUND",
+      "message": "no translation run with that id"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

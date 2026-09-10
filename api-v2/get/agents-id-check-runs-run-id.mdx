@@ -1,0 +1,192 @@
+---
+title: "Get Check Run"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/check-runs/{run_id}"
+description: "Retrieve a check run and its verdicts."
+---
+
+### Overview
+
+Returns one check run with its per-judge verdicts. Poll this after [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) until `status` is `PASSED`, `FAILED`, `ERROR`, or `CANCELLED`; only then are `overall_passed` and `verdicts` final. The run is a report only: it never changes which version an environment runs.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="run_id" type="string" required>
+  The check run's unique identifier, from the `id` returned by [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The check run.
+
+  <Expandable title="check run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the check run.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the run belongs to.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      The environment whose checks were run: `staging` or `production`.
+    </ResponseField>
+    <ResponseField name="agent_version_id" type="string">
+      The candidate version the run scored.
+    </ResponseField>
+    <ResponseField name="semver" type="string | null">
+      The candidate's published version number. `null` when the candidate has never been published, which is the normal case for a `staging` run.
+    </ResponseField>
+    <ResponseField name="version_name" type="string | null">
+      The candidate's saved name, or `null` if it has none.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `PENDING` (created, scoring not yet started), `RUNNING` (generating and scoring conversations), then one of the terminal states `PASSED`, `FAILED`, `ERROR`, or `CANCELLED`. A run that stays `PENDING` or `RUNNING` for 45 minutes is marked `ERROR` with the message `Check run timed out`.
+    </ResponseField>
+    <ResponseField name="judge_names" type="array">
+      Display names of the judges frozen into the run when it started. Present while the run is in flight, before any verdicts exist.
+    </ResponseField>
+    <ResponseField name="scenario_count" type="integer">
+      Number of scenarios the run drove conversations from.
+    </ResponseField>
+    <ResponseField name="simulations_count" type="integer">
+      Conversations generated per scenario.
+    </ResponseField>
+    <ResponseField name="overall_passed" type="boolean | null">
+      `true` when the run `PASSED`, meaning every judge with `required: true` passed. `false` when it `FAILED`. `null` while in flight, or when the run ended in `ERROR` or `CANCELLED` without a verdict. Informational judges (`required: false`) never affect this value.
+    </ResponseField>
+    <ResponseField name="verdicts" type="array | null">
+      Per-judge results, or `null` until the run completes. See `data.verdicts` below.
+    </ResponseField>
+    <ResponseField name="simulation_set_id" type="string | null">
+      ID of the generated conversation set. `null` until generation starts.
+    </ResponseField>
+    <ResponseField name="eval_run_id" type="string | null">
+      ID of the scoring run. `null` until scoring starts.
+    </ResponseField>
+    <ResponseField name="error_message" type="string | null">
+      Why the run ended in `ERROR`, or `null`.
+    </ResponseField>
+    <ResponseField name="triggered_by" type="string | null">
+      ID of the user who started the run, or `null` when started with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp the run was created.
+    </ResponseField>
+    <ResponseField name="started_at" type="string | null">
+      When scoring began. `null` while `PENDING`.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      When the run reached a terminal status. `null` while in flight.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.verdicts" type="array | null">
+  One entry per judge, in config order. `null` until the run completes.
+
+  <Expandable title="verdict object">
+    <ResponseField name="eval_agent_id" type="string">
+      The judge's unique identifier.
+    </ResponseField>
+    <ResponseField name="eval_agent_version_id" type="string">
+      The judge version the run used.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The judge's display name.
+    </ResponseField>
+    <ResponseField name="required" type="boolean">
+      Whether a failing verdict from this judge fails the run.
+    </ResponseField>
+    <ResponseField name="target_level_keys" type="array">
+      The grade levels counted as passing. Empty for pass/fail judges.
+    </ResponseField>
+    <ResponseField name="match_rate" type="number | null">
+      Fraction of scored conversations, `0` to `1`, that landed on a passing level. `null` when no conversation produced a determinable result.
+    </ResponseField>
+    <ResponseField name="score" type="number | null">
+      Mean judge score across scored conversations on a `0` to `100` scale, rounded to one decimal. `null` when none were scored.
+    </ResponseField>
+    <ResponseField name="passed" type="boolean | null">
+      `true` when `match_rate` is at least `0.5`, `false` when it is lower, `null` when `match_rate` is `null`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "fb12d904-efbe-4bb2-b167-04a5d8446fad",
+    "agent_id": "3a5dff19-707a-4776-943e-809520a3592a",
+    "env_type": "production",
+    "agent_version_id": "20752a9f-c33c-49b1-914c-ba468ea4ad5f",
+    "semver": "2.1.0",
+    "version_name": "Insurance intake v2",
+    "status": "PASSED",
+    "judge_names": ["Resolution quality", "No policy violations"],
+    "scenario_count": 2,
+    "simulations_count": 5,
+    "overall_passed": true,
+    "verdicts": [
+      {
+        "eval_agent_id": "30dd62b6-13b2-4279-ac57-fdee065880a5",
+        "eval_agent_version_id": "2ea22a1c-380f-4d94-90ce-0c30b003fbfc",
+        "name": "Resolution quality",
+        "required": true,
+        "target_level_keys": ["good", "excellent"],
+        "match_rate": 0.8,
+        "score": 81.3,
+        "passed": true
+      },
+      {
+        "eval_agent_id": "0497636a-27e3-4b06-b05a-3f49a6610f4f",
+        "eval_agent_version_id": "aed97f7b-4535-49d3-b125-c4692ab44d87",
+        "name": "No policy violations",
+        "required": false,
+        "target_level_keys": [],
+        "match_rate": 0.4,
+        "score": 40.0,
+        "passed": false
+      }
+    ],
+    "simulation_set_id": "92e38d39-f377-4075-9ddc-724096d72d22",
+    "eval_run_id": "4f96db0e-2456-4b70-81e9-155b3c29a9b5",
+    "error_message": null,
+    "triggered_by": "0ce6e187-38fa-40f7-95df-465368d7c104",
+    "created_at": "2026-09-10T14:03:22.901Z",
+    "started_at": "2026-09-10T14:03:25.144Z",
+    "completed_at": "2026-09-10T14:16:58.377Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Check run not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

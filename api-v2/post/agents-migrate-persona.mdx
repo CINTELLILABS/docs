@@ -1,0 +1,265 @@
+---
+title: "Migrate Persona"
+api: "POST https://api.bland.ai/v2/agents/migrate/persona"
+description: "Build an agent from a persona and its attached pathways."
+---
+
+### Overview
+
+Deterministically converts a persona into a new agent, with no AI planning involved. The persona's prompts, voice, and call settings become the agent's settings, each attached pathway becomes a complex scenario holding a one-to-one conversion of its graph, and the persona's skills become simple scenarios. The persona's published version is used, falling back to its draft. The agent and its first version are always created; the response is `201`. To have the planner re-architect the persona's pathways instead, use [Start Pathway Translation](/api-v2/post/agents-migrate-translations) with the same body.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="persona_id" type="string" required>
+  UUID of a persona in your organization. Returns `400 INVALID_PERSONA_ID` if it is not a UUID, `404 PERSONA_NOT_FOUND` if no such persona exists in your organization, and `422 PERSONA_HAS_NO_VERSION` if the persona has neither a published nor a draft version.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent. Whitespace is trimmed. Defaults to the persona's name.
+</ParamField>
+
+<ParamField body="pathway_modes" type="array">
+  One entry per pathway attached to the persona, in the persona's order, each `one_to_one` or `translate`. The length must match the persona's pathway count or the request returns `400 INVALID_PATHWAY_MODES`. This endpoint only performs `one_to_one`; any `translate` entry returns `400 TRANSLATE_NOT_SUPPORTED`. Omit the field to convert every pathway one-to-one.
+</ParamField>
+
+### Response
+
+Returns `201` on success. Returns `422` with `INVALID_MIGRATED_SNAPSHOT` or `MIGRATION_LINT_FAILED` when the converted agent does not validate, and `422 PERSONA_MIGRATION_FAILED` when a referenced pathway cannot be loaded (for example, it was deleted or belongs to another organization).
+
+<ResponseField name="data.agent" type="object">
+  The new agent record.
+
+  <Expandable title="agent object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the agent.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The agent's display name.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who ran the migration, or `null` when run with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+    <ResponseField name="deleted_at" type="null">
+      Always `null` on a live agent.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.version" type="object">
+  The agent's first version, saved on the dev timeline.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the version.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent this version belongs to.
+    </ResponseField>
+    <ResponseField name="branch_id" type="null">
+      Always `null`; migrations save to the dev timeline, not a branch.
+    </ResponseField>
+    <ResponseField name="snapshot" type="object">
+      The full agent configuration (`behavior`, `settings`, `contact`, and `knowledge` when the persona had knowledge bases). Same shape as [Create Agent Version](/api-v2/post/agents-id-versions) accepts. Abbreviated in the example below.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      `Migrated from persona: <persona name>`.
+    </ResponseField>
+    <ResponseField name="created_via" type="string">
+      Always `manual`.
+    </ResponseField>
+    <ResponseField name="revision" type="integer">
+      Always `0` on a new version.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who ran the migration, or `null` when run with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.warnings" type="array">
+  Human-readable notes about constructs the one-to-one conversion could not carry faithfully. Review each before publishing the agent.
+</ResponseField>
+
+<ResponseField name="data.lint" type="object">
+  Structural checks on the saved snapshot: `errors` (always empty on a `201`) and `warnings` (array of strings).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent": {
+      "id": "3096f27e-d17c-4fe8-a469-dac7da1d8d57",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "name": "Support line",
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-10T19:02:15.907Z",
+      "updated_at": "2026-09-10T19:02:15.907Z",
+      "deleted_at": null
+    },
+    "version": {
+      "id": "d24c0c2b-ea67-4ad2-97f7-aad1c9aef52f",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "agent_id": "3096f27e-d17c-4fe8-a469-dac7da1d8d57",
+      "branch_id": null,
+      "snapshot": {
+        "behavior": {
+          "nodes": [
+            {
+              "id": "inbound",
+              "type": "inbound",
+              "position": { "x": 360, "y": -180 },
+              "data": { "number": "" }
+            },
+            {
+              "id": "agent",
+              "type": "agent",
+              "position": { "x": 192, "y": 0 },
+              "data": {
+                "prompt": "You are the support line for Acme Utilities. Greet the caller and find out what they need.\n\n## Routing\n\nAfter each user turn, enter the scenario that matches where the conversation is now. The scenarios you can enter:\n\n- \"Report an outage\": the caller has lost service",
+                "loopWhile": "",
+                "variables": []
+              }
+            },
+            {
+              "id": "67a8c229-341e-423f-8295-e837e301134b",
+              "type": "complex-scenario",
+              "position": { "x": 0, "y": 260 },
+              "data": {
+                "name": "Report an outage",
+                "rule": "The caller has lost service",
+                "target": { "kind": "dialogue", "label": "Report an outage" },
+                "entry": {
+                  "mode": "llm",
+                  "label": "Report an outage",
+                  "description": "The caller has lost service",
+                  "alwaysPick": false,
+                  "conditions": []
+                },
+                "flow": {
+                  "nodes": [
+                    { "id": "start", "type": "start", "position": { "x": 0, "y": 0 }, "data": {} },
+                    {
+                      "id": "08e7085c-e318-42d8-a071-a5cd91f202cc",
+                      "type": "prompt",
+                      "position": { "x": 0, "y": 160 },
+                      "data": {
+                        "name": "Collect address",
+                        "prompt": "Ask for the service address and when the outage started.",
+                        "useStaticText": false,
+                        "loopWhile": "",
+                        "variables": [],
+                        "useAudioExtraction": false,
+                        "ignorePreviousExtractions": false,
+                        "settings": {}
+                      }
+                    },
+                    { "id": "end", "type": "end", "position": { "x": 0, "y": 320 }, "data": {} }
+                  ],
+                  "edges": [
+                    { "id": "e-start-address", "source": "start", "target": "08e7085c-e318-42d8-a071-a5cd91f202cc" },
+                    { "id": "e-address-end", "source": "08e7085c-e318-42d8-a071-a5cd91f202cc", "target": "end" }
+                  ]
+                }
+              }
+            }
+          ],
+          "edges": [
+            { "id": "e-inbound-agent", "source": "inbound", "target": "agent" },
+            {
+              "id": "e-agent-outage",
+              "source": "agent",
+              "target": "67a8c229-341e-423f-8295-e837e301134b",
+              "data": {
+                "mode": "llm",
+                "label": "Report an outage",
+                "description": "The caller has lost service",
+                "alwaysPick": false,
+                "conditions": []
+              }
+            }
+          ]
+        },
+        "settings": {
+          "displayName": "Support line",
+          "systemPrompt": "Be concise and empathetic. Never promise a restoration time.",
+          "voice": "maya",
+          "languages": ["english"],
+          "enableMemory": true,
+          "interruptionSensitivity": 350,
+          "backgroundNoise": "off"
+        },
+        "contact": { "inboundNumbers": [] },
+        "knowledge": { "kbIds": ["53156238-c466-459f-8057-1f88c256d55b"] }
+      },
+      "name": "Migrated from persona: Support line",
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-10T19:02:15.907Z"
+    },
+    "warnings": [],
+    "lint": {
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "errors": null
+}
+```
+
+```json Persona Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PERSONA_NOT_FOUND",
+      "message": "persona not found in this organization"
+    }
+  ]
+}
+```
+
+```json Translate Not Supported
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TRANSLATE_NOT_SUPPORTED",
+      "message": "AI-translated persona pathways run as a job — POST /v2/agents/migrate/translations with the persona_id, or switch those pathways to 1:1 to migrate synchronously"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

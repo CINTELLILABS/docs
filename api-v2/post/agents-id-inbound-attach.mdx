@@ -1,0 +1,125 @@
+---
+title: "Attach Numbers to Agent"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/inbound/attach"
+description: "Route inbound calls on your phone numbers to an agent."
+---
+
+### Overview
+
+Points one or more of your phone numbers at the agent so inbound calls run it. Any existing pathway or persona assignment on those numbers is replaced. Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach after saving to refresh it. The agent must have at least one saved version. Use [Detach Numbers from Agent](/api-v2/post/agents-id-inbound-detach) to undo.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="inbound_numbers" type="string[]" required>
+  Phone numbers to attach, each exactly as it appears on your account (for example `+18005551234`). Must be a non-empty array of non-empty strings; surrounding whitespace is trimmed. Returns `400 INVALID_BODY` if the array is missing, empty, or contains a non-string. Returns `400 INVALID_INBOUND_NUMBERS` if any number is not on your account, in which case nothing is attached.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.agent_id" type="string">
+  The agent ID from the request path.
+</ResponseField>
+
+<ResponseField name="data.persona_id" type="string">
+  ID of the persona the attached numbers route through. Created on the agent's first attach and reused afterwards.
+</ResponseField>
+
+<ResponseField name="data.pathway_id" type="string">
+  ID of the pathway compiled from the agent's version for this binding. Regenerated on every attach.
+</ResponseField>
+
+<ResponseField name="data.compiled_from_version" type="string">
+  ID of the agent version the binding was compiled from: the newest version on the dev timeline. Versions saved on branches are ignored.
+</ResponseField>
+
+<ResponseField name="data.attached" type="string[]">
+  The numbers that were attached, after trimming.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, and `422 COMPILE_FAILED` when the newest version cannot be compiled.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent_id": "56ad3ffc-41c3-4466-b41f-220d17779a74",
+    "persona_id": "4cbdee81-f067-4fb7-8738-0995316ab3ce",
+    "pathway_id": "48e86cb8-4d1a-4be6-a85a-4c277255eeb4",
+    "compiled_from_version": "4adbe770-fc45-42ea-aa17-7533429c34f3",
+    "attached": [
+      "+18005551234",
+      "+18005556789"
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Invalid Numbers
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_INBOUND_NUMBERS",
+      "message": "Some phone numbers were not found or do not belong to you"
+    }
+  ]
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_BODY",
+      "message": "inbound_numbers must be a non-empty array of phone numbers"
+    }
+  ]
+}
+```
+
+```json No Versions
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NO_VERSIONS",
+      "message": "Agent has no saved versions — save it in the builder first"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
