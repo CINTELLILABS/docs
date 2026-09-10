@@ -1,0 +1,74 @@
+---
+title: "List Scenario Eval Agents"
+api: "GET https://api.bland.ai/v1/agent-testing/scenarios/{id}/eval-agents"
+description: "List the eval agents attached to a test scenario. Attached eval agents score every simulated conversation generated for the scenario."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+### Response
+
+Returns an array of attached eval agents, ordered by `order` then attachment time.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the attachment row.
+</ResponseField>
+
+<ResponseField name="scenario_id" type="string">
+  The scenario the eval agent is attached to.
+</ResponseField>
+
+<ResponseField name="eval_agent_id" type="string">
+  The eval agent that scores generated conversations.
+</ResponseField>
+
+<ResponseField name="eval_agent_version_id" type="string">
+  The pinned eval agent version used for scoring.
+</ResponseField>
+
+<ResponseField name="weight" type="number">
+  Per-experiment weight applied when aggregating scores across attached eval agents (0 or greater).
+</ResponseField>
+
+<ResponseField name="target_level_keys" type="array of strings">
+  Level keys that count as a pass for `levels`-mode eval agents. Empty for `passfail`-mode agents.
+</ResponseField>
+
+<ResponseField name="order" type="integer">
+  Display order in the dashboard. Lower values render first.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of when the eval agent was attached.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+[
+  {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "scenario_id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+    "eval_agent_id": "22222222-2222-2222-2222-222222222222",
+    "eval_agent_version_id": "33333333-3333-3333-3333-333333333333",
+    "weight": 1.0,
+    "target_level_keys": ["excellent", "good"],
+    "order": 0,
+    "created_at": "2026-06-30T10:00:00.000Z"
+  }
+]
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,75 @@
+---
+title: "Attach Eval Agent to Scenario"
+api: "POST https://api.bland.ai/v1/agent-testing/scenarios/{id}/eval-agents"
+description: "Attach an eval agent to a test scenario so it scores every simulated conversation generated for that scenario. Re-attaching the same eval agent updates the existing attachment in place."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="eval_agent_id" type="string" required>
+  The eval agent to attach. Must belong to your organization.
+</ParamField>
+
+<ParamField body="eval_agent_version_id" type="string">
+  Pin a specific eval agent version. When omitted, the eval agent's current published version is used.
+</ParamField>
+
+<ParamField body="weight" type="number">
+  Per-experiment weight applied when aggregating scores across attached eval agents. Must be 0 or greater. Defaults to the version's configured weight.
+</ParamField>
+
+<ParamField body="target_level_keys" type="array of strings">
+  Level keys that count as a pass for `levels`-mode eval agents (for example `["excellent", "good"]`). Defaults to the version's configured target levels. Ignored for `passfail`-mode agents.
+</ParamField>
+
+<ParamField body="order" type="integer">
+  Display order in the dashboard. Lower values render first. Defaults to `0`.
+</ParamField>
+
+### Response
+
+Returns the persisted attachment row. See [List Scenario Eval Agents](/api-v1/get/agent-testing-scenarios-id-eval-agents) for the full schema.
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v1/agent-testing/scenarios/a1b2c3d4-5678-9abc-def0-1234567890ab/eval-agents \
+  -H "authorization: $BLAND_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "eval_agent_id": "22222222-2222-2222-2222-222222222222",
+    "weight": 1.0,
+    "target_level_keys": ["excellent", "good"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "scenario_id": "a1b2c3d4-5678-9abc-def0-1234567890ab",
+  "eval_agent_id": "22222222-2222-2222-2222-222222222222",
+  "eval_agent_version_id": "33333333-3333-3333-3333-333333333333",
+  "weight": 1.0,
+  "target_level_keys": ["excellent", "good"],
+  "order": 0,
+  "created_at": "2026-06-30T10:00:00.000Z"
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
