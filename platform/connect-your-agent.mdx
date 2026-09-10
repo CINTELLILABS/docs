@@ -167,16 +167,18 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 
 ## Texting from the new number
 
-Outbound texts go through [`POST /v1/sms/send`](/api-v1/post/sms-send). Replies arrive at the same number and are answered automatically using the number's texting prompt, which starts out generic. Before starting a thread that has a goal, set the prompt for that goal with [Update SMS Configuration](/api-v1/post/sms-update):
+Outbound texts go through [`POST /v1/sms/send`](/api-v1/post/sms-send). Replies arrive at the same number and are answered automatically. When a thread has a goal, pass it as `objective`, and every reply in that conversation works toward it:
 
 ```bash
-curl -X POST https://api.bland.ai/v1/sms/number/update \
+curl -X POST https://api.bland.ai/v1/sms/send \
   -H "authorization: $API_KEY" \
   -H "content-type: application/json" \
-  -d '{"phone_number": "+14155550123", "prompt": "You are booking a haircut for the owner. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation."}'
+  -d '{"user_number": "+14155550123", "agent_number": "+12765550123", "agent_message": "Hi, do you have an opening next Tuesday afternoon for a haircut?", "objective": "Book a haircut for the owner next Tuesday afternoon. Confirm the time and price, then end the conversation."}'
 ```
 
-The prompt belongs to the number, not to one conversation. It applies to every text thread on that number until you change it, so set it before each new task.
+A conversation without an objective is answered from the number's texting prompt, which starts out generic. To change that default for every conversation on the number, use [Update SMS Configuration](/api-v1/post/sms-update).
+
+Calls use the same number. A call placed without `from` leaves from the plan's number, so the person you called can call or text it back.
 
 ## Error codes
 

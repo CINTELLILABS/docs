@@ -5,7 +5,7 @@ description: "Send an SMS message from an agent to a user. This creates or resum
 ---
 
 <Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+  SMS is available on Enterprise plans and on the [Agent Phone Plan](/platform/agent-phone-plan). WhatsApp and iMessage are Enterprise only. Contact your Bland representative for Enterprise access.
 </Info>
 
 ### Headers
@@ -29,7 +29,15 @@ description: "Send an SMS message from an agent to a user. This creates or resum
 </ParamField>
 
 <ParamField body="agent_message" type="string">
-  The content of the SMS message to send. If not passed in, this generates a response using the pathway/prompt the conversation has been setup with.
+  The content of the SMS message to send. If not passed in, the message is generated from the conversation's pathway, persona, or `objective`, or from the number's prompt.
+</ParamField>
+
+<ParamField body="objective" type="string" required={false}>
+  The goal of this conversation, for example "Book a haircut for Tuesday afternoon and confirm the price." Replies in the conversation are generated from it instead of the number's prompt, and so is the first message when you omit `agent_message`. Up to 20,000 characters. `prompt` and `task` are accepted as aliases.
+
+  A later send to the same conversation with a new `objective` replaces it, and a send without one keeps it. Set `new_conversation` to `true` to start a thread without it. A `persona_id` or `pathway_id`, on the request or on the number, takes priority: those replies don't use the objective.
+
+  An objective that is not a string, is empty, or is longer than 20,000 characters is rejected with a `400` and error code `INVALID_OBJECTIVE`.
 </ParamField>
 
 <ParamField body="request_data" type="object" required={false}>
