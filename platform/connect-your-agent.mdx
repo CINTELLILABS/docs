@@ -1,6 +1,6 @@
 ---
 title: "Agent onboarding API"
-description: "The device-authorization flow an AI agent follows to sign itself up for Bland: it shows its owner a link and a code, the owner finishes signup in a browser, and the agent gets an API key and a phone number."
+description: "The device-authorization flow an AI agent follows to sign itself up for Bland: it shows its owner a link and a code, the owner finishes signup in a browser, and the agent gets an API key, plus a phone number if the owner starts the Agent Phone Plan."
 ---
 
 ## Overview
@@ -9,12 +9,12 @@ This page is written for the agent. If you are a person setting up an assistant 
 
 Most Bland integrations start with a human signing up in the dashboard, minting an API key, and pasting it into whatever they're building. That doesn't work well for an autonomous bot: there's no dashboard session to sign into, and often no browser or localhost to redirect back to.
 
-Agent onboarding solves this with a device-authorization flow, the same shape used by tools like `gh auth login` or a smart TV signing into a streaming app: the bot starts the flow over a plain API call, shows its owner a short code and a link, and polls in the background while the owner finishes signup and subscribes in their own browser. No callback URL, no localhost, no client secret. It works the same way whether the bot is running on your laptop or on a server with no browser at all.
+Agent onboarding solves this with a device-authorization flow, the same shape used by tools like `gh auth login` or a smart TV signing into a streaming app: the bot starts the flow over a plain API call, shows its owner a short code and a link, and polls in the background while the owner finishes signup in their own browser. No callback URL, no localhost, no client secret. It works the same way whether the bot is running on your laptop or on a server with no browser at all.
 
-At the end of the flow, the bot receives a dedicated API key and the phone number provisioned for it. The owner never sees or handles the key.
+At the end of the flow, the bot receives a dedicated API key. If the owner starts the [Agent Phone Plan](/platform/agent-phone-plan), the bot also receives the phone number provisioned for it. If the owner continues with free credits instead, `phone_number` is `null`. The owner never sees or handles the key.
 
 <Note>
-This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-plan). If the owner already has a Bland account, they sign in and subscribe instead of creating a new one.
+During signup, the owner chooses between the [Agent Phone Plan](/platform/agent-phone-plan) and connecting on the org's \$2 of free credits. If the owner already has a Bland account, they sign in and choose there instead of creating a new one.
 </Note>
 
 ## The flow
@@ -44,12 +44,30 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     ```
 
     `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). It's shown to the owner so they know which bot is asking.
+
+    `prefill` is also optional. If you already know your owner's name, email, or phone number, pass them so the sign-up form arrives pre-filled:
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/agent/onboarding/start \
+      -H "Content-Type: application/json" \
+      -d '{"client_name": "my-bot", "prefill": {"name": "Sam Lee", "email": "sam@example.com", "phone": "+14155550123"}}'
+    ```
+
+    `prefill` takes `name`, `first_name`, `last_name`, `email`, and `phone`, each a string up to 128 characters. When `first_name` and `last_name` are absent, `name` is split on its first space. `phone` is normalized to E.164, with US as the default region. `email` must have the shape `x@y.z`. Invalid values are dropped silently; a bad pre-fill never fails the request.
+
+    Values that survive validation are appended to `verification_url_complete` as a URL fragment, form-encoded the way `URLSearchParams` does it (`@` becomes `%40`, `+` becomes `%2B`, a space becomes `+`):
+
+    ```text
+    https://app.bland.ai/agent-setup?code=BQPL-7VXR#first_name=Sam&last_name=Lee&email=sam%40example.com&phone=%2B14155550123
+    ```
+
+    The sign-up page reads the fragment and pre-fills the form. Pre-fill values ride only in the fragment, which stays in the owner's browser; Bland never stores or logs them. If you build the link yourself from `verification_url` and `user_code`, you can append a fragment in the same format.
   </Step>
 
   <Step title="Show the link and code to your owner">
     Display `verification_url_complete` (or `verification_url` plus `user_code` if you can't render a clickable link) wherever your owner will see it: a chat message, a terminal, a Slack DM.
 
-    The owner opens the link, signs up or logs in, enters the code if it isn't already pre-filled, and subscribes to the [Agent Phone Plan](/platform/agent-phone-plan). This happens once, in their browser. Your bot doesn't participate in it beyond polling for the result.
+    The owner opens the link, signs up or logs in, enters the code if it isn't already pre-filled, and then either starts the [Agent Phone Plan](/platform/agent-phone-plan) or connects you on the org's free credits. This happens once, in their browser. Your bot doesn't participate in it beyond polling for the result.
   </Step>
 
   <Step title="Poll until approved">
@@ -66,7 +84,7 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     | `status` | Meaning |
     | --- | --- |
     | `pending` | Still waiting on the owner. Keep polling at the returned `interval`. |
-    | `approved` | Onboarding is complete. The response includes `api_key`, `org_id`, and `phone_number`. |
+    | `approved` | Onboarding is complete. The response includes `api_key`, `org_id`, and `phone_number` (`null` when the owner connected you without the plan). |
     | `expired` | The code expired, or the `device_code` was never valid. These two cases aren't distinguished, so don't use `expired` to debug a typo, start over with a fresh `/start` call instead. |
 
     If you poll faster than `interval`, you get a `429` with error code `SLOW_DOWN` instead of a status:
@@ -88,9 +106,9 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
   </Step>
 
   <Step title="Use the key">
-    Once `status` is `approved`, the response looks like this:
+    Once `status` is `approved`, the response depends on the choice the owner made:
 
-    ```json Response
+    ```json With the plan
     {
       "data": {
         "status": "approved",
@@ -112,6 +130,31 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
       "errors": null
     }
     ```
+
+    ```json With free credits
+    {
+      "data": {
+        "status": "approved",
+        "api_key": "org_...",
+        "org_id": "...",
+        "phone_number": null,
+        "plan": {
+          "name": null,
+          "display_name": null,
+          "status": "none",
+          "phone_number": null,
+          "concurrency": null,
+          "max_call_duration_minutes": null,
+          "allowed_countries": null,
+          "current_period_end": null
+        },
+        "client_name": "my-bot"
+      },
+      "errors": null
+    }
+    ```
+
+    When the owner connected you without the plan, `phone_number` is `null` and `plan.status` is `"none"`. The API key works the same way; your calls go out from Bland's shared pool of numbers, and texting is not included. The owner can add the plan later from [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan).
 
     This is the only time `api_key` is returned. Store it immediately, the code is single-use, so polling again after this returns `expired`.
   </Step>
@@ -145,13 +188,13 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
     Run the Bland CLI's MCP server as a stdio server and your agent can run the whole flow itself, with no API key set up first. In Claude Code:
 
     ```bash
-    claude mcp add bland-agent -- npx -y bland-cli@0.9.0 mcp
+    claude mcp add bland-agent -- npx -y bland-cli@0.10.0 mcp
     ```
 
     Any other MCP host that launches stdio servers takes the same command:
 
     ```json
-    { "mcpServers": { "bland-agent": { "command": "npx", "args": ["-y", "bland-cli@0.9.0", "mcp"] } } }
+    { "mcpServers": { "bland-agent": { "command": "npx", "args": ["-y", "bland-cli@0.10.0", "mcp"] } } }
     ```
 
     That server exposes two tools for this flow:
@@ -166,6 +209,8 @@ This flow signs the owner up for the [Agent Phone Plan](/platform/agent-phone-pl
 </Tabs>
 
 ## Texting from the new number
+
+Texting requires the [Agent Phone Plan](/platform/agent-phone-plan). If the owner connected you with free credits, there is no dedicated number to text from, and this section doesn't apply until they add the plan.
 
 Outbound texts go through [`POST /v1/sms/send`](/api-v1/post/sms-send). Replies arrive at the same number and are answered automatically. When a thread has a goal, pass it as `objective`, and every reply in that conversation works toward it:
 
@@ -187,7 +232,7 @@ Calls use the same number. A call placed without `from` leaves from the plan's n
 | `SLOW_DOWN` | 429 | `/poll` | Polling faster than `interval`. Back off and retry. |
 | `TOO_MANY_REQUESTS` | 429 | `/start`, `/poll`, `/approve` (browser) | Rate limited. Respect the `Retry-After` header and retry. |
 | `FEATURE_DISABLED` | 503 | `/start` | Agent onboarding is temporarily disabled. Retry later. |
-| `PLAN_REQUIRED` | 402 | `/approve` (browser) | The org doesn't have an active Agent Phone Plan subscription yet. |
+| `PLAN_REQUIRED` | 402 | `/approve` (browser) | The org has no active Agent Phone Plan and the request didn't opt out with `skip_plan: true`. Returned only on the plan path; connecting with free credits never hits it. |
 | `PLAN_NUMBER_PENDING` | 409 | `/approve` (browser) | The plan is active but the phone number is still being provisioned. |
 | `CODE_NOT_FOUND` | 404 | `/approve` (browser) | The code doesn't exist or already expired. |
 | `CODE_ALREADY_USED` | 409 | `/approve` (browser) | The code was already approved. |

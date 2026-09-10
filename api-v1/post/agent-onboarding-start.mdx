@@ -1,7 +1,7 @@
 ---
 title: "Start Agent Onboarding"
 api: "POST https://api.bland.ai/v1/agent/onboarding/start"
-description: "Start the device-authorization flow a bot uses to get its own Bland API key and phone number. No API key required."
+description: "Start the device-authorization flow a bot uses to get its own Bland API key, plus a phone number if its owner starts the Agent Phone Plan. No API key required."
 ---
 
 ### Overview
@@ -16,6 +16,30 @@ Requests are rate-limited globally and per IP. A `429` includes a `Retry-After` 
 
 <ParamField body="client_name" type="string">
   A name for the bot starting the flow, shown to the owner during signup so they know what's asking. Max length `64`. Allowed characters: letters, numbers, spaces, and `._/-`.
+</ParamField>
+
+<ParamField body="prefill" type="object">
+  Values to pre-fill the owner's sign-up form. Pass what the bot already knows. Invalid values are dropped silently, never a `400`. Values that survive validation are appended to `verification_url_complete` as a URL fragment, form-encoded the way `URLSearchParams` does it (`@` becomes `%40`, `+` becomes `%2B`, a space becomes `+`). The fragment stays in the owner's browser; Bland never stores or logs pre-fill values.
+</ParamField>
+
+<ParamField body="prefill.name" type="string">
+  Full name, up to 128 characters. Split on its first space into first and last name when `first_name` and `last_name` are absent.
+</ParamField>
+
+<ParamField body="prefill.first_name" type="string">
+  First name, up to 128 characters.
+</ParamField>
+
+<ParamField body="prefill.last_name" type="string">
+  Last name, up to 128 characters.
+</ParamField>
+
+<ParamField body="prefill.email" type="string">
+  Email address, up to 128 characters. Dropped unless it has the shape `x@y.z`.
+</ParamField>
+
+<ParamField body="prefill.phone" type="string">
+  Phone number, up to 128 characters, normalized to E.164 with US as the default region. Dropped when it can't be normalized.
 </ParamField>
 
 ### Response
@@ -37,7 +61,7 @@ Requests are rate-limited globally and per IP. A `429` includes a `Retry-After` 
 </ResponseField>
 
 <ResponseField name="data.verification_url_complete" type="string">
-  The same page with `user_code` pre-filled. Prefer this when you can show a clickable link.
+  The same page with `user_code` pre-filled. When `prefill` values survive validation, they are appended as a URL fragment, for example `...?code=BQPL-7VXR#first_name=Sam&last_name=Lee&email=sam%40example.com&phone=%2B14155550123`. Prefer this when you can show a clickable link.
 </ResponseField>
 
 <ResponseField name="data.expires_in" type="number">
@@ -60,6 +84,20 @@ Requests are rate-limited globally and per IP. A `429` includes a `Retry-After` 
     "user_code": "BQPL-7VXR",
     "verification_url": "https://app.bland.ai/agent-setup",
     "verification_url_complete": "https://app.bland.ai/agent-setup?code=BQPL-7VXR",
+    "expires_in": 900,
+    "interval": 5
+  },
+  "errors": null
+}
+```
+
+```json Response with prefill
+{
+  "data": {
+    "device_code": "Xk9pQ2mZ...",
+    "user_code": "BQPL-7VXR",
+    "verification_url": "https://app.bland.ai/agent-setup",
+    "verification_url_complete": "https://app.bland.ai/agent-setup?code=BQPL-7VXR#first_name=Sam&last_name=Lee&email=sam%40example.com&phone=%2B14155550123",
     "expires_in": 900,
     "interval": 5
   },

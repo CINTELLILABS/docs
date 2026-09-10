@@ -44,44 +44,44 @@ This endpoint has two independent `429` responses: `SLOW_DOWN` when you poll fas
   Present when `status` is `approved`. The org the key belongs to.
 </ResponseField>
 
-<ResponseField name="data.phone_number" type="string">
-  Present when `status` is `approved`. The number provisioned for this org.
+<ResponseField name="data.phone_number" type="string | null">
+  Present when `status` is `approved`. The number provisioned for this org, or `null` when the owner connected the bot without the Agent Phone Plan. Without the plan, calls go out from Bland's shared pool of numbers and texting is not included.
 </ResponseField>
 
 <ResponseField name="data.plan" type="object">
-  Present when `status` is `approved`. The org's Agent Phone Plan subscription. The same object is returned by `GET /billing/agent_phone` (as `data`) and by `GET /v1/me` (as `plan`).
+  Present when `status` is `approved`. The org's Agent Phone Plan subscription. When the owner connected the bot on free credits instead, `plan.status` is `none` and every other `plan` field is `null`. The same object is returned by `GET /billing/agent_phone` (as `data`) and by `GET /v1/me` (as `plan`).
 </ResponseField>
 
-<ResponseField name="data.plan.name" type="string">
-  Internal plan identifier, `agent_phone_basic`.
+<ResponseField name="data.plan.name" type="string | null">
+  Internal plan identifier, `agent_phone_basic`. `null` when there is no plan.
 </ResponseField>
 
-<ResponseField name="data.plan.display_name" type="string">
-  Human-readable plan name, `Agent Phone Plan`.
+<ResponseField name="data.plan.display_name" type="string | null">
+  Human-readable plan name, `Agent Phone Plan`. `null` when there is no plan.
 </ResponseField>
 
 <ResponseField name="data.plan.status" type="string">
-  Subscription status, `active`.
+  Subscription status: `active`, or `none` when the org has no Agent Phone Plan.
 </ResponseField>
 
-<ResponseField name="data.plan.phone_number" type="string">
-  The number provisioned for this org's Agent Phone Plan.
+<ResponseField name="data.plan.phone_number" type="string | null">
+  The number provisioned for this org's Agent Phone Plan. `null` when there is no plan.
 </ResponseField>
 
-<ResponseField name="data.plan.concurrency" type="number">
-  Maximum concurrent calls, `1`.
+<ResponseField name="data.plan.concurrency" type="number | null">
+  Maximum concurrent calls, `1`. `null` when there is no plan.
 </ResponseField>
 
-<ResponseField name="data.plan.max_call_duration_minutes" type="number">
-  Maximum call length in minutes, `60`.
+<ResponseField name="data.plan.max_call_duration_minutes" type="number | null">
+  Maximum call length in minutes, `60`. `null` when there is no plan.
 </ResponseField>
 
-<ResponseField name="data.plan.allowed_countries" type="array">
-  Country codes calls, transfers, and SMS are allowed to, `["US", "CA"]`.
+<ResponseField name="data.plan.allowed_countries" type="array | null">
+  Country codes calls, transfers, and SMS are allowed to, `["US", "CA"]`. `null` when there is no plan.
 </ResponseField>
 
-<ResponseField name="data.plan.current_period_end" type="string">
-  ISO 8601 timestamp for the end of the current billing period.
+<ResponseField name="data.plan.current_period_end" type="string | null">
+  ISO 8601 timestamp for the end of the current billing period. `null` when there is no plan.
 </ResponseField>
 
 <ResponseField name="data.client_name" type="string">
@@ -104,7 +104,7 @@ This endpoint has two independent `429` responses: `SLOW_DOWN` when you poll fas
 }
 ```
 
-```json Approved
+```json Approved with the plan
 {
   "data": {
     "status": "approved",
@@ -120,6 +120,29 @@ This endpoint has two independent `429` responses: `SLOW_DOWN` when you poll fas
       "max_call_duration_minutes": 60,
       "allowed_countries": ["US", "CA"],
       "current_period_end": "2026-10-07T00:00:00.000Z"
+    },
+    "client_name": "my-bot"
+  },
+  "errors": null
+}
+```
+
+```json Approved with free credits
+{
+  "data": {
+    "status": "approved",
+    "api_key": "org_...",
+    "org_id": "...",
+    "phone_number": null,
+    "plan": {
+      "name": null,
+      "display_name": null,
+      "status": "none",
+      "phone_number": null,
+      "concurrency": null,
+      "max_call_duration_minutes": null,
+      "allowed_countries": null,
+      "current_period_end": null
     },
     "client_name": "my-bot"
   },

@@ -1,12 +1,12 @@
 ---
 title: "Approve Agent Onboarding"
 api: "POST https://api.bland.ai/v1/agent/onboarding/approve"
-description: "Claim a device-authorization code after the owner signs up and subscribes in the browser. Called by the Bland dashboard, not by the bot."
+description: "Claim a device-authorization code after the owner signs up in the browser. Called by the Bland dashboard, not by the bot."
 ---
 
 ### Overview
 
-This endpoint is called from the browser by the dashboard during the [agent onboarding](/platform/connect-your-agent) flow, after the owner signs up (or logs in) and subscribes to the [Agent Phone Plan](/platform/agent-phone-plan). It isn't called directly by the bot, the bot only ever sees its effect through `/v1/agent/onboarding/poll`.
+This endpoint is called from the browser by the dashboard during the [agent onboarding](/platform/connect-your-agent) flow, after the owner signs up (or logs in) and either starts the [Agent Phone Plan](/platform/agent-phone-plan) or chooses to connect the bot on the org's free credits. It isn't called directly by the bot, the bot only ever sees its effect through `/v1/agent/onboarding/poll`.
 
 <Note>
 Requires an authenticated dashboard session for an org (not a personal account, and not an API key). The response never includes the `api_key`, only the bot's later `poll` call receives it.
@@ -16,6 +16,10 @@ Requires an authenticated dashboard session for an org (not a personal account, 
 
 <ParamField body="user_code" type="string" required>
   The short code shown to the owner by `/v1/agent/onboarding/start`.
+</ParamField>
+
+<ParamField body="skip_plan" type="boolean">
+  Pass `true` to connect the bot without an Agent Phone Plan, on the org's free credits. Strictly a boolean; `"true"` as a string is rejected. Without it, an org that has no active plan gets `402 PLAN_REQUIRED`. An org that already has an active plan ignores `skip_plan` entirely: the plan payload is returned as usual, including the `PLAN_NUMBER_PENDING` wait while its number is provisioned.
 </ParamField>
 
 ### Response
@@ -32,8 +36,8 @@ Requires an authenticated dashboard session for an org (not a personal account, 
   The org the code was claimed for.
 </ResponseField>
 
-<ResponseField name="data.phone_number" type="string">
-  The number provisioned for this org's Agent Phone Plan.
+<ResponseField name="data.phone_number" type="string | null">
+  The number provisioned for this org's Agent Phone Plan, or `null` when the code was approved with `skip_plan: true` and the org has no plan.
 </ResponseField>
 
 <ResponseField name="data.client_name" type="string">
@@ -55,6 +59,19 @@ Requires an authenticated dashboard session for an org (not a personal account, 
     "status": "approved",
     "org_id": "...",
     "phone_number": "+15551234567",
+    "client_name": "my-bot",
+    "key_prefix": "org_3f9a1c7e2b"
+  },
+  "errors": null
+}
+```
+
+```json Response with skip_plan
+{
+  "data": {
+    "status": "approved",
+    "org_id": "...",
+    "phone_number": null,
     "client_name": "my-bot",
     "key_prefix": "org_3f9a1c7e2b"
   },
