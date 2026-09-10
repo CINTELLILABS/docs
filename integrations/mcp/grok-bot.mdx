@@ -1,98 +1,54 @@
 ---
 title: "Grok Bot"
-description: "Integrate Grok Bot with Bland: give your Grok Bot its own phone number and let it call and text on your behalf"
+description: "Check Grok Bot's connection requirements and configure Bland when custom MCP servers are available."
 hidden: true
 ---
 
-Grok Bot attaches remote MCP servers by URL. Bland's hosted MCP server is exactly that, so a Grok Bot can place calls, send texts, and read results with no code on your side.
+[Grok Bot](https://x.ai/bot) works from a cloud computer and can use connected tools. Its [official connector instructions](https://docs.x.ai/grok-bot/computer-and-apps#connect-an-app) use **Settings > Plugins**. Connections are shared across your account, and you attach a connector to a task with `@`.
 
-There are two ways to connect, depending on whether you already have a Bland account. Setting up a different assistant? See [Personal AI Agents](/integrations/mcp/personal-agents).
+<Note>
+The documented Plugins flow does not establish how to add an arbitrary MCP URL with an Authorization header. The Bland connection has not been verified in Grok Bot. Confirm that your version supports both before following the configuration below.
+</Note>
+
+Setting up a different assistant? See [Personal AI Agents](/integrations/mcp/personal-agents).
 
 ## Prerequisites
 
-- A [Grok Bot](https://grok.com) with MCP connectors enabled
-- A payment card for the [Agent Phone Plan](/platform/agent-phone-plan) ($29.99/month, includes a US phone number)
+- Access to Grok Bot with a custom MCP connection that accepts a URL and headers
+- A Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings)
+- An active [Agent Phone Plan](/platform/agent-phone-plan) if you want a dedicated number for your agent
 
-## Option 1: You have a Bland API key
+## If your client supports custom MCP servers
 
-1. In Grok Bot, open your bot's MCP settings and add a custom server.
-2. Set the server URL to:
+Configure the connection with these values:
 
-   ```
-   https://api.bland.ai/v1/mcp
-   ```
-
-3. Add one header, using your API key from the [dashboard](https://app.bland.ai/dashboard/settings):
-
-   ```
-   Authorization: Bearer org_...
-   ```
-
-4. Ask your bot to make a call:
-
-   ```
-   Call +1 415 555 0123, introduce yourself as my assistant, and ask what time they close today.
-   ```
-
-To give the bot its own number, so it can receive calls and send texts, subscribe to the Agent Phone Plan at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). The plan provisions a US number within a few seconds. Ask the bot "what's my Bland phone number?" and it reads the number from your account and uses it from then on.
-
-## Option 2: Let your bot set itself up
-
-If you do not have a Bland account, your bot can request its own access. Paste this into Grok Bot:
-
-```
-Read https://docs.bland.ai/platform/connect-your-agent and get yourself a Bland phone number. Show me the link and code when you have them. Once approved, add https://api.bland.ai/v1/mcp as an MCP server using the API key you receive, then call me at +1 415 555 0123 to confirm it works.
-```
-
-The bot starts the device flow, sends you a link and a short code, and waits. Open the link, sign up or sign in, subscribe to the Agent Phone Plan, and approve the request. The bot receives its own API key and phone number, connects the MCP server, and is ready to call and text.
-
-The key is scoped to a new organization that belongs to you. You can revoke it any time from **Settings > API Keys**. If your bot cannot add MCP servers on its own, ask it for the key and add the server yourself as in Option 1.
-
-## What the bot can do
-
-| Ask for | What happens |
+| Field | Value |
 | --- | --- |
-| "Call +1 ... and ask ..." | Places an outbound call from the bot's number and returns the transcript and summary when it ends |
-| "Text +1 ... saying ..." | Sends an SMS from the bot's number. Replies are answered automatically, so set the texting prompt first (below) |
-| "What did they say on my last call?" | Reads the call transcript and analysis |
-| "Create an agent that ..." | Builds a reusable pathway the bot can call with later |
+| Server URL | `https://api.bland.ai/v1/mcp` |
+| Header name | `Authorization` |
+| Header value | `Bearer YOUR_BLAND_API_KEY` |
 
-Calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
+Replace `YOUR_BLAND_API_KEY` with your key in the connection's credential field. Attach the connection to your task, then ask Grok Bot to list your Bland pathways to check authentication before placing a call.
 
-## Two-way texting
+If the required custom-server or header controls are unavailable, use a client with documented setup, such as [Poke](/integrations/mcp/poke) or [OpenClaw](/integrations/mcp/openclaw).
 
-A text is a conversation. When the other side replies, Bland answers from the bot's number automatically, using the number's **texting prompt**. A new plan number starts with a generic prompt, so before asking the bot to run a text thread with a goal, have it set the prompt for that goal:
+## Account setup and phone numbers
 
-```
-Set my number's texting prompt to: "You are booking a haircut for Spencer. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation." Then text the salon at +1 415 555 0123 to get it started.
-```
+You can create a Bland account and subscribe to the Agent Phone Plan at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan), then configure the connection with your API key.
 
-The bot does this with one API call, [Update SMS Configuration](/api-v1/post/sms-update):
+Automatic signup through the [Agent onboarding API](/platform/connect-your-agent) requires your agent to make HTTP requests, poll for approval, and store the returned credential. Automatic MCP registration is an additional client capability. These steps have not been verified in Grok Bot; use manual account and connection setup unless you have confirmed those capabilities.
 
-```json
-POST https://api.bland.ai/v1/sms/number/update
-{ "phone_number": "+12765550123", "prompt": "You are booking a haircut for Spencer. ..." }
-```
-
-The prompt belongs to the number, not to one conversation, so it applies to every thread on that number until it is changed. Set it again for the next task.
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| Bot reports `PLAN_REQUIRED` or "not available" | The organization has no active Agent Phone Plan | Subscribe at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) |
-| Bot reports `CALL_PLAN_DESTINATION_BLOCKED` | The destination is outside the US and Canada | Use a US or Canadian number |
-| The approval link says the code expired | Codes last 15 minutes | Ask the bot to start again |
-| Text replies are generic and ignore the task | The number's texting prompt was not set for this task | Ask the bot to set the texting prompt, then start the thread again |
-| Approval page says the request did not come from the dashboard | The link was opened in an embedded browser | Open it in a normal browser tab |
+On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Agent Phone Plan" icon="phone" href="/platform/agent-phone-plan">
-    What's included, limits, and how to cancel.
+  <Card title="Personal AI Agents" icon="robot" href="/integrations/mcp/personal-agents">
+    Two-way texting, troubleshooting, and connection requirements.
   </Card>
   <Card title="Bland MCP Server" icon="plug" href="/integrations/mcp/overview">
-    Every tool the server exposes and how authentication works.
+    How authentication works and what the server exposes.
   </Card>
 </CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)

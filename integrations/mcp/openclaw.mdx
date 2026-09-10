@@ -40,7 +40,7 @@ There are two ways to connect, depending on whether you already have a Bland acc
    }
    ```
 
-   With the Gateway running, config changes hot-reload. Otherwise restart OpenClaw.
+   With the Gateway running and hot reload enabled, config changes apply automatically. Otherwise restart OpenClaw.
 
 3. Verify the connection and list the Bland tools:
 
@@ -50,7 +50,7 @@ There are two ways to connect, depending on whether you already have a Bland acc
 
 4. Ask your agent to make a call:
 
-   ```
+   ```text
    Call +1 415 555 0123, introduce yourself as my assistant, and ask what time they close today.
    ```
 
@@ -60,13 +60,13 @@ To give the agent its own number, so it can receive calls and send texts, subscr
 
 ## Option 2: Let the agent set itself up
 
-If you do not have a Bland account, the agent can request its own access. Tell it:
+This workflow requires your agent to make HTTP requests, poll for approval, store the returned key in its environment, and edit your OpenClaw configuration. Enable those capabilities before proceeding, or create your Bland account in the [dashboard](https://app.bland.ai) and use Option 1. Tell the agent:
 
-```
+```text
 Read https://docs.bland.ai/platform/connect-your-agent and get yourself a Bland phone number. Show me the link and code when you have them. Once approved, store the API key you receive as BLAND_API_KEY and add https://api.bland.ai/v1/mcp as a streamable-http MCP server named bland in my OpenClaw config, then call me at +1 415 555 0123 to confirm it works.
 ```
 
-The agent starts the device flow, shows you a link and a short code, and waits. Open the link, sign up or sign in, subscribe to the Agent Phone Plan, and approve the request. The agent receives its own API key and phone number.
+Once the agent starts the device flow, it shows you a link and a short code. Open the link, sign up or sign in, subscribe to the Agent Phone Plan, and approve the request. After the agent retrieves its API key and phone number, verify the connection with `openclaw mcp doctor bland --probe`. If it cannot update the environment or configuration, finish those steps manually as in Option 1.
 
 If your agent runs where Node.js is available, it can instead run the Bland CLI's MCP server, which handles the same flow as two tools and stores the key for you. See the [Agent onboarding API](/platform/connect-your-agent#try-it-with-a-client).
 
@@ -81,7 +81,7 @@ The key is scoped to a new organization that belongs to you. Revoke it any time 
 | "What did they say on my last call?" | Reads the call transcript and analysis |
 | "Create an agent that ..." | Builds a reusable pathway the agent can call with later |
 
-On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
+On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
 
 ## Next steps
 

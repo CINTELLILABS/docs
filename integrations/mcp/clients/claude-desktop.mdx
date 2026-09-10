@@ -1,6 +1,6 @@
 ---
 title: "Connect Claude Desktop to the Bland MCP server"
-description: "Connect the Claude Desktop app to your Bland account with the Bland plugin or a stdio bridge."
+description: "Connect the Claude Desktop app to your Bland account with the Bland plugin, request-header authentication, or a stdio bridge."
 hidden: true
 ---
 
@@ -15,7 +15,9 @@ Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Sett
 
 Prefer the [Bland plugin](/integrations/mcp/norm), which installs into Claude Desktop and stores the key for you.
 
-Without the plugin, Claude Desktop's custom connectors expect OAuth, so use the stdio bridge with your API key instead. Add to `claude_desktop_config.json` (**Settings → Developer → Edit Config**):
+If your organization has access to Claude's [request-header authentication beta](https://claude.com/docs/connectors/custom/remote-mcp#authenticating-with-request-headers), add a custom connector with the server URL above, choose **No sign-in**, and add an **Authorization** request header with the full value `Bearer YOUR_BLAND_API_KEY`.
+
+If **Request headers** is unavailable, use the stdio bridge below. Install Node.js 22+ with npm first, then add this entry to `claude_desktop_config.json` (**Settings → Developer → Edit Config**). Replace `org_your_key_here` with your API key:
 
 ```json
 {
@@ -24,15 +26,15 @@ Without the plugin, Claude Desktop's custom connectors expect OAuth, so use the 
       "command": "npx",
       "args": [
         "-y", "mcp-remote", "https://api.bland.ai/v1/mcp",
-        "--header", "Authorization: Bearer ${BLAND_API_KEY}"
+        "--header", "Authorization:${AUTH_HEADER}"
       ],
-      "env": { "BLAND_API_KEY": "org_your_key_here" }
+      "env": { "AUTH_HEADER": "Bearer org_your_key_here" }
     }
   }
 }
 ```
 
-Requires Node.js 18+. Restart Claude Desktop after saving.
+Keep the entire `Bearer ...` value in `AUTH_HEADER`. This avoids the [Windows argument-spacing issue](https://github.com/punkpeye/mcp-remote#custom-headers) documented by `mcp-remote`. Restart Claude Desktop after saving.
 
 ## Next steps
 
