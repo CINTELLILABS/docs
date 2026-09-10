@@ -1,0 +1,81 @@
+---
+title: "Poke"
+description: "Integrate Poke with Bland: give your Poke assistant its own phone number and let it call and text on your behalf"
+hidden: true
+---
+
+Poke is an AI assistant that lives in Apple Messages, Telegram, WhatsApp, and RCS. It can attach custom MCP servers by URL, and Bland's hosted MCP server is exactly that, so Poke can place calls, send texts, and read the results with no code on your side.
+
+There are two ways to connect, depending on whether you already have a Bland account. Setting up a different assistant? See [Personal AI Agents](/integrations/mcp/personal-agents).
+
+## Prerequisites
+
+- A [Poke](https://poke.com) account
+- A payment card for the [Agent Phone Plan](/platform/agent-phone-plan) (\$29.99/month, includes a US phone number)
+
+## Option 1: You have a Bland API key
+
+<Tabs>
+  <Tab title="Web">
+    1. Open [poke.com/integrations/new](https://poke.com/integrations/new).
+    2. Enter a **Name** (for example, `Bland`) and set **MCP Server URL** to:
+
+       ```text
+       https://api.bland.ai/v1/mcp
+       ```
+
+    3. Paste your Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings) into **API Key**. Poke sends it as an `Authorization: Bearer` header, which is what the Bland server expects.
+    4. Click **Create Integration**. Poke connects and lists the Bland tools it discovered.
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    npx poke@latest mcp add https://api.bland.ai/v1/mcp -n "Bland" -k "org_..."
+    ```
+
+    Replace `org_...` with your Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings).
+  </Tab>
+</Tabs>
+
+Then message Poke:
+
+```text
+Call +1 415 555 0123, introduce yourself as my assistant, and ask what time they close today.
+```
+
+To give Poke its own number, so it can receive calls and send texts, subscribe to the Agent Phone Plan at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). The plan provisions a US number within a few seconds. Ask "what's my Bland phone number?" and Poke reads it from your account and uses it from then on.
+
+## Option 2: Let Poke set itself up
+
+This optional workflow requires Poke to make HTTP requests, poll for approval, and retain the returned API key. If those capabilities are unavailable, create your Bland account in the [dashboard](https://app.bland.ai) and use Option 1. Otherwise, message Poke:
+
+```text
+Read https://docs.bland.ai/platform/connect-your-agent and get yourself a Bland phone number. Show me the link and code when you have them. Once approved, add https://api.bland.ai/v1/mcp as an MCP integration named Bland using the API key you receive, then call me at +1 415 555 0123 to confirm it works.
+```
+
+If Poke starts the device flow, it sends you a link and a short code. Open the link, sign up or sign in, subscribe to the Agent Phone Plan, and approve the request. After Poke retrieves the API key and phone number, confirm that the Bland integration is connected before asking it to call or text.
+
+The key is scoped to a new organization that belongs to you. Revoke it any time from **Settings > API Keys**. If Poke cannot add the integration on its own, ask it for the key and add the integration yourself as in Option 1.
+
+## What Poke can do
+
+| Ask for | What happens |
+| --- | --- |
+| "Call +1 ... and ask ..." | Places an outbound call from Poke's Bland number and returns the transcript and summary when it ends |
+| "Text +1 ... saying ..." | Sends an SMS from Poke's Bland number. Replies are answered automatically, so set the texting prompt first (see [Two-way texting](/integrations/mcp/personal-agents#two-way-texting)) |
+| "What did they say on my last call?" | Reads the call transcript and analysis |
+| "Create an agent that ..." | Builds a reusable pathway Poke can call with later |
+
+On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Personal AI Agents" icon="robot" href="/integrations/mcp/personal-agents">
+    Two-way texting, troubleshooting, and the general pattern.
+  </Card>
+  <Card title="Agent Phone Plan" icon="phone" href="/platform/agent-phone-plan">
+    What's included, limits, and how to cancel.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)
