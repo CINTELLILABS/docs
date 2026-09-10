@@ -1,9 +1,9 @@
 ---
 title: "Bland MCP Server"
-description: "Connect Claude Code, Cursor, Codex, and any MCP client to your Bland account"
+description: "Connect coding agents like Claude Code, Cursor, and Codex, or personal AI agents like Grok Bot, Meta Muse, OpenClaw, Instinct, and Poke, to your Bland account over MCP"
 ---
 
-The Bland MCP server lets AI coding agents work with your Bland account through natural language: place and inspect calls, build and validate pathways, manage agents, query analytics, run evals, and search the Bland docs, all without leaving your editor.
+The Bland MCP server lets any AI agent work with your Bland account through natural language: place and inspect calls, send texts, build and validate pathways, manage agents, query analytics, run evals, and search the Bland docs.
 
 It's a remote [Model Context Protocol](https://modelcontextprotocol.io) server hosted by Bland. There's nothing to run locally: point your client at the endpoint, authenticate with your API key, and your agent has the full toolset.
 
@@ -11,30 +11,25 @@ It's a remote [Model Context Protocol](https://modelcontextprotocol.io) server h
 https://api.bland.ai/v1/mcp
 ```
 
-## Set up your client
+## Which path is yours?
+
+<Note>
+**Personal AI agent (Grok Bot, Meta Muse, OpenClaw, Instinct, Poke, or similar) asked to integrate with Bland?** Go straight to [Personal AI Agents](/integrations/mcp/personal-agents). The rest of this page is for developers and coding agents.
+</Note>
 
 <CardGroup cols={2}>
-  <Card title="Claude Code" icon="terminal" href="/integrations/mcp/claude-code">
-    One command, plus the Bland plugin for the full pathway-building workflow.
+  <Card title="I'm building voice agents from a coding agent" icon="terminal" href="/integrations/mcp/norm">
+    Claude Code, Claude Desktop, Cursor, or Codex: install the Bland plugin. It bundles this server with skills, `/bland:*` commands, and Norm. Other clients, or the server alone, are on the [MCP clients](/integrations/mcp/clients) page.
   </Card>
-  <Card title="Bland plugin" icon="wand-magic-sparkles" href="/integrations/mcp/norm">
-    The full Bland development experience in Claude Code, Claude Desktop, Cursor, and Codex: skills, `/bland:*` commands, and a file-based pathway workspace.
-  </Card>
-  <Card title="Cursor" icon="arrow-pointer" href="/integrations/mcp/cursor">
-    One-click install link or a three-line config file.
-  </Card>
-  <Card title="Codex, VS Code, Windsurf &amp; more" icon="plug" href="/integrations/mcp/other-clients">
-    Claude Desktop, OpenAI Codex, VS Code, Windsurf, Gemini CLI, or raw HTTP.
-  </Card>
-  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
-    Every tool the server exposes, grouped by what it does.
+  <Card title="I want my personal AI agent to have a phone" icon="robot" href="/integrations/mcp/personal-agents">
+    Grok Bot, Meta Muse, OpenClaw, Instinct, Poke, and any assistant that attaches MCP servers by URL. One dedicated number on the Agent Phone Plan, and the agent can even sign itself up.
   </Card>
 </CardGroup>
 
 ## How it works
 
 - **Transport:** Streamable HTTP (the current MCP standard). The server is stateless, so there are no sessions to manage and any request can hit any node.
-- **Authentication:** your Bland API key in the `Authorization` header (`Bearer org_...`). The key's organization scopes every tool: an agent connected with your key sees only your org's calls, pathways, and agents. Get a key from the [dashboard](https://app.bland.ai/dashboard/settings).
+- **Authentication:** your Bland API key in the `Authorization` header (`Bearer org_...`). The key's organization scopes every tool: an agent connected with your key sees only your org's calls, pathways, and agents. Get a key from the [dashboard](https://app.bland.ai/dashboard/settings), or let an agent obtain its own through the [Agent onboarding API](/platform/connect-your-agent).
 - **Rate limits:** 120 requests per minute per organization.
 - **Safety:** every tool is annotated read-only or destructive, so well-behaved clients ask before the agent does anything with side effects (like placing a real phone call). Mutating tools additionally require an explicit confirmation argument.
 
@@ -60,8 +55,8 @@ Bland has three MCP-related surfaces. If you're unsure, use the first one.
 
 | Surface | What it is | When to use it |
 | --- | --- | --- |
-| `https://api.bland.ai/v1/mcp` | **This server.** Remote, account-scoped, full toolset. | Building on Bland with an AI agent. |
-| `bland mcp` ([CLI](/sdks/cli)) | A local stdio server bundled with the Bland CLI. | You already use the CLI and prefer a local process. |
+| `https://api.bland.ai/v1/mcp` | **This server.** Remote, account-scoped, full toolset. | Building on Bland with an AI agent that already has an API key. |
+| `bland mcp` ([CLI](/sdks/cli)) | A local stdio server bundled with the Bland CLI. | You prefer a local process, or your agent has no API key yet and needs to [onboard itself](/platform/connect-your-agent). |
 | `https://docs.bland.ai/mcp` | The docs site's own MCP (search-only, no auth). | You only want documentation search. |
 
 ## Security notes
@@ -73,10 +68,16 @@ Bland has three MCP-related surfaces. If you're unsure, use the first one.
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Connect Claude Code" icon="terminal" href="/integrations/mcp/claude-code">
-    The fastest path, including the Bland plugin.
+  <Card title="MCP clients" icon="plug" href="/integrations/mcp/clients">
+    Connect the server directly to VS Code, Windsurf, Gemini CLI, or any client, without the plugin.
   </Card>
-  <Card title="Send your first call" icon="phone" href="/quickstart">
+  <Card title="Agent Phone Plan" icon="phone" href="/platform/agent-phone-plan">
+    A dedicated number with unlimited US and Canada calling and texting, built for one agent.
+  </Card>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Every tool the server exposes, grouped by what it does.
+  </Card>
+  <Card title="Send your first call" icon="bolt" href="/quickstart">
     The 5-minute API quickstart.
   </Card>
 </CardGroup>
