@@ -1,0 +1,97 @@
+---
+title: "OpenClaw"
+description: "Integrate OpenClaw with Bland: give your OpenClaw agent its own phone number and let it call and text on your behalf"
+hidden: true
+---
+
+OpenClaw is a personal AI agent you run yourself, configured through a JSON5 file. It connects to remote MCP servers over streamable HTTP, and Bland's hosted MCP server is exactly that, so an OpenClaw agent can place calls, send texts, and read the results.
+
+There are two ways to connect, depending on whether you already have a Bland account. Setting up a different assistant? See [Personal AI Agents](/integrations/mcp/personal-agents).
+
+## Prerequisites
+
+- A running [OpenClaw](https://docs.openclaw.ai) gateway
+- A payment card for the [Agent Phone Plan](/platform/agent-phone-plan) (\$29.99/month, includes a US phone number)
+
+## Option 1: You have a Bland API key
+
+1. Export your Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings) in the environment that runs OpenClaw, so it never lands in the config file:
+
+   ```bash
+   export BLAND_API_KEY="org_..."
+   ```
+
+2. Add the server under `mcp.servers` in `~/.openclaw/openclaw.json`:
+
+   ```json5
+   {
+     mcp: {
+       servers: {
+         bland: {
+           url: "https://api.bland.ai/v1/mcp",
+           transport: "streamable-http",
+           enabled: true,
+           headers: {
+             Authorization: "Bearer ${BLAND_API_KEY}",
+           },
+         },
+       },
+     },
+   }
+   ```
+
+   With the Gateway running, config changes hot-reload. Otherwise restart OpenClaw.
+
+3. Verify the connection and list the Bland tools:
+
+   ```bash
+   openclaw mcp doctor bland --probe
+   ```
+
+4. Ask your agent to make a call:
+
+   ```
+   Call +1 415 555 0123, introduce yourself as my assistant, and ask what time they close today.
+   ```
+
+Bland's tools go through OpenClaw's normal tool-profile and tool-policy controls. Keep confirmation on for tools that place calls or publish agents: they have real-world side effects.
+
+To give the agent its own number, so it can receive calls and send texts, subscribe to the Agent Phone Plan at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). The plan provisions a US number within a few seconds. Ask "what's my Bland phone number?" and the agent reads it from your account and uses it from then on.
+
+## Option 2: Let the agent set itself up
+
+If you do not have a Bland account, the agent can request its own access. Tell it:
+
+```
+Read https://docs.bland.ai/platform/connect-your-agent and get yourself a Bland phone number. Show me the link and code when you have them. Once approved, store the API key you receive as BLAND_API_KEY and add https://api.bland.ai/v1/mcp as a streamable-http MCP server named bland in my OpenClaw config, then call me at +1 415 555 0123 to confirm it works.
+```
+
+The agent starts the device flow, shows you a link and a short code, and waits. Open the link, sign up or sign in, subscribe to the Agent Phone Plan, and approve the request. The agent receives its own API key and phone number.
+
+If your agent runs where Node.js is available, it can instead run the Bland CLI's MCP server, which handles the same flow as two tools and stores the key for you. See the [Agent onboarding API](/platform/connect-your-agent#try-it-with-a-client).
+
+The key is scoped to a new organization that belongs to you. Revoke it any time from **Settings > API Keys**.
+
+## What the agent can do
+
+| Ask for | What happens |
+| --- | --- |
+| "Call +1 ... and ask ..." | Places an outbound call from the agent's Bland number and returns the transcript and summary when it ends |
+| "Text +1 ... saying ..." | Sends an SMS from the agent's Bland number. Replies are answered automatically, so set the texting prompt first (see [Two-way texting](/integrations/mcp/personal-agents#two-way-texting)) |
+| "What did they say on my last call?" | Reads the call transcript and analysis |
+| "Create an agent that ..." | Builds a reusable pathway the agent can call with later |
+
+On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Personal AI Agents" icon="robot" href="/integrations/mcp/personal-agents">
+    Two-way texting, troubleshooting, and the general pattern.
+  </Card>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Every tool the server exposes.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)
