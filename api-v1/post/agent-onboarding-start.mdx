@@ -18,6 +18,28 @@ Requests are rate-limited globally and per IP. A `429` includes a `Retry-After` 
   A name for the bot starting the flow, shown to the owner during signup so they know what's asking. Max length `64`. Allowed characters: letters, numbers, spaces, and `._/-`.
 </ParamField>
 
+<ParamField body="prefill" type="object" required={false}>
+  Details your bot already knows about the owner, used to pre-fill the sign-up form. Whatever validates is folded into the URL fragment of `verification_url_complete`. The values are never stored, and invalid fields are dropped silently rather than failing the request.
+
+  <Expandable title="prefill object">
+    <ParamField body="first_name" type="string">
+      The owner's first name.
+    </ParamField>
+    <ParamField body="last_name" type="string">
+      The owner's last name.
+    </ParamField>
+    <ParamField body="name" type="string">
+      The owner's full name. Used when `first_name`/`last_name` aren't provided, split on the first space.
+    </ParamField>
+    <ParamField body="email" type="string">
+      The owner's email address.
+    </ParamField>
+    <ParamField body="phone" type="string">
+      The owner's phone number, normalized to E.164 (US assumed when no country code is given).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="object">
@@ -37,7 +59,7 @@ Requests are rate-limited globally and per IP. A `429` includes a `Retry-After` 
 </ResponseField>
 
 <ResponseField name="data.verification_url_complete" type="string">
-  The same page with `user_code` pre-filled. Prefer this when you can show a clickable link.
+  The same page with `user_code` pre-filled. Prefer this when you can show a clickable link. If you passed `prefill`, the accepted fields ride in this URL's fragment and pre-fill the sign-up form.
 </ResponseField>
 
 <ResponseField name="data.expires_in" type="number">
