@@ -1,0 +1,53 @@
+---
+title: "Connect VS Code to the Bland MCP server"
+description: "Connect VS Code and GitHub Copilot to your Bland account with a one-click install or an mcp.json entry."
+hidden: true
+---
+
+The Bland MCP server is a hosted, streamable-HTTP server. Every client needs the same two values:
+
+- **URL:** `https://api.bland.ai/v1/mcp`
+- **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
+
+Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Setting up a different tool? See all [MCP clients](/integrations/mcp/clients).
+
+## Setup
+
+<a href="https://vscode.dev/redirect/mcp/install?name=bland&config=%7B%22name%22%3A%20%22bland%22%2C%20%22type%22%3A%20%22http%22%2C%20%22url%22%3A%20%22https%3A//api.bland.ai/v1/mcp%22%2C%20%22headers%22%3A%20%7B%22Authorization%22%3A%20%22Bearer%20%24%7Binput%3Abland-api-key%7D%22%7D%7D">Install in VS Code</a>, or add to `.vscode/mcp.json`:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "bland-api-key",
+      "description": "Bland API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "bland": {
+      "type": "http",
+      "url": "https://api.bland.ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:bland-api-key}"
+      }
+    }
+  }
+}
+```
+
+VS Code prompts for the key on first use and stores it securely. It never lands in the config file.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Everything the MCP server can do.
+  </Card>
+  <Card title="Bland MCP Server" icon="circle-info" href="/integrations/mcp/overview">
+    Auth, rate limits, and how the server works.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)

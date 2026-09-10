@@ -1,0 +1,48 @@
+---
+title: "Connect Claude Desktop to the Bland MCP server"
+description: "Connect the Claude Desktop app to your Bland account with the Bland plugin or a stdio bridge."
+hidden: true
+---
+
+The Bland MCP server is a hosted, streamable-HTTP server. Every client needs the same two values:
+
+- **URL:** `https://api.bland.ai/v1/mcp`
+- **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
+
+Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Setting up a different tool? See all [MCP clients](/integrations/mcp/clients).
+
+## Setup
+
+Prefer the [Bland plugin](/integrations/mcp/norm), which installs into Claude Desktop and stores the key for you.
+
+Without the plugin, Claude Desktop's custom connectors expect OAuth, so use the stdio bridge with your API key instead. Add to `claude_desktop_config.json` (**Settings → Developer → Edit Config**):
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "https://api.bland.ai/v1/mcp",
+        "--header", "Authorization: Bearer ${BLAND_API_KEY}"
+      ],
+      "env": { "BLAND_API_KEY": "org_your_key_here" }
+    }
+  }
+}
+```
+
+Requires Node.js 18+. Restart Claude Desktop after saving.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Everything the MCP server can do.
+  </Card>
+  <Card title="Bland MCP Server" icon="circle-info" href="/integrations/mcp/overview">
+    Auth, rate limits, and how the server works.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)
