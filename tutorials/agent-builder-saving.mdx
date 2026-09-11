@@ -1,0 +1,92 @@
+---
+title: "Saving and versions in the agent builder"
+description: "Learn how the agent builder autosaves your work, when manual saves create checkpoint versions, and how to resolve editing conflicts safely."
+---
+
+## Overview
+
+The agent builder saves your work automatically. Edits to scenarios, tools, knowledge bases, and settings persist within seconds of typing, so a refresh, crash, or closed tab no longer loses work. A status indicator in the toolbar shows what the builder is doing at all times, and the **Save** button still creates explicit checkpoint versions when you want one.
+
+## How autosave works
+
+Autosave watches for changes and writes them a couple of seconds after you pause. While you type continuously, it still saves periodically, so long editing sessions never build up much unsaved work.
+
+Consecutive autosaves fold into a single working version instead of stacking up. Your version history stays readable: one working version for the current editing session, plus the checkpoints you create on purpose.
+
+Autosave never rewrites a version that something else depends on. Versions that are named, published, or referenced by a deployment, branch, or experiment stay exactly as they were. New edits after that point go into a fresh working version.
+
+## The status indicator
+
+The toolbar shows the current save state:
+
+| Status | Meaning |
+|---|---|
+| **Editing…** | You have unsaved changes and a save is about to fire |
+| **Saving…** | A save is in flight |
+| **Saved** | Everything on screen is persisted |
+| **Saved — N things to check** | The save landed, but the server flagged advisories (for example, a transfer with no target). Select the indicator to review them |
+| **Couldn't save · Retry** | Saving failed after automatic retries. Select **Retry** to try again |
+| **Updated elsewhere** | Someone else changed this agent while you were editing. See [Editing conflicts](#editing-conflicts) |
+
+No indicator appears on a clean load. It shows up once there is something to report.
+
+## Checkpoints: manual Save, Cmd+S, and Publish
+
+Autosave keeps your work from being lost. Checkpoints mark the moments you want to keep.
+
+- Select **Save**, or press **Cmd+S** (**Ctrl+S** on Windows), to create a permanent checkpoint version. Later autosaves append after it and never rewrite it.
+- **Publish** also creates a checkpoint as part of promoting the agent.
+
+Use checkpoints before risky edits or after reaching a state you may want to roll back to. Autosaved working versions are interim by design; checkpoints are the versions you navigate back to.
+
+## Scenario version history
+
+Every save also records the state of each scenario, so you can look back at how a single scenario evolved and bring an older version back without touching the rest of the agent.
+
+### View a scenario's history
+
+Select a scenario in the builder and open **Version history** from the inspector header. The history sheet lists every saved version of that scenario, newest first, with:
+
+- The save time and author of each version.
+- Badges marking versions that are live in Staging or Production.
+- A change count (added and removed values) relative to your current draft.
+
+Select a version to compare it with your current draft. The comparison highlights what changed field by field; clear **Show diff** to see the saved values on their own instead. If the list is long, select **Load more versions** to page further back.
+
+History is scoped to the branch you are editing. A new branch starts with only its base version's history, not every save from the source branch.
+
+### Restore a version
+
+Select **Restore** to replace the scenario in your current draft with the selected version. A confirmation shows the same comparison before anything changes.
+
+Restoring only edits your draft:
+
+- The restored scenario keeps its identity, position, and connections to surrounding steps.
+- The change is a normal edit. Use **Undo** on the canvas to reverse it.
+- Nothing deploys. Save to keep the change, then publish and promote through the existing flow when ready.
+
+**Restore** is available only in an editable draft. When you view history from Staging or Production, the list stays readable but **Restore** is disabled.
+
+## Editing conflicts
+
+If the same agent is edited somewhere else at the same time, in another tab, by a teammate, or through the API, the builder detects the conflict instead of silently overwriting the other change. Autosave pauses and the indicator shows **Updated elsewhere** with two choices:
+
+- **Keep my changes** saves what is on your screen, knowingly replacing the other edit.
+- **Discard mine & reload** drops your local edits and reloads the latest saved version.
+
+Nothing is lost without you choosing it. After either choice, autosave resumes normally.
+
+## Failed saves
+
+If a save fails (for example, a network drop), the builder retries automatically a few times. If the retries also fail, the indicator changes to **Couldn't save · Retry** and waits for you. Your edits stay on screen the whole time; select **Retry** once the connection recovers.
+
+Saves blocked by missing permissions do not retry automatically.
+
+## Leaving the page
+
+Navigating away or closing the tab flushes any pending changes first, so you can leave mid-edit without losing work. The unsaved-changes dialog only appears when the builder cannot trust the flush, such as when the last save failed or an unresolved conflict is pending.
+
+## What autosave does not cover
+
+- **Staging view**: agents viewed in staging are read-only. The **Save** button is hidden and autosave is off.
+- **Custom code steps**: the code text autosaves with the rest of the configuration, but the code is not built and deployed until you select **Save code** in the editor.
