@@ -1,0 +1,71 @@
+---
+title: "Detach Numbers from Agent"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/inbound/detach"
+description: "Stop routing inbound calls on phone numbers to an agent."
+---
+
+### Overview
+
+Removes the agent from the given phone numbers. Only numbers currently attached to this agent are affected; any others in the list are skipped and not counted. Detached numbers have no inbound assignment until you attach them somewhere else. The reverse operation is [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="inbound_numbers" type="string[]" required>
+  Phone numbers to detach, each exactly as it appears on your account (for example `+18005551234`). Must be a non-empty array of non-empty strings; surrounding whitespace is trimmed. Returns `400 INVALID_BODY` otherwise.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.agent_id" type="string">
+  The agent ID from the request path.
+</ResponseField>
+
+<ResponseField name="data.detached_count" type="integer">
+  How many of the given numbers were attached to this agent and are now detached. `0` when none were, including when the agent has never had numbers attached or the agent ID is unknown. This endpoint does not return `404` for an unknown agent.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent_id": "8a60ad62-9f9e-4d97-817f-ac47ee2639cc",
+    "detached_count": 2
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_BODY",
+      "message": "inbound_numbers must be a non-empty array of phone numbers"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,57 @@
+---
+title: "Overview"
+description: "What the Agents API covers, how an agent is structured, and where to start."
+---
+
+The Agents API is the programmatic surface for agents built in the new Bland dashboard at `v2.app.bland.ai`. Every endpoint here mirrors something the agent builder does: saving a configuration, publishing it to an environment, branching to try a change, or routing a phone number to an agent.
+
+It does not replace the rest of the Bland API. Calls, numbers, knowledge bases, tools, and everything else still live in the API Reference tab, and those endpoints are unchanged.
+
+### How an agent is structured
+
+Most of this API follows from four ideas, so it is worth reading these before the endpoint pages.
+
+**An agent** is an org-scoped record. Creating one gives you three empty environments and nothing else, because an agent holds no configuration of its own.
+
+**A version** is a complete agent configuration, saved and never modified afterwards. Saving a version does not deploy it.
+
+**Environments** are `dev`, `staging`, and `production`. Each one pins a single version. Publishing moves the staging pin, promoting moves the production pin, and rolling back moves it to an earlier version. Calls run whatever version the environment currently pins.
+
+**Branches** are dev workspaces. Save onto a branch to work without touching the dev timeline, then rebase and merge it back.
+
+Three features build on those: checks gate promotions, experiments run a variant against an environment's pin, and dispositions classify call outcomes. Dispositions are enabled per organization.
+
+### Base URL and authentication
+
+Every route lives under `https://api.bland.ai/v2/agents`. Send your API key in the `authorization` header.
+
+A successful response returns your payload in `data` with `errors` set to `null`. On any error, `data` is `null` and `errors` carries one or more entries with an `error` code and a `message`.
+
+```json Success
+{
+  "data": { "id": "9f3d0b1c-4a77-4f3e-91a6-2c0d8e5b6a14" },
+  "errors": null
+}
+```
+
+```json Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+
+### Where to start
+
+If you have not built an agent yet, [Build your first agent](/build-your-first-agent) walks through the dashboard first, which makes these endpoints easier to follow.
+
+To create one over the API, the shortest path to a live agent is [Create Agent](/api-v2/post/agents), then [Create Agent Version](/api-v2/post/agents-id-versions), then [Publish Agent](/api-v2/post/agents-id-publish) and [Promote Agent](/api-v2/post/agents-id-promote).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

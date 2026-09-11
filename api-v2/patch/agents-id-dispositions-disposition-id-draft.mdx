@@ -1,0 +1,239 @@
+---
+title: "Update Disposition Draft"
+api: "PATCH https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/draft"
+description: "Replace a disposition's draft definition."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Replaces the whole draft definition. The write is guarded by the draft revision: pass the `revision` you read from [Get Disposition Draft](/api-v2/get/agents-id-dispositions-disposition-id-draft) as `expectedDraftRevision`, and the call returns `409` if someone else saved first. Editing the draft never affects the published version or calls already running; publish with [Publish Disposition](/api-v2/post/agents-id-dispositions-disposition-id-publish) to make changes live.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Body Parameters
+
+Unknown fields anywhere in the body are rejected. This is a full replacement, not a merge: every field of `definition` must be present.
+
+<ParamField body="expectedDraftRevision" type="integer" required>
+  The draft revision you last read, at least `1`. If the live revision differs, nothing is written and the call returns `409 CONFLICT`. On success the revision becomes `expectedDraftRevision + 1`.
+</ParamField>
+
+<ParamField body="definition" type="object" required>
+  The complete replacement definition. Schema violations return `400 BAD_REQUEST` with message `Invalid request body` and an `ext` string listing each failing path. Rule violations return `400 BAD_REQUEST` with message `Definition failed validation` and an `ext` string carrying `problems`, each with `valueId` and `message`. Drafts are validated less strictly than publishing: a `structured_extraction` value may omit its version pin, and judge or extractor pins may still be editable.
+
+  <Expandable title="definition object">
+    <ParamField body="name" type="string" required>
+      Display name, 1 to 120 characters.
+    </ParamField>
+    <ParamField body="description" type="string" required>
+      Free-text description, up to 2000 characters. May be empty.
+    </ParamField>
+    <ParamField body="timing" type="string" required>
+      `immediate` runs within 30 minutes of call completion. `within_24h` queues the run with a 24-hour deadline.
+    </ParamField>
+    <ParamField body="values" type="array" required>
+      Up to 50 value objects. Each value produces one field of the result. Value `id`s and `key`s must be unique within the definition. A definition with no values can be saved but not published or tested.
+    </ParamField>
+    <ParamField body="values[].id" type="string" required>
+      A UUID you generate. It is the value's permanent identity: results, corrections, and the transformation all refer to it. Keep existing ids stable when editing so history stays attached.
+    </ParamField>
+    <ParamField body="values[].key" type="string" required>
+      Payload field name, 1 to 64 characters matching `^[a-z][a-z0-9_]*$`. May change between drafts.
+    </ParamField>
+    <ParamField body="values[].label" type="string" required>
+      Human-readable label, 1 to 120 characters.
+    </ParamField>
+    <ParamField body="values[].schema" type="object" required>
+      The value's output shape. `kind` is one of `boolean`, `string`, `number`, `enum`, `array`, or `object`; every kind accepts an optional `description` up to 2000 characters. `string` accepts `format: "date-time"`. `enum` requires `options`: 1 to 24 entries of `{ "key", "label" }` with `key` 1 to 64 characters, `label` 1 to 120, and keys unique. `array` requires `items` (a nested schema) and accepts `minItems` (at least 0) and `maxItems` (at least 1); neither may exceed 1000 and `minItems` may not exceed `maxItems`. `object` requires `properties` (a map of names up to 64 characters to nested schemas, at most 64 of them) and `required` (unique names that all appear in `properties`). A schema may not exceed 200 nodes, 8 levels of nesting, or 64 KB.
+    </ParamField>
+    <ParamField body="values[].source" type="object" required>
+      How the value is produced. `kind` selects one of four shapes; the fields for each kind are listed below. A `judge` value's schema must be `boolean` or an `enum` whose keys exactly match the judge's level keys (a pass/fail judge maps to `boolean` or a two-option `pass` and `fail` enum). A `structured_extraction` value's schema must exactly match the pinned extractor's output schema. A `variable_extraction` value's schema must exactly match the `outputSchema` of the matching entry in [Get Variable Catalog](/api-v2/get/agents-id-dispositions-variable-catalog).
+    </ParamField>
+    <ParamField body="values[].source.kind" type="string" required>
+      One of `variable_extraction`, `structured_extraction`, `judge`, or `custom_code`.
+    </ParamField>
+    <ParamField body="values[].source.variableKey" type="string">
+      `variable_extraction` only, required. Key of an existing variable on the agent, 1 to 128 characters matching `^[A-Za-z_][A-Za-z0-9_.-]{0,127}$`. The variable must exist in the agent's current configuration.
+    </ParamField>
+    <ParamField body="values[].source.execution" type="object">
+      For `variable_extraction`, optional `{ "reasoningEffort" }` defaulting to `auto`. For `structured_extraction` and `judge`, required `{ "reasoningEffort", "inputSourceIds" }`. `reasoningEffort` is `auto`, `low`, `medium`, or `high`. `inputSourceIds` is 1 to 8 of `transcript`, `audio_recording`, `call_metadata`, `pathway_logs`, `tool_logs`, `variables`, `agent_config`, `call_config`. An audio judge must include `audio_recording`. A structured extraction cannot combine `low` effort with `audio_recording`.
+    </ParamField>
+    <ParamField body="values[].source.extractorId" type="string">
+      `structured_extraction` only, required. UUID of an extractor from [List Extractors](/api-v2/get/agents-id-dispositions-extractors) that is org-wide or scoped to this agent.
+    </ParamField>
+    <ParamField body="values[].source.extractorVersionId" type="string">
+      `structured_extraction` only. UUID of a version of that extractor. Optional while drafting; required to publish or run a test, and publish requires a published (archived) version.
+    </ParamField>
+    <ParamField body="values[].source.frozen" type="object">
+      `structured_extraction` only. Written by the server at publish time with a copy of the pinned extractor's prompt, output schema, and inference configuration. You may echo back the copy you read from the draft or omit it; publish rewrites it either way.
+    </ParamField>
+    <ParamField body="values[].source.judgeId" type="string">
+      `judge` only, required. UUID of a judge from [Get Judge Catalog](/api-v2/get/agents-id-dispositions-judge-catalog) that is org-wide or scoped to this agent.
+    </ParamField>
+    <ParamField body="values[].source.judgeVersionId" type="string">
+      `judge` only, required. UUID of a version of that judge. Publish and test runs require a published (archived) version; a draft may temporarily reference an editable one.
+    </ParamField>
+    <ParamField body="values[].source.snippetId" type="string">
+      `custom_code` only, required. UUID of a code snippet owned by your organization. The snippet must be JavaScript.
+    </ParamField>
+    <ParamField body="values[].source.snippetVersion" type="integer">
+      `custom_code` only, required. Snippet version number, at least `1`.
+    </ParamField>
+    <ParamField body="values[].source.timeoutSeconds" type="integer">
+      `custom_code` only, required. 1 to 60.
+    </ParamField>
+    <ParamField body="values[].source.connections" type="object">
+      `custom_code` only, required (may be `{}`). Up to 20 entries keyed by an alias matching `^[A-Za-z_][A-Za-z0-9_]{0,63}$`, each `{ "resourceId": "uuid", "integration": "optional string" }`. Resources must belong to your organization.
+    </ParamField>
+    <ParamField body="values[].source.secrets" type="object">
+      `custom_code` only, required (may be `{}`). Up to 20 entries keyed by an alias with the same pattern, each `{ "secretId": "uuid" }`.
+    </ParamField>
+    <ParamField body="values[].source.dependencyValueIds" type="array">
+      `custom_code` only, required (may be `[]`). Up to 20 unique value ids whose results are passed to the code. Only `variable_extraction`, `structured_extraction`, and `judge` values may be referenced; a code value cannot depend on itself or on another code value.
+    </ParamField>
+    <ParamField body="transformation" type="object" required>
+      `{ "version": 1, "root": node }`. A node is one of `{ "kind": "value", "valueId" }`, `{ "kind": "literal", "value" }`, `{ "kind": "object", "fields": { name: node } }` with names up to 64 characters, or `{ "kind": "array", "items": [node] }` with up to 50 items. Every referenced `valueId` must exist in `values`. At most 2000 nodes.
+    </ParamField>
+    <ParamField body="postCallWebhook" type="object" required>
+      `{ "mode": "hold" }` or `{ "mode": "emit_followup" }`. `hold` is only valid with `timing: "immediate"`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="data.dispositionId" type="string">
+  The disposition this draft belongs to.
+</ResponseField>
+
+<ResponseField name="data.revision" type="number">
+  The new draft revision, `expectedDraftRevision + 1`.
+</ResponseField>
+
+<ResponseField name="data.baseVersionId" type="string | null">
+  The most recently published version, or `null` if never published.
+</ResponseField>
+
+<ResponseField name="data.definition" type="object">
+  The saved definition, as stored.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "dispositionId": "70195e6f-b0b5-4ade-b851-2a2f25dcbde0",
+    "revision": 4,
+    "baseVersionId": "9cf8e056-0ffa-4acf-853e-c37ecaaa7e64",
+    "definition": {
+      "name": "Appointment outcome",
+      "description": "Did the caller book an appointment?",
+      "timing": "within_24h",
+      "values": [
+        {
+          "id": "59ef1515-aa81-4010-bd61-790abdebe92f",
+          "key": "callback_window",
+          "label": "Requested callback window",
+          "schema": { "kind": "string", "description": "Preferred callback time in the caller's words" },
+          "source": {
+            "kind": "structured_extraction",
+            "extractorId": "cf3403ca-16af-4e5e-ad76-e4c044e6611e",
+            "extractorVersionId": "af6ec0dc-ebf5-47a8-bf8c-4b114cd90ddf",
+            "execution": { "reasoningEffort": "medium", "inputSourceIds": ["transcript"] }
+          }
+        }
+      ],
+      "transformation": {
+        "version": 1,
+        "root": {
+          "kind": "object",
+          "fields": {
+            "callback_window": { "kind": "value", "valueId": "59ef1515-aa81-4010-bd61-790abdebe92f" }
+          }
+        }
+      },
+      "postCallWebhook": { "mode": "emit_followup" }
+    }
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Invalid request body",
+      "ext": "{\"errors\":[\"/expectedDraftRevision: Expected required property\"]}"
+    }
+  ]
+}
+```
+
+```json Definition Invalid
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Definition failed validation",
+      "ext": "{\"problems\":[{\"valueId\":\"59ef1515-aa81-4010-bd61-790abdebe92f\",\"message\":\"Disposition value schema must exactly match the pinned extractor output schema\"}]}"
+    }
+  ]
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "Draft revision moved (expected 3) — reload and reapply your change"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

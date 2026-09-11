@@ -1,0 +1,176 @@
+---
+title: "Start Check Run"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/check-runs"
+description: "Start a check run against a candidate version."
+---
+
+### Overview
+
+Starts a check run for one environment. The server generates `simulations_count` conversations per configured scenario against the candidate version, scores each with the configured judges, and records a verdict. The run is returned immediately as `PENDING`, moves to `RUNNING`, and ends `PASSED`, `FAILED`, `ERROR`, or `CANCELLED`. Poll [Get Check Run](/api-v2/get/agents-id-check-runs-run-id) until the status is terminal, then gate your own [publish](/api-v2/post/agents-id-publish) or [promote](/api-v2/post/agents-id-promote) call on `overall_passed`. A check run never moves an environment pointer.
+
+The run freezes the config as it stands when it starts; later edits with [Set Checks](/api-v2/put/agents-id-environments-env-checks) do not affect it. One run at a time per environment. Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  `staging` or `production`. Any other value returns `400 BAD_REQUEST`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="version_id" type="string">
+  The version to score. Must be a version of this agent; any version qualifies, so you can re-check an older one. Omit it (or pass an empty string) to score what a promotion into this environment would deploy: for `production`, the version pinned to `staging`; for `staging`, the newest version saved on the main line. Returns `400 BAD_REQUEST` when the ID is not a version of this agent, or when the default cannot be resolved (staging is unpinned, or the agent has no saved versions).
+</ParamField>
+
+### Response
+
+Returns `202` with the new run. If the run could not be scheduled, the response is still `202` but the run's `status` is `ERROR` with an `error_message`, so read the status rather than assuming `PENDING`.
+
+Returns `400 BAD_REQUEST` when the environment has no check config, the config is disabled, or the config is no longer runnable (for example, a scenario was deleted). Returns `409 CONFLICT` while another run for the same environment is `PENDING` or `RUNNING`; cancel it with [Cancel Check Run](/api-v2/post/agents-id-check-runs-run-id-cancel) or wait for it to finish.
+
+<ResponseField name="data" type="object">
+  The new check run.
+
+  <Expandable title="check run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the check run. Pass it as `{run_id}` when polling.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the run belongs to.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      The environment whose checks were run: `staging` or `production`.
+    </ResponseField>
+    <ResponseField name="agent_version_id" type="string">
+      The candidate version the run scores.
+    </ResponseField>
+    <ResponseField name="semver" type="string | null">
+      The candidate's published version number. `null` when the candidate has not been published yet, which is the normal case for a `staging` run.
+    </ResponseField>
+    <ResponseField name="version_name" type="string | null">
+      The candidate's saved name, or `null` if it has none.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `PENDING` on a successful start, or `ERROR` if the run could not be scheduled. Later values are `RUNNING`, `PASSED`, `FAILED`, `ERROR`, and `CANCELLED`.
+    </ResponseField>
+    <ResponseField name="judge_names" type="array">
+      Display names of the judges frozen into the run.
+    </ResponseField>
+    <ResponseField name="scenario_count" type="integer">
+      Number of scenarios the run drives conversations from.
+    </ResponseField>
+    <ResponseField name="simulations_count" type="integer">
+      Conversations generated per scenario.
+    </ResponseField>
+    <ResponseField name="overall_passed" type="boolean | null">
+      `null` until the run completes. `true` when every `required` judge passed, `false` otherwise.
+    </ResponseField>
+    <ResponseField name="verdicts" type="array | null">
+      `null` until the run completes. See [Get Check Run](/api-v2/get/agents-id-check-runs-run-id) for the verdict object.
+    </ResponseField>
+    <ResponseField name="simulation_set_id" type="string | null">
+      ID of the generated conversation set. `null` until generation starts.
+    </ResponseField>
+    <ResponseField name="eval_run_id" type="string | null">
+      ID of the scoring run. `null` until scoring starts.
+    </ResponseField>
+    <ResponseField name="error_message" type="string | null">
+      Why the run ended in `ERROR`, or `null`.
+    </ResponseField>
+    <ResponseField name="triggered_by" type="string | null">
+      ID of the user who started the run, or `null` when started with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp the run was created.
+    </ResponseField>
+    <ResponseField name="started_at" type="string | null">
+      When scoring began. `null` while `PENDING`.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      When the run reached a terminal status. `null` while in flight.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "e8b994db-eeaa-4948-a4b8-3edbca49ca9c",
+    "agent_id": "9b97c1a6-3171-4139-b83d-b9119586080d",
+    "env_type": "production",
+    "agent_version_id": "b7a09422-c97c-49d8-b66f-8991b14e8253",
+    "semver": "1.4.0",
+    "version_name": "Shorter greeting",
+    "status": "PENDING",
+    "judge_names": ["Resolution quality", "No policy violations"],
+    "scenario_count": 2,
+    "simulations_count": 5,
+    "overall_passed": null,
+    "verdicts": null,
+    "simulation_set_id": null,
+    "eval_run_id": null,
+    "error_message": null,
+    "triggered_by": "c43222b9-b7ab-4823-950d-517ac22291ff",
+    "created_at": "2026-09-10T17:02:39.115Z",
+    "started_at": null,
+    "completed_at": null
+  },
+  "errors": null
+}
+```
+
+```json No Config
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "No checks are configured for this environment"
+    }
+  ]
+}
+```
+
+```json Run In Progress
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "A check run is already in progress"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,154 @@
+---
+title: "Cancel Check Run"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/check-runs/{run_id}/cancel"
+description: "Cancel a pending or running check run."
+---
+
+### Overview
+
+Marks a `PENDING` or `RUNNING` run `CANCELLED` and stops its scoring work. A cancelled run never produces a final verdict, and cancelling frees the environment so a new run can be started with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs). Returns `409 CONFLICT` when the run is already `PASSED`, `FAILED`, `ERROR`, or `CANCELLED`. Cancelling never changes an environment pointer.
+
+Requires an admin, owner, operator, or prompter role. This endpoint takes no body.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="run_id" type="string" required>
+  The check run's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The cancelled run, with `status` set to `CANCELLED` and `completed_at` set to the cancellation time.
+
+  <Expandable title="check run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the check run.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the run belongs to.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      The environment whose checks were run: `staging` or `production`.
+    </ResponseField>
+    <ResponseField name="agent_version_id" type="string">
+      The candidate version the run was scoring.
+    </ResponseField>
+    <ResponseField name="semver" type="string | null">
+      The candidate's published version number, or `null` if it has never been published.
+    </ResponseField>
+    <ResponseField name="version_name" type="string | null">
+      The candidate's saved name, or `null` if it has none.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Always `CANCELLED` on success.
+    </ResponseField>
+    <ResponseField name="judge_names" type="array">
+      Display names of the judges frozen into the run when it started.
+    </ResponseField>
+    <ResponseField name="scenario_count" type="integer">
+      Number of scenarios the run was driving conversations from.
+    </ResponseField>
+    <ResponseField name="simulations_count" type="integer">
+      Conversations generated per scenario.
+    </ResponseField>
+    <ResponseField name="overall_passed" type="boolean | null">
+      `null` for a cancelled run.
+    </ResponseField>
+    <ResponseField name="verdicts" type="array | null">
+      `null` for a cancelled run. See [Get Check Run](/api-v2/get/agents-id-check-runs-run-id) for the verdict object.
+    </ResponseField>
+    <ResponseField name="simulation_set_id" type="string | null">
+      ID of the generated conversation set, if generation had started.
+    </ResponseField>
+    <ResponseField name="eval_run_id" type="string | null">
+      ID of the scoring run, if scoring had started.
+    </ResponseField>
+    <ResponseField name="error_message" type="string | null">
+      `null` unless the run had already hit an error.
+    </ResponseField>
+    <ResponseField name="triggered_by" type="string | null">
+      ID of the user who started the run, or `null` when started with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp the run was created.
+    </ResponseField>
+    <ResponseField name="started_at" type="string | null">
+      When scoring began, or `null` if the run was cancelled while `PENDING`.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      The cancellation time.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "9eab4005-81c7-46c4-b4af-cd219844dd53",
+    "agent_id": "358f36b8-91ea-4c19-90ed-f1ebc9f861c9",
+    "env_type": "staging",
+    "agent_version_id": "a26b7ffd-7f60-4f62-9592-861d40fdac3c",
+    "semver": null,
+    "version_name": "Trim hold music prompt",
+    "status": "CANCELLED",
+    "judge_names": ["Resolution quality"],
+    "scenario_count": 3,
+    "simulations_count": 5,
+    "overall_passed": null,
+    "verdicts": null,
+    "simulation_set_id": "9d76db16-4da7-450f-9c78-f72539731e1e",
+    "eval_run_id": null,
+    "error_message": null,
+    "triggered_by": "1473e1e7-c185-4c56-85fb-dab8863394b3",
+    "created_at": "2026-09-10T19:22:07.530Z",
+    "started_at": "2026-09-10T19:22:10.088Z",
+    "completed_at": "2026-09-10T19:25:41.962Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Cancellable
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "Check run is not in a cancellable state"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Check run not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

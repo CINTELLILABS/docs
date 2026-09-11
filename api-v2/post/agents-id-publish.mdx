@@ -1,0 +1,194 @@
+---
+title: "Publish Agent to Staging"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/publish"
+description: "Publish a version to the staging environment."
+---
+
+### Overview
+
+Moves the agent's `staging` pointer. The body picks one of three modes: send `snapshot` to save a new version and publish it, send `version_id` to publish an existing dev-timeline version, or send neither to publish the newest saved dev version. A version published for the first time is given a semver using `bump`; republishing a version that already has one re-records its original number. Move it on to production with [Promote Agent to Production](/api-v2/post/agents-id-promote).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="snapshot" type="object">
+  A full agent configuration to save as a new version and publish, the same object accepted by [Create Agent Version](/api-v2/post/agents-id-versions). Top-level keys: `behavior` (`{ nodes, edges }`), `settings` (`displayName` and `systemPrompt` strings, optional `guardrails` with at most 5 custom entries), `contact` (`inboundNumbers` array), and optional `knowledge` (`{ kbIds: string[] }`). Serialized size must not exceed 2 MB. Returns `400 INVALID_SNAPSHOT` with one error entry per problem. Custom guardrails require an enterprise plan: a snapshot that adds one on another plan returns `403 ENTERPRISE_REQUIRED`. When present, `version_id` is ignored.
+</ParamField>
+
+<ParamField body="version_id" type="string">
+  ID of an existing version on the agent's dev timeline to publish without saving anything new. Versions saved on a branch are not accepted; merge the branch first. Returns `404 VERSION_NOT_FOUND` if the ID is not on the dev timeline. Ignored when `snapshot` is present.
+</ParamField>
+
+<ParamField body="bump" type="string" default="patch">
+  Which component to increment when this publish mints a new version number: `patch`, `minor`, or `major`. The increment is applied to the highest number ever minted for the agent, so a first publish yields `0.0.1`, `0.1.0`, or `1.0.0`. Ignored when the version already has a number. Returns `400 INVALID_BUMP` for any other value.
+</ParamField>
+
+### Response
+
+Returns `201` on success. Returns `200` instead when `version_id` names the version already pinned to staging; nothing changes and the current number is returned.
+
+<ResponseField name="data.version" type="object">
+  The published version, including its full `snapshot`.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the version.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the version belongs to.
+    </ResponseField>
+    <ResponseField name="branch_id" type="null">
+      Always `null`; only dev-timeline versions can be published.
+    </ResponseField>
+    <ResponseField name="snapshot" type="object">
+      The agent configuration stored in this version.
+    </ResponseField>
+    <ResponseField name="name" type="string | null">
+      The version's saved name, or `null`.
+    </ResponseField>
+    <ResponseField name="created_via" type="string">
+      `manual` or `autosave`, depending on how the version was originally saved. A version created by this call is `manual`.
+    </ResponseField>
+    <ResponseField name="revision" type="integer">
+      Rewrite counter for autosaved versions. `0` for a version created by this call.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who saved the version, or `null` when saved with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp the version was saved.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.semver" type="string">
+  The version number recorded on this deployment, for example `1.4.0`.
+</ResponseField>
+
+<ResponseField name="data.environments" type="array">
+  The agent's three environments after the publish. Each has `id`, `env_type` (`dev`, `staging`, or `production`), and `current_version_id` (the pinned version, or `null` if unpinned).
+</ResponseField>
+
+<ResponseField name="data.warnings" type="string[]">
+  Non-blocking advisories about the saved snapshot (for example a transfer step with no target). Only present in `snapshot` mode and only when there is at least one.
+</ResponseField>
+
+<ResponseField name="data.warning_details" type="array">
+  Present alongside `warnings`. Each entry has `message` and, when the advisory concerns a single step, `nodeId`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the body has neither `snapshot` nor `version_id` and the agent has no saved versions, and `409 PUBLISH_IN_PROGRESS` when another publish for the same agent is still running; retry after a moment.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "version": {
+      "id": "5bf56fc0-6ad5-4cd9-bb96-90cb63121526",
+      "org_id": "cee059fe-ac03-4fb4-acb1-6e8ef9dc4c39",
+      "agent_id": "9e676162-cf94-4d38-b9e7-4f2e8528989b",
+      "branch_id": null,
+      "snapshot": {
+        "behavior": {
+          "nodes": [],
+          "edges": []
+        },
+        "settings": {
+          "displayName": "Front desk",
+          "systemPrompt": "You answer calls for Northwind Dental and book appointments."
+        },
+        "contact": {
+          "inboundNumbers": []
+        }
+      },
+      "name": null,
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "68140a61-70e5-4a16-a5dc-70a0b923f52b",
+      "created_at": "2026-09-10T19:02:44.310Z"
+    },
+    "semver": "1.4.0",
+    "environments": [
+      {
+        "id": "a8e0f34d-0d4a-421e-b13e-26dd1bbd5161",
+        "env_type": "dev",
+        "current_version_id": null
+      },
+      {
+        "id": "c0835434-da77-4691-8452-bcfd7a2e6bee",
+        "env_type": "staging",
+        "current_version_id": "5bf56fc0-6ad5-4cd9-bb96-90cb63121526"
+      },
+      {
+        "id": "95e84904-2fe9-45e8-bb2a-137eb5bb40eb",
+        "env_type": "production",
+        "current_version_id": "65039217-bb14-4b1a-85b4-bfde372485a3"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Invalid Snapshot
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_SNAPSHOT",
+      "message": "settings.systemPrompt must be a string"
+    },
+    {
+      "error": "INVALID_SNAPSHOT",
+      "message": "contact.inboundNumbers must be an array"
+    }
+  ]
+}
+```
+
+```json Nothing To Publish
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NO_VERSIONS",
+      "message": "Save a version before publishing to staging"
+    }
+  ]
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PUBLISH_IN_PROGRESS",
+      "message": "Another publish is in progress for this agent, please retry"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

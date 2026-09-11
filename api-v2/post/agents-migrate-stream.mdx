@@ -1,0 +1,166 @@
+---
+title: "Stream Pathway Migration"
+api: "POST https://api.bland.ai/v2/agents/migrate/stream"
+description: "Run a pathway migration with live progress events."
+---
+
+### Overview
+
+Runs the same migration as [Migrate Pathway](/api-v2/post/agents-migrate) with the same body and the same outcome, but delivers it as a Server-Sent Events stream so you can show progress during the multi-minute planner run. The final `done` event carries exactly the status, `data`, and `errors` the JSON endpoint would have returned. If you disconnect before the run finishes, the planner is aborted and nothing is created.
+
+Limited to 10 migration starts per hour per organization, counted together with [Migrate Pathway](/api-v2/post/agents-migrate) and [Start Pathway Translation](/api-v2/post/agents-migrate-translations). Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="pathway" type="object" required>
+  The legacy pathway graph, in the shape the pathway editor exports: `nodes` (required, non-empty array), `edges` (required array, may be empty), and optional `name` and `globalPrompt`. Returns `400 INVALID_PATHWAY` if `nodes` or `edges` is missing or `nodes` is empty, and `400 PATHWAY_TOO_LARGE` beyond 500 nodes, 2,000 edges, or 2 MB serialized. See [Migrate Pathway](/api-v2/post/agents-migrate) for field details.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent when `create` is `true`. Defaults to `<pathway.name> (migrated)`, or `unnamed pathway (migrated)` when the pathway has no name.
+</ParamField>
+
+<ParamField body="create" type="boolean" default="false">
+  When `true`, the migrated snapshot is saved as a new agent with its first version. Any other value is treated as `false` (dry run).
+</ParamField>
+
+### Response
+
+Body validation and the rate limit are checked before the stream opens, so those failures arrive as ordinary JSON responses (`400` or `429`). Once accepted, the response is `200` with `Content-Type: text/event-stream`, `Cache-Control: no-cache, no-transform`, and `Connection: keep-alive`. Each event is a single `data:` line holding a JSON object whose `type` field identifies it; no `event:` names are used. A comment line `: ping` is sent every 10 seconds as a heartbeat and should be ignored. The stream closes after the `done` or `error` event.
+
+<ResponseField name="type" type="string">
+  Present on every event. One of `start`, `read_reference`, `read_nodes`, `iteration`, `plan_submitted`, `materializing`, `done`, `error`.
+</ResponseField>
+
+<ResponseField name="start" type="event">
+  Emitted once when the planner begins.
+
+  <Expandable title="start payload">
+    <ResponseField name="pathway" type="string">
+      The pathway label (its `name`, or `unnamed pathway`).
+    </ResponseField>
+    <ResponseField name="nodes" type="integer">
+      Number of nodes in the submitted graph.
+    </ResponseField>
+    <ResponseField name="edges" type="integer">
+      Number of edges in the submitted graph.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="read_reference" type="event">
+  The planner consulted one of its internal reference documents. `name` (string) identifies the document.
+</ResponseField>
+
+<ResponseField name="read_nodes" type="event">
+  The planner read the full content of specific legacy nodes. `ids` (array of strings) lists their IDs.
+</ResponseField>
+
+<ResponseField name="iteration" type="event">
+  One planner turn finished. Turns can be one to three minutes apart.
+
+  <Expandable title="iteration payload">
+    <ResponseField name="iteration" type="integer">
+      1-based turn counter.
+    </ResponseField>
+    <ResponseField name="stopReason" type="string | null">
+      Why the turn ended, for example `tool_use` or `end_turn`.
+    </ResponseField>
+    <ResponseField name="outputTokens" type="integer">
+      Tokens the planner produced in this turn.
+    </ResponseField>
+    <ResponseField name="toolCalls" type="array">
+      Names of the planner actions taken this turn, such as `read_nodes` or `submit_migration_plan`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="plan_submitted" type="event">
+  The planner submitted a plan. Carries `scenarios`, `endCalls`, and `openQuestions` (integers). A rejected plan is repaired and resubmitted within the same run, so this can fire more than once.
+</ResponseField>
+
+<ResponseField name="materializing" type="event">
+  The plan is being turned into an agent snapshot. No other fields.
+</ResponseField>
+
+<ResponseField name="done" type="event">
+  The run finished. Emitted once, then the stream closes.
+
+  <Expandable title="done payload">
+    <ResponseField name="status" type="integer">
+      The HTTP status [Migrate Pathway](/api-v2/post/agents-migrate) would have returned: `200` (dry run), `201` (agent created), `422` (validation, lint, or create blocked), or `500`.
+    </ResponseField>
+    <ResponseField name="data" type="object">
+      The same `data` object as [Migrate Pathway](/api-v2/post/agents-migrate): `plan`, `snapshot`, `lint`, `usage`, `created`, and in create mode `agent` and `version`. Unlike the JSON endpoint, a `422` here still includes the partial `data` (at minimum `plan`, `lint`, and `usage`) so you can inspect what failed.
+    </ResponseField>
+    <ResponseField name="errors" type="null | array">
+      `null` when `status` is `200` or `201`, otherwise the error list.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="error" type="event">
+  The planner itself failed. `message` (string) is safe to show to users. The stream closes after it.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```text Event Stream
+data: {"type":"start","pathway":"Front desk booking","nodes":2,"edges":1}
+
+data: {"type":"read_reference","name":"inversion-rules"}
+
+data: {"type":"read_nodes","ids":["73a855b4-7257-4c6e-bd7d-f151a763c9fa","ddc0765a-8086-4826-bfaf-77b889fb3022"]}
+
+: ping
+
+data: {"type":"iteration","iteration":1,"stopReason":"tool_use","outputTokens":1420,"toolCalls":["read_reference","read_nodes"]}
+
+: ping
+
+data: {"type":"plan_submitted","scenarios":1,"endCalls":0,"openQuestions":0}
+
+data: {"type":"materializing"}
+
+data: {"type":"iteration","iteration":2,"stopReason":"end_turn","outputTokens":4700,"toolCalls":["submit_migration_plan"]}
+
+data: {"type":"done","status":200,"data":{"plan":{"displayName":"Front desk","hubPrompt":"Greet the caller and find out what they need.\n\n## Routing\n\n- \"Book appointment\": the caller wants to schedule a visit","scenarios":[{"kind":"simple","name":"Book appointment","entry":{"mode":"llm","label":"Wants to book"},"ruleParts":[{"legacyPromptOf":"73a855b4-7257-4c6e-bd7d-f151a763c9fa"}]}],"endCalls":[],"report":{"architectureSummary":"A two-node booking pathway collapsed into one hub and one booking scenario.","dispositions":[{"nodeIds":["73a855b4-7257-4c6e-bd7d-f151a763c9fa"],"disposition":"Became scenario \"Book appointment\"","rationale":"Single dialogue step."},{"nodeIds":["ddc0765a-8086-4826-bfaf-77b889fb3022"],"disposition":"Merged into the hub prompt","rationale":"Greeting-only node."}],"droppedOrApproximated":[],"openQuestions":[]}},"snapshot":{"behavior":{"nodes":[{"id":"inbound","type":"inbound","position":{"x":360,"y":-180},"data":{"number":""}},{"id":"agent","type":"agent","position":{"x":192,"y":0},"data":{"prompt":"Greet the caller and find out what they need.\n\n## Routing\n\n- \"Book appointment\": the caller wants to schedule a visit","loopWhile":"","variables":[]}},{"id":"545fe342-06be-4151-aae2-bd10bf128464","type":"scenario","position":{"x":0,"y":260},"data":{"name":"Book appointment","rule":"Ask which day and time works for the caller, then confirm the appointment back to them.","target":{"kind":"dialogue","label":"Book appointment"},"loopWhile":"","variables":[],"entry":{"mode":"llm","label":"Wants to book","description":"","alwaysPick":false,"conditions":[]}}}],"edges":[{"id":"e-inbound-agent","source":"inbound","target":"agent"},{"id":"e-agent-book","source":"agent","target":"545fe342-06be-4151-aae2-bd10bf128464","data":{"mode":"llm","label":"Wants to book","description":"","alwaysPick":false,"conditions":[]}}]},"settings":{"displayName":"Front desk","systemPrompt":"You are the front desk assistant for a dental office.","voice":"","languages":["english"],"enableMemory":false,"interruptionSensitivity":350,"backgroundNoise":"off"},"contact":{"inboundNumbers":[]}},"lint":{"errors":[],"warnings":[]},"usage":{"inputTokens":48211,"outputTokens":6120,"iterations":2},"created":false},"errors":null}
+```
+
+```json Invalid Pathway
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PATHWAY_TOO_LARGE",
+      "message": "pathway exceeds 500 nodes / 2000 edges"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many pathway migrations started for this organization — please wait before starting another."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

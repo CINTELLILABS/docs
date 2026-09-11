@@ -1,0 +1,224 @@
+---
+title: "Create Experiment"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/experiments"
+description: "Start an A/B experiment on a variant version."
+---
+
+### Overview
+
+Starts an A/B experiment that sends `traffic_percentage` percent of the agent's eligible calls to `variant_version_id`, with the rest running the version pinned to `baseline_env`. Only calls that do not explicitly select a version or environment are eligible. An agent has at most one active experiment: stop it with [Stop Experiment](/api-v2/post/agents-id-experiments-experiment-id-stop) before creating another, or adjust it in place with [Update Experiment](/api-v2/patch/agents-id-experiments-experiment-id). Returns `409 CONFLICT` while one is active.
+
+An experiment completes on its own when `ends_at` passes, when `variant_call_quota` connected variant calls have been routed, or when the baseline environment is repointed to another version (for example by a publish or promote). Completion is permanent, and all eligible traffic returns to the baseline pin.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="variant_version_id" type="string" required>
+  The version to test. Must be a UUID, a version of this agent, and different from the baseline environment's current pin. The variant is prepared for live calls before the experiment is created, so a version that cannot run returns `400 BAD_REQUEST` here rather than failing on calls.
+</ParamField>
+
+<ParamField body="traffic_percentage" type="integer" required>
+  Share of eligible calls routed to the variant, `1` to `100`. The remainder runs the baseline pin.
+</ParamField>
+
+<ParamField body="baseline_env" type="string" default="production">
+  `production` or `staging`. The environment whose pinned version is the control arm. Returns `400 BAD_REQUEST` if that environment has no pinned version.
+</ParamField>
+
+<ParamField body="run_hours" type="object | null" default="null">
+  Weekly schedule during which the variant receives traffic, evaluated in `timezone` at each call so daylight-saving changes are handled automatically. Outside the schedule every eligible call runs the baseline. `null` means the variant is always eligible.
+
+  ```json
+  {
+    "timezone": "America/New_York",
+    "days": {
+      "mon": { "start": "09:00", "end": "17:00" },
+      "tue": { "start": "09:00", "end": "17:00" },
+      "fri": { "start": "22:00", "end": "02:00" }
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="run_hours.timezone" type="string" required>
+  An IANA timezone name such as `America/Chicago`. Returns `400 BAD_REQUEST` for an unknown name.
+</ParamField>
+
+<ParamField body="run_hours.days" type="object" required>
+  Keyed by `mon`, `tue`, `wed`, `thu`, `fri`, `sat`, `sun`, with at least one day. Each value is `{ "start": "HH:mm", "end": "HH:mm" }` in 24-hour time, and `start` and `end` must differ. A day that is absent never routes to the variant. When `end` is earlier than `start`, the window wraps past midnight into the following day.
+</ParamField>
+
+<ParamField body="starts_at" type="string | null" default="null">
+  ISO 8601 datetime. The variant receives no traffic before this time. `null` starts immediately.
+</ParamField>
+
+<ParamField body="ends_at" type="string | null" default="null">
+  ISO 8601 datetime. The experiment completes with `completed_reason: "date_ended"` once this time passes. Must be in the future and, when `starts_at` is set, after it. `null` means no end date.
+</ParamField>
+
+<ParamField body="variant_call_quota" type="integer | null" default="null">
+  Maximum connected variant calls, `1` to `1000000`. The experiment completes with `completed_reason: "quota_reached"` when the count is reached. Only calls that connect count, so unanswered outbound calls never consume quota. `null` means no cap.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.experiment" type="object">
+  The new experiment, in `active` status.
+
+  <Expandable title="experiment object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the experiment. Pass it as `{experiment_id}` on the other experiment endpoints.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the experiment belongs to.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `active` on creation. Becomes `completed` when the experiment ends; completion is terminal.
+    </ResponseField>
+    <ResponseField name="completed_reason" type="string | null">
+      `null` while active. On completion, one of `manual` (stopped through the API), `date_ended`, `quota_reached`, or `baseline_changed` (the baseline environment was repointed).
+    </ResponseField>
+    <ResponseField name="baseline_env" type="string">
+      The control environment: `production` or `staging`.
+    </ResponseField>
+    <ResponseField name="baseline_current_version_id" type="string | null">
+      The version currently pinned to `baseline_env`, read at request time. While the experiment is active this is the control arm.
+    </ResponseField>
+    <ResponseField name="variant_version_id" type="string">
+      The version under test.
+    </ResponseField>
+    <ResponseField name="traffic_percentage" type="integer">
+      Share of eligible calls routed to the variant.
+    </ResponseField>
+    <ResponseField name="run_hours" type="object | null">
+      The weekly schedule as submitted, or `null` when the variant is always eligible.
+    </ResponseField>
+    <ResponseField name="starts_at" type="string | null">
+      When variant traffic begins, or `null` for immediately.
+    </ResponseField>
+    <ResponseField name="ends_at" type="string | null">
+      When the experiment completes on its own, or `null` for no end date.
+    </ResponseField>
+    <ResponseField name="variant_call_quota" type="integer | null">
+      Maximum connected variant calls, or `null` for no cap.
+    </ResponseField>
+    <ResponseField name="variant_calls_routed" type="integer">
+      Connected calls routed to the variant so far. Always `0` on creation; live while active, frozen at completion.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who created the experiment, or `null` when created with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      `null` while active.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "experiment": {
+      "id": "5c590769-b12c-4f5e-8608-85dd2ac29bb1",
+      "agent_id": "4fdd0f5b-4416-42f6-bb85-fb42d3ceec29",
+      "status": "active",
+      "completed_reason": null,
+      "baseline_env": "production",
+      "baseline_current_version_id": "d717a103-f912-42f4-ae07-6a2a8b5395b0",
+      "variant_version_id": "dc7c8387-c78e-4942-8190-b8899f31237d",
+      "traffic_percentage": 20,
+      "run_hours": {
+        "timezone": "America/Chicago",
+        "days": {
+          "mon": { "start": "09:00", "end": "17:00" },
+          "tue": { "start": "09:00", "end": "17:00" },
+          "wed": { "start": "09:00", "end": "17:00" },
+          "thu": { "start": "09:00", "end": "17:00" },
+          "fri": { "start": "09:00", "end": "17:00" }
+        }
+      },
+      "starts_at": null,
+      "ends_at": "2026-09-24T00:00:00.000Z",
+      "variant_call_quota": 500,
+      "variant_calls_routed": 0,
+      "created_by": "3ba21c4b-2b23-413d-8a09-1ce549a29391",
+      "created_at": "2026-09-10T20:14:33.508Z",
+      "completed_at": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "traffic_percentage must be an integer between 1 and 100"
+    }
+  ]
+}
+```
+
+```json Variant Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "variant_version_id is not a version of this agent"
+    }
+  ]
+}
+```
+
+```json Already Active
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "This agent already has an active experiment — stop it first"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,238 @@
+---
+title: "Publish Disposition Extractor"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/extractors/{extractor_id}/publish"
+description: "Publish an extractor draft as an immutable version."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Validates the `editable` draft, moves it to the `archived` state as the extractor's new `activeVersionId`, and opens a fresh `editable` copy with the next `versionNumber` as the new `currentVersionId`. The published version is immutable and appears in [Get Extractor Catalog](/api-v2/get/agents-id-dispositions-extractor-catalog), where a disposition value can pin it. Dispositions that already pinned an earlier version keep running that version.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+<ParamField path="extractor_id" type="string" required>
+  The extractor's unique identifier. Must be organization-wide or scoped to this agent; otherwise returns `404` with the message `Disposition extractor not found`. A malformed id returns `400` with the message `extractorId must be a valid UUID`.
+</ParamField>
+
+### Body Parameters
+
+Unknown fields are rejected and return `400` with the message `Invalid request body`. If the draft fails the same prompt, schema, or model-profile rules as [Create Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors), the request returns `400` with the message `Extractor definition failed validation` and nothing is published.
+
+<ParamField body="expectedVersionId" type="string" required>
+  The extractor's current `currentVersionId`, the draft being published. If another update or publish has moved it, the request returns `409 CONFLICT` with the message `Extractor draft changed; refresh and try again`.
+</ParamField>
+
+<ParamField body="expectedDraftRevision" type="integer" required>
+  The extractor's current `draftRevision`. Minimum `1`. A stale value returns the same `409 CONFLICT`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.extractor" type="object">
+  The extractor record after publishing. `activeVersionId` now points at `data.publishedVersion.id`, `currentVersionId` at `data.currentVersion.id`, and `draftRevision` has incremented by `1`.
+
+  <Expandable title="extractor object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the extractor.
+    </ResponseField>
+    <ResponseField name="agentId" type="string | null">
+      `null` for an organization-wide extractor. Otherwise the id of the one agent it is scoped to.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Stable machine key, unique within your organization.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The extractor's display name.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Optional description.
+    </ResponseField>
+    <ResponseField name="currentVersionId" type="string">
+      The new `editable` version, the same id as `data.currentVersion.id`.
+    </ResponseField>
+    <ResponseField name="activeVersionId" type="string">
+      The version just published, the same id as `data.publishedVersion.id`.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="integer">
+      The new revision. Pass it as `expectedDraftRevision` on your next update or publish.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of this publish.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.publishedVersion" type="object">
+  The version that was just published, now `archived` and immutable.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version. This is the id a disposition value pins.
+    </ResponseField>
+    <ResponseField name="extractorId" type="string">
+      The extractor this version belongs to.
+    </ResponseField>
+    <ResponseField name="versionNumber" type="integer">
+      The published version number.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      Always `archived` here.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name at this version.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Description at this version.
+    </ResponseField>
+    <ResponseField name="systemPromptMd" type="string">
+      The frozen system prompt. Empty string when none is set.
+    </ResponseField>
+    <ResponseField name="promptMd" type="string">
+      The frozen extraction prompt.
+    </ResponseField>
+    <ResponseField name="outputSchema" type="object">
+      The frozen output schema.
+    </ResponseField>
+    <ResponseField name="inferenceConfig" type="object">
+      The frozen inference configuration: `modelProfileKey`, `contextSources`, and, when set, `temperature`, `maxOutputTokens`, and `thinking`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last draft edit before publishing.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.currentVersion" type="object">
+  The new `editable` draft, a copy of the published version with `versionNumber` incremented by `1`. Same fields as `data.publishedVersion`, with `state` set to `editable`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "extractor": {
+      "id": "6816b867-754b-413f-9c19-1a7e94c541b4",
+      "agentId": null,
+      "key": "appointment_outcome",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "currentVersionId": "ddf9de6a-0ba7-4f73-8a0c-c0d52afcd355",
+      "activeVersionId": "ab65bde8-78d1-443c-9406-e3a8c8934b7b",
+      "draftRevision": 2,
+      "createdAt": "2026-09-01T15:02:11.480Z",
+      "updatedAt": "2026-09-10T17:32:08.905Z"
+    },
+    "publishedVersion": {
+      "id": "ab65bde8-78d1-443c-9406-e3a8c8934b7b",
+      "extractorId": "6816b867-754b-413f-9c19-1a7e94c541b4",
+      "versionNumber": 1,
+      "state": "archived",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "systemPromptMd": "",
+      "promptMd": "Decide whether the caller booked, rescheduled, or declined an appointment. Return unclear if the call ended before a decision.",
+      "outputSchema": {
+        "kind": "enum",
+        "description": "Final appointment outcome for this call.",
+        "options": [
+          { "key": "booked", "label": "Booked" },
+          { "key": "rescheduled", "label": "Rescheduled" },
+          { "key": "declined", "label": "Declined" },
+          { "key": "unclear", "label": "Unclear" }
+        ]
+      },
+      "inferenceConfig": {
+        "modelProfileKey": "balanced",
+        "thinking": "low",
+        "contextSources": ["transcript", "call_metadata"]
+      },
+      "createdAt": "2026-09-01T15:02:11.480Z",
+      "updatedAt": "2026-09-01T15:02:11.480Z"
+    },
+    "currentVersion": {
+      "id": "ddf9de6a-0ba7-4f73-8a0c-c0d52afcd355",
+      "extractorId": "6816b867-754b-413f-9c19-1a7e94c541b4",
+      "versionNumber": 2,
+      "state": "editable",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "systemPromptMd": "",
+      "promptMd": "Decide whether the caller booked, rescheduled, or declined an appointment. Return unclear if the call ended before a decision.",
+      "outputSchema": {
+        "kind": "enum",
+        "description": "Final appointment outcome for this call.",
+        "options": [
+          { "key": "booked", "label": "Booked" },
+          { "key": "rescheduled", "label": "Rescheduled" },
+          { "key": "declined", "label": "Declined" },
+          { "key": "unclear", "label": "Unclear" }
+        ]
+      },
+      "inferenceConfig": {
+        "modelProfileKey": "balanced",
+        "thinking": "low",
+        "contextSources": ["transcript", "call_metadata"]
+      },
+      "createdAt": "2026-09-10T17:32:08.905Z",
+      "updatedAt": "2026-09-10T17:32:08.905Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "Extractor draft changed; refresh and try again"
+    }
+  ]
+}
+```
+
+```json Invalid Definition
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Extractor definition failed validation",
+      "ext": "{\"problems\":[\"Extractor prompt must contain non-whitespace text\"]}"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

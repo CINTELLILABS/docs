@@ -614,6 +614,91 @@ Issues capture problems found on calls, bundle the evidence (calls, SMS conversa
 - [Create Agent Session](https://docs.bland.ai/api-v1/post/triage-issues-id-agent-sessions.md): Create a Norm agent session on an issue.
 - [Prompt Norm](https://docs.bland.ai/api-v1/post/triage-issues-id-agent-sessions-session-id-prompts.md): Send a prompt to Norm. Returns 202 with a run ID.
 
+## API Reference: Agents (V2)
+
+The V2 Agents API is the programmatic surface for the new Bland dashboard. An agent is an org-scoped record whose configuration lives in immutable versions; three environments (dev, staging, production) each pin a version. Publish and promote move those pins. Branches are dev workspaces merged back by rebase. Checks gate promotions, experiments A/B a variant against an environment's pin, and dispositions (enabled per organization) classify call outcomes. All routes live under `https://api.bland.ai/v2/agents` and return `{ "data": ..., "errors": null }` on success.
+
+- [Overview](https://docs.bland.ai/api-v2/overview.md): What the Agents API covers, how an agent is structured, and where to start.
+- [Create Agent](https://docs.bland.ai/api-v2/post/agents.md): Create an agent with empty dev, staging, and production environments.
+- [List Agents](https://docs.bland.ai/api-v2/get/agents.md): List the agents in your organization, most recently updated first.
+- [Get Agent](https://docs.bland.ai/api-v2/get/agents-id.md): Retrieve an agent and its environment pointers.
+- [Update Agent](https://docs.bland.ai/api-v2/patch/agents-id.md): Change an agent's display name.
+- [Delete Agent](https://docs.bland.ai/api-v2/delete/agents-id.md): Soft-delete an agent. Versions and history are kept.
+- [Create Agent Version](https://docs.bland.ai/api-v2/post/agents-id-versions.md): Save an agent configuration snapshot as a new version.
+- [List Agent Versions](https://docs.bland.ai/api-v2/get/agents-id-versions.md): List an agent's saved versions, newest first.
+- [Get Latest Agent Version](https://docs.bland.ai/api-v2/get/agents-id-versions-latest.md): Retrieve the newest saved version with its full snapshot.
+- [Get Agent Version](https://docs.bland.ai/api-v2/get/agents-id-versions-semver.md): Retrieve a published version by its semantic version.
+- [Get Scenario History](https://docs.bland.ai/api-v2/get/agents-id-scenarios-node-id-history.md): List how one scenario changed across saved versions.
+- [Get Agent Number Binding](https://docs.bland.ai/api-v2/get/agents-id-inbound.md): Check whether phone numbers have been attached to an agent.
+- [Attach Numbers to Agent](https://docs.bland.ai/api-v2/post/agents-id-inbound-attach.md): Route inbound calls on your phone numbers to an agent.
+- [Detach Numbers from Agent](https://docs.bland.ai/api-v2/post/agents-id-inbound-detach.md): Stop routing inbound calls on phone numbers to an agent.
+- [List Agent Environments](https://docs.bland.ai/api-v2/get/agents-id-environments.md): List an agent's environments with their pinned versions.
+- [List Agent Deployments](https://docs.bland.ai/api-v2/get/agents-id-deployments.md): List an environment's deployment history, newest first.
+- [Publish Agent to Staging](https://docs.bland.ai/api-v2/post/agents-id-publish.md): Publish a version to the staging environment.
+- [Promote Agent to Production](https://docs.bland.ai/api-v2/post/agents-id-promote.md): Pin production to the version currently in staging.
+- [Roll Back Agent](https://docs.bland.ai/api-v2/post/agents-id-rollback.md): Repoint production at a previously deployed version.
+- [List Agent Branches](https://docs.bland.ai/api-v2/get/agents-id-branches.md): List an agent's open branches.
+- [Create Agent Branch](https://docs.bland.ai/api-v2/post/agents-id-branches.md): Create a branch off the agent's dev head.
+- [Delete Agent Branch](https://docs.bland.ai/api-v2/delete/agents-id-branches-branch-id.md): Abandon an open branch without merging it.
+- [Preview Agent Branch Rebase](https://docs.bland.ai/api-v2/post/agents-id-branches-branch-id-rebase-preview.md): Preview a branch rebase onto the current dev head.
+- [Rebase Agent Branch](https://docs.bland.ai/api-v2/post/agents-id-branches-branch-id-rebase.md): Rebase a branch onto the dev head with resolutions.
+- [Merge Agent Branch](https://docs.bland.ai/api-v2/post/agents-id-branches-branch-id-merge.md): Fast-forward a branch into the agent's dev timeline.
+- [List Agent Variables](https://docs.bland.ai/api-v2/get/agents-id-environments-env-variables.md): List an environment's variables for an agent.
+- [Set Agent Variable](https://docs.bland.ai/api-v2/put/agents-id-environments-env-variables-key.md): Set an environment variable on an agent.
+- [Delete Agent Variable](https://docs.bland.ai/api-v2/delete/agents-id-environments-env-variables-key.md): Delete an environment variable from an agent.
+- [Get Checks](https://docs.bland.ai/api-v2/get/agents-id-environments-env-checks.md): Retrieve an environment's check config.
+- [Set Checks](https://docs.bland.ai/api-v2/put/agents-id-environments-env-checks.md): Replace an environment's check config.
+- [Delete Checks](https://docs.bland.ai/api-v2/delete/agents-id-environments-env-checks.md): Remove an environment's check config.
+- [Start Check Run](https://docs.bland.ai/api-v2/post/agents-id-environments-env-check-runs.md): Start a check run against a candidate version.
+- [List Check Runs](https://docs.bland.ai/api-v2/get/agents-id-check-runs.md): List an agent's check runs for one environment.
+- [Get Check Run](https://docs.bland.ai/api-v2/get/agents-id-check-runs-run-id.md): Retrieve a check run and its verdicts.
+- [Cancel Check Run](https://docs.bland.ai/api-v2/post/agents-id-check-runs-run-id-cancel.md): Cancel a pending or running check run.
+- [Create Experiment](https://docs.bland.ai/api-v2/post/agents-id-experiments.md): Start an A/B experiment on a variant version.
+- [List Experiments](https://docs.bland.ai/api-v2/get/agents-id-experiments.md): List an agent's experiments, newest first.
+- [Get Experiment](https://docs.bland.ai/api-v2/get/agents-id-experiments-experiment-id.md): Retrieve one experiment and its live progress.
+- [Update Experiment](https://docs.bland.ai/api-v2/patch/agents-id-experiments-experiment-id.md): Adjust an active experiment's split or conditions.
+- [Stop Experiment](https://docs.bland.ai/api-v2/post/agents-id-experiments-experiment-id-stop.md): End an active experiment and return traffic to baseline.
+- [List Library Scenarios](https://docs.bland.ai/api-v2/get/agents-library-scenarios.md): List reusable scenarios from your other agents.
+- [List Archived Nodes](https://docs.bland.ai/api-v2/get/agents-library-archived-nodes.md): List nodes archived from your organization's agents.
+- [Delete Archived Node](https://docs.bland.ai/api-v2/delete/agents-library-archived-nodes-archived-node-id.md): Permanently remove an entry from the node archive.
+- [Archive Agent Node](https://docs.bland.ai/api-v2/post/agents-id-archived-nodes.md): Copy a node from an agent into the organization archive.
+- [Migrate Pathway](https://docs.bland.ai/api-v2/post/agents-migrate.md): Plan and build an agent from a legacy pathway graph.
+- [Stream Pathway Migration](https://docs.bland.ai/api-v2/post/agents-migrate-stream.md): Run a pathway migration with live progress events.
+- [Migrate Persona](https://docs.bland.ai/api-v2/post/agents-migrate-persona.md): Build an agent from a persona and its attached pathways.
+- [Migrate Pathways](https://docs.bland.ai/api-v2/post/agents-migrate-pathways.md): Convert stored or inline pathways into agent scenarios.
+- [Start Pathway Translation](https://docs.bland.ai/api-v2/post/agents-migrate-translations.md): Start an async job translating pathways into scenarios.
+- [Get Pathway Translation Run](https://docs.bland.ai/api-v2/get/agents-migrate-translations-run-id.md): Poll the status and result of a translation job.
+- [Cancel Pathway Translation Run](https://docs.bland.ai/api-v2/post/agents-migrate-translations-run-id-cancellations.md): Cancel a pending or running translation job.
+- [List Dispositions](https://docs.bland.ai/api-v2/get/agents-id-dispositions.md): List the dispositions defined on an agent.
+- [Create Disposition](https://docs.bland.ai/api-v2/post/agents-id-dispositions.md): Create a disposition with an initial draft definition.
+- [Get Disposition](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id.md): Retrieve a disposition's summary and lifecycle state.
+- [Get Disposition Draft](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-draft.md): Retrieve a disposition's live draft definition.
+- [Update Disposition Draft](https://docs.bland.ai/api-v2/patch/agents-id-dispositions-disposition-id-draft.md): Replace a disposition's draft definition.
+- [List Disposition Versions](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-versions.md): List a disposition's published versions, newest first.
+- [Get Disposition Version](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-versions-version-id.md): Retrieve one published disposition version.
+- [Estimate Disposition Cost](https://docs.bland.ai/api-v2/post/agents-id-dispositions-disposition-id-estimates.md): Estimate a disposition's per-call cost before publishing.
+- [Publish Disposition](https://docs.bland.ai/api-v2/post/agents-id-dispositions-disposition-id-publish.md): Publish a disposition draft as an immutable version.
+- [Disable Disposition](https://docs.bland.ai/api-v2/post/agents-id-dispositions-disposition-id-disable.md): Stop a disposition from running on new calls.
+- [List Disposition Test Runs](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-runs.md): List test runs for a disposition.
+- [Create Disposition Test Run](https://docs.bland.ai/api-v2/post/agents-id-dispositions-disposition-id-runs.md): Run a disposition against completed production calls.
+- [Get Disposition Test Run](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id.md): Retrieve a test run with live progress counts.
+- [Get Test Run Rows](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-rows.md): Page through a test run's per-call results.
+- [Export Test Run CSV](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-export-csv.md): Download a test run's results as CSV.
+- [Align Disposition Test Run](https://docs.bland.ai/api-v2/post/agents-id-dispositions-disposition-id-runs-run-id-align.md): Propose definition edits from a test run's corrections.
+- [Correct Test Run Value](https://docs.bland.ai/api-v2/put/agents-id-dispositions-disposition-id-runs-run-id-cases-call-id-annotations-value-id.md): Record a corrected value for one call in a test run.
+- [List Test Run Correction Revisions](https://docs.bland.ai/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-cases-call-id-annotations-value-id.md): List correction revisions for one call and value.
+- [List Disposition Extractors](https://docs.bland.ai/api-v2/get/agents-id-dispositions-extractors.md): List the extractors available to an agent's dispositions.
+- [Create Disposition Extractor](https://docs.bland.ai/api-v2/post/agents-id-dispositions-extractors.md): Create an extractor with its first editable version.
+- [Get Disposition Extractor](https://docs.bland.ai/api-v2/get/agents-id-dispositions-extractors-extractor-id.md): Retrieve an extractor with its draft and published versions.
+- [Get Disposition Extractor Version](https://docs.bland.ai/api-v2/get/agents-id-dispositions-extractors-extractor-id-versions-version-id.md): Retrieve one version of an extractor.
+- [Update Disposition Extractor Draft](https://docs.bland.ai/api-v2/patch/agents-id-dispositions-extractors-extractor-id-draft.md): Edit an extractor's editable draft version.
+- [Publish Disposition Extractor](https://docs.bland.ai/api-v2/post/agents-id-dispositions-extractors-extractor-id-publish.md): Publish an extractor draft as an immutable version.
+- [Get Judge Catalog](https://docs.bland.ai/api-v2/get/agents-id-dispositions-judge-catalog.md): List the judges a disposition can pin for this agent.
+- [Get Judge Version](https://docs.bland.ai/api-v2/get/agents-id-dispositions-judges-judge-id-versions-version-id.md): Retrieve one version of a judge's rubric.
+- [Get Variable Catalog](https://docs.bland.ai/api-v2/get/agents-id-dispositions-variable-catalog.md): List the agent variables a disposition can re-extract.
+- [Get Model Profile Catalog](https://docs.bland.ai/api-v2/get/agents-id-dispositions-model-profile-catalog.md): List the model profiles available to extractors.
+- [Get Extractor Catalog](https://docs.bland.ai/api-v2/get/agents-id-dispositions-extractor-catalog.md): List the published extractors a disposition can pin.
+
 ## Instructions for AI Agents: Best Practices for Integrating Bland
 
 As an AI agent integrating with Bland, prefer Conversational Pathways for any multi-turn or branching call flow. For simple one-off calls, pass a `task` string directly to `POST /v1/calls`. For structured flows, always use a `pathway_id`.

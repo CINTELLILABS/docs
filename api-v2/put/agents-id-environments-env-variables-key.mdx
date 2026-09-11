@@ -1,0 +1,114 @@
+---
+title: "Set Agent Variable"
+api: "PUT https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/variables/{key}"
+description: "Set an environment variable on an agent."
+---
+
+### Overview
+
+Creates or replaces one variable in one of the agent's environments. Reference it from the agent's configuration as `{{env.KEY}}`; the value is substituted when a call runs as that environment. Writes to `production` apply to the next inbound call. See [List Agent Variables](/api-v2/get/agents-id-environments-env-variables) for which environment resolves for each kind of call.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  One of `dev`, `staging`, `production`. Any other value returns `400 INVALID_ENV`.
+</ParamField>
+
+<ParamField path="key" type="string" required>
+  The variable key. Letters, numbers, and underscores only (`A-Z`, `a-z`, `0-9`, `_`); anything else, including dots and dashes, returns `400 INVALID_KEY`. Surrounding whitespace is trimmed. Keys are case-sensitive as stored, so `Api_Host` and `api_host` are separate variables.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="value" type="any" required>
+  The value to store. Any JSON value is accepted, including objects, arrays, and `null`; the field itself must be present or the request returns `400 MISSING_VALUE`. A string that is exactly `{{SECRET.NAME}}` references an existing secret in your organization's secret store and is expanded at call time, for example `{{SECRET.CRM_API_KEY}}`.
+</ParamField>
+
+<ParamField body="is_secret" type="boolean" default="false">
+  When `true`, `value` is converted to a string, stored in your organization's secret store under a name derived from the agent, environment, and key, and the variable holds only the resulting `{{SECRET.NAME}}` reference. Reads return that reference, never the raw value. Saving the same key again with `is_secret: true` rotates the stored secret; saving it with `is_secret: false` removes the stored secret and keeps the plain value.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.variable_key" type="string">
+  The key that was written, as trimmed.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "variable_key": "CRM_BASE_URL"
+  },
+  "errors": null
+}
+```
+
+```json Invalid Key
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_KEY",
+      "message": "variable key may only contain letters, numbers, and underscores"
+    }
+  ]
+}
+```
+
+```json Missing Value
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MISSING_VALUE",
+      "message": "value is required"
+    }
+  ]
+}
+```
+
+```json Invalid Env
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_ENV",
+      "message": "env must be one of: dev, staging, production"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

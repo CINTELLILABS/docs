@@ -1,0 +1,256 @@
+---
+title: "Create Agent Version"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/versions"
+description: "Save an agent configuration snapshot as a new version."
+---
+
+### Overview
+
+Validates a full configuration snapshot and saves it as an immutable version on the agent's dev timeline, or on an open branch when `branch_id` is set. Saving does not deploy anything; staging and production pin a version through [Publish Agent](/api-v2/post/agents-id-publish) and [Promote Agent](/api-v2/post/agents-id-promote). Read the current head with [Get Latest Agent Version](/api-v2/get/agents-id-versions-latest).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="snapshot" type="object" required>
+  The complete agent configuration: `behavior`, `settings`, `contact`, and optionally `knowledge`. Structural problems return `400 INVALID_SNAPSHOT` with one error entry per problem (up to 20). A snapshot larger than 2,097,152 bytes when serialized is rejected outright.
+
+  <Accordion title="behavior (required)">
+    The root behavior graph, shaped `{ "nodes": [], "edges": [] }`.
+
+    Each node needs a string `id` that is unique within its flow, a `position` of `{ "x": number, "y": number }`, and a `data` object. `type` names the node kind (for example `start`, `scenario`, `complex-scenario`, `auth`). Container nodes carry a nested `data.flow` with the same `{ nodes, edges }` shape, validated recursively; flows may nest at most 10 levels deep.
+
+    Each edge needs string `id`, `source`, and `target` values, and `source` and `target` must reference nodes in the same flow.
+  </Accordion>
+
+  <Accordion title="settings (required)">
+    Agent-wide configuration. `displayName` and `systemPrompt` must be strings. The remaining keys the dashboard writes (`voice`, `languages`, `enableMemory`, `interruptionSensitivity`, `backgroundNoise`, `voiceCall`, `webChat`, `requestData`, `metadata`, `color`, and others) are stored as sent and applied at call time.
+
+    `guardrails` is optional. When present it must be an array (not `null`). Each entry has a unique string `id`, a `kind`, and an `actions` array whose items are `{ "type": "end_call" }`, `{ "type": "transfer", "phoneNumber": "..." }`, or `{ "type": "move_to_node", "nodeId": "..." }`. Accepted kinds:
+
+    - `tcpa:ai_disclosure`, `tcpa:recording_disclosure`, `tcpa:self_introduction`: also require `endSeconds`, an integer from 1 to 600.
+    - `tcpa:opt_out`: no extra fields.
+    - `custom`: requires a non-empty `name`, a string `description`, and a non-empty `prompt`. At most 5 custom guardrails per agent.
+
+    Each built-in kind may appear once. A `move_to_node` target must be a step the agent can actually move to. Custom guardrails require an enterprise plan: adding one that is not already saved on this agent returns `403 ENTERPRISE_REQUIRED`. Custom guardrails already saved keep running and can still be edited.
+  </Accordion>
+
+  <Accordion title="contact (required)">
+    `inboundNumbers` must be an array of phone number strings routed to this agent, or a single `{{env.KEY}}` reference string that resolves to an environment variable at call time.
+  </Accordion>
+
+  <Accordion title="knowledge (optional)">
+    When present, must be `{ "kbIds": string[] }`, the knowledge base IDs the agent retrieves against on every call. `null` is rejected; omit the key instead. Order carries no meaning.
+  </Accordion>
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the version. Leading and trailing whitespace is trimmed; an empty or whitespace-only value is treated as no name. A named version is always written as a new row and is never pruned.
+</ParamField>
+
+<ParamField body="branch_id" type="string">
+  Save onto an open branch instead of the dev timeline. Returns `404 BRANCH_NOT_FOUND` if the branch is not open or does not belong to this agent.
+</ParamField>
+
+<ParamField body="autosave" type="boolean" default="false">
+  Mark this as an editor background save. While the timeline's head is an unnamed autosave that nothing references (no environment pin, deployment, branch base, experiment, or check run), the save rewrites that head in place and increments its `revision` instead of appending. The response then carries version metadata only, without `org_id` or `snapshot`. Any value other than `true` is treated as `false`.
+</ParamField>
+
+<ParamField body="parent_version_id" type="string | null">
+  Compare-and-set guard. The version ID you believe is the current head of the timeline you are saving onto; send `null` to assert the timeline is empty. On a branch with no saves of its own, the head is the branch's base version. If the real head differs, nothing is written and the response is `409 STALE_HEAD` with the real head's ID and revision at the top level of the body as `head_version_id` and `head_revision`. Omit the field to skip the check.
+</ParamField>
+
+<ParamField body="parent_revision" type="integer">
+  Second half of the compare-and-set: the head's `revision` as you last saw it. An in-place autosave keeps the head's ID stable, so `parent_version_id` alone cannot detect a concurrent autosave from another editor; the revision can. Checked only when `parent_version_id` matches. Non-integer values are ignored. Omit to skip.
+</ParamField>
+
+### Response
+
+Returns `201` on success. A manual save returns the full version row. An `autosave` returns the same object without `org_id` and `snapshot`.
+
+<ResponseField name="data" type="object">
+  The saved version.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version. Send it back as `parent_version_id` on your next save.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent. Omitted on autosave responses.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent this version belongs to.
+    </ResponseField>
+    <ResponseField name="branch_id" type="string | null">
+      The branch the version was saved onto, or `null` on the dev timeline.
+    </ResponseField>
+    <ResponseField name="snapshot" type="object">
+      The configuration as saved: `behavior`, `settings`, `contact`, and `knowledge` when supplied. Omitted on autosave responses.
+    </ResponseField>
+    <ResponseField name="name" type="string | null">
+      The version's display name, or `null` if none was given.
+    </ResponseField>
+    <ResponseField name="created_via" type="string">
+      `manual` or `autosave`.
+    </ResponseField>
+    <ResponseField name="revision" type="integer">
+      Starts at `0` and increments each time an autosave rewrites this row in place. Send it back as `parent_revision` on your next save.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who saved the version, or `null` when saved with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of the first write. Not updated when an autosave rewrites the row.
+    </ResponseField>
+    <ResponseField name="warnings" type="array">
+      Non-blocking advisories about the saved configuration (for example a transfer step with no target). Present only when there are any.
+    </ResponseField>
+    <ResponseField name="warning_details" type="array">
+      The same advisories as objects with `message` and, when the advisory is about one step, `nodeId`. Present only when `warnings` is.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "53bb14d7-2bb3-400b-81fb-45f23017bf84",
+    "org_id": "4bb834b5-8e95-487a-908d-d712a201008c",
+    "agent_id": "ec74c83e-5370-450b-9aa0-59757ec25a81",
+    "branch_id": null,
+    "snapshot": {
+      "behavior": {
+        "nodes": [
+          {
+            "id": "d375e44c-69d4-43c3-9e06-6f9ef052fd85",
+            "type": "start",
+            "position": { "x": 0, "y": 0 },
+            "data": {}
+          },
+          {
+            "id": "a0ddbf3b-0d9a-42a3-90c4-2dcc66dcd2e0",
+            "type": "scenario",
+            "position": { "x": 320, "y": 0 },
+            "data": {
+              "name": "Book appointment",
+              "rule": "Collect the caller's preferred date and time, then confirm the booking.",
+              "target": { "kind": "dialogue", "label": "Book appointment" },
+              "loopWhile": "",
+              "variables": [],
+              "entry": {
+                "mode": "llm",
+                "label": "Caller wants to book",
+                "description": "",
+                "alwaysPick": false,
+                "conditions": []
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "af8cb5af-9407-4abd-ba41-bb39f0da2682",
+            "source": "d375e44c-69d4-43c3-9e06-6f9ef052fd85",
+            "target": "a0ddbf3b-0d9a-42a3-90c4-2dcc66dcd2e0"
+          }
+        ]
+      },
+      "settings": {
+        "displayName": "Front desk",
+        "systemPrompt": "You are the front desk assistant for a dental clinic.",
+        "languages": ["en"],
+        "enableMemory": false,
+        "backgroundNoise": "off"
+      },
+      "contact": {
+        "inboundNumbers": ["+14155550123"]
+      },
+      "knowledge": {
+        "kbIds": []
+      }
+    },
+    "name": "Adds booking flow",
+    "created_via": "manual",
+    "revision": 0,
+    "created_by": "6109c149-783b-4882-943f-0bd9c5dd6cdf",
+    "created_at": "2026-09-10T23:02:11.418Z"
+  },
+  "errors": null
+}
+```
+
+```json Invalid Snapshot
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_SNAPSHOT",
+      "message": "settings.displayName must be a string"
+    },
+    {
+      "error": "INVALID_SNAPSHOT",
+      "message": "contact.inboundNumbers must be an array"
+    }
+  ]
+}
+```
+
+```json Stale Head
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "STALE_HEAD",
+      "message": "The agent was updated by someone else — reload to get the latest."
+    }
+  ],
+  "head_version_id": "0483f68e-d39b-42da-a7f5-c18a2264389c",
+  "head_revision": 3
+}
+```
+
+```json Enterprise Required
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ENTERPRISE_REQUIRED",
+      "message": "Adding a custom guardrail requires an enterprise plan. Custom guardrails already saved on this agent keep running and can still be edited."
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

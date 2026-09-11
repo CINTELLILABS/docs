@@ -1,0 +1,164 @@
+---
+title: "Start Pathway Translation"
+api: "POST https://api.bland.ai/v2/agents/migrate/translations"
+description: "Start an async job translating pathways into scenarios."
+---
+
+### Overview
+
+Starts a background job that converts pathways into agent scenarios, using Bland's migration planner for entries in `translate` mode and the deterministic one-to-one conversion for the rest. The body takes either the pathway-selection shape of [Migrate Pathways](/api-v2/post/agents-migrate-pathways) (stored pathways only) or the persona shape of [Migrate Persona](/api-v2/post/agents-migrate-persona); a body containing `persona_id` is treated as a persona run. The response is `202` with a run record. Poll it with [Get Pathway Translation Run](/api-v2/get/agents-migrate-translations-run-id) and stop it with [Cancel Pathway Translation Run](/api-v2/post/agents-migrate-translations-run-id-cancellations).
+
+Limited to 10 starts per hour per organization, counted together with [Migrate Pathway](/api-v2/post/agents-migrate) and [Stream Pathway Migration](/api-v2/post/agents-migrate-stream). At most 5 pathways per job may be in `translate` mode, and at most 3 jobs per organization may be active at once. Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+Send one of the two shapes below. If `persona_id` is present the persona shape is used and `pathways` is ignored.
+
+**Pathway selection**
+
+<ParamField body="pathways" type="array" required>
+  One to 20 entries, each referencing a stored pathway. Returns `400 INVALID_PATHWAYS` for an empty array or a malformed entry, `400 TOO_MANY_PATHWAYS` beyond 20, `400 INLINE_PATHWAY_NOT_SUPPORTED` if any entry carries an inline `pathway` graph, and `400 TOO_MANY_TRANSLATIONS` if more than 5 entries are in `translate` mode.
+
+  <Expandable title="entry fields">
+    <ParamField body="pathway_id" type="string" required>
+      UUID of a pathway your organization owns.
+    </ParamField>
+    <ParamField body="version" type="integer">
+      Pin a specific version number (a positive integer). Defaults to the pathway's published production version, or its live graph when nothing is published.
+    </ParamField>
+    <ParamField body="mode" type="string" default="one_to_one">
+      `translate` to have the planner re-architect the pathway into scenarios, or `one_to_one` for the deterministic conversion. Any mix is accepted within one job.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent when `create` is `true`. Whitespace is trimmed. Defaults to the pathway's name when exactly one pathway is given, otherwise `Migrated pathways`.
+</ParamField>
+
+<ParamField body="create" type="boolean" default="true">
+  When `false`, the job produces scenario nodes only (returned in the run's `result.scenarios`) instead of creating an agent.
+</ParamField>
+
+**Persona**
+
+<ParamField body="persona_id" type="string" required>
+  UUID of a persona in your organization. Its attached pathways become the job's items and its prompts and settings become the agent shell, so a persona run always creates an agent. Returns `400 INVALID_PERSONA_ID` if not a UUID, `404 PERSONA_NOT_FOUND` if no such persona exists in your organization, `422 PERSONA_HAS_NO_VERSION` if it has neither a published nor a draft version, `400 NO_PATHWAY_CONDITIONS` if it has no attached pathways (use [Migrate Persona](/api-v2/post/agents-migrate-persona) instead), and `400 TOO_MANY_PATHWAYS` if it has more than 20.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent. Defaults to the persona's name.
+</ParamField>
+
+<ParamField body="pathway_modes" type="array">
+  One entry per attached pathway, in the persona's order, each `one_to_one` or `translate`. The length must match the persona's pathway count or the request returns `400 INVALID_PATHWAY_MODES`. Defaults to `translate` for every pathway. More than 5 `translate` entries returns `400 TOO_MANY_TRANSLATIONS`.
+</ParamField>
+
+### Response
+
+Returns `202` on success. Returns `429 TOO_MANY_ACTIVE_TRANSLATIONS` when 3 jobs are already active for your organization.
+
+<ResponseField name="data.run" type="object">
+  The new run, always in `PENDING` status.
+
+  <Expandable title="run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the run. Pass it as `{run_id}` when polling or cancelling.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `PENDING` on creation. Later one of `RUNNING`, `FINALIZING`, `COMPLETE`, `FAILED`, `CANCELLED`.
+    </ResponseField>
+    <ResponseField name="total_pathways" type="integer">
+      Number of pathways in the job.
+    </ResponseField>
+    <ResponseField name="completed_pathways" type="integer">
+      Pathways processed so far. `0` on creation.
+    </ResponseField>
+    <ResponseField name="result" type="null">
+      Always `null` until the run reaches a terminal state.
+    </ResponseField>
+    <ResponseField name="error_code" type="string | null">
+      `null` on creation.
+    </ResponseField>
+    <ResponseField name="error_message" type="string | null">
+      `null` on creation.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the run was created.
+    </ResponseField>
+    <ResponseField name="completed_at" type="null">
+      Always `null` until the run reaches a terminal state.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "run": {
+      "id": "eb732a2a-94a9-45ae-9def-ecbc56c4a5bf",
+      "status": "PENDING",
+      "total_pathways": 2,
+      "completed_pathways": 0,
+      "result": null,
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-09-10T20:01:12.530Z",
+      "completed_at": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Too Many Translations
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_TRANSLATIONS",
+      "message": "at most 5 pathways can be AI-translated in one job — split the selection or switch some to 1:1"
+    }
+  ]
+}
+```
+
+```json Too Many Active Jobs
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_ACTIVE_TRANSLATIONS",
+      "message": "at most 3 translation jobs can run at once — wait for one to finish or cancel it"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many pathway migrations started for this organization — please wait before starting another."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,122 @@
+---
+title: "List Archived Nodes"
+api: "GET https://api.bland.ai/v2/agents/library/archived-nodes"
+description: "List nodes archived from your organization's agents."
+---
+
+### Overview
+
+Returns the organization's archived nodes, newest first, up to 200 entries. Each entry is a self-contained copy of a node lifted off an agent canvas with [Archive Agent Node](/api-v2/post/agents-id-archived-nodes); a container node keeps its nested flow inside `node.data.flow`. Remove an entry with [Delete Archived Node](/api-v2/delete/agents-library-archived-nodes-archived-node-id).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of archived node objects, most recently archived first.
+
+  <Expandable title="archived node object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the archive entry.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string | null">
+      The agent the node was archived from. May reference an agent that has since been deleted.
+    </ResponseField>
+    <ResponseField name="agent_name" type="string | null">
+      The source agent's name as it was at archive time. Kept even if the agent is later renamed or deleted.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The node's name at archive time, or `Untitled node` when it had none.
+    </ResponseField>
+    <ResponseField name="kind" type="string">
+      The archived node's type, for example `scenario`, `complex-scenario`, or `auth-zone`.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      The first 160 characters of the node's rule or prompt at archive time. `null` when the node had neither.
+    </ResponseField>
+    <ResponseField name="node" type="object">
+      The complete node payload (`id`, `type`, `position`, `data`, and for containers `data.flow`). Re-insertable into any agent's graph.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the node was archived.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "ff6c62c6-33c0-49f1-ae2c-fb24e3b3a6fa",
+      "agent_id": "20d4a218-7083-4f3d-8ba3-4f6869345c70",
+      "agent_name": "Front desk",
+      "name": "Holiday hours",
+      "kind": "scenario",
+      "description": "Tell the caller the office is closed for the holiday and offer to take a message.",
+      "node": {
+        "id": "9a929a49-f89f-42a0-b9fb-e5c08cd6654a",
+        "type": "scenario",
+        "position": { "x": 380, "y": 260 },
+        "data": {
+          "name": "Holiday hours",
+          "rule": "Tell the caller the office is closed for the holiday and offer to take a message.",
+          "target": { "kind": "dialogue", "label": "Holiday hours" },
+          "loopWhile": "",
+          "variables": [],
+          "entry": {
+            "mode": "llm",
+            "label": "Asks about hours",
+            "description": "",
+            "alwaysPick": false,
+            "conditions": []
+          }
+        }
+      },
+      "created_at": "2026-09-09T17:02:44.318Z"
+    },
+    {
+      "id": "b9f03e9e-6e50-4910-aad5-d257603a289c",
+      "agent_id": null,
+      "agent_name": "Old survey bot",
+      "name": "Satisfaction question",
+      "kind": "scenario",
+      "description": "Ask the caller to rate their experience from 1 to 5.",
+      "node": {
+        "id": "c06bd9d6-3d58-471b-a19e-d082b2a62307",
+        "type": "scenario",
+        "position": { "x": 0, "y": 260 },
+        "data": {
+          "name": "Satisfaction question",
+          "rule": "Ask the caller to rate their experience from 1 to 5.",
+          "target": { "kind": "dialogue", "label": "Rating" },
+          "loopWhile": "",
+          "variables": [],
+          "entry": {
+            "mode": "llm",
+            "label": "Survey",
+            "description": "",
+            "alwaysPick": false,
+            "conditions": []
+          }
+        }
+      },
+      "created_at": "2026-08-30T11:45:09.006Z"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

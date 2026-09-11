@@ -1,0 +1,207 @@
+---
+title: "Set Checks"
+api: "PUT https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/checks"
+description: "Replace an environment's check config."
+---
+
+### Overview
+
+Creates or fully replaces the check config for one environment: the test scenarios to drive conversations from, the judges that score them, and how many conversations to generate per scenario. The whole config is validated up front, so an unrunnable config fails here with `400 BAD_REQUEST` instead of erroring mid-run. Runs already in flight keep the config they started with. Read it back with [Get Checks](/api-v2/get/agents-id-environments-env-checks) and run it with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  `staging` or `production`. Checks do not attach to `dev`. Any other value returns `400 BAD_REQUEST`.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="scenario_ids" type="array" required>
+  IDs of this agent's test scenarios, 1 to 5 after duplicates are removed. Every ID must belong to this agent and must target the agent rather than a pathway. Returns `400 BAD_REQUEST` otherwise.
+</ParamField>
+
+<ParamField body="evals" type="array" required>
+  The judges to attach. At least one, and each judge may appear once. Returns `400 BAD_REQUEST` when a judge or judge version is not found in your organization, the version does not belong to the judge, or the version is not runnable.
+</ParamField>
+
+<ParamField body="evals[].eval_agent_id" type="string" required>
+  The judge's unique identifier.
+</ParamField>
+
+<ParamField body="evals[].eval_agent_version_id" type="string" required>
+  The judge version to pin. Must belong to `eval_agent_id`. Runs keep using this version until you replace the config.
+</ParamField>
+
+<ParamField body="evals[].target_level_keys" type="array" default="[]">
+  For graded judges, the level keys counted as passing. At least one is required, and each must be a level defined on the pinned version. For pass/fail judges, omit it or pass an empty array; any level key returns `400 BAD_REQUEST`.
+</ParamField>
+
+<ParamField body="evals[].required" type="boolean" default="true">
+  `true` makes the judge blocking: a run fails when this judge fails. `false` makes it informational; its verdict is reported but never fails the run.
+</ParamField>
+
+<ParamField body="enabled" type="boolean" default="true">
+  Whether check runs can be started for this environment. Because this endpoint replaces the whole config, omitting it re-enables a disabled config.
+</ParamField>
+
+<ParamField body="simulations_count" type="integer" default="5">
+  Conversations to generate per scenario on each run. Fractional values are floored and the result is clamped to 1 to 50, then rejected with `400 BAD_REQUEST` if it exceeds your organization's per-scenario limit (10 unless raised for your account).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The saved check config.
+
+  <Expandable title="check config object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the check config. Stable across replacements for the same environment.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the config belongs to.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      The environment the config gates: `staging` or `production`.
+    </ResponseField>
+    <ResponseField name="enabled" type="boolean">
+      Whether check runs can be started for this environment.
+    </ResponseField>
+    <ResponseField name="scenario_ids" type="array">
+      The saved scenario IDs, duplicates removed.
+    </ResponseField>
+    <ResponseField name="scenario_names" type="array">
+      Display names for `scenario_ids`, in the same order.
+    </ResponseField>
+    <ResponseField name="simulations_count" type="integer">
+      The saved conversations-per-scenario count, after clamping.
+    </ResponseField>
+    <ResponseField name="evals" type="array">
+      The judges attached to the config. See `data.evals` below.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp the config was first created.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of this update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.evals" type="array">
+  One entry per judge, in the order submitted.
+
+  <Expandable title="eval object">
+    <ResponseField name="eval_agent_id" type="string">
+      The judge's unique identifier.
+    </ResponseField>
+    <ResponseField name="eval_agent_version_id" type="string">
+      The pinned judge version.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The judge's display name. Omitted when the name cannot be resolved.
+    </ResponseField>
+    <ResponseField name="target_level_keys" type="array">
+      The grade levels counted as passing. Empty for pass/fail judges.
+    </ResponseField>
+    <ResponseField name="required" type="boolean">
+      Whether a failing verdict from this judge fails the run.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "202787b7-f07b-4bb8-9cc3-8383e8475601",
+    "agent_id": "fd497648-881e-4c22-8641-b7b1d08810bc",
+    "env_type": "staging",
+    "enabled": true,
+    "scenario_ids": [
+      "b29848b2-2dda-47c6-be10-67d32a0818e7",
+      "15de9946-b614-484b-a848-47947f21a15a"
+    ],
+    "scenario_names": [
+      "Verify identity before account changes",
+      "Caller disputes a charge"
+    ],
+    "simulations_count": 3,
+    "evals": [
+      {
+        "eval_agent_id": "43209e25-b51c-421b-b080-653b1fbbba97",
+        "eval_agent_version_id": "66640bc3-47f1-4dc9-9c09-b8adf4d58205",
+        "name": "Identity verified",
+        "target_level_keys": [],
+        "required": true
+      },
+      {
+        "eval_agent_id": "cf13ff40-580a-4841-b7bb-4ee7e2887925",
+        "eval_agent_version_id": "31064d1a-fcef-4e34-8520-03f72e801481",
+        "name": "Tone",
+        "target_level_keys": ["neutral", "warm"],
+        "required": false
+      }
+    ],
+    "created_at": "2026-09-03T10:12:45.771Z",
+    "updated_at": "2026-09-10T15:48:02.236Z"
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "scenario_ids and evals are required arrays"
+    }
+  ]
+}
+```
+
+```json Invalid Config
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "One or more scenarios do not belong to this agent"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

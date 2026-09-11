@@ -1,0 +1,280 @@
+---
+title: "Create Disposition Test Run"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/runs"
+description: "Run a disposition against completed production calls."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Starts an asynchronous test run of the draft or the published definition against up to 250 of the agent's completed production calls, or replays the frozen cohort of an earlier run. The response is the queued run; poll [Get Disposition Test Run](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id) for progress and read results with [Get Test Run Rows](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-rows). Test runs bill inference like production runs. An organization may start at most 10 test runs per hour and hold at most 3 in `queued` or `running` at once.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Body Parameters
+
+The body takes one of two shapes: a current-definition run (`target` plus `population`, with optional `executionSla`) or a replay (`replayRunId` alone). Mixing fields from both shapes, or adding unknown fields, returns `400 BAD_REQUEST` with the message `Invalid request body`.
+
+<ParamField body="target" type="string">
+  Required for a current-definition run. `draft` runs the live draft, which is first validated as strictly as publish (every value must pin a runnable judge or extractor version, though an editable pin is allowed); failures return `400` with the message `Definition failed validation`. `published` runs the current published version and returns `409 CONFLICT` if the disposition has never been published. A definition with no values returns `400` with the message `Add at least one value before running a test`.
+</ParamField>
+
+<ParamField body="executionSla" type="string">
+  `realtime` or `queued`. Defaults from the definition's `timing`: `immediate` gives `realtime`, `within_24h` gives `queued`.
+</ParamField>
+
+<ParamField body="population" type="object">
+  Required for a current-definition run. Which completed, non-simulated production calls of this agent to run against. Two shapes:
+
+  Recent sample: `{ "environment": "production", "requestedSize": 25 }`, optionally with `"mode": "recent"`. `requestedSize` is an integer from 1 to 250; the newest eligible calls are sampled. Returns `400` if the agent has no eligible completed calls to sample.
+
+  Explicit calls: `{ "mode": "calls", "callIds": ["..."] }`, optionally with `"environment": "production"`. `callIds` is 1 to 250 unique call UUIDs. Every call must belong to this agent and be completed with non-zero duration, otherwise `400` with the message `One or more selected calls are not eligible completed production calls for this agent`. Calls that cannot enter dispositions for compliance reasons return `400` listing the offending ids.
+</ParamField>
+
+<ParamField body="replayRunId" type="string">
+  Alternative body: `{ "replayRunId": "..." }` with no other fields. Re-executes the frozen call cohort and definition snapshot of a finished run (`complete`, `partial`, `failed`, or `cancelled`) on this disposition, with `configurationSource: "frozen_run"`. Returns `404` with the message `Replay source test run not found` if no such run exists, `400` with the message `Replay source test run has no frozen call cohort` if it recorded no calls, and `409` with the message `Replay source frozen inputs are incomplete; run a new test instead` if any call lacks a frozen input snapshot.
+</ParamField>
+
+### Response
+
+Returns `201` on success with the run in `queued` status. Returns `503 SERVICE_UNAVAILABLE` if the run could not be handed to the execution queue; the run is recorded as `failed` and the request can be retried.
+
+<ResponseField name="data" type="object">
+  The new test run. Same shape as the entries of [List Disposition Test Runs](/api-v2/get/agents-id-dispositions-disposition-id-runs); the fields that matter on creation are listed here.
+
+  <Expandable title="test run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the test run. Pass it as `{run_id}` to the run endpoints.
+    </ResponseField>
+    <ResponseField name="dispositionId" type="string">
+      The disposition this run belongs to.
+    </ResponseField>
+    <ResponseField name="target" type="string">
+      `draft` or `published`.
+    </ResponseField>
+    <ResponseField name="configurationSource" type="string">
+      `draft`, `published`, or `frozen_run` for a replay.
+    </ResponseField>
+    <ResponseField name="executionSla" type="string">
+      `realtime` or `queued`, as requested or defaulted.
+    </ResponseField>
+    <ResponseField name="replaySourceRunId" type="string | null">
+      The `replayRunId` you passed, or `null`.
+    </ResponseField>
+    <ResponseField name="definition" type="object">
+      The frozen definition snapshot this run executes. For a `draft` target, `structured_extraction` sources are frozen the same way publish freezes them.
+    </ResponseField>
+    <ResponseField name="population" type="object">
+      `{ "environment": "production", "requestedSize" }`.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Always `queued` on creation. Later `running`, then `complete`, `partial`, `failed`, or `cancelled`.
+    </ResponseField>
+    <ResponseField name="requestedSize" type="number">
+      The sample size requested, or the number of call ids supplied.
+    </ResponseField>
+    <ResponseField name="resolvedSize" type="number">
+      Always `0` on creation.
+    </ResponseField>
+    <ResponseField name="completedSize" type="number">
+      Always `0` on creation.
+    </ResponseField>
+    <ResponseField name="failedSize" type="number">
+      Always `0` on creation.
+    </ResponseField>
+    <ResponseField name="evalRunId" type="null">
+      Always `null`.
+    </ResponseField>
+    <ResponseField name="mode" type="string">
+      `recent` or `calls`.
+    </ResponseField>
+    <ResponseField name="inputSetHash" type="null">
+      Always `null`.
+    </ResponseField>
+    <ResponseField name="definitionHash" type="string">
+      SHA-256 hex digest of the definition snapshot.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="number | null">
+      The draft revision executed, or `null` for a published target.
+    </ResponseField>
+    <ResponseField name="dispositionVersionId" type="string | null">
+      The published version executed, or `null` for a draft target.
+    </ResponseField>
+    <ResponseField name="summary" type="object">
+      All zeros on creation: `caseCount`, `failedCaseCount`, `producedValueCount`, `totalValueCount`. `correctionCount` is omitted here and appears on later reads.
+    </ResponseField>
+    <ResponseField name="error" type="null">
+      Always `null` on creation.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="startedAt" type="null">
+      Always `null` on creation.
+    </ResponseField>
+    <ResponseField name="completedAt" type="null">
+      Always `null` on creation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "08435e5a-e5b8-4e21-8236-85fbe3149fbf",
+    "dispositionId": "19c27589-b319-411a-a4b5-17bb55ff68f8",
+    "target": "draft",
+    "configurationSource": "draft",
+    "executionSla": "realtime",
+    "replaySourceRunId": null,
+    "definition": {
+      "name": "Appointment outcome",
+      "description": "Did the caller book an appointment?",
+      "timing": "immediate",
+      "values": [
+        {
+          "id": "45ef74d6-b7ba-4ef2-b0a7-6cc4314da544",
+          "key": "booked",
+          "label": "Appointment booked",
+          "schema": { "kind": "boolean" },
+          "source": {
+            "kind": "variable_extraction",
+            "variableKey": "appointment_booked",
+            "execution": { "reasoningEffort": "auto" }
+          }
+        }
+      ],
+      "transformation": {
+        "version": 1,
+        "root": { "kind": "value", "valueId": "45ef74d6-b7ba-4ef2-b0a7-6cc4314da544" }
+      },
+      "postCallWebhook": { "mode": "emit_followup" }
+    },
+    "population": { "environment": "production", "requestedSize": 25 },
+    "status": "queued",
+    "requestedSize": 25,
+    "resolvedSize": 0,
+    "completedSize": 0,
+    "failedSize": 0,
+    "evalRunId": null,
+    "mode": "recent",
+    "inputSetHash": null,
+    "definitionHash": "1754d979043d46cca6e46a034a39b234c3299a5a4200241e955bdc18bc9394e4",
+    "draftRevision": 4,
+    "dispositionVersionId": null,
+    "summary": {
+      "caseCount": 0,
+      "failedCaseCount": 0,
+      "producedValueCount": 0,
+      "totalValueCount": 0
+    },
+    "error": null,
+    "createdAt": "2026-09-10T19:12:44.902Z",
+    "startedAt": null,
+    "completedAt": null
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Invalid request body",
+      "ext": "{\"errors\":[\"/population/requestedSize: Expected integer to be less or equal to 250\"]}"
+    }
+  ]
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "This organization already has 3 disposition test runs queued or running — wait for one to finish before starting another"
+    }
+  ]
+}
+```
+
+```json Never Published
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "This disposition has never been published — target the draft instead"
+    }
+  ]
+}
+```
+
+```json No Eligible Calls
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "This agent has no completed calls to sample — place a call first, or test the draft after traffic arrives"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many disposition test runs started for this organization — please wait before starting another."
+    }
+  ]
+}
+```
+
+```json Unavailable
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SERVICE_UNAVAILABLE",
+      "message": "Disposition test run could not be started; retry the request"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

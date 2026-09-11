@@ -1,0 +1,103 @@
+---
+title: "Get Variable Catalog"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/variable-catalog"
+description: "List the agent variables a disposition can re-extract."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Lists the variables the agent extracts during calls that a disposition value can re-extract from the corrected post-call transcript, read from the agent's most recently saved version. Only `string`, `number`, and `boolean` variables are included; `json` variables, and variables defined with conflicting prompts or types in different scenarios, are omitted. Entries are sorted by `key`, and the list is empty if the agent has no saved version.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of variable catalog entries.
+
+  <Expandable title="variable entry">
+    <ResponseField name="key" type="string">
+      The variable name as defined on the agent. Use it as `variableKey` in a disposition value's `variable_extraction` source.
+    </ResponseField>
+    <ResponseField name="prompt" type="string">
+      The extraction prompt configured on the agent, trimmed. Empty string when the variable has no prompt.
+    </ResponseField>
+    <ResponseField name="accurateSpelling" type="boolean">
+      `true` when the variable is configured for exact character-by-character spelling.
+    </ResponseField>
+    <ResponseField name="outputSchema" type="object">
+      The schema a disposition value should use for this variable. `kind` mirrors the variable's type (`string`, `number`, or `boolean`). `description` is the prompt, with the sentence `Preserve exact character-by-character spelling.` appended when `accurateSpelling` is `true`; it is omitted when both are empty.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "key": "callback_number",
+      "prompt": "The phone number the caller wants us to call back.",
+      "accurateSpelling": true,
+      "outputSchema": {
+        "kind": "string",
+        "description": "The phone number the caller wants us to call back. Preserve exact character-by-character spelling."
+      }
+    },
+    {
+      "key": "party_size",
+      "prompt": "How many people the reservation is for.",
+      "accurateSpelling": false,
+      "outputSchema": {
+        "kind": "number",
+        "description": "How many people the reservation is for."
+      }
+    },
+    {
+      "key": "wants_followup",
+      "prompt": "Whether the caller asked for a follow-up call.",
+      "accurateSpelling": false,
+      "outputSchema": {
+        "kind": "boolean",
+        "description": "Whether the caller asked for a follow-up call."
+      }
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

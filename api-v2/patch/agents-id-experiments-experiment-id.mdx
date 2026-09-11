@@ -1,0 +1,180 @@
+---
+title: "Update Experiment"
+api: "PATCH https://api.bland.ai/v2/agents/{agent_id}/experiments/{experiment_id}"
+description: "Adjust an active experiment's split or conditions."
+---
+
+### Overview
+
+Changes an active experiment's traffic split, schedule, dates, or quota. The variant and baseline are fixed for the experiment's life; to test a different version, [stop it](/api-v2/post/agents-id-experiments-experiment-id-stop) and [create a new one](/api-v2/post/agents-id-experiments). Only the fields below are accepted: any other key returns `400 BAD_REQUEST`, and so does an empty body. Completed experiments cannot be edited and return `409 CONFLICT`, as does a second update that arrives while one is still being applied (retry it).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="experiment_id" type="string" required>
+  The experiment's unique identifier. Must be a valid UUID; returns `400 BAD_REQUEST` otherwise.
+</ParamField>
+
+### Body Parameters
+
+Send at least one field. Fields you omit keep their current value.
+
+<ParamField body="traffic_percentage" type="integer">
+  New share of eligible calls routed to the variant, `1` to `100`. Use this to ramp the variant up or down.
+</ParamField>
+
+<ParamField body="run_hours" type="object | null">
+  New weekly schedule, with the same shape and rules as on [Create Experiment](/api-v2/post/agents-id-experiments): an IANA `timezone` and a `days` object keyed `mon` through `sun` whose values are `{ "start": "HH:mm", "end": "HH:mm" }` windows. Pass `null` to remove the schedule and make the variant always eligible.
+</ParamField>
+
+<ParamField body="starts_at" type="string | null">
+  ISO 8601 datetime before which the variant receives no traffic. Pass `null` to clear it.
+</ParamField>
+
+<ParamField body="ends_at" type="string | null">
+  ISO 8601 datetime at which the experiment completes with `date_ended`. Must be in the future and after the effective `starts_at` (the one in this request, or the stored one if not sent). Pass `null` to remove the end date.
+</ParamField>
+
+<ParamField body="variant_call_quota" type="integer | null">
+  New cap on connected variant calls, `1` to `1000000`, or `null` for no cap. Lowering it to or below the current `variant_calls_routed` completes the experiment immediately with `quota_reached`, and the response reflects that.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.experiment" type="object">
+  The experiment after the update.
+
+  <Expandable title="experiment object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the experiment.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the experiment belongs to.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `active`, or `completed` if the update lowered the quota below the routed count.
+    </ResponseField>
+    <ResponseField name="completed_reason" type="string | null">
+      `null` while active; `quota_reached` if this update completed the experiment.
+    </ResponseField>
+    <ResponseField name="baseline_env" type="string">
+      The control environment: `production` or `staging`. Not editable.
+    </ResponseField>
+    <ResponseField name="baseline_current_version_id" type="string | null">
+      The version currently pinned to `baseline_env`, read at request time.
+    </ResponseField>
+    <ResponseField name="variant_version_id" type="string">
+      The version under test. Not editable.
+    </ResponseField>
+    <ResponseField name="traffic_percentage" type="integer">
+      The current share of eligible calls routed to the variant.
+    </ResponseField>
+    <ResponseField name="run_hours" type="object | null">
+      The current weekly schedule, or `null` when always eligible.
+    </ResponseField>
+    <ResponseField name="starts_at" type="string | null">
+      When variant traffic begins, or `null` for immediately.
+    </ResponseField>
+    <ResponseField name="ends_at" type="string | null">
+      When the experiment completes on its own, or `null` for no end date.
+    </ResponseField>
+    <ResponseField name="variant_call_quota" type="integer | null">
+      The current cap on connected variant calls, or `null` for no cap.
+    </ResponseField>
+    <ResponseField name="variant_calls_routed" type="integer">
+      Connected calls routed to the variant so far.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who created the experiment, or `null` when created with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      `null` while active.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "experiment": {
+      "id": "f4e3870b-7e35-4088-9855-917de3633c54",
+      "agent_id": "ff4b135e-2a7e-48e3-9e75-1303718b2f9d",
+      "status": "active",
+      "completed_reason": null,
+      "baseline_env": "production",
+      "baseline_current_version_id": "41cf1621-96cc-4f7c-8f9c-a8456b65b9fe",
+      "variant_version_id": "82a83fe3-719f-45f8-9207-4424aac1a26d",
+      "traffic_percentage": 50,
+      "run_hours": null,
+      "starts_at": null,
+      "ends_at": "2026-10-01T00:00:00.000Z",
+      "variant_call_quota": 2000,
+      "variant_calls_routed": 318,
+      "created_by": "499bd008-10c1-4fb9-841e-87e1961b5904",
+      "created_at": "2026-09-08T12:40:19.221Z",
+      "completed_at": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "\"variant_version_id\" is not an updatable field (allowed: traffic_percentage, run_hours, starts_at, ends_at, variant_call_quota)"
+    }
+  ]
+}
+```
+
+```json Completed
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "Completed experiments cannot be edited"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Experiment not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

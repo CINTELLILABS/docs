@@ -1,0 +1,93 @@
+---
+title: "Promote Agent to Production"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/promote"
+description: "Pin production to the version currently in staging."
+---
+
+### Overview
+
+Moves the agent's `production` pointer to whatever `staging` is pinned to and records a deployment carrying that version's original semver; promoting never mints a new number. Phone numbers attached to the agent begin answering with the promoted version. No request body. The server does not run checks here: start one with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) beforehand and gate on its result yourself.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.semver" type="string">
+  The promoted version's number, for example `1.4.0`.
+</ResponseField>
+
+<ResponseField name="data.environments" type="array">
+  The agent's three environments after the promote. Each has `id`, `env_type` (`dev`, `staging`, or `production`), and `current_version_id` (the pinned version, or `null` if unpinned). `staging` and `production` now point at the same version.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when nothing has been published to staging yet.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "semver": "1.4.0",
+    "environments": [
+      {
+        "id": "3d5a2d9b-0457-4610-b6d0-86d09b42d8bc",
+        "env_type": "dev",
+        "current_version_id": null
+      },
+      {
+        "id": "f1ad8610-caea-4c4f-9d9b-3f35bf1a1a43",
+        "env_type": "staging",
+        "current_version_id": "46201abd-c8e6-4095-a65f-d5135a673627"
+      },
+      {
+        "id": "de65595f-4fbf-4d9e-9ce4-13dd995e863e",
+        "env_type": "production",
+        "current_version_id": "46201abd-c8e6-4095-a65f-d5135a673627"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Staging Unpinned
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "STAGING_UNPINNED",
+      "message": "Publish to staging before promoting to production"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
