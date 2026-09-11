@@ -39,7 +39,7 @@ Requires an admin, owner, operator, or prompter role.
   - `"theirs"`: take dev's value.
   - `{ "value": ... }`: write this value in place of both. Any JSON value is accepted; the merged configuration is validated as a whole before it is saved.
 
-  Any other shape returns `400 INVALID_RESOLUTIONS` and nothing is written. Every conflict the merge finds must be covered, or the request returns `400 UNRESOLVED_CONFLICTS` with the remaining conflicts in `data.conflicts`. Omit when the preview reported no conflicts.
+  Any other shape returns `400 INVALID_RESOLUTIONS` and nothing is written. Every conflict the merge finds must be covered, or the request returns `400 UNRESOLVED_CONFLICTS` and nothing is written. That error does not list which conflicts are outstanding, so build your resolutions from [Preview Agent Branch Rebase](/api-v2/post/agents-id-branches-branch-id-rebase-preview), which returns the full conflict set. Omit when the preview reported no conflicts.
 
   ```json
   {
@@ -140,21 +140,7 @@ Requires an admin, owner, operator, or prompter role.
 
 ```json Unresolved Conflicts
 {
-  "data": {
-    "conflicts": [
-      {
-        "id": "setting:systemPrompt",
-        "kind": "setting",
-        "key": "systemPrompt",
-        "path": "",
-        "path_labels": [],
-        "label": "systemPrompt",
-        "base": "You are the front desk assistant for Northwind Dental.",
-        "theirs": "You are the front desk assistant for Northwind Dental. Keep answers under two sentences.",
-        "ours": "You are the scheduling assistant for Northwind Dental. Always offer the next two open slots."
-      }
-    ]
-  },
+  "data": null,
   "errors": [
     {
       "error": "UNRESOLVED_CONFLICTS",
