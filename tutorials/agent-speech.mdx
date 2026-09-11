@@ -1,12 +1,13 @@
 ---
 title: "Agent Speech"
-description: "Control how readily your agent pauses for callers and how quickly it responds after they stop talking."
+description: "Control how your agent shares the call: interruptions, response timing, and the small listener sounds it makes while a caller talks."
 ---
 
-Two behaviors control how your agent shares the conversation:
+Three behaviors control how your agent shares the conversation:
 
 - **Interruptibility** governs what happens while the agent is speaking: how readily it yields when the caller talks over it. This is a setting you choose.
 - **Resumption** governs what happens after the caller finishes: how quickly the agent takes its turn. This is adaptive: the agent measures each caller's pace and matches it automatically. There is nothing to configure.
+- **Backchannels** are the short listener sounds the agent makes while the caller is still talking, so the caller knows the agent is following along. You choose the density, whether the agent reacts to what the caller says, and any words you never want it to use.
 
 ## Agent pauses
 
@@ -66,3 +67,50 @@ The adaptation runs continuously in both directions: slowing down earns patience
 | The agent stops for background noise or brief acknowledgments | Difficult interruptibility, or Block interruptions |
 
 Response timing needs no tuning: an agent that seems to jump in on a hesitant caller will settle within a few turns as the measurement catches up to the caller's pace.
+
+## Backchannels
+
+Backchannels are the short listener sounds a human makes while someone else is talking. Your agent uses two kinds:
+
+- **Continuers** are neutral: `mm-hm`, `okay`, `yeah`. They tell the caller you are still there without commenting on what they said. Use these when you want the agent to sound attentive but not opinionated.
+- **Reactions** respond to the content: `oh no`, `nice`, `that's amazing`. They land when something notable happens and add warmth, but can feel out of place on formal or transactional calls.
+
+### Density
+
+`agent_backchannel_level` (integer, `0`-`3`) sets how often the agent murmurs at all. `0` (Off) is the default and keeps the agent silent until its turn.
+
+| Setting | API value | When to use it |
+| :---- | :---- | :---- |
+| Off | `0` | Formal or scripted calls, IVR navigation, or any flow where filler sounds distract. |
+| Sparse | `1` | Occasional acknowledgment on short exchanges. |
+| Normal | `2` | Conversational calls where you want the agent to feel present. |
+| Rich | `3` | Long caller turns (venting, storytelling, spelling out an ID) where regular acknowledgment reads as engaged. |
+
+### Reactions
+
+While murmurs are on, `agent_backchannel_config.continuers_only` chooses whether the agent may react to content or must stick to neutral sounds.
+
+- `continuers_only: false` (default) — reactions are allowed. The agent picks a reaction when something in the caller's turn calls for one, and a continuer otherwise.
+- `continuers_only: true` — only continuers. Use this for professional or high-stakes contexts (clinical intake, collections, legal) where a stray "oh no" or "nice" would land badly.
+
+### Never say
+
+`agent_backchannel_config.blocked_tokens` is a list of words the agent must never murmur, in either continuers or reactions. Up to 20 entries, matched case-insensitively. A blocked continuer swaps to an allowed alternate or the moment stays silent; a blocked reaction falls back to another word of the same feeling.
+
+Use the blocklist for brand-inconsistent wording, filler your team wants retired, or emotive words that read poorly on your calls.
+
+```json
+{
+  "agent_backchannel_level": 2,
+  "agent_backchannel_config": {
+    "continuers_only": false,
+    "blocked_tokens": ["gotcha", "yikes", "no worries"]
+  }
+}
+```
+
+### Where to set backchannels
+
+- **Send Call API**: pass `agent_backchannel_level` and `agent_backchannel_config` in the [`/v1/calls`](/api-v1/post/calls) request body. They apply to the whole call and override the agent's defaults.
+- **Inbound numbers**: the same fields on your inbound number configuration set the defaults for calls placed to that number.
+- **Dashboard**: on the Voice channel's Conversation feel tab for your agent, use the Agent backchannels select for density, the Reactions switch for `continuers_only`, and the Block utterances input for `blocked_tokens`. Reactions and Block utterances appear once backchannels are on.
