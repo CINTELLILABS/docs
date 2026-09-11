@@ -22,7 +22,7 @@ Choose your assistant for its setup steps or connection requirements. Grok Bot a
 ## Prerequisites
 
 - An assistant that can add a custom MCP server by URL with an Authorization header, or make authenticated HTTP requests and store the API credential.
-- A payment card for the [Agent Phone Plan](/platform/agent-phone-plan) (\$29.99/month, includes a US phone number). Without it, the agent can still use numbers already on your account.
+- Optional: a payment card for the [Agent Phone Plan](/platform/agent-phone-plan) (\$29.99/month, includes a US phone number). Without it, the agent connects on \$2 of free credits, calls from a shared Bland number or numbers already on your account, and can't text.
 
 ## Option 1: You have a Bland API key
 
@@ -52,13 +52,13 @@ To give the assistant its own number, so it can receive calls and send texts, su
 
 This workflow requires your assistant to make HTTP requests, poll for approval, and retain the returned credential. Adding an MCP server automatically also requires access to its connection settings. If those capabilities are unavailable, create your account in the [dashboard](https://app.bland.ai) and use Option 1.
 
-An assistant with those capabilities can use Bland's device-authorization flow: it shows you a link and a short code, you sign up and subscribe in your browser, and it retrieves an API key and phone number. For an MCP-capable assistant, use this prompt. REST-based assistants should follow their client-specific guide:
+An assistant with those capabilities can use Bland's device-authorization flow: it shows you a link and a short code, you sign up in your browser, and it retrieves an API key, plus a phone number if you start the Agent Phone Plan. For an MCP-capable assistant, use this prompt. REST-based assistants should follow their client-specific guide:
 
 ```text
-Read https://docs.bland.ai/platform/connect-your-agent and get yourself a Bland phone number. Show me the link and code when you have them. Once approved, add https://api.bland.ai/v1/mcp as an MCP server using the API key you receive, then call me at +1 415 555 0123 to confirm it works.
+Read https://docs.bland.ai/platform/connect-your-agent and connect yourself to Bland. Pass my name, email, and phone number to the start call if you know them, so the sign-up form arrives pre-filled. Show me the link and code when you have them; I'll pick between the Agent Phone Plan and free credits when I approve. Once approved, add https://api.bland.ai/v1/mcp as an MCP server using the API key you receive, then call me at +1 415 555 0123 to confirm it works.
 ```
 
-Once the agent starts the flow, it sends you a link and a short code. Open the link, sign up or sign in, subscribe to the Agent Phone Plan, and approve the request. After the agent retrieves its API key and phone number, check that it has connected the MCP server before asking it to call or text.
+Once the agent starts the flow, it sends you a link and a short code. Open the link, sign up or sign in, then either start the Agent Phone Plan or continue with free credits, and approve the request. After the agent retrieves its API key, and its phone number if you chose the plan, check that it has connected the MCP server before asking it to call or text.
 
 The key is scoped to a new organization that belongs to you. Revoke it any time from **Settings > API Keys**. If your assistant cannot add MCP servers on its own, ask it for the key and add the server yourself as in Option 1.
 
@@ -69,29 +69,36 @@ Agents that run on a machine with Node.js can skip the HTTP calls and run the Bl
 | Ask for | What happens |
 | --- | --- |
 | "Call +1 ... and ask ..." | Places an outbound call from the agent's number and returns the transcript and summary when it ends |
-| "Text +1 ... saying ..." | Sends an SMS from the agent's number. Replies are answered automatically, so set the texting prompt first (below) |
+| "Text +1 ... and ..." | Sends an SMS from the agent's number and answers the replies toward the goal you gave it (below) |
 | "What did they say on my last call?" | Reads the call transcript and analysis |
 | "Create an agent that ..." | Builds a reusable pathway the assistant can call with later |
 
-On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
+On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits). Without the plan, the agent calls from a shared Bland number and texting is not included.
 
 ## Two-way texting
 
-A text is a conversation. When the other side replies, Bland answers from the agent's number automatically, using the number's **texting prompt**. A new plan number starts with a generic prompt, so before asking the agent to run a text thread with a goal, have it set the prompt for that goal:
+Texting requires the [Agent Phone Plan](/platform/agent-phone-plan): the agent needs its own number to text from.
+
+A text is a conversation. When the other side replies, Bland answers from the agent's number automatically. Tell the agent the goal when you ask it to text:
 
 ```text
-Set my number's texting prompt to: "You are booking a haircut for Spencer. Ask for the next available Tuesday afternoon, confirm the time and price, then end the conversation." Then text the salon at +1 415 555 0123 to get it started.
+Text the salon at +1 415 555 0123 and book me a haircut for next Tuesday afternoon. Confirm the time and the price.
 ```
 
-The agent does this with one API call, [Update SMS Configuration](/api-v1/post/sms-update):
+The agent starts the thread with one API call, [Send SMS](/api-v1/post/sms-send), and passes the goal as the conversation's `objective`. Bland answers every reply in that conversation from it:
 
-Send a `POST` request to `/v1/sms/number/update` with this JSON body:
+Send a `POST` request to `/v1/sms/send` with this JSON body:
 
 ```json
-{ "phone_number": "+12765550123", "prompt": "You are booking a haircut for Spencer. ..." }
+{
+  "user_number": "+14155550123",
+  "agent_number": "+12765550123",
+  "agent_message": "Hi, do you have an opening next Tuesday afternoon for a haircut?",
+  "objective": "Book a haircut for Spencer next Tuesday afternoon. Confirm the time and the price, then end the conversation."
+}
 ```
 
-The prompt belongs to the number, not to one conversation, so it applies to every thread on that number until it is changed. Set it again for the next task.
+The objective belongs to that one conversation. A conversation without one is answered from the number's **texting prompt**, which starts out generic on a new plan number. To change that default for every conversation on the number, use [Update SMS Configuration](/api-v1/post/sms-update).
 
 ## Troubleshooting
 
@@ -100,7 +107,7 @@ The prompt belongs to the number, not to one conversation, so it applies to ever
 | Agent reports `PLAN_REQUIRED` or "not available" | The organization has no active Agent Phone Plan | Subscribe at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) |
 | Agent reports `CALL_PLAN_DESTINATION_BLOCKED` | The destination is outside the US and Canada | Use a US or Canadian number |
 | The approval link says the code expired | Codes last 15 minutes | Ask the agent to start again |
-| Text replies are generic and ignore the task | The number's texting prompt was not set for this task | Ask the agent to set the texting prompt, then start the thread again |
+| Text replies are generic and ignore the task | The thread was started without an `objective`, so replies used the number's generic texting prompt | Ask the agent to text again with the goal as the `objective` |
 | Approval page says the request did not come from the dashboard | The link was opened in an embedded browser | Open it in a normal browser tab |
 
 ## Building your own agent loop
