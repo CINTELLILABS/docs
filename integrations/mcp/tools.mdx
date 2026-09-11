@@ -3,7 +3,7 @@ title: "Tool Reference"
 description: "Every tool exposed by the Bland MCP server"
 ---
 
-The Bland MCP server currently exposes **39 tools** plus 3 prompts. All of them are scoped to the organization that owns the API key used to connect.
+The Bland MCP server currently exposes **40 tools** plus 3 prompts. All of them are scoped to the organization that owns the API key used to connect.
 
 **Access** describes each tool's annotation: **Read** tools never change anything and clients can call them freely; **Write** and **Destructive** tools have side effects (Destructive ones spend money, touch live traffic, or delete things) and are confirmation-gated: the tool asks for an explicit confirmation argument before executing.
 
@@ -13,6 +13,7 @@ The Bland MCP server currently exposes **39 tools** plus 3 prompts. All of them 
 | --- | --- | --- |
 | `create_call` | Destructive | Place an outbound call to a phone number, optionally with a task or pathway. |
 | `get_call_log` | Read | Fetch a single call: its transcript, recording, summary, and metadata. |
+| `wait_for_call` | Read | Wait for a call to finish, then return its call log. Holds the request open for up to `timeoutSeconds` (default 30, max 45) and returns as soon as the call reaches a terminal state. Timing out is not an error: you get the call log as it stands, and calling again keeps waiting. |
 
 ### Pathways
 
@@ -81,7 +82,7 @@ Full lifecycle for the v2 agents model: versioned, branched, and promoted throug
 
 ### API passthrough
 
-For anything without a dedicated tool, the passthrough pair gives agents the entire [Bland REST API](/api-v1/post/calls):
+Dedicated tools expose a deliberate subset of their endpoint's fields. If a field is missing from a dedicated tool (for example, `create_call` omits voicemail handling, `keywords`, webhooks, retry, recording, and max duration), the capability still exists: look it up in the docs tools, then reach it through the passthrough pair, which covers the entire [Bland REST API](/api-v1/post/calls). The server states this routing rule in its MCP `instructions`, so connected agents learn it at initialization.
 
 | Tool | Access | Description |
 | --- | --- | --- |
