@@ -1,0 +1,93 @@
+---
+title: "Update Snippet"
+api: "POST https://api.bland.ai/v1/snippets/update"
+description: "Upload a new version of an existing snippet. Previous versions are kept."
+---
+
+Updating a snippet does not overwrite it. Each update creates a new version, and the previous versions remain available. Custom Code Nodes and [Run Snippet](/api-v1/post/snippets-id-run) use the latest version unless a specific version is requested.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Set to `text/plain`. The request body is the raw script, not JSON.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="snippet_id" type="string" required>
+  ID of the snippet to update.
+</ParamField>
+
+### Body
+
+Send the snippet's full source code as the raw request body, exactly as you would write it in an editor. Maximum length is 100,000 characters.
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated snippet.
+</ResponseField>
+
+<ResponseField name="data.snippet_id" type="string">
+  ID of the updated snippet.
+</ResponseField>
+
+<ResponseField name="data.version" type="integer">
+  The new version number created by this update.
+</ResponseField>
+
+<ResponseField name="data.submission" type="string">
+  The script exactly as it was received.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<RequestExample>
+```bash Request
+curl --request POST \
+  --url 'https://api.bland.ai/v1/snippets/update?snippet_id=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' \
+  --header 'authorization: YOUR_API_KEY' \
+  --header 'content-type: text/plain' \
+  --data 'export default {
+  async fetch(request, env, ctx) {
+    const input = await request.json();
+    return Response.json({ message: `Hi again, ${input.name}` });
+  }
+}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "snippet_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "version": 2,
+    "submission": "export default {\n  async fetch(request, env, ctx) {\n    const input = await request.json();\n    return Response.json({ message: `Hi again, ${input.name}` });\n  }\n}"
+  },
+  "errors": null
+}
+```
+
+```json Validation Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SCRIPT_UPDATE_VALIDATION_ERROR",
+      "message": "Snippet ID must be provided as a query string. Add ?snippet_id= to the URL."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
