@@ -1,0 +1,73 @@
+---
+title: "Use Bland Speech with LiveKit Agents"
+description: "Configure the official LiveKit Agents plugin for Bland realtime TTS, and fix the two settings that make streaming sound wrong."
+---
+
+LiveKit Agents ships an official Bland plugin. It streams over [Realtime Speech (WebSocket)](/api-v2/post/tts-ws), so an agent gets Bland's turn model, preemption on interruption, and server-side text buffering without any extra code.
+
+## Prerequisites
+
+- A LiveKit Agents project (Python).
+- A Bland API key in the `BLAND_API_KEY` environment variable.
+- A Bland voice UUID from [List Voices](/api-v1/get/voices). Names are not accepted.
+
+## Install and configure
+
+```bash
+pip install livekit-plugins-bland
+```
+
+```python
+from livekit.agents import AgentSession
+from livekit.plugins import bland
+
+session = AgentSession(
+    tts=bland.TTS(
+        voice_id="29158307-9893-4149-8a75-bc9ce313d64e",
+        sample_rate=48000,
+        expressiveness=0.6,
+        stability=0.5,
+    ),
+    # stt, llm, vad as usual
+)
+```
+
+| Parameter | Default | Notes |
+| --- | --- | --- |
+| `voice_id` | a Bland V3 voice | Voice UUID. Fixed for the connection; the plugin opens a new connection to change voices. |
+| `sample_rate` | `48000` | One of `8000`, `16000`, `24000`, `44100`, `48000`. See below. |
+| `expressiveness`, `stability` | unset | Same 0.0 to 1.0 controls as the API. |
+| `api_key` | `BLAND_API_KEY` | |
+| `base_url` | `https://api.bland.ai/v2` | |
+| `streaming` | `True` | Keep it on. With streaming off the plugin falls back to `POST /v2/tts` per sentence, which adds a full sentence of synthesis before the first frame. |
+
+Output is always mono `pcm_s16le`.
+
+## How the plugin maps onto Bland turns
+
+- Each LiveKit speech segment is one Bland turn with its own `context_id`. The plugin sends LLM tokens as `speak` messages the moment they arrive, with no sentence tokenizer of its own; Bland picks the synthesis boundaries.
+- When the LLM finishes, the plugin sends `end_of_turn`, and the segment ends on Bland's `utterance_end` with reason `complete`.
+- An interruption sends `cancel`; the segment ends with reason `cancelled`.
+- The idle flush described in [Realtime TTS Concepts](/tts/realtime-concepts#bland-buffers-incoming-text) applies here with its default of 150 ms, so an LLM that opens with a short phrase and then pauses is spoken rather than waited on.
+
+## Sample rate: match your pipeline
+
+The Bland plugin defaults to 48 kHz, Bland's native rate. Other TTS plugins, Cartesia's among them, default to 24 kHz. If your room, recorder, or telephony bridge assumes 24 kHz, audio at the wrong rate plays pitch-shifted or choppy, and it is easy to blame the model. Set `sample_rate` to the rate the rest of your pipeline uses rather than resampling downstream, and use `8000` for a phone line.
+
+## Latency behaviour to expect
+
+- Time to first frame is measured from the first `speak` of a turn on a connection that has already announced `ready`. On a warm connection, expect well under 200 ms at 48 kHz for a sentence-length turn.
+- Opening a connection costs about 300 ms once: voice resolution, provider warm-up, and billing admission all happen before `ready`. The plugin keeps a connection pool, but it expires connections after 50 seconds of age, so the first turn after a long silence in the conversation pays that cost again.
+
+## Troubleshooting
+
+- **Choppy or stuttering audio with a fast time to first frame.** LiveKit's playout buffer is running dry. Raise the audio queue size on the output side before changing anything on the TTS.
+- **Pitch is wrong.** Sample-rate mismatch between `sample_rate` here and the audio source in your pipeline.
+- **First frame takes a full sentence.** `streaming` is off, or the plugin is being wrapped by a sentence-based stream adapter. Leave `streaming=True` and do not wrap it.
+- **`unsupported_voice` or `voice_not_found`.** `voice_id` must be a UUID of a `BTTS_V3` or `BTTS_V2` voice your account can access.
+
+Language is not a plugin parameter. The voice speaks the language of the text; for cloned voices that speak more than one language, see the `boost_language_consistency` note on [Clone Voice](/api-v1/post/clone).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
