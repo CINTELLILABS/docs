@@ -1,0 +1,259 @@
+---
+title: "Headless agent onboarding"
+description: "Let an agent pay for and provision its own Bland account in one conversation: no browser, no dashboard, just a phone OTP relayed back to the agent."
+hidden: true
+---
+
+## Overview
+
+The [Agent onboarding API](/platform/connect-your-agent) needs one browser visit: the owner opens a link, signs up, and approves the request. Headless onboarding removes that visit entirely. If your agent can approve a payment through its own agent wallet, it can sign up, pay for the first month of the [Agent Phone Plan](/platform/agent-phone-plan), and receive its API key and phone number, all in the same conversation. The owner's only manual step is relaying a 6-digit code sent to their phone by text.
+
+Two calls, no API key required to start:
+
+1. `POST /v1/agent/onboarding/headless/start`: send the owner's phone and email, and get back a session handle. A text with a verification code goes out to the phone immediately.
+2. `POST /v1/agent/onboarding/headless/complete`: send the code back along with a payment approval, and get back the API key, org ID, phone number, and plan.
+
+Nothing is created until the code is verified and the payment settles. A declined payment creates nothing, and the response tells your agent how to fall back to the [link-based flow](/platform/connect-your-agent) instead.
+
+<Note>
+This is a different path to the same result as the [Agent onboarding API](/platform/connect-your-agent), not a replacement for it. Use headless onboarding when your agent can present a payment token from an agent wallet. Use the link-based flow when it can't, or when the payment is declined.
+</Note>
+
+## Prerequisites
+
+- An agent wallet that can approve a single-use payment token (`shared_payment_token`, prefixed `spt_`) for the exact amount you're charging
+- The owner's phone number, to send the verification code to
+- The owner present in the conversation to relay that code back
+
+## The flow
+
+<Steps>
+  <Step title="Start the flow">
+    Call `POST /v1/agent/onboarding/headless/start` with the owner's phone, email, and an optional label for your agent. No API key is required, this is how an agent gets one.
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/start \
+      -H "Content-Type: application/json" \
+      -d '{"client_name": "my-bot", "owner_phone": "+14155550123", "owner_email": "owner@example.com"}'
+    ```
+
+    ```json Response
+    {
+      "data": {
+        "headless_session": "Xk9pQ2mZ...",
+        "expires_in": 600
+      },
+      "errors": null
+    }
+    ```
+
+    `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
+
+    This call sends a 6-digit verification code to `owner_phone` by text and creates nothing else: no account, no organization, no charge. `headless_session` is valid for `expires_in` seconds (600, or 10 minutes) and is single-use.
+  </Step>
+
+  <Step title="Get the code from your owner">
+    Ask the owner for the 6-digit code that was just texted to their phone. This is their only manual step in the entire flow.
+  </Step>
+
+  <Step title="Complete the flow">
+    Call `POST /v1/agent/onboarding/headless/complete` with the session, the code, and a payment approval from your agent wallet.
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/complete \
+      -H "Content-Type: application/json" \
+      -d '{
+        "headless_session": "Xk9pQ2mZ...",
+        "otp_code": "482913",
+        "payment": { "shared_payment_token": "spt_..." }
+      }'
+    ```
+
+    ```json Response
+    {
+      "data": {
+        "api_key": "org_...",
+        "org_id": "...",
+        "phone_number": "+14155550199",
+        "plan": {
+          "name": "agent_phone_basic",
+          "display_name": "Agent Phone Plan",
+          "status": "active",
+          "phone_number": "+14155550199",
+          "concurrency": 1,
+          "max_call_duration_minutes": 60,
+          "allowed_countries": ["US", "CA"],
+          "current_period_end": "2026-10-12T00:00:00.000Z"
+        },
+        "provisioning": "ready",
+        "next_steps": ["The Agent Phone Plan calls US and Canada only."]
+      },
+      "errors": null
+    }
+    ```
+
+    `payment.shared_payment_token` is the only supported payment credential today: the single-use token your agent wallet issued for this charge. This settles the first month of the Agent Phone Plan (\$29.99).
+
+    `next_steps` is a short list of things your agent should know before its first call. It's optional on the wire: treat a missing field the same as an empty list.
+  </Step>
+
+  <Step title="Store the key">
+    `api_key` is returned exactly once. Store it immediately; a repeated `/complete` call with a spent session returns `INVALID_SESSION` rather than the key again.
+  </Step>
+</Steps>
+
+## If the number isn't ready yet
+
+`provisioning` is `"ready"` when everything is in place, or `"pending"` when the payment settled but a phone number hasn't been handed over yet. On `"pending"`, `phone_number` is `null` and `next_steps` includes a line telling your agent to call `POST /billing/subscribe_agent_phone` with the new API key in a few minutes. That call retries provisioning without charging again, since the plan is already active.
+
+## If the payment is declined
+
+A declined payment, a payment that needs extra verification from the owner's bank, or a payment token that's already used or rejected all answer the same way: `402 CARD_DECLINED`. Nothing is created. The response bundles a device-flow fallback so your agent can continue without starting over:
+
+```json 402 CARD_DECLINED
+{
+  "data": null,
+  "errors": [
+    { "error": "CARD_DECLINED", "message": "Your card was declined. Try another card." }
+  ],
+  "fallback": {
+    "device_code": "Xk9pQ2mZ...",
+    "verification_url_complete": "https://app.bland.ai/agent-setup?code=BQPL-7VXR",
+    "user_code": "BQPL-7VXR",
+    "expires_in": 900,
+    "interval": 5
+  }
+}
+```
+
+`fallback` carries everything [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent) returns except `verification_url`. Show `verification_url_complete` (or `user_code`) to the owner exactly as you would from that flow, then poll [`POST /v1/agent/onboarding/poll`](/platform/connect-your-agent) with `device_code` until the owner approves. `fallback` also rides along on `402 PLAN_REQUIRED` and `409 ACCOUNT_EXISTS`.
+
+## Error codes
+
+Both endpoints:
+
+| Code | HTTP status | Meaning |
+| --- | --- | --- |
+| `FEATURE_DISABLED` | 503 | Headless onboarding is temporarily disabled. Retry later, or use the [link-based flow](/platform/connect-your-agent). |
+| `INVALID_BODY` | 400 | The request body failed validation. |
+| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. |
+| `SERVICE_UNAVAILABLE` | 503 | Session storage is temporarily unreachable. Retry in a moment; on `/complete`, the session is unaffected. |
+| `INVALID_PHONE_NUMBER`, `BLOCKED_COUNTRY`, `USER_BANNED`, `BLOCKED_EMAIL`, `SSO_REQUIRED`, `BANNED_SIGNUP` | 400 | The phone or email was refused. `/complete` re-checks these right before charging. |
+| `ACCOUNT_EXISTS` | 409 | An account already uses this phone or email. Use the [link-based flow](/platform/connect-your-agent) instead. Plus fallback on `/complete`. |
+| `INTERNAL_ERROR` | 500 | Something unexpected happened. |
+
+`/headless/start` only:
+
+| Code | HTTP status | Meaning |
+| --- | --- | --- |
+| `OTP_SEND_FAILED` | 502 | The verification text couldn't be sent. Try again in a moment. |
+
+`/headless/complete` only:
+
+| Code | HTTP status | Meaning |
+| --- | --- | --- |
+| `INVALID_SESSION` | 404 | The session is unknown, expired, or already used. Start over with a fresh `/start` call. |
+| `OTP_INVALID` | 400 | The code is wrong or expired. The session is still usable; ask the owner for the code again. |
+| `PAYMENT_METHOD_UNSUPPORTED` | 400 | The request included a card-based payment field. Only `payment.shared_payment_token` is accepted. |
+| `PLAN_REQUIRED` | 402 | No `payment` was included. Plus fallback. |
+| `PLAN_UNAVAILABLE` / `BAD_REQUEST` | 503 / 400 | The plan can't be sold right now. The session is still usable. |
+| `PURCHASE_IN_PROGRESS` | 409 | Another `/complete` call for this phone number is already running. Retry the same session in a moment. |
+| `CARD_DECLINED` | 402 | The payment was declined or refused, the token was rejected or already used, or the payment couldn't be confirmed. Plus fallback. The session is spent; start over with a fresh `/start` call. |
+| `PURCHASE_INTERRUPTED` | 409 | Setup stopped before any payment was taken. The session is spent; start over. |
+| `PAYMENT_FAILED` | 500 | The payment couldn't be completed. The session is spent; start over. |
+| `ACCOUNT_CREATION_FAILED` | 500 | The account couldn't be created after payment. Everything is rolled back and the payment refunded. Start over. |
+
+A code isn't only ever "wrong": if the owner takes too long or guesses incorrectly too many times, the session is burned and `/complete` answers `INVALID_SESSION` even with the right code. Start over with a fresh `/start` call.
+
+## Buying credits
+
+An agent can also buy prepaid credits directly, using a payment token from the owner's agent wallet, no browser involved. This is how an organization without the Agent Phone Plan unlocks international calling: the plan itself is US and Canada only, and buying credits doesn't change that, but a completed credit purchase clears the same bar international calling requires everywhere else on Bland.
+
+Buying credits requires an existing Bland API key. If your agent hasn't onboarded yet, do that first.
+
+### `POST /v1/agent/credits`
+
+```bash
+curl -X POST https://api.bland.ai/v1/agent/credits \
+  -H "authorization: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"amount_usd": 20, "shared_payment_token": "spt_..."}'
+```
+
+```json Response
+{
+  "data": {
+    "payment_intent_id": "...",
+    "amount_usd": 20,
+    "status": "succeeded",
+    "international_unlocked": true,
+    "balance_update": "pending"
+  },
+  "errors": null
+}
+```
+
+- `amount_usd`: from \$5 to \$100, at most two decimal places.
+- `shared_payment_token`: the single-use `spt_` token your agent wallet issued for this purchase.
+- `idempotency_key` (optional): a UUID. Send the same one to retry the exact same purchase without paying twice.
+- The body is strict: no other fields are accepted.
+
+The balance rises within seconds, once the payment is confirmed; that's why the response says `balance_update: "pending"` rather than reporting a new balance directly.
+
+`international_unlocked` is `true` only once the unlock has actually taken effect. It's `false`, with a `note` explaining why, in two cases: your organization is on an active Agent Phone Plan (which stays US and Canada only regardless of balance), or the unlock is still settling (retry in a few minutes).
+
+### The `buy_credits` MCP tool
+
+The same purchase is available as a tool on Bland's [hosted MCP server](/integrations/mcp/overview), scoped to your organization:
+
+| Parameter | Description |
+| --- | --- |
+| `amount_usd` | Dollars to buy, \$5 to \$100, at most two decimal places |
+| `shared_payment_token` | The `spt_` token your agent wallet issued for this purchase |
+| `idempotency_key` | Optional UUID, to retry a purchase without paying twice |
+
+Ask the owner to approve the amount in their agent wallet first, then pass the token it gives you. If the tool doesn't answer within its own timeout, the purchase may still be going through: check the balance before retrying, and if you do retry, send the same `amount_usd`, `shared_payment_token`, and `idempotency_key` so the same purchase can't be charged twice.
+
+### Who can buy credits
+
+Both surfaces share one policy: the caller must be acting as an organization, as an owner, admin, or operator of it. A personal (non-org) API key, or a member without one of those roles, is refused.
+
+### Error codes
+
+Both `POST /v1/agent/credits` and `buy_credits` share one policy entry point and refuse for the same reasons with the same messages. The MCP tool has no HTTP status: it surfaces the message text directly, or a generic message for anything unexpected.
+
+| Code | HTTP status | Meaning |
+| --- | --- | --- |
+| `FEATURE_DISABLED` | 503 | Buying credits is temporarily disabled. |
+| `UNAUTHORIZED` | 403 | The caller isn't acting as an organization, or is a member without owner, admin, or operator access. |
+| `INVALID_BODY` | 400 | The request failed validation, or `amount_usd` isn't a whole-cent number in range. |
+| `INVALID_AMOUNT` | 400 | The amount is out of bounds or finer than a cent. Nothing was read or charged. |
+| `TOO_MANY_REQUESTS` | 429 | Rate limited: up to 100 requests an hour per address on the REST route, and 5 purchases an hour per organization shared across both surfaces. |
+| `BILLING_UNAVAILABLE` | 503 | The organization's billing account couldn't be loaded. Nothing was charged. |
+| `IDEMPOTENCY_CONFLICT` | 409 | The same payment approval or `idempotency_key` was already used for a different purchase, or that purchase is still processing. |
+| `CARD_DECLINED` | 402 | The payment was declined or refused, or the token was rejected, already used, or already refunded. |
+| `PAYMENT_FAILED` | 500 | The payment couldn't be completed, and it may still go through. Check the balance before retrying. |
+| `INTERNAL_SERVER_ERROR` | 500 | Something unexpected happened. |
+
+## Security notes
+
+- **The verification code expires in 10 minutes** and can only be checked a handful of times before the session is burned. Start over with a fresh `/start` call if it expires.
+- **A session is single-use.** Once `/complete` succeeds (or the session is spent by a decline), a repeated call returns `INVALID_SESSION`.
+- **The API key is scoped to a new organization** and can be revoked at any time from **Settings > API Keys** in the dashboard.
+- **A declined payment creates nothing**: no account, no organization, no charge left behind.
+- Treat the returned `api_key` and any payment token like credentials: keep them out of logs and chat transcripts.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent onboarding API" icon="link" href="/platform/connect-your-agent">
+    The link-based flow this one falls back to when payment isn't available or is declined.
+  </Card>
+  <Card title="Agent Phone Plan" icon="phone" href="/platform/agent-phone-plan">
+    What's included, limits, and how to cancel.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

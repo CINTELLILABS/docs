@@ -1,24 +1,36 @@
 ---
 title: "Grok Bot"
-description: "Check Grok Bot's connection requirements and configure Bland when custom MCP servers are available."
+description: "Let Grok Bot pay for and set up its own Bland account in one conversation, or configure the connection yourself with an existing API key."
 hidden: true
 ---
 
-[Grok Bot](https://x.ai/bot) works from a cloud computer and can use connected tools. Its [official connector instructions](https://docs.x.ai/grok-bot/computer-and-apps#connect-an-app) use **Settings > Plugins**. Connections are shared across your account, and you attach a connector to a task with `@`.
-
-<Note>
-The documented Plugins flow does not establish how to add an arbitrary MCP URL with an Authorization header. The Bland connection has not been verified in Grok Bot. Confirm that your version supports both before following the configuration below.
-</Note>
+[Grok Bot](https://x.ai/bot) works from a cloud computer, can use connected tools, and can approve a payment through its own agent wallet. That combination lets it sign up for Bland, pay for its own number, and hand you the finished connection without you ever opening a signup page. Relaying a one-time code by text is your only manual step.
 
 Setting up a different assistant? See [Personal AI Agents](/integrations/mcp/personal-agents).
 
 ## Prerequisites
 
-- Access to Grok Bot with a custom MCP connection that accepts a URL and headers
-- A Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings)
-- An active [Agent Phone Plan](/platform/agent-phone-plan) if you want a dedicated number and texting for your agent
+- Access to Grok Bot with its agent wallet connected, to let it set itself up
+- Or: a Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings) and a custom MCP connection that accepts a URL and headers, to configure the connection yourself
+- Either way, an active [Agent Phone Plan](/platform/agent-phone-plan) gets you a dedicated number and texting; headless self-setup pays for the first month as part of signup
 
-## If your client supports custom MCP servers
+## Option 1: Let Grok Bot set itself up
+
+Tell Grok Bot:
+
+```text
+Read https://docs.bland.ai/platform/agent-headless-onboarding and set yourself up with a Bland account, paying with my agent wallet. Text me the verification code when it arrives so I can send it back to you, then add the account's API key as a custom MCP connection and confirm it works by listing my pathways.
+```
+
+Grok Bot starts the headless flow, asks your agent wallet to approve the first month of the Agent Phone Plan, and a verification code arrives at your phone by text. Relay that code back to Grok Bot, and it finishes setup and receives its API key and phone number in the same conversation. If the payment is declined, Grok Bot falls back to the link-based flow and asks you to approve it in a browser instead.
+
+See [Headless agent onboarding](/platform/agent-headless-onboarding) for the full request and response shapes, in case you want to follow along with what Grok Bot is doing.
+
+## Option 2: Configure the connection yourself
+
+<Note>
+The documented Plugins flow does not establish how to add an arbitrary MCP URL with an Authorization header. Confirm that your version supports both before following the configuration below.
+</Note>
 
 Configure the connection with these values:
 
@@ -32,22 +44,18 @@ Replace `YOUR_BLAND_API_KEY` with your key in the connection's credential field.
 
 If the required custom-server or header controls are unavailable, use a client with documented setup, such as [Poke](/integrations/mcp/poke) or [OpenClaw](/integrations/mcp/openclaw).
 
-## Account setup and phone numbers
-
-You can create a Bland account in the [dashboard](https://app.bland.ai) and configure the connection with your API key. Add the [Agent Phone Plan](/platform/agent-phone-plan) at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) if you want a dedicated number and texting; without it, your agent calls from a shared Bland number on the org's free credits.
-
-Automatic signup through the [Agent onboarding API](/platform/connect-your-agent) requires your agent to make HTTP requests, poll for approval, and store the returned credential. Automatic MCP registration is an additional client capability. These steps have not been verified in Grok Bot; use manual account and connection setup unless you have confirmed those capabilities.
+You can create the account yourself in the [dashboard](https://app.bland.ai) rather than through Option 1, and add the [Agent Phone Plan](/platform/agent-phone-plan) at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) if you want a dedicated number and texting; without it, your agent calls from a shared Bland number on the org's free credits.
 
 On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits).
 
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Headless agent onboarding" icon="bolt" href="/platform/agent-headless-onboarding">
+    The full request and response shapes behind Option 1, including error handling and buying credits.
+  </Card>
   <Card title="Personal AI Agents" icon="robot" href="/integrations/mcp/personal-agents">
     Two-way texting, troubleshooting, and connection requirements.
-  </Card>
-  <Card title="Bland MCP Server" icon="plug" href="/integrations/mcp/overview">
-    How authentication works and what the server exposes.
   </Card>
 </CardGroup>
 
