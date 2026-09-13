@@ -33,6 +33,17 @@ https://api.bland.ai/v1/mcp
 - **Rate limits:** 120 requests per minute per organization.
 - **Safety:** every tool is annotated read-only or destructive, so well-behaved clients ask before the agent does anything with side effects (like placing a real phone call). Mutating tools additionally require an explicit confirmation argument.
 
+## Discovering the server from a 401
+
+A request that reaches `/v1/mcp` without a key gets a 401 that tells your agent what to do next. Two pieces:
+
+- A `WWW-Authenticate: Bearer realm="bland"` header (RFC 6750). A credential that was refused gets `error="invalid_token"` on the same header.
+- A JSON-RPC error body whose `error.message` and `error.data` name the header to send, where a human gets a key, and any self-serve signup flows an agent can run on its own: currently [headless onboarding](/platform/agent-headless-onboarding) and the [device-code flow](/platform/connect-your-agent). Each is listed only while it's enabled.
+
+An agent with no key can read the body, pick a signup flow, obtain its own key, and retry the same MCP call. Well-configured clients that already send a valid `Authorization` header see no change.
+
+The server intentionally does not publish an RFC 9728 resource-metadata document or a `.well-known/oauth-protected-resource` pointer. MCP requires that document to name an OAuth authorization server, which an API-key server does not have, and several MCP clients start an OAuth flow the moment they find one, ahead of the header the user configured.
+
 ## What your agent can do
 
 | Category | Highlights |
