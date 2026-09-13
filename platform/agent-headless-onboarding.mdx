@@ -137,7 +137,9 @@ npx @stripe/link-cli spend-request create \
 
 ### Or let the 402 drive the payment
 
-`/complete` also speaks the [Machine Payments Protocol](https://mpp.dev). Call it with the session and the code and no `payment`, and the `402 PLAN_REQUIRED` response carries a challenge:
+`/complete` also speaks the [Machine Payments Protocol](https://mpp.dev), for deployments where free signup is off: a call with the session and the code and no `payment` then answers `402 PLAN_REQUIRED` with a challenge. While free signup is on (it is today), that same call creates a free account instead, so present the token in the body as shown above. A way to request the challenge explicitly is coming.
+
+The challenge looks like this:
 
 ```http
 HTTP/1.1 402 Payment Required
