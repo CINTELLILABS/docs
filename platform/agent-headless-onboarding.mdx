@@ -1,7 +1,6 @@
 ---
 title: "Headless agent onboarding"
 description: "Let an agent pay for and provision its own Bland account in one conversation: no browser, no dashboard, just a phone OTP relayed back to the agent."
-hidden: true
 ---
 
 ## Overview
@@ -19,9 +18,16 @@ Nothing is created until the code is verified and the payment settles. A decline
 This is a different path to the same result as the [Agent onboarding API](/platform/connect-your-agent), not a replacement for it. Use headless onboarding when your agent can present a payment token from an agent wallet. Use the link-based flow when it can't, or when the payment is declined.
 </Note>
 
+## Which flow to use
+
+| Your agent | Use |
+| --- | --- |
+| Owner has no Bland account | This page. The owner relays one texted code and your agent has an API key. No browser. With an agent wallet that can approve a payment (for example Grok Bot with Stripe Link connected), add the payment to the same call and get the Agent Phone Plan and a phone number too. Without one, the account starts on free credits and the owner can add the plan later (see [Adding the plan later](#adding-the-plan-later)). |
+| Owner already has a Bland account | The [Agent onboarding API](/platform/connect-your-agent): the owner signs in from the link and approves. Headless signup creates new accounts only. |
+
 ## Prerequisites
 
-- An agent wallet that can approve a single-use payment token (`shared_payment_token`, prefixed `spt_`) for the exact amount you're charging
+- An agent wallet that can approve a single-use shared payment token (`spt_`) scoped to a Stripe business profile and an exact amount. Stripe Link's wallet for agents does this; see [Paying with an agent wallet](#paying-with-an-agent-wallet) for the values to use.
 - The owner's phone number, to send the verification code to
 - The owner present in the conversation to relay that code back
 
@@ -102,6 +108,85 @@ This is a different path to the same result as the [Agent onboarding API](/platf
   </Step>
 </Steps>
 
+## Paying with an agent wallet
+
+The first month of the Agent Phone Plan costs \$29.99. The token you present must be scoped to these values:
+
+| Field | Value |
+| --- | --- |
+| Seller (Stripe business profile, the wallet's `network_id`) | `profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8` |
+| Amount | `2999` (cents, `usd`) |
+| Credential type | `shared_payment_token`, single use |
+
+A token is spent by one settled charge. If the payment fails, request a new token rather than retrying the same one.
+
+### Mint the token with Stripe Link
+
+With Stripe's wallet CLI, create a spend request and wait for the owner to approve it in the Link app:
+
+```bash
+npx @stripe/link-cli spend-request create \
+  --credential-type shared_payment_token \
+  --network-id profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8 \
+  --amount 2999 \
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly at 29.99 USD." \
+  --request-approval
+```
+
+`--context` must be at least 100 characters; the owner reads it when approving. The approved request carries the `spt_` token. Send it as `payment.shared_payment_token` in `/complete`, as shown above.
+
+### Or let the 402 drive the payment
+
+`/complete` also speaks the [Machine Payments Protocol](https://mpp.dev), for deployments where free signup is off: a call with the session and the code and no `payment` then answers `402 PLAN_REQUIRED` with a challenge. While free signup is on (it is today), that same call creates a free account instead, so present the token in the body as shown above. A way to request the challenge explicitly is coming.
+
+The challenge looks like this:
+
+```http
+HTTP/1.1 402 Payment Required
+WWW-Authenticate: Payment id="...", realm="api.bland.ai", method="stripe", intent="charge", request="eyJhbW91bnQiOiIyOTk5Ii...", expires="2026-09-13T06:12:59.687Z"
+```
+
+`request` is base64url JSON with the amount, the currency, and the seller profile under `methodDetails.networkId`. A wallet that speaks the protocol reads the challenge, mints the token, and repeats the request with `Authorization: Payment <credential>`. Stripe's wallet CLI does the whole round trip:
+
+```bash
+npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/onboarding/headless/complete \
+  -X POST \
+  -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913"}' \
+  --header "Content-Type: application/json" \
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly at 29.99 USD."
+```
+
+The first call verifies the code, so the retry with the credential skips it. The `200` carries a `Payment-Receipt` header naming the settled payment. A credential that doesn't verify (expired, or not issued by this server) answers `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge; repeat the request without the credential to get a new one. If both a body `payment` and a credential are present, the body wins.
+
+### If the bank asks for extra verification
+
+A token whose card requires 3D Secure can't complete headlessly. `/complete` answers `402 CARD_DECLINED`, cancels the payment attempt, and creates nothing. Continue through the bundled `fallback` link, where the owner can complete the verification in a browser.
+
+### Renewals
+
+The token settles the first month only. The plan renews one month later against the card on file. If there is none, the plan goes past due and degrades to pay-as-you-go: the number is kept, and the owner adds a card at **Billing & Plans** in the [dashboard](https://app.bland.ai/dashboard/pay?tab=plan), which their verified phone lets them sign in to.
+
+### Existing accounts
+
+Headless onboarding creates new accounts only. If the phone or the email already belongs to a Bland account, `/start` and `/complete` answer `409 ACCOUNT_EXISTS`. Connect that account through the [Agent onboarding API](/platform/connect-your-agent) instead, or add the plan from the dashboard.
+
+## Connecting without the plan
+
+If your agent omits `payment`, `/complete` still verifies the code and answers `200` with `phone_number: null`, `plan.status: "none"`, and `provisioning: "ready"`. The account starts with free credits, calls from a shared Bland number, can't text, and can't call internationally until the owner completes a purchase. `next_steps` says how to change each of those.
+
+If free signup is ever switched off, the same request answers `402 PLAN_REQUIRED` with the browser `fallback` bundled and a payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session stays verified, so a follow-up `/complete` with a payment finishes without a second code.
+
+## Adding the plan later
+
+Card details can't pass through your agent, so adding the Agent Phone Plan to an account that started free takes one browser visit by the owner. Two ways, both with a card:
+
+1. **The link flow, from your agent.** Call [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent), show the owner the link and code, and poll. The owner signs in with their phone, adds a card, and picks the plan; the poll result carries the plan and the new phone number, and your existing key keeps working.
+2. **The dashboard, by the owner.** [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). Ask "what's my Bland phone number?" afterwards and your agent reads it from the account.
+
+Both act on the organization the owner has selected in the dashboard. An owner who belongs to more than one should have this account's organization selected (its `org_id` came back from `/complete`), and your agent should check that the poll result's `org_id` matches before treating the plan as this account's.
+
+International calling unlocks after any completed purchase: buying credits on that same billing page does it, and so does the plan for US and Canada calling. `next_steps` on the connect response names whichever path is available.
+
 ## If the number isn't ready yet
 
 `provisioning` is `"ready"` when everything is in place, or `"pending"` when the payment settled but a phone number hasn't been handed over yet. On `"pending"`, `phone_number` is `null` and `next_steps` includes a line telling your agent to call `POST /billing/subscribe_agent_phone` with the new API key in a few minutes. That call retries provisioning without charging again, since the plan is already active.
@@ -136,11 +221,11 @@ Both endpoints:
 | --- | --- | --- |
 | `FEATURE_DISABLED` | 503 | Headless onboarding is temporarily disabled. Retry later, or use the [link-based flow](/platform/connect-your-agent). |
 | `INVALID_BODY` | 400 | The request body failed validation. |
-| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. |
+| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. `/start` sends at most 3 codes to one phone number per 15 minutes. On `/complete`, too many wrong codes for one phone number also burns the session: start over with a fresh `/start` call rather than retrying the same session. |
 | `SERVICE_UNAVAILABLE` | 503 | Session storage is temporarily unreachable. Retry in a moment; on `/complete`, the session is unaffected. |
 | `INVALID_PHONE_NUMBER`, `BLOCKED_COUNTRY`, `USER_BANNED`, `BLOCKED_EMAIL`, `SSO_REQUIRED`, `BANNED_SIGNUP` | 400 | The phone or email was refused. `/complete` re-checks these right before charging. |
 | `ACCOUNT_EXISTS` | 409 | An account already uses this phone or email. Use the [link-based flow](/platform/connect-your-agent) instead. Plus fallback on `/complete`. |
-| `INTERNAL_ERROR` | 500 | Something unexpected happened. |
+| `INTERNAL_ERROR`, `DATABASE_ERROR` (on `/start`); `INTERNAL_SERVER_ERROR` (on `/complete`) | 500 | Something unexpected happened. |
 
 `/headless/start` only:
 
@@ -155,7 +240,8 @@ Both endpoints:
 | `INVALID_SESSION` | 404 | The session is unknown, expired, or already used. Start over with a fresh `/start` call. |
 | `OTP_INVALID` | 400 | The code is wrong or expired. The session is still usable; ask the owner for the code again. |
 | `PAYMENT_METHOD_UNSUPPORTED` | 400 | The request included a card-based payment field. Only `payment.shared_payment_token` is accepted. |
-| `PLAN_REQUIRED` | 402 | No `payment` was included. Plus fallback. |
+| `PLAN_REQUIRED` | 402 | No `payment` was included. Plus fallback, and a `WWW-Authenticate: Payment` challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session is still usable. |
+| `PAYMENT_CREDENTIAL_INVALID` | 402 | The `Authorization: Payment` credential didn't verify: expired, altered, for another method, or missing the token. Plus fallback and a fresh challenge. The session is still usable. |
 | `PLAN_UNAVAILABLE` / `BAD_REQUEST` | 503 / 400 | The plan can't be sold right now. The session is still usable. |
 | `PURCHASE_IN_PROGRESS` | 409 | Another `/complete` call for this phone number is already running. Retry the same session in a moment. |
 | `CARD_DECLINED` | 402 | The payment was declined or refused, the token was rejected or already used, or the payment couldn't be confirmed. Plus fallback. The session is spent; start over with a fresh `/start` call. |
@@ -241,6 +327,7 @@ Both `POST /v1/agent/credits` and `buy_credits` share one policy entry point and
 - **A session is single-use.** Once `/complete` succeeds (or the session is spent by a decline), a repeated call returns `INVALID_SESSION`.
 - **The API key is scoped to a new organization** and can be revoked at any time from **Settings > API Keys** in the dashboard.
 - **A declined payment creates nothing**: no account, no organization, no charge left behind.
+- **Payment challenges are signed and expire** with the session's 10-minute window. A credential built against a changed or expired challenge is refused.
 - Treat the returned `api_key` and any payment token like credentials: keep them out of logs and chat transcripts.
 
 ## Next steps
