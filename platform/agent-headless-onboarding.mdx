@@ -1,7 +1,6 @@
 ---
 title: "Headless agent onboarding"
 description: "Let an agent pay for and provision its own Bland account in one conversation: no browser, no dashboard, just a phone OTP relayed back to the agent."
-hidden: true
 ---
 
 ## Overview
@@ -21,9 +20,19 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
 ## Prerequisites
 
-- An agent wallet that can approve a single-use payment token (`shared_payment_token`, prefixed `spt_`) for the exact amount you're charging
+- An agent wallet that can grant a single-use payment token (`shared_payment_token`, prefixed `spt_`) to Bland's Stripe profile. See [Paying with an agent wallet](#paying-with-an-agent-wallet) for the grant fields
 - The owner's phone number, to send the verification code to
 - The owner present in the conversation to relay that code back
+
+## New owners only
+
+Headless onboarding creates a brand new Bland account. If the `owner_phone` or the `owner_email` you send already belongs to one, `/complete` answers `409 ACCOUNT_EXISTS`, creates nothing, and charges nothing. Either field matching is enough.
+
+<Warning>
+There is no headless path for an owner who already has a Bland account. They have to approve in a browser. Use the `fallback` object on the 409 to hand them the [link-based flow](/platform/connect-your-agent), where they sign in and approve your agent against the account they already have.
+</Warning>
+
+If you don't know whether your owner has signed up before, ask before you start. It is cheaper than the round trip.
 
 ## The flow
 
@@ -92,7 +101,7 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     }
     ```
 
-    `payment.shared_payment_token` is the only supported payment credential today: the single-use token your agent wallet issued for this charge. This settles the first month of the Agent Phone Plan (\$29.99).
+    `payment.shared_payment_token` is the only supported payment credential today: the single-use token your agent wallet issued for this charge. This settles the first month of the Agent Phone Plan (\$29.99). See [Paying with an agent wallet](#paying-with-an-agent-wallet) for how to grant it, and [Signing up without a payment](#signing-up-without-a-payment) if your agent has no wallet to charge.
 
     `next_steps` is a short list of things your agent should know before its first call. It's optional on the wire: treat a missing field the same as an empty list.
   </Step>
@@ -101,6 +110,88 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     `api_key` is returned exactly once. Store it immediately; a repeated `/complete` call with a spent session returns `INVALID_SESSION` rather than the key again.
   </Step>
 </Steps>
+
+## Paying with an agent wallet
+
+`/complete` accepts one payment credential: a Stripe [shared payment token](https://docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens), prefixed `spt_`. Your agent mints it from the owner's wallet and passes it as `payment.shared_payment_token`. Bland redeems it for the first month of the [Agent Phone Plan](/platform/agent-phone-plan).
+
+Grant the token to Bland's Stripe profile, with a usage limit that covers the first month:
+
+| Grant field | Value |
+| --- | --- |
+| Seller profile | `profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8` |
+| Usage limit, amount | `2999`, the first month's price in cents |
+| Usage limit, currency | `usd` |
+
+<Warning>
+The usage limit has to cover the full \$29.99. A token granted for less is refused when Bland charges it, and the signup comes back `402 CARD_DECLINED` with nothing created. Grant `2999`, or more.
+</Warning>
+
+A shared payment token is single-use. Bland captures the whole \$29.99, which spends the token, so the same `spt_` can't be presented twice: not for a second signup, and not for next month's renewal. Mint a fresh one for each purchase.
+
+### The charge comes first
+
+Bland settles the \$29.99 before it creates anything. The account, the organization, the API key, and the phone number are all created after the payment succeeds, never before.
+
+That ordering is what keeps the failure cases clean. A signup that settles hands your agent a provisioned US or Canadian phone number, an active plan, and an API key for the new organization, all in a single response. A signup that doesn't go through leaves nothing behind: no account to delete, no organization to reconcile, and no money kept.
+
+### Renewal needs a card from the owner
+
+The first charge spends the token, so the subscription is created with no payment method saved against it. Nothing is kept on file for next month. When the plan renews, Bland has nothing to charge, the renewal goes to dunning, and the owner is emailed about it.
+
+If it stays unpaid, the plan goes past due and the organization drops back to pay-as-you-go pricing, so the plan's included calling and texting stop. The number stays on the account and the account is not locked, so adding a card later picks up where it left off.
+
+<Warning>
+Tell your owner this when you finish signup: to keep the plan past the first month, they need to add a card at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) in the dashboard. The first month is paid. Nothing after it is.
+</Warning>
+
+### Where the plan can call
+
+The Agent Phone Plan calls and texts US and Canadian numbers only. If your agent needs to dial other countries, it has to buy credits: see [Buying credits](#buying-credits). An organization that's on the plan stays US and Canada only whatever its balance.
+
+## Signing up without a payment
+
+`payment` is optional. Where the free path is available, leaving it out gives you an organization with \$2 of starting credits instead of a subscription: no plan, no dedicated number. Your agent calls from a shared Bland number, and texting is not included.
+
+```bash
+curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/complete \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headless_session": "Xk9pQ2mZ...",
+    "otp_code": "482913"
+  }'
+```
+
+```json Response
+{
+  "data": {
+    "api_key": "org_...",
+    "org_id": "...",
+    "phone_number": null,
+    "plan": {
+      "name": null,
+      "display_name": null,
+      "status": "none",
+      "phone_number": null,
+      "concurrency": null,
+      "max_call_duration_minutes": null,
+      "allowed_countries": null,
+      "current_period_end": null
+    },
+    "provisioning": "ready",
+    "next_steps": ["International calls unlock after a completed purchase. Buy credits (minimum $5) with the buy_credits tool or POST /v1/agent/credits."]
+  },
+  "errors": null
+}
+```
+
+<Note>
+Read `plan.status`, not `phone_number`, to tell the two `null` numbers apart. On the free path `plan.status` is `"none"` and `provisioning` is `"ready"`: there is no number coming, and waiting for one won't help. A paid signup that is still provisioning has `plan.status` of `"active"` and `provisioning` of `"pending"` instead.
+</Note>
+
+Where the free path isn't available, that same request answers `402 PLAN_REQUIRED`. The session survives it: send `/complete` again with the same `headless_session` and a `payment`, and it finishes without troubling your owner for a second code. The 402 also carries the usual `fallback` object if you'd rather hand the whole thing to a browser.
+
+Send `payment` whenever the owner's wallet can cover it, and treat the free path as the fallback rather than the default. An owner who starts without a plan can add it later from [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan).
 
 ## If the number isn't ready yet
 
@@ -127,6 +218,12 @@ A declined payment, a payment that needs extra verification from the owner's ban
 ```
 
 `fallback` carries everything [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent) returns except `verification_url`. Show `verification_url_complete` (or `user_code`) to the owner exactly as you would from that flow, then poll [`POST /v1/agent/onboarding/poll`](/platform/connect-your-agent) with `device_code` until the owner approves. `fallback` also rides along on `402 PLAN_REQUIRED` and `409 ACCOUNT_EXISTS`.
+
+### Payments that need the owner's bank
+
+Some cards ask for extra verification (3D Secure) before they authorize a charge. That step needs a browser and the owner's bank, so it can't be completed headlessly, and Bland doesn't try. It cancels the payment before any money moves, then answers `402 CARD_DECLINED` with the same `fallback` object.
+
+The owner is never charged for an account that wasn't created. Hand them `verification_url_complete` and let them finish in a browser, where their bank can prompt them for whatever it needs.
 
 ## Error codes
 
