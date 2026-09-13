@@ -1,0 +1,105 @@
+---
+title: "List Org DNC Numbers"
+api: "GET https://api.bland.ai/v1/org_dnc"
+description: "Page through the phone numbers on your organization's outbound do-not-call list."
+---
+
+<Info>
+  **Paginated read** – Returns entries in reverse chronological order. Use `limit` and `offset` to page through large lists.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="number" required={false}>
+  Maximum number of entries to return. Defaults to `100`. Maximum `1000`.
+</ParamField>
+
+<ParamField query="offset" type="number" required={false}>
+  Number of entries to skip. Defaults to `0`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.entries" type="array">
+  The list of DNC entries.
+</ResponseField>
+
+<ResponseField name="data.entries[].id" type="string">
+  UUID for the entry. Use this to delete an individual entry.
+</ResponseField>
+
+<ResponseField name="data.entries[].phone_number" type="string">
+  The E.164 formatted phone number.
+</ResponseField>
+
+<ResponseField name="data.entries[].reason" type="string|null">
+  Optional reason recorded when the number was added.
+</ResponseField>
+
+<ResponseField name="data.entries[].created_at" type="string">
+  ISO 8601 timestamp when the entry was added.
+</ResponseField>
+
+<ResponseField name="data.entries[].updated_at" type="string">
+  ISO 8601 timestamp when the entry was last updated.
+</ResponseField>
+
+<ResponseField name="data.total_count" type="number">
+  Total number of entries on the list.
+</ResponseField>
+
+<ResponseField name="data.limit" type="number">
+  The `limit` applied to this response.
+</ResponseField>
+
+<ResponseField name="data.offset" type="number">
+  The `offset` applied to this response.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if validation fails.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --request GET \
+  --url 'https://api.bland.ai/v1/org_dnc?limit=100&offset=0' \
+  --header 'authorization: <your_api_key>'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "entries": [
+      {
+        "id": "b7d3e9fc-5c4a-4c2a-9b8f-d1e1d1a2e333",
+        "phone_number": "+12124567890",
+        "reason": "Customer opt-out",
+        "created_at": "2026-08-04T12:00:00.000Z",
+        "updated_at": "2026-08-04T12:00:00.000Z"
+      }
+    ],
+    "total_count": 1,
+    "limit": 100,
+    "offset": 0
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+<Note>
+  To check whether a single specific number is on the list, use [Search Org DNC Number](/api-v1/post/org-dnc-search) rather than paging through this endpoint.
+</Note>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
