@@ -20,14 +20,10 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
 ## Which flow to use
 
-Decide before the first request, because `/headless/start` sends the owner a text.
-
 | Your agent | Use |
 | --- | --- |
-| Has an agent wallet that can approve a payment (for example Grok Bot or Meta Muse with Stripe Link connected) | This page. The owner relays one code; no browser. |
-| Has no agent wallet, or the owner doesn't want the plan | The [Agent onboarding API](/platform/connect-your-agent). Show the owner the link; they enter card details for the plan or pick free credits there. |
-
-If you start headless without a wallet, `/complete` answers `402 PLAN_REQUIRED` with that same link bundled, so nothing is lost, but the owner has typed a code for nothing.
+| Owner has no Bland account | This page. The owner relays one texted code and your agent has an API key. No browser. With an agent wallet that can approve a payment (for example Grok Bot with Stripe Link connected), add the payment to the same call and get the Agent Phone Plan and a phone number too. Without one, the account starts on free credits and the owner can add the plan later (see [Adding the plan later](#adding-the-plan-later)). |
+| Owner already has a Bland account | The [Agent onboarding API](/platform/connect-your-agent): the owner signs in from the link and approves. Headless signup creates new accounts only. |
 
 ## Prerequisites
 
@@ -174,10 +170,18 @@ Headless onboarding creates new accounts only. If the phone or the email already
 
 ## Connecting without the plan
 
-If your agent omits `payment`, `/complete` still verifies the code. What happens next depends on whether free headless signup is enabled:
+If your agent omits `payment`, `/complete` still verifies the code and answers `200` with `phone_number: null`, `plan.status: "none"`, and `provisioning: "ready"`. The account starts with free credits, calls from a shared Bland number, can't text, and can't call internationally until the owner completes a purchase. `next_steps` says how to change each of those.
 
-- **Enabled:** the response is a `200` with `phone_number: null`, `plan.status: "none"`, and `provisioning: "ready"`. The account starts with free credits, calls from a shared Bland number, can't text, and can't call internationally until the owner completes a purchase. `next_steps` says how to unlock that.
-- **Not enabled:** `402 PLAN_REQUIRED` with the browser `fallback` bundled, and a payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session stays verified, so a follow-up `/complete` with a payment finishes without a second code.
+If free signup is ever switched off, the same request answers `402 PLAN_REQUIRED` with the browser `fallback` bundled and a payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session stays verified, so a follow-up `/complete` with a payment finishes without a second code.
+
+## Adding the plan later
+
+Card details can't pass through your agent, so adding the Agent Phone Plan to an account that started free takes one browser visit by the owner. Two ways, both with a card:
+
+1. **The link flow, from your agent.** Call [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent), show the owner the link and code, and poll. The owner signs in with their phone, adds a card, and picks the plan; the poll result carries the plan and the new phone number, and your existing key keeps working.
+2. **The dashboard, by the owner.** [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). Ask "what's my Bland phone number?" afterwards and your agent reads it from the account.
+
+International calling unlocks after any completed purchase: buying credits on that same billing page does it, and so does the plan for US and Canada calling. `next_steps` on the connect response names whichever path is available.
 
 ## If the number isn't ready yet
 
