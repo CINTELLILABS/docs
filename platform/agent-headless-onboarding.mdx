@@ -50,6 +50,8 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
 
     This call sends a 6-digit verification code to `owner_phone` by text and creates nothing else: no account, no organization, no charge. `headless_session` is valid for `expires_in` seconds (600, or 10 minutes) and is single-use.
+
+    One phone number can receive at most 3 verification codes per 15 minutes. A fourth `/start` for the same number inside that window is refused with `429 TOO_MANY_REQUESTS` and a `Retry-After` header; no text is sent and no session is created. Other numbers are unaffected.
   </Step>
 
   <Step title="Get the code from your owner">
@@ -102,6 +104,32 @@ This is a different path to the same result as the [Agent onboarding API](/platf
   </Step>
 </Steps>
 
+## Pay with a wallet credential
+
+If your agent's wallet speaks the [Machine Payments Protocol](https://www.rfc-editor.org/rfc/rfc9110) (for example, Stripe's `link-cli mpp pay`), it can pay from the 402 alone, with no prior knowledge of Bland's plan or price.
+
+Call `/headless/complete` with a valid session and OTP but no `payment` in the body. The response is `402 PLAN_REQUIRED` with a `WWW-Authenticate: Payment` header that names Bland's Stripe seller profile, the plan's exact price, and an expiry that matches your session's:
+
+```http 402 PLAN_REQUIRED
+HTTP/1.1 402 Payment Required
+WWW-Authenticate: Payment realm="api.bland.ai", ...
+```
+
+Hand that header to your wallet. It returns an `Authorization: Payment` credential that authorizes the exact charge. Retry `/headless/complete` with the credential in the header instead of a token in the body:
+
+```bash
+curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/complete \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Payment <credential>" \
+  -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913"}'
+```
+
+A valid credential charges through the same path as `payment.shared_payment_token` and returns the same 200 payload. The response also carries a `Payment-Receipt` header referencing the settled charge.
+
+If both a header credential and `payment.shared_payment_token` are present, the body wins.
+
+A credential that fails signature, expiry, or price validation is answered as `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge and the device-flow `fallback` block. The session is not spent, so your wallet can retry against the new challenge.
+
 ## If the number isn't ready yet
 
 `provisioning` is `"ready"` when everything is in place, or `"pending"` when the payment settled but a phone number hasn't been handed over yet. On `"pending"`, `phone_number` is `null` and `next_steps` includes a line telling your agent to call `POST /billing/subscribe_agent_phone` with the new API key in a few minutes. That call retries provisioning without charging again, since the plan is already active.
@@ -136,7 +164,7 @@ Both endpoints:
 | --- | --- | --- |
 | `FEATURE_DISABLED` | 503 | Headless onboarding is temporarily disabled. Retry later, or use the [link-based flow](/platform/connect-your-agent). |
 | `INVALID_BODY` | 400 | The request body failed validation. |
-| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. |
+| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. `/start` allows at most 3 verification codes to one phone number per 15 minutes; other numbers are unaffected. |
 | `SERVICE_UNAVAILABLE` | 503 | Session storage is temporarily unreachable. Retry in a moment; on `/complete`, the session is unaffected. |
 | `INVALID_PHONE_NUMBER`, `BLOCKED_COUNTRY`, `USER_BANNED`, `BLOCKED_EMAIL`, `SSO_REQUIRED`, `BANNED_SIGNUP` | 400 | The phone or email was refused. `/complete` re-checks these right before charging. |
 | `ACCOUNT_EXISTS` | 409 | An account already uses this phone or email. Use the [link-based flow](/platform/connect-your-agent) instead. Plus fallback on `/complete`. |
@@ -155,7 +183,8 @@ Both endpoints:
 | `INVALID_SESSION` | 404 | The session is unknown, expired, or already used. Start over with a fresh `/start` call. |
 | `OTP_INVALID` | 400 | The code is wrong or expired. The session is still usable; ask the owner for the code again. |
 | `PAYMENT_METHOD_UNSUPPORTED` | 400 | The request included a card-based payment field. Only `payment.shared_payment_token` is accepted. |
-| `PLAN_REQUIRED` | 402 | No `payment` was included. Plus fallback. |
+| `PLAN_REQUIRED` | 402 | No `payment` was included. Plus fallback. The response also carries a `WWW-Authenticate: Payment` challenge when the Machine Payments Protocol is enabled. |
+| `PAYMENT_CREDENTIAL_INVALID` | 402 | An `Authorization: Payment` credential was presented but failed signature, expiry, or price validation. Plus a fresh challenge and fallback. The session is still usable. |
 | `PLAN_UNAVAILABLE` / `BAD_REQUEST` | 503 / 400 | The plan can't be sold right now. The session is still usable. |
 | `PURCHASE_IN_PROGRESS` | 409 | Another `/complete` call for this phone number is already running. Retry the same session in a moment. |
 | `CARD_DECLINED` | 402 | The payment was declined or refused, the token was rejected or already used, or the payment couldn't be confirmed. Plus fallback. The session is spent; start over with a fresh `/start` call. |
