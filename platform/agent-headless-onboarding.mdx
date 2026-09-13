@@ -50,6 +50,8 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
 
     This call sends a 6-digit verification code to `owner_phone` by text and creates nothing else: no account, no organization, no charge. `headless_session` is valid for `expires_in` seconds (600, or 10 minutes) and is single-use.
+
+    One phone number can receive at most 3 verification codes per 15 minutes. A fourth `/start` for the same number inside that window is refused with `429 TOO_MANY_REQUESTS` and a `Retry-After` header; no text is sent and no session is created. Other numbers are unaffected.
   </Step>
 
   <Step title="Get the code from your owner">
@@ -162,7 +164,7 @@ Both endpoints:
 | --- | --- | --- |
 | `FEATURE_DISABLED` | 503 | Headless onboarding is temporarily disabled. Retry later, or use the [link-based flow](/platform/connect-your-agent). |
 | `INVALID_BODY` | 400 | The request body failed validation. |
-| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. |
+| `TOO_MANY_REQUESTS` | 429 | Rate limited. Respect the `Retry-After` header and retry. `/start` allows at most 3 verification codes to one phone number per 15 minutes; other numbers are unaffected. |
 | `SERVICE_UNAVAILABLE` | 503 | Session storage is temporarily unreachable. Retry in a moment; on `/complete`, the session is unaffected. |
 | `INVALID_PHONE_NUMBER`, `BLOCKED_COUNTRY`, `USER_BANNED`, `BLOCKED_EMAIL`, `SSO_REQUIRED`, `BANNED_SIGNUP` | 400 | The phone or email was refused. `/complete` re-checks these right before charging. |
 | `ACCOUNT_EXISTS` | 409 | An account already uses this phone or email. Use the [link-based flow](/platform/connect-your-agent) instead. Plus fallback on `/complete`. |
