@@ -172,6 +172,13 @@ The token settles the first month only. The plan renews one month later against 
 
 Headless onboarding creates new accounts only. If the phone or the email already belongs to a Bland account, `/start` and `/complete` answer `409 ACCOUNT_EXISTS`. Connect that account through the [Agent onboarding API](/platform/connect-your-agent) instead, or add the plan from the dashboard.
 
+## Connecting without the plan
+
+If your agent omits `payment`, `/complete` still verifies the code. What happens next depends on whether free headless signup is enabled:
+
+- **Enabled:** the response is a `200` with `phone_number: null`, `plan.status: "none"`, and `provisioning: "ready"`. The account starts with free credits, calls from a shared Bland number, can't text, and can't call internationally until the owner completes a purchase. `next_steps` says how to unlock that.
+- **Not enabled:** `402 PLAN_REQUIRED` with the browser `fallback` bundled, and a payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session stays verified, so a follow-up `/complete` with a payment finishes without a second code.
+
 ## If the number isn't ready yet
 
 `provisioning` is `"ready"` when everything is in place, or `"pending"` when the payment settled but a phone number hasn't been handed over yet. On `"pending"`, `phone_number` is `null` and `next_steps` includes a line telling your agent to call `POST /billing/subscribe_agent_phone` with the new API key in a few minutes. That call retries provisioning without charging again, since the plan is already active.
