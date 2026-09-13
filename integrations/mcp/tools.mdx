@@ -3,7 +3,7 @@ title: "Tool Reference"
 description: "Every tool exposed by the Bland MCP server"
 ---
 
-The Bland MCP server currently exposes **39 tools** plus 3 prompts. All of them are scoped to the organization that owns the API key used to connect.
+The Bland MCP server exposes the tools below plus 3 prompts. All of them are scoped to the organization that owns the API key used to connect.
 
 **Access** describes each tool's annotation: **Read** tools never change anything and clients can call them freely; **Write** and **Destructive** tools have side effects (Destructive ones spend money, touch live traffic, or delete things) and are confirmation-gated: the tool asks for an explicit confirmation argument before executing.
 
@@ -11,8 +11,11 @@ The Bland MCP server currently exposes **39 tools** plus 3 prompts. All of them 
 
 | Tool | Access | Description |
 | --- | --- | --- |
-| `create_call` | Destructive | Place an outbound call to a phone number, optionally with a task or pathway. |
+| `create_call` | Destructive | Place an outbound call to a phone number, optionally with a task or pathway. Omit `voice` to use Karen. |
 | `get_call_log` | Read | Fetch a single call: its transcript, recording, summary, and metadata. |
+| `wait_for_call` | Read | Wait up to 45 seconds for a call to finish, then return its call log. Use it instead of polling `get_call_log`. |
+| `stop_call` | Destructive | End a call in progress, or cancel one that is still queued. |
+| `list_voices` | Read | List Bland's curated voices, the recommended set for `create_call`. Any voice the user names still works. |
 
 ### Pathways
 
