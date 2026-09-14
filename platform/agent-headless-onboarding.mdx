@@ -178,14 +178,110 @@ If free signup is ever switched off, the same request answers `402 PLAN_REQUIRED
 
 ## Adding the plan later
 
-Card details can't pass through your agent, so adding the Agent Phone Plan to an account that started free takes one browser visit by the owner. Two ways, both with a card:
+If your agent has an agent wallet, add the Agent Phone Plan to an existing account the same way you paid for it during onboarding: present a shared payment token and receive the plan and a number back. Use [`POST /v1/agent/phone_plan`](#post-v1-agent-phone-plan) or the [`buy_phone_plan` MCP tool](#the-buy-phone-plan-mcp-tool). No browser step.
+
+Without a wallet, adding the plan takes one browser visit by the owner. Two ways, both with a card:
 
 1. **The link flow, from your agent.** Call [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent), show the owner the link and code, and poll. The owner signs in with their phone, adds a card, and picks the plan; the poll result carries the plan and the new phone number, and your existing key keeps working.
 2. **The dashboard, by the owner.** [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). Ask "what's my Bland phone number?" afterwards and your agent reads it from the account.
 
-Both act on the organization the owner has selected in the dashboard. An owner who belongs to more than one should have this account's organization selected (its `org_id` came back from `/complete`), and your agent should check that the poll result's `org_id` matches before treating the plan as this account's.
+Both browser paths act on the organization the owner has selected in the dashboard. An owner who belongs to more than one should have this account's organization selected (its `org_id` came back from `/complete`), and your agent should check that the poll result's `org_id` matches before treating the plan as this account's.
 
 International calling unlocks after any completed purchase: buying credits on that same billing page does it, and so does the plan for US and Canada calling. `next_steps` on the connect response names whichever path is available.
+
+## Buying the plan for an existing org
+
+An agent with an existing Bland API key can add the Agent Phone Plan to its own organization using a shared payment token, without the owner leaving the conversation. This is the same money path as headless onboarding, moved to an org that already exists.
+
+Use it when:
+
+- Your agent connected on free credits during headless onboarding and the owner now wants a dedicated number and texting.
+- The owner has an agent wallet that can approve the first-month charge.
+
+Requirements:
+
+- An API key for the organization to charge. The caller must be an owner or admin of that org.
+- An agent wallet that can approve a single-use `spt_` token for the plan's first month. Mint it the same way as during headless onboarding (see [Paying with an agent wallet](#paying-with-an-agent-wallet)).
+
+Nothing is charged if the org already has an active Agent Phone Plan: the response says so and points at `POST /billing/subscribe_agent_phone` for retrying a pending number.
+
+### `POST /v1/agent/phone_plan`
+
+```bash
+curl -X POST https://api.bland.ai/v1/agent/phone_plan \
+  -H "authorization: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"shared_payment_token": "spt_..."}'
+```
+
+```json Response
+{
+  "data": {
+    "plan": {
+      "name": "agent_phone_basic",
+      "display_name": "Agent Phone Plan",
+      "status": "active",
+      "phone_number": "+14155550199",
+      "concurrency": 1,
+      "max_call_duration_minutes": 60,
+      "allowed_countries": ["US", "CA"],
+      "current_period_end": "2026-10-14T00:00:00.000Z"
+    },
+    "phone_number": "+14155550199",
+    "provisioning": "ready",
+    "next_steps": ["The Agent Phone Plan calls US and Canada only."]
+  },
+  "errors": null
+}
+```
+
+The response fields match the [headless `/complete` 200](#the-flow) with `plan` nested, so an agent that already parses the onboarding response can reuse the same reader. `provisioning: "pending"` with `phone_number: null` means the charge settled and the plan is active but the number hasn't been handed over yet; call `POST /billing/subscribe_agent_phone` with the same API key in a few minutes to finish provisioning without charging again.
+
+### Or let the 402 drive the payment
+
+The route also speaks the [Machine Payments Protocol](https://mpp.dev). A request with no `shared_payment_token` and no credential answers `402 PLAN_REQUIRED` with a challenge, so a wallet can negotiate the payment without a body:
+
+```bash
+npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/phone_plan \
+  -X POST \
+  --header "authorization: $API_KEY" \
+  --header "Content-Type: application/json" \
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly at 29.99 USD."
+```
+
+The wallet presents the credential in the `Payment-Authorization` header (not `Authorization`, which carries the API key). The `200` carries a `Payment-Receipt` header naming the settled payment. A credential whose signed amount doesn't match the plan's current price answers `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge; repeat the request without the credential to get a new one.
+
+### The `buy_phone_plan` MCP tool
+
+The same purchase is available as a tool on Bland's [hosted MCP server](/integrations/mcp/overview), scoped to your organization:
+
+| Parameter | Description |
+| --- | --- |
+| `shared_payment_token` | The `spt_` token your agent wallet issued for the plan's first month |
+
+Ask the owner to approve the amount in their agent wallet first, then pass the token it gives you. The tool is confirmation-gated and waits up to 57 seconds for the purchase to settle. If it doesn't answer in time the purchase may still be going through: check the plan's status before retrying.
+
+### Who can buy the plan
+
+Both surfaces share one policy: the caller must be acting as an organization, as an owner or admin of it. A personal (non-org) API key, or a member without one of those roles, is refused. The bar is higher than for credits because the plan commits the org to a monthly charge.
+
+### Error codes
+
+Both `POST /v1/agent/phone_plan` and `buy_phone_plan` share one policy entry point and refuse for the same reasons with the same messages. The MCP tool has no HTTP status: it surfaces the message text directly, or a generic message for anything unexpected.
+
+| Code | HTTP status | Meaning |
+| --- | --- | --- |
+| `FEATURE_DISABLED` | 503 | Buying the plan is temporarily disabled for this organization. |
+| `UNAUTHORIZED` | 403 | The caller isn't acting as an organization, or is a member without owner or admin access. |
+| `INVALID_BODY` | 400 | The request failed validation. |
+| `PLAN_ALREADY_ACTIVE` | 409 | The organization already has an active Agent Phone Plan. Nothing charged. Call `POST /billing/subscribe_agent_phone` if the number is still pending. |
+| `PLAN_REQUIRED` | 402 | No `shared_payment_token` was included and no `Payment-Authorization` credential was presented. Plus a `WWW-Authenticate: Payment` challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). |
+| `PAYMENT_CREDENTIAL_INVALID` | 402 | The `Payment-Authorization` credential didn't verify: expired, altered, for another method, or its signed amount doesn't match the plan's current price. Plus a fresh challenge. |
+| `BILLING_UNAVAILABLE` | 503 | The organization's billing account couldn't be loaded. Nothing charged. |
+| `CARD_DECLINED` | 402 | The payment was declined or refused, or the token was rejected, already used, or already refunded. |
+| `PAYMENT_FAILED` | 500 | The payment couldn't be completed, and it may still go through. Check the plan's status before retrying with a fresh token. |
+| `PLAN_PURCHASE_UNRESOLVED` | 500 | The purchase reached an ambiguous state and can't be safely rolled back or completed automatically. Do not retry with a fresh token; contact support. |
+| `INTERNAL_SERVER_ERROR` | 500 | Something unexpected happened. |
 
 ## If the number isn't ready yet
 
