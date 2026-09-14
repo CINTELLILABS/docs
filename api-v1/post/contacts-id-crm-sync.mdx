@@ -1,0 +1,73 @@
+---
+title: "Sync Contact to CRM"
+api: "POST https://api.bland.ai/v1/contacts/{contact_id}/crm-sync"
+description: "Immediately push a contact's identity, summary, entities, and deals to every connected CRM. Equivalent to clicking Sync now on the contact drawer."
+---
+
+Bland already syncs contact memory to your connected CRM automatically after every call or message. Use this endpoint to force a sync outside that flow — for example, after editing a contact through the API, or to confirm a specific record is up to date.
+
+You must first connect HubSpot or Salesforce from the **Contacts** page. See [Sync contact memory to HubSpot or Salesforce](/tutorials/memories#sync-contact-memory-to-hubspot-or-salesforce).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="contact_id" type="string" required>
+  The unique identifier of the contact to sync.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Sync outcome for the contact.
+</ResponseField>
+
+<ResponseField name="data.synced" type="boolean">
+  `true` if at least one CRM push completed.
+</ResponseField>
+
+<ResponseField name="data.results" type="array">
+  One entry per connected CRM describing what was pushed on this run.
+</ResponseField>
+
+<ResponseField name="data.crm_syncs" type="array">
+  The current persisted sync rows for this contact, in the same shape returned by [Get Contact CRM Sync Status](/api-v1/get/contacts-id-crm-sync).
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "synced": true,
+    "results": [
+      {
+        "integration": "hubspot",
+        "status": "synced",
+        "crm_record_id": "1234567890"
+      }
+    ],
+    "crm_syncs": [
+      {
+        "integration": "hubspot",
+        "status": "synced",
+        "crm_record_id": "1234567890",
+        "type_results": {
+          "contacts": { "status": "synced" },
+          "notes": { "status": "synced" }
+        },
+        "error": null
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
