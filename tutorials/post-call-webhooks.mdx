@@ -109,6 +109,44 @@ This webhook will receive the post-call data when that specific call completes.
 
 If you encounter any issues, reach out in our [Discord community](https://discord.gg/QvxDz8zcKe) for support.
 
+## Step 6: Correlate webhooks from automations
+
+If you place calls through an automation's **Send Call** action, you can attach custom metadata to each call so the post-call webhook can be matched back to a record in your own system. Metadata is included in the webhook payload for **every** call status — including `no-answer` — which makes it the most reliable way to keep two-way automations in sync when a call is never answered.
+
+Use metadata when you need to:
+
+- Store a correlation ID (for example, a CRM object ID) that survives an unanswered call.
+- Tag calls with campaign, environment, or routing information you want to see in the webhook.
+- Update the source record from the post-call webhook without relying on variables or request data, which are unavailable for `no-answer` calls.
+
+### Configure metadata on the Send Call action
+
+1. Open your automation in the [Automations](https://app.bland.ai/dashboard/automations) builder.
+2. Select the **Send Call** action node.
+3. In the **Metadata** section, add one or more key/value pairs. Each value can be either:
+   - **Static** — a fixed string you type in.
+   - **Event-mapped** — a field from the triggering event, such as a record ID.
+4. Save the automation.
+
+When the call completes, the values appear under `metadata` in the post-call webhook payload:
+
+```json
+{
+  "call_id": "8a9620f6-d634-4b92-8d75-93280a894a71",
+  "status": "no-answer",
+  "metadata": {
+    "crm_object_id": "a06XX000004C1abYAA",
+    "campaign": "renewal_q3",
+    "automation_execution_id": "auto-exec-123",
+    "automation_pipeline_id": "auto-pipe-456"
+  }
+}
+```
+
+<Note>
+`automation_execution_id` and `automation_pipeline_id` are reserved keys that Bland always sets so executions stay traceable. If you use a key with the same name, the automation value takes precedence.
+</Note>
+
 ---
 
 ## Webhook Payload Examples
