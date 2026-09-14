@@ -53,7 +53,9 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     }
     ```
 
-    `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). Send the name of the platform you run on (`grok`, `openclaw`, `poke`, `meta`, or your product's name): it never reaches the owner and lets Bland see which assistants complete setup. `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
+    `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). Send the name of the platform you run on (`grok`, `openclaw`, `poke`, `meta`, or your product's name): it never reaches the owner and lets Bland see which assistants complete setup.
+
+    `payment_intent` is optional: `"shared_payment_token"` if you will pay with an agent wallet, `"none"` if you won't. With `"none"`, and only when free signup is off, `/start` answers `402 PLAN_REQUIRED` with the browser `fallback` before any text is sent, so the owner isn't asked for a code the flow can't use. Today free signup is on, so `"none"` proceeds like any other start. `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
 
     This call sends a 6-digit verification code to `owner_phone` by text and creates nothing else: no account, no organization, no charge. `headless_session` is valid for `expires_in` seconds (600, or 10 minutes) and is single-use.
   </Step>
@@ -137,26 +139,24 @@ npx @stripe/link-cli spend-request create \
 
 ### Or let the 402 drive the payment
 
-`/complete` also speaks the [Machine Payments Protocol](https://mpp.dev), for deployments where free signup is off: a call with the session and the code and no `payment` then answers `402 PLAN_REQUIRED` with a challenge. While free signup is on (it is today), that same call creates a free account instead, so present the token in the body as shown above. A way to request the challenge explicitly is coming.
-
-The challenge looks like this:
+`/complete` also speaks the [Machine Payments Protocol](https://mpp.dev). Send `payment: {"request_challenge": true}` with the session and the code, and the response is `402 PLAN_REQUIRED` with a challenge instead of a free account:
 
 ```http
 HTTP/1.1 402 Payment Required
 WWW-Authenticate: Payment id="...", realm="api.bland.ai", method="stripe", intent="charge", request="eyJhbW91bnQiOiIyOTk5Ii...", expires="2026-09-13T06:12:59.687Z"
 ```
 
-`request` is base64url JSON with the amount, the currency, and the seller profile under `methodDetails.networkId`. A wallet that speaks the protocol reads the challenge, mints the token, and repeats the request with `Authorization: Payment <credential>`. Stripe's wallet CLI does the whole round trip:
+`request` is base64url JSON with the amount, the currency, and the seller profile under `methodDetails.networkId`. A wallet that speaks the protocol reads the challenge, mints the token, and repeats the same request with `Authorization: Payment <credential>`; the credential wins over `request_challenge` on the retry. Stripe's wallet CLI does the whole round trip:
 
 ```bash
 npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/onboarding/headless/complete \
   -X POST \
-  -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913"}' \
+  -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913", "payment": {"request_challenge": true}}' \
   --header "Content-Type: application/json" \
   --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly at 29.99 USD."
 ```
 
-The first call verifies the code, so the retry with the credential skips it. The `200` carries a `Payment-Receipt` header naming the settled payment. A credential that doesn't verify (expired, or not issued by this server) answers `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge; repeat the request without the credential to get a new one. If both a body `payment` and a credential are present, the body wins.
+The first call verifies the code, so the retry with the credential skips it. The `200` carries a `Payment-Receipt` header naming the settled payment. A credential that doesn't verify (expired, or not issued by this server) answers `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge; repeat the request with `request_challenge` and no credential to get a new one. A body `shared_payment_token` wins over a credential; sending `shared_payment_token` and `request_challenge` together is a `400`.
 
 ### If the bank asks for extra verification
 
@@ -240,7 +240,7 @@ Both endpoints:
 | `INVALID_SESSION` | 404 | The session is unknown, expired, or already used. Start over with a fresh `/start` call. |
 | `OTP_INVALID` | 400 | The code is wrong or expired. The session is still usable; ask the owner for the code again. |
 | `PAYMENT_METHOD_UNSUPPORTED` | 400 | The request included a card-based payment field. Only `payment.shared_payment_token` is accepted. |
-| `PLAN_REQUIRED` | 402 | No `payment` was included. Plus fallback, and a `WWW-Authenticate: Payment` challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session is still usable. |
+| `PLAN_REQUIRED` | 402 | `payment.request_challenge` was sent, or no `payment` while free signup is off. Plus fallback, and a `WWW-Authenticate: Payment` challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session is still usable. On `/start`, only with `payment_intent: "none"` while free signup is off; plus fallback, and no text is sent. |
 | `PAYMENT_CREDENTIAL_INVALID` | 402 | The `Authorization: Payment` credential didn't verify: expired, altered, for another method, or missing the token. Plus fallback and a fresh challenge. The session is still usable. |
 | `PLAN_UNAVAILABLE` / `BAD_REQUEST` | 503 / 400 | The plan can't be sold right now. The session is still usable. |
 | `PURCHASE_IN_PROGRESS` | 409 | Another `/complete` call for this phone number is already running. Retry the same session in a moment. |
