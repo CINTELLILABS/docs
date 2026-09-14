@@ -1,0 +1,72 @@
+---
+title: "End Conversation"
+api: "POST https://api.bland.ai/v1/sms/conversations/{conversation_id}/end"
+description: "Close a conversation for good, typically when a human rep is done with it."
+---
+
+<Info>
+  **Enterprise Feature** - SMS is only available on Enterprise plans.
+</Info>
+
+Ends the conversation without handing it back to the agent. Use it when a human rep has finished a thread they [took over](/api-v1/post/sms-conversations-handoff) and the agent should not resume, or whenever your platform wants to close an active thread cleanly. It also works on threads that were never handed off.
+
+The conversation is marked inactive, any human handoff is cleared (its audit trail is kept in the conversation's `metadata.last_human_handoff`), the inactivity timer is cancelled, post-conversation analysis runs (summary, citations, dispositions), and a single `status: "ended"` [status webhook](/tutorials/post-call-webhooks#sms-webhooks) fires with the same payload an End Call node produces. No `human_handoff_ended` webhook is sent; `ended` is the final event.
+
+<Note>
+  Nothing is sent to the customer. If the rep wants to say goodbye, send it first with [Send Message on Conversation](/api-v1/post/sms-conversations-messages), then call this. The next inbound text from the customer starts a fresh conversation with the agent.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="conversation_id" type="string" required>
+  The conversation to end.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="reason" type="string" required={false}>
+  Surfaced as `status_reason` on the `ended` webhook. Max 500 characters. Defaults to "Conversation ended by the human rep" when a handoff was active, otherwise "Conversation ended via API".
+</ParamField>
+
+<ParamField body="actor" type="string" required={false}>
+  Who ended the thread, for the audit trail.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.was_active" type="boolean">
+  `false` when the conversation was already over. Nothing is changed and no webhook fires in that case; whatever ended it already sent one.
+</ResponseField>
+
+<ResponseField name="data.was_handed_off" type="boolean">
+  `true` when a human owned the thread at the moment it was ended.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "message": "Conversation ended",
+    "was_active": true,
+    "was_handed_off": true,
+    "conversation": {
+      "id": "8f1c2a4e-1b7d-4f2a-9c1e-2d3f4a5b6c7d",
+      "is_active": false,
+      "current_node_id": "transfer-to-human",
+      "human_handoff_at": null,
+      "human_handoff_reason": null,
+      "human_handoff_metadata": null,
+      "updated_at": "2026-09-11T20:14:37.000Z"
+    },
+    "workflow_id": "sms-end:8f1c2a4e-1b7d-4f2a-9c1e-2d3f4a5b6c7d:3d2f1c0b-..."
+  },
+  "errors": null
+}
+```
+</ResponseExample>
