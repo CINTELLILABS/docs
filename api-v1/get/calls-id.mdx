@@ -260,6 +260,14 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ResponseField>
 
+<ResponseField name="citations_status" type="string">
+  Indicates the state of the `citations` array so you can tell a genuinely empty result apart from a partial or failed fetch. Only returned for enterprise calls that had a citation schema attached; omitted otherwise.
+
+  - `ok` — citations were fetched successfully. An empty `citations` array means the transcript produced no matches.
+  - `incomplete` — citations were returned, but some may be missing due to a partial hydration. Treat the array as a subset of the true result.
+  - `unavailable` — citations could not be fetched for this call right now. The `citations` array will be empty. Retry the request later to get the full result.
+</ResponseField>
+
 <ResponseField name="warm_transfer_call" type="object">
   Information about warm transfer calls if the call was part of a warm transfer. Contains details about proxy agent calls and transfer state.
 
