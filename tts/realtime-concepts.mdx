@@ -39,7 +39,12 @@ You do not need to:
 - Send a flush command after every fragment.
 - Predict how much text the model needs for natural prosody.
 
-Very short or unfinished text may remain buffered without producing audio. `end_of_turn` tells Bland to synthesize that remaining tail. The buffering thresholds are tuned internally and are not part of the API contract.
+Unfinished text may remain buffered for a moment without producing audio. Two things release it before the next sentence boundary:
+
+- **The idle timer.** When no `speak` has arrived for `max_buffer_delay_ms` (default 150 ms, set on `init`) and nothing else is being spoken, Bland speaks the buffered text as its own short generation. This is what keeps an opener like "Sure." from sitting in silence while the LLM thinks. The timer never cuts into a sentence that is still rendering and never speaks text that ends mid-word. Set `max_buffer_delay_ms` to `0` to turn it off.
+- **`flush`.** Send `{ "type": "flush", "context_id": "..." }` to speak the buffered text immediately, for example when your application knows the LLM has paused for a tool call. `flush` does not wait for a word boundary.
+
+`end_of_turn` tells Bland to synthesize whatever tail remains. The sentence-boundary thresholds are tuned internally and are not part of the API contract.
 
 <Tip>
   Preserve the spaces and punctuation from the LLM stream. Each `speak.text` value is appended verbatim to the turn.

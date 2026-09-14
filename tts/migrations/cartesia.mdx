@@ -17,7 +17,10 @@ Start with the [Realtime TTS Quickstart](/tts/realtime-quickstart), then transla
 | `{ context_id, cancel: true }` | `{ type: "cancel", context_id }` |
 | Base64 `chunk.data` in JSON | Raw binary audio frame |
 | `done: true` for a context | `utterance_end` |
-| Repeated model, voice, language, and output fields | One `init` message for the connection |
+| `flush: true` (with `flush_id`) | `{ type: "flush", context_id }` |
+| `max_buffer_delay_ms` on the request | `max_buffer_delay_ms` on `init` (default 150, `0` disables) |
+| `language` on each request | `language` on `init`, validated against the voice's model |
+| Repeated model, voice, and output fields | One `init` message for the connection |
 
 ```js
 ws.send(
@@ -41,7 +44,8 @@ ws.send(JSON.stringify({ type: "end_of_turn", context_id: "turn-9" }));
 
 - Cartesia can multiplex multiple contexts over one socket. Bland has exactly one active turn. Sending a different `context_id` preempts the old one.
 - Cartesia echoes the context ID on audio JSON. Bland brackets raw binary frames with `utterance_start` and `utterance_end`, so track the active context locally.
-- Bland handles token buffering. You do not need to port `max_buffer_delay_ms` or manual flush IDs.
+- Bland handles token buffering, and the idle timer is on by default, so most clients need neither `max_buffer_delay_ms` nor manual flushes. If you tuned either on Cartesia, the same two knobs exist: set `max_buffer_delay_ms` once on `init`, and send `flush` where you sent `flush: true`. Bland's `flush` has no `flush_id` and no per-flush `done` because audio is bracketed per turn, not per flush.
+- Bland fixes the voice and language for the connection. Cartesia clients that switch voice per request open one Bland connection per voice.
 - Bland does not currently emit word or phoneme timestamps.
 - Bland cancellation stops forwarding the active turn. Clear locally queued audio as well because delivered frames cannot be recalled.
 

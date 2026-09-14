@@ -11,8 +11,10 @@ Creates a Bland TTS voice clone from one or more audio samples. Sent as `multipa
 
 Two cloning engines are available, selectable per request:
 
-- **BTTS V3** (default), single 10-second sample, 17+ languages, highest fidelity. Returned `service: "BTTS_V3"`.
-- **BTTS V2**, exactly 1 WAV file, 17+ languages. Returned `service: "BTTS_V2"`.
+- **BTTS V3** (default), single sample of about 10 seconds, 30 languages, highest fidelity. Returned `service: "BTTS_V3"`.
+- **BTTS V2**, exactly 1 WAV file, 17 languages. Returned `service: "BTTS_V2"`.
+
+The full language list for each engine is in [List TTS Models](/api-v2/get/tts-models). Cantonese is served as a Chinese dialect mode through `zh` text and is not a separate entry.
 
 ---
 
@@ -50,6 +52,15 @@ Two cloning engines are available, selectable per request:
   Use the V2 engine instead of V3. Pass `"true"` as a multipart string.
 </ParamField>
 
+<ParamField body="boost_language_consistency" type="boolean" default="true">
+  V3 only. Controls how the clone is anchored at synthesis time.
+
+  - `"true"` (default): **continuation** cloning. Bland transcribes your sample automatically and conditions every generation on the sample audio plus that transcript. Tightest voice match when the sample and the speech are in the same language. If the automatic transcript is empty, the clone request fails.
+  - `"false"`: **reference** cloning. Timbre only, no transcript. This generalizes better across languages and is the right choice when the voice will speak a language other than the sample's, code-switch, or speak a language where automatic transcription is weak (Cantonese, for example).
+
+  Pass `"false"` as a multipart string for any multilingual voice. You can inspect the automatic transcript afterward with `GET /v1/voices/:voice/clone` and correct it with `PATCH /v1/voices/:voice/clone/transcript` (body: `{ "transcript": "..." }`).
+</ParamField>
+
 ---
 
 ## Engine constraints
@@ -58,17 +69,21 @@ Each engine validates `audio_samples` differently. Mismatched files will return 
 
 <Accordion title="V3 (default)">
   - Exactly 1 audio file.
-  - Roughly 10 seconds is ideal.
+  - Accepted length: 1 to 60 seconds. About 10 seconds is ideal; the 1-second floor is a validation limit, not a quality floor.
   - Max 10 MB.
-  - 17+ languages supported.
+  - 30 languages. The sample should be in the language the voice will mostly speak.
 </Accordion>
 
 <Accordion title="V2 (isBTTS_V2=true)">
   - Exactly 1 audio file.
-  - Roughly 10 seconds is ideal.
+  - Accepted length: 3 to 60 seconds. About 10 seconds is ideal.
   - Max 10 MB.
-  - 17+ languages supported.
+  - 17 languages.
 </Accordion>
+
+<Note>
+  For a voice that must speak several languages, or any language other than English, send `boost_language_consistency: "false"`. With the default on, a wrong automatic transcript of a non-English sample becomes part of the voice, which is the most common cause of a clone that sounds fine in the console and wrong in another language.
+</Note>
 
 ---
 
