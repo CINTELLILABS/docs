@@ -1,0 +1,119 @@
+---
+title: "Hand Off SMS Conversation to a Human"
+api: "POST https://api.bland.ai/v1/sms/conversations/{id}/handoff"
+description: "Pause the AI agent and hand a live SMS conversation to a human rep, without breaking the thread."
+---
+
+<Info>
+  **Enterprise feature** — Human handoff is available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+Pauses the AI agent on the conversation. While a handoff is active:
+
+- The agent stops replying.
+- Inbound user messages are stored and relayed to your webhook.
+- The rep sends messages on the same number using [Send Message on Conversation](/api-v1/post/sms-conversations-messages).
+- The inactivity timeout is suspended and re-armed when the agent resumes.
+- Each webhook payload's `metadata` includes a `human_handoff` object describing the reason, source, and actor.
+
+Fires the `human_handoff` status webhook once at transition. See [Post-Call Webhooks](/tutorials/post-call-webhooks) for payload details.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the SMS conversation to hand off.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="reason" type="string" required={false}>
+  Free-text reason for the handoff. Surfaced in the `human_handoff` webhook payload and stored on the conversation.
+</ParamField>
+
+<ParamField body="metadata" type="object" required={false}>
+  Custom metadata about the handoff (for example, rep identity, ticket ID, routing tags). Included in every webhook payload while the handoff is active.
+</ParamField>
+
+<ParamField body="webhook" type="string" required={false}>
+  Override the webhook URL for this conversation. Subsequent inbound relays and status events are POSTed here instead of the number's configured webhook.
+</ParamField>
+
+<ParamField body="notify_number" type="string" required={false}>
+  E.164 phone number to text when the handoff begins. Use this to alert the human rep that the thread is theirs.
+</ParamField>
+
+<ParamField body="actor" type="string" required={false}>
+  Identifier for the person or system initiating the handoff (for example, a rep email or user ID).
+</ParamField>
+
+### Response
+
+<ResponseField name="data.message" type="string">
+  Confirmation text.
+</ResponseField>
+
+<ResponseField name="data.already_active" type="boolean">
+  `true` if the conversation was already in handoff state and nothing changed. Use this to make retries safe.
+</ResponseField>
+
+<ResponseField name="data.conversation" type="object">
+  Summary of the conversation after the handoff, including `id`, `is_active`, `current_node_id`, `human_handoff_at`, `human_handoff_reason`, `human_handoff_metadata`, and `updated_at`.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/sms/conversations/conv_abc123/handoff \
+  -H "authorization: YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "reason": "Customer requested a human broker",
+    "notify_number": "+15555550123",
+    "actor": "rep_42",
+    "metadata": { "rep_id": "rep_42", "ticket": "TCK-9001" }
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "message": "Conversation handed off to a human",
+    "already_active": false,
+    "conversation": {
+      "id": "conv_abc123",
+      "is_active": true,
+      "current_node_id": "node_xyz",
+      "human_handoff_at": "2026-09-14T12:00:00.000Z",
+      "human_handoff_reason": "Customer requested a human broker",
+      "human_handoff_metadata": {
+        "source": "api",
+        "actor": "rep_42",
+        "rep_id": "rep_42",
+        "ticket": "TCK-9001"
+      },
+      "updated_at": "2026-09-14T12:00:00.000Z"
+    }
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,110 @@
+---
+title: "Send Message on SMS Conversation"
+api: "POST https://api.bland.ai/v1/sms/conversations/{id}/messages"
+description: "Send a message on an existing SMS conversation as a human rep or as the agent. Used during a human handoff."
+---
+
+<Info>
+  **Enterprise feature** — Sending on a conversation is available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+Sends a message on the conversation from the same number the agent uses. Because the send is keyed on the conversation ID (not the number pair), it lands on the correct thread even while the conversation is [handed off](/api-v1/post/sms-conversations-handoff).
+
+Messages sent with `sender: "HUMAN"` are attributed to a human rep in the transcript and in webhook payloads. `sender: "AGENT"` sends as the AI agent.
+
+For safe retries, pass an `Idempotency-Key` header. Repeated requests with the same key on the same conversation return the same message and do not send twice.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="idempotency-key" type="string" required={false}>
+  A unique key to prevent duplicate sends. Retries with the same key on the same conversation return the same message and are not billed twice.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the SMS conversation to send on.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="message" type="string" required>
+  The message body to send. Cannot be empty or whitespace-only. Maximum 1600 characters.
+</ParamField>
+
+<ParamField body="sender" type="string" required={false}>
+  Who the message is attributed to. Allowed values: `"HUMAN"`, `"AGENT"`. Defaults to `"HUMAN"`.
+</ParamField>
+
+### Response
+
+Returns `202 Accepted` when the message has been queued for delivery.
+
+<ResponseField name="data.status" type="string">
+  Delivery status. `"processing"` while the message is being sent.
+</ResponseField>
+
+<ResponseField name="data.message" type="string">
+  Confirmation text.
+</ResponseField>
+
+<ResponseField name="data.conversation_id" type="string">
+  ID of the conversation the message was sent on.
+</ResponseField>
+
+<ResponseField name="data.sender" type="string">
+  The sender attribution used (`"HUMAN"` or `"AGENT"`).
+</ResponseField>
+
+<ResponseField name="data.message_id" type="string">
+  ID of the message that was sent. Use this to track delivery status.
+</ResponseField>
+
+<ResponseField name="data.human_handoff_active" type="boolean">
+  `true` if the conversation is currently in handoff state.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/sms/conversations/conv_abc123/messages \
+  -H "authorization: YOUR_API_KEY" \
+  -H "idempotency-key: rep-msg-0001" \
+  -H "content-type: application/json" \
+  -d '{
+    "message": "Hi, this is Sarah taking over from the agent. Happy to negotiate a rate.",
+    "sender": "HUMAN"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "status": "processing",
+    "message": "Message accepted for delivery",
+    "conversation_id": "conv_abc123",
+    "sender": "HUMAN",
+    "message_id": "msg_9f1c2b",
+    "human_handoff_active": true
+  },
+  "errors": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

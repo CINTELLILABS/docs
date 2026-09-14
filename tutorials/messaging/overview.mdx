@@ -64,6 +64,25 @@ Per-number and per-request settings let you control:
 - **Restart on reply.** When `restart_after_end_call` is enabled, a new conversation starts automatically if the user replies after the previous one ended.
 - **Webhooks.** Each agent reply (and the conversation status) can be POSTed to a URL of your choice with the full message context.
 
+## Human handoff
+
+You can hand a live SMS conversation off to a human rep without breaking the thread. When a handoff is active:
+
+- The agent stops replying.
+- Inbound user messages are stored and relayed to your webhook.
+- The rep sends on the same number using [Send Message on Conversation](/api-v1/post/sms-conversations-messages), attributed as `HUMAN` in the transcript and webhook payloads.
+- The inactivity timeout is suspended and re-armed when the agent resumes.
+- Every webhook payload's `metadata` includes a `human_handoff` object with the reason, source, and actor.
+
+Two `status` webhook events mark the transition: `human_handoff` fires once when the handoff begins, and `human_handoff_ended` fires when the agent resumes.
+
+You can drive a handoff two ways:
+
+- **From your platform**, using the [handoff](/api-v1/post/sms-conversations-handoff), [messages](/api-v1/post/sms-conversations-messages), and [resume](/api-v1/post/sms-conversations-resume) endpoints.
+- **From a pathway**, by adding a **Transfer Chat** node. When the conversation reaches the node, the node's dialogue is sent and the conversation enters handoff state.
+
+Handed-off conversations also appear in the [Messaging dashboard](https://app.bland.ai/dashboard/sms) under the Escalation filter and the Escalated saved view.
+
 ## Outcomes, citations, and summaries
 
 Messaging conversations support the same post-conversation analytics as voice. When a conversation ends, Bland can:
@@ -102,6 +121,12 @@ All three channels share the same endpoints. Pass `channel` in the request body,
   </Card>
   <Card title="Conversations" icon="inbox" href="/api-v1/get/sms-conversations">
     List, retrieve, patch, and delete conversations.
+  </Card>
+  <Card title="Hand off to a human" icon="user-headset" href="/api-v1/post/sms-conversations-handoff">
+    Pause the agent and hand the thread to a human rep.
+  </Card>
+  <Card title="Send as human or agent" icon="paper-plane" href="/api-v1/post/sms-conversations-messages">
+    Send a message on the conversation from the same number, attributed as `HUMAN` or `AGENT`.
   </Card>
 </CardGroup>
 
