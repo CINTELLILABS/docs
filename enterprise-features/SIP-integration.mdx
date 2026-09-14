@@ -61,6 +61,19 @@ curl -X POST https://api.bland.ai/v1/calls \
   }'
 ```
 
+You can also pass a non-E.164 SIP trunk identity — such as a DID or a dial-plan extension like `2001` — as `from`, as long as it is attached to one of your outbound trunks. The value is forwarded to the carrier verbatim, so no country code or E.164 formatting is required:
+
+```bash
+curl -X POST https://api.bland.ai/v1/calls \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "Say hi to the nice person!",
+    "from": "2001",
+    "phone_number": "<the callee phone number>"
+  }'
+```
+
 ---
 
 ## SIP Setup Wizard
@@ -257,6 +270,8 @@ Open a trunk's **Calls** tab and select a call to see the full **SIP trace** —
 />
 
 The trace shows the INVITE / 100 Trying / 180 Ringing / 200 OK / ACK flow with full headers and SDP, including transfers and new legs — copy or export it for debugging. Call logs auto-refresh and include direction, status, SIP response code, duration, and timestamps.
+
+Outbound trunk calls egress through the carrier, so a full packet-level trace isn't captured. For these calls, the ladder shows a synthesized dispatch and outcome timeline (dial → carrier response → final status) so you can still see how each attempt resolved. Both inbound and outbound trunk call outcomes are included in the trunk's call log and answer-rate analytics.
 
 ### Advanced configuration
 
