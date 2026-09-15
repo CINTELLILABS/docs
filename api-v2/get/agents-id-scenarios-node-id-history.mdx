@@ -6,7 +6,7 @@ description: "List how one scenario changed across saved versions."
 
 ### Overview
 
-Walks the agent's saved versions, newest first, and returns the scenario node's saved content at each one, 25 versions per page, alongside the node as currently pinned in `staging` and `production`. Works for `scenario`, `complex-scenario`, `auth`, `auth-zone`, and `complex-auth` nodes. Node content is returned as stored, so older versions may carry fields the editor no longer writes. To read a whole version instead, use [Get Latest Agent Version](/api-v2/get/agents-id-versions-latest).
+Walks the agent's saved versions, newest first, and returns the scenario node's saved content at each one, 25 versions per page, alongside the node as currently pinned in `staging` and `production`. Works for `scenario`, `complex-scenario`, `auth`, `auth-zone`, and `complex-auth` nodes, and for the agent's hub prompt by passing `agent` as the `node_id`. Node content is returned as stored, so older versions may carry fields the editor no longer writes. To read a whole version instead, use [Get Latest Agent Version](/api-v2/get/agents-id-versions-latest).
 
 ### Headers
 
@@ -21,7 +21,7 @@ Walks the agent's saved versions, newest first, and returns the scenario node's 
 </ParamField>
 
 <ParamField path="node_id" type="string" required>
-  The scenario node's `id` within its flow. 1 to 200 characters and not blank.
+  The scenario node's `id` within its flow. 1 to 200 characters and not blank. Pass the literal value `agent` to read the agent's hub prompt instead of a scenario; the hub lives in the root flow, so `path` must be omitted or empty for that value.
 </ParamField>
 
 ### Query Parameters
@@ -57,7 +57,7 @@ Walks the agent's saved versions, newest first, and returns the scenario node's 
       Display name of the user who saved the version, or `null` when saved with an org-level key or the name is unavailable.
     </ResponseField>
     <ResponseField name="node" type="object | null">
-      The scenario as saved in that version: its `type` and full `data` object (for example `name`, `rule`, `target`, `loopWhile`, `variables`, `entry`, and for container types `flow`). `null` when the node did not exist at that path in that version.
+      The scenario as saved in that version: its `type` and full `data` object (for example `name`, `rule`, `target`, `loopWhile`, `variables`, `entry`, and for container types `flow`). For `node_id` `agent` the `type` is `agent` and `data` carries the hub's `prompt`, `variables`, and `tools`, with no `name` field, since the agent's name lives on the agent record. `null` when the node did not exist at that path in that version.
     </ResponseField>
   </Expandable>
 </ResponseField>
