@@ -125,6 +125,10 @@ The first month of the Agent Phone Plan costs \$29.99. The token you present mus
 
 A token is spent by one settled charge. If the payment fails, request a new token rather than retrying the same one.
 
+<Note>
+`/complete` accepts a shared payment token or an `Authorization: Payment` credential from the [Machine Payments Protocol](#or-let-the-402-drive-the-payment) round trip. It doesn't accept card numbers, including virtual cards that a Link wallet might mint by default. If your agent has a Link tool that returns a card, look for the shared-payment-token action instead, or drive the flow with the MPP challenge below.
+</Note>
+
 ### Mint the token with Stripe Link
 
 With Stripe's wallet CLI, create a spend request and wait for the owner to approve it in the Link app:
@@ -218,7 +222,7 @@ A declined payment, a payment that needs extra verification from the owner's ban
 }
 ```
 
-`fallback` carries everything [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent) returns except `verification_url`. Show `verification_url_complete` (or `user_code`) to the owner exactly as you would from that flow, then poll [`POST /v1/agent/onboarding/poll`](/platform/connect-your-agent) with `device_code` until the owner approves. `fallback` also rides along on `402 PLAN_REQUIRED` and `409 ACCOUNT_EXISTS`.
+`fallback` carries everything [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent) returns except `verification_url`. Show `verification_url_complete` (or `user_code`) to the owner so they can open it in their own browser, then poll [`POST /v1/agent/onboarding/poll`](/platform/connect-your-agent) with `device_code` until they approve. The link isn't for your agent to open in a cloud-computer browser: it's for the human owner, and the sign-in page will block a bot. `fallback` also rides along on `402 PLAN_REQUIRED` and `409 ACCOUNT_EXISTS`.
 
 ## Error codes
 
