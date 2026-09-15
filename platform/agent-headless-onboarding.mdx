@@ -104,7 +104,7 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     }
     ```
 
-    `payment.shared_payment_token` is the single-use token your agent wallet issued for this charge. The other accepted credential is an `Authorization: Payment` header built from the challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Card details, including a Link virtual card, are refused. Either credential settles the first month of the Agent Phone Plan (\$2.99 first month, then \$29.99/month).
+    `payment.shared_payment_token` is the single-use token your agent wallet issued for this charge. The other accepted credential is an `Authorization: Payment` header built from the challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Card details, including a Link virtual card, are refused. Either credential settles the first month of the Agent Phone Plan (\$29.99).
 
     The session lasts 10 minutes from `/start`. The first successful code check, whether from a `request_challenge` call or a paying call, restarts that window once. A re-issued challenge doesn't restart it again, so the wallet approval has to complete inside it. If the session expires, start over with a new `/start` call and a new code.
 
@@ -118,12 +118,12 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
 ## Paying with an agent wallet
 
-The Agent Phone Plan is \$2.99 for your first month, then \$29.99/month. Offer ends September 17, 2026, 11:59 PM Pacific. The token you present must be scoped to the seller and the amount named in the payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Read them from the challenge rather than from this page: the price comes from the plan catalog and can change. At the time of writing the challenge names:
+The first month of the Agent Phone Plan costs \$29.99. The token you present must be scoped to the seller and the amount named in the payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Read them from the challenge rather than from this page: the price comes from the plan catalog and can change. At the time of writing the challenge names:
 
 | Field | Value |
 | --- | --- |
 | Seller (Stripe business profile, the wallet's `network_id`) | `profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8` |
-| Amount | `299` (cents, `usd`). The amount comes from the payment challenge and returns to `2999` after the offer ends. |
+| Amount | `2999` (cents, `usd`) |
 | Credential type | `shared_payment_token`, single use |
 
 A token is spent by one settled charge. If the payment fails, request a new token rather than retrying the same one.
@@ -144,8 +144,8 @@ Then create a spend request with those values and wait for the owner to approve 
 npx @stripe/link-cli spend-request create \
   --credential-type shared_payment_token \
   --network-id profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8 \
-  --amount 299 \
-  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed at 2.99 USD for the first month, then 29.99 USD monthly." \
+  --amount 2999 \
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly at 29.99 USD." \
   --request-approval
 ```
 
@@ -167,7 +167,7 @@ npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/onboarding/headless/c
   -X POST \
   -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913", "payment": {"request_challenge": true}}' \
   --header "Content-Type: application/json" \
-  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed at 2.99 USD for the first month, then 29.99 USD monthly."
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly at 29.99 USD."
 ```
 
 The first call verifies the code, so the retry with the credential skips it. The `200` carries a `Payment-Receipt` header naming the settled payment. A credential that doesn't verify (expired, or not issued by this server) answers `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge; repeat the request with `request_challenge` and no credential to get a new one. A body `shared_payment_token` wins over a credential; sending `shared_payment_token` and `request_challenge` together is a `400`.
