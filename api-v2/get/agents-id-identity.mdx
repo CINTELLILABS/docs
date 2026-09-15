@@ -1,0 +1,155 @@
+---
+title: "Get Agent Identity"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/identity"
+description: "Read the agent's branded contact card and its delivery settings."
+---
+
+### Overview
+
+Returns the agent's identity: the display fields a recipient sees, the generated contact card, the numbers bound to the agent, and the delivery toggles. An agent that has never been given an identity gets one on first read, seeded with the agent's name as `display_name` and the remaining fields empty.
+
+Signed URLs in the response are short lived, about an hour. Read the identity again for fresh ones rather than storing them.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the identity record. Distinct from the agent ID.
+</ResponseField>
+
+<ResponseField name="data.org_id" type="string">
+  The organization that owns the agent.
+</ResponseField>
+
+<ResponseField name="data.agent_id" type="string">
+  The agent the identity belongs to.
+</ResponseField>
+
+<ResponseField name="data.display_name" type="string">
+  The name shown to the recipient. Seeded from the agent's name on first read.
+</ResponseField>
+
+<ResponseField name="data.tagline" type="string">
+  Short line describing the agent. Empty string when unset.
+</ResponseField>
+
+<ResponseField name="data.support_email" type="string">
+  Contact email on the card. Empty string when unset.
+</ResponseField>
+
+<ResponseField name="data.website" type="string">
+  Website on the card. Empty string when unset.
+</ResponseField>
+
+<ResponseField name="data.address" type="string">
+  Postal address on the card. Empty string when unset.
+</ResponseField>
+
+<ResponseField name="data.logo_file_id" type="string | null">
+  ID of the stored logo, or `null` when no logo has been uploaded.
+</ResponseField>
+
+<ResponseField name="data.vcf_file_id" type="string | null">
+  ID of the generated contact card file. Rebuilt whenever a card field changes, so this value moves after an update.
+</ResponseField>
+
+<ResponseField name="data.vcf_delivery_enabled" type="boolean">
+  Whether the contact card is delivered automatically. Defaults to `false`.
+</ResponseField>
+
+<ResponseField name="data.rcs_enabled" type="boolean">
+  Whether rich messaging is allowed for this agent. Defaults to `true`.
+</ResponseField>
+
+<ResponseField name="data.bcid_enabled" type="boolean">
+  Whether verified caller display is switched on for this agent.
+</ResponseField>
+
+<ResponseField name="data.bcid_status" type="string">
+  Registration state of the verified caller display: `not_submitted`, `submitted`, `pending_review`, `approved`, or `rejected`.
+</ResponseField>
+
+<ResponseField name="data.bcid_submission" type="object | null">
+  The stored registration payload, or `null` when nothing has been submitted.
+</ResponseField>
+
+<ResponseField name="data.phone_numbers" type="string[]">
+  The agent's bound numbers in E.164, as returned by [Get Agent Inbound Numbers](/api-v2/get/agents-id-inbound). Empty when no number is attached.
+</ResponseField>
+
+<ResponseField name="data.logo_url" type="string | null">
+  Short-lived signed URL for the logo, or `null` when there is no logo.
+</ResponseField>
+
+<ResponseField name="data.vcf_url" type="string | null">
+  Short-lived signed URL for the contact card file, or `null` when none exists.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp of when the identity was created.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string">
+  ISO 8601 timestamp of the last change.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "b88c3ce2-54d4-406c-bd21-733c61556151",
+    "org_id": "4bb834b5-8e95-487a-908d-d712a201008c",
+    "agent_id": "ec74c83e-5370-450b-9aa0-59757ec25a81",
+    "display_name": "Northwind Dental",
+    "tagline": "Front desk",
+    "support_email": "help@northwind.example",
+    "website": "https://northwind.example",
+    "address": "",
+    "logo_file_id": "5db9aecc-5013-4f97-8592-b0330617a6d0",
+    "vcf_file_id": "29be0d69-898a-41a2-b875-5aeaae7fbd23",
+    "vcf_delivery_enabled": false,
+    "rcs_enabled": true,
+    "bcid_enabled": false,
+    "bcid_status": "not_submitted",
+    "bcid_submission": null,
+    "phone_numbers": ["+18005551234"],
+    "logo_url": "https://files.bland.ai/agent-identity/5db9aecc-5013-4f97-8592-b0330617a6d0?signature=...",
+    "vcf_url": "https://files.bland.ai/agent-identity/29be0d69-898a-41a2-b875-5aeaae7fbd23?signature=...",
+    "created_at": "2026-09-15T05:08:35.092Z",
+    "updated_at": "2026-09-15T05:08:44.301Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

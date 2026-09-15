@@ -1,0 +1,82 @@
+---
+title: "Delete Disposition"
+api: "DELETE https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}"
+description: "Retire a disposition so it stops classifying new calls."
+---
+
+<Note>
+  Dispositions are enabled per organization. If your organization does not have them, every route under `/dispositions` returns `404`.
+</Note>
+
+### Overview
+
+Retires a disposition. It is disabled and marked deleted, so it stops running on new calls and no longer appears in [List Dispositions](/api-v2/get/agents-id-dispositions). Results already recorded on past calls are left alone.
+
+The call is idempotent: deleting a disposition that is already deleted succeeds and returns the same body, so a retry after a dropped connection is safe.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID, and must belong to this agent. Returns `404 NOT_FOUND` otherwise.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  The disposition that was deleted. Matches `{disposition_id}`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `409 CONFLICT` when the disposition changed while the delete was in flight; read it again and retry.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "ce0deae0-e40c-4a8c-b1e7-6122591f4aea"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "Disposition changed while it was being deleted; refresh and try again"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
