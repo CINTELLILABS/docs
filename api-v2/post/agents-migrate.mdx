@@ -1,0 +1,279 @@
+---
+title: "Migrate Pathway"
+api: "POST https://api.bland.ai/v2/agents/migrate"
+description: "Plan and build an agent from a legacy pathway graph."
+---
+
+### Overview
+
+Takes an exported pathway graph and uses Bland's migration planner to re-architect it as an agent: the planner decides the scenario structure, and every legacy prompt, code snippet, and webhook body is carried over verbatim. By default the call is a dry run that returns the plan, the proposed agent snapshot, and a lint report for review; set `create` to `true` to also persist a new agent with its first version. A run takes several minutes; to receive progress events while it runs, use [Stream Pathway Migration](/api-v2/post/agents-migrate-stream). For a deterministic conversion with no planner, see [Migrate Pathways](/api-v2/post/agents-migrate-pathways).
+
+Limited to 10 migration starts per hour per organization, counted together with [Stream Pathway Migration](/api-v2/post/agents-migrate-stream) and [Start Pathway Translation](/api-v2/post/agents-migrate-translations). Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="pathway" type="object" required>
+  The legacy pathway graph, in the shape the pathway editor exports. Returns `400 INVALID_PATHWAY` if `nodes` or `edges` is missing or `nodes` is empty, and `400 PATHWAY_TOO_LARGE` beyond 500 nodes, 2,000 edges, or 2 MB serialized.
+
+  <Expandable title="pathway fields">
+    <ParamField body="nodes" type="array" required>
+      The pathway's nodes. Each has a string `id` and, typically, `type` and `data`. Must be non-empty.
+    </ParamField>
+    <ParamField body="edges" type="array" required>
+      The pathway's edges. Each has `source` and `target` node IDs and optional `data`. May be empty.
+    </ParamField>
+    <ParamField body="name" type="string">
+      The pathway's name. Used to label the run and as the basis for the default agent name.
+    </ParamField>
+    <ParamField body="globalPrompt" type="string">
+      The pathway's global prompt, if it had one.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent when `create` is `true`. Whitespace is trimmed. Defaults to `<pathway.name> (migrated)`, or `unnamed pathway (migrated)` when the pathway has no name.
+</ParamField>
+
+<ParamField body="create" type="boolean" default="false">
+  When `true`, the migrated snapshot is saved as a new agent with its first version and the response is `201`. Any other value is treated as `false` (dry run, `200`).
+</ParamField>
+
+### Response
+
+Returns `200` for a dry run and `201` when an agent was created. Returns `422` when the migrated snapshot fails validation or lint, or, in create mode, when the planner's report contains a blocking loss (`MIGRATION_BLOCKING_LOSS`), an open question (`MIGRATION_OPEN_QUESTION`), or a custom-code step with no saved snippet (`MIGRATION_CUSTOM_CODE_UNSUPPORTED`). In those cases review the dry-run output before creating.
+
+<ResponseField name="data.plan" type="object">
+  The planner's migration plan. It references legacy nodes by ID rather than repeating their content.
+
+  <Expandable title="plan object">
+    <ResponseField name="displayName" type="string">
+      Proposed agent display name.
+    </ResponseField>
+    <ResponseField name="hubPrompt" type="string">
+      The prompt for the agent's central hub node, including a routing directory naming every scenario.
+    </ResponseField>
+    <ResponseField name="languages" type="array">
+      Spoken languages detected for the agent. Omitted when the planner did not set any.
+    </ResponseField>
+    <ResponseField name="requestData" type="array">
+      Request-data keys the pathway relied on, as `{ key, value }` pairs. Omitted when none.
+    </ResponseField>
+    <ResponseField name="scenarios" type="array">
+      Planned scenarios. Each has `kind` (`simple`, `complex`, or `auth-zone`), `name`, and `entry` (`mode` of `llm` or `deterministic`, `label`, and optional `description`, `alwaysPick`, `conditions`). A `simple` scenario carries `ruleParts` (text pieces, each either `{ text }` or `{ legacyPromptOf: <node id> }`) plus optional `variablesFrom`, `extraVariables`, `tools`, `carryToolsFrom`, and `settingsFrom`. A `complex` scenario carries `rule`, `steps`, and `edges`. An `auth-zone` carries `method`, `detail`, `steps`, `edges`, and `gates` (names of scenarios it protects).
+    </ResponseField>
+    <ResponseField name="endCalls" type="array">
+      Planned end-call nodes, each with `name`, `entry`, `promptParts`, and optional `variablesFrom` and `extraVariables`.
+    </ResponseField>
+    <ResponseField name="report" type="object">
+      The planner's accounting: `architectureSummary` (string), `dispositions` (one entry per legacy node group with `nodeIds`, `disposition`, `rationale`), `droppedOrApproximated` (entries with `item`, `severity` of `blocking`, `behavioral`, or `cosmetic`, and `note`), and `openQuestions` (strings).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.snapshot" type="object">
+  The proposed agent configuration: `behavior` (`nodes` and `edges`), `settings`, `contact`, and optionally `knowledge`. This is the same shape [Create Agent Version](/api-v2/post/agents-id-versions) accepts, so you can edit it and save it to any agent. Abbreviated in the example below.
+</ResponseField>
+
+<ResponseField name="data.lint" type="object">
+  Structural checks on the snapshot: `errors` (array of strings; non-empty blocks creation) and `warnings` (array of strings).
+</ResponseField>
+
+<ResponseField name="data.usage" type="object">
+  Planner usage for the run: `inputTokens`, `outputTokens`, and `iterations`.
+</ResponseField>
+
+<ResponseField name="data.created" type="boolean">
+  `false` for a dry run, `true` when an agent and first version were saved.
+</ResponseField>
+
+<ResponseField name="data.agent" type="object">
+  Present only when `created` is `true`. The new agent record: `id`, `org_id`, `name`, `created_by` (`string | null`), `created_at`, `updated_at`, and `deleted_at` (`null`). Its `dev`, `staging`, and `production` environments are created unpinned; see [Get Agent](/api-v2/get/agents-id).
+</ResponseField>
+
+<ResponseField name="data.version" type="object">
+  Present only when `created` is `true`. The agent's first version: `id`, `org_id`, `agent_id`, `branch_id` (`null`), `snapshot` (identical to `data.snapshot`), `name` (`Migrated from pathway: <pathway name>`), `created_via` (`manual`), `revision` (`0`), `created_by` (`string | null`), and `created_at`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "plan": {
+      "displayName": "Front desk",
+      "hubPrompt": "Greet the caller and find out what they need.\n\n## Routing\n\nAfter each user turn, enter the scenario that matches where the conversation is now. The scenarios you can enter:\n\n- \"Book appointment\": the caller wants to schedule a visit",
+      "languages": ["english"],
+      "scenarios": [
+        {
+          "kind": "simple",
+          "name": "Book appointment",
+          "entry": {
+            "mode": "llm",
+            "label": "Wants to book",
+            "description": "The caller wants to schedule a visit"
+          },
+          "ruleParts": [
+            { "legacyPromptOf": "73a855b4-7257-4c6e-bd7d-f151a763c9fa" }
+          ],
+          "variablesFrom": ["73a855b4-7257-4c6e-bd7d-f151a763c9fa"],
+          "settingsFrom": "73a855b4-7257-4c6e-bd7d-f151a763c9fa"
+        }
+      ],
+      "endCalls": [],
+      "report": {
+        "architectureSummary": "A two-node booking pathway collapsed into one hub and one booking scenario.",
+        "dispositions": [
+          {
+            "nodeIds": ["73a855b4-7257-4c6e-bd7d-f151a763c9fa"],
+            "disposition": "Became scenario \"Book appointment\"",
+            "rationale": "Single dialogue step with variable extraction."
+          },
+          {
+            "nodeIds": ["ddc0765a-8086-4826-bfaf-77b889fb3022"],
+            "disposition": "Merged into the hub prompt",
+            "rationale": "Greeting-only node with no branching."
+          }
+        ],
+        "droppedOrApproximated": [],
+        "openQuestions": []
+      }
+    },
+    "snapshot": {
+      "behavior": {
+        "nodes": [
+          {
+            "id": "inbound",
+            "type": "inbound",
+            "position": { "x": 360, "y": -180 },
+            "data": { "number": "" }
+          },
+          {
+            "id": "agent",
+            "type": "agent",
+            "position": { "x": 192, "y": 0 },
+            "data": {
+              "prompt": "Greet the caller and find out what they need.\n\n## Routing\n\nAfter each user turn, enter the scenario that matches where the conversation is now. The scenarios you can enter:\n\n- \"Book appointment\": the caller wants to schedule a visit",
+              "loopWhile": "",
+              "variables": []
+            }
+          },
+          {
+            "id": "545fe342-06be-4151-aae2-bd10bf128464",
+            "type": "scenario",
+            "position": { "x": 0, "y": 260 },
+            "data": {
+              "name": "Book appointment",
+              "rule": "Ask which day and time works for the caller, then confirm the appointment back to them.",
+              "target": { "kind": "dialogue", "label": "Book appointment" },
+              "loopWhile": "",
+              "variables": [
+                {
+                  "id": "78bf9689-57fb-4106-9402-34bce288b561",
+                  "key": "appointment_time",
+                  "value": "The date and time the caller chose",
+                  "type": "string",
+                  "accurateSpelling": false
+                }
+              ],
+              "entry": {
+                "mode": "llm",
+                "label": "Wants to book",
+                "description": "The caller wants to schedule a visit",
+                "alwaysPick": false,
+                "conditions": []
+              }
+            }
+          }
+        ],
+        "edges": [
+          { "id": "e-inbound-agent", "source": "inbound", "target": "agent" },
+          {
+            "id": "e-agent-book",
+            "source": "agent",
+            "target": "545fe342-06be-4151-aae2-bd10bf128464",
+            "data": {
+              "mode": "llm",
+              "label": "Wants to book",
+              "description": "The caller wants to schedule a visit",
+              "alwaysPick": false,
+              "conditions": []
+            }
+          }
+        ]
+      },
+      "settings": {
+        "displayName": "Front desk",
+        "systemPrompt": "You are the front desk assistant for a dental office.",
+        "voice": "",
+        "languages": ["english"],
+        "enableMemory": false,
+        "interruptionSensitivity": 350,
+        "backgroundNoise": "off"
+      },
+      "contact": { "inboundNumbers": [] }
+    },
+    "lint": {
+      "errors": [],
+      "warnings": []
+    },
+    "usage": {
+      "inputTokens": 48211,
+      "outputTokens": 6120,
+      "iterations": 4
+    },
+    "created": false
+  },
+  "errors": null
+}
+```
+
+```json Invalid Pathway
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PATHWAY",
+      "message": "body.pathway must be a legacy pathway graph with non-empty nodes[] and edges[]"
+    }
+  ]
+}
+```
+
+```json Create Blocked
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MIGRATION_OPEN_QUESTION",
+      "message": "open question: The transfer node has no phone number configured. Which number should the agent transfer to?"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many pathway migrations started for this organization — please wait before starting another."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

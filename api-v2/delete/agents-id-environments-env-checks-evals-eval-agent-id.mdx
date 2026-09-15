@@ -1,0 +1,109 @@
+---
+title: "Remove Check Eval"
+api: "DELETE https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/checks/evals/{eval_agent_id}"
+description: "Drop one eval from an environment's promotion checks."
+---
+
+### Overview
+
+Removes a single eval from the checks that gate promotion into an environment, leaving the rest of the roster in place. Use [Set Agent Checks](/api-v2/put/agents-id-environments-env-checks) to replace the whole roster instead, or [Delete Agent Checks](/api-v2/delete/agents-id-environments-env-checks) to clear it.
+
+Removing the last eval deletes the environment's check configuration entirely. The response then carries `config` of `null`, and promotion into that environment is no longer gated.
+
+The call is idempotent. Removing an eval that is not on the roster, or one from an environment with no configuration, returns `200` with `removed` set to `false` and changes nothing.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  Which environment's checks to change. Must be `staging` or `production`; `dev` is not gated and returns `400 BAD_REQUEST`.
+</ParamField>
+
+<ParamField path="eval_agent_id" type="string" required>
+  The eval to remove.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.removed" type="boolean">
+  `true` when an eval was taken off the roster, `false` when there was nothing to remove.
+</ResponseField>
+
+<ResponseField name="data.config" type="object | null">
+  The environment's remaining check configuration, in the same shape as [Get Agent Checks](/api-v2/get/agents-id-environments-env-checks). `null` when removing the last eval deleted the configuration.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "removed": true,
+    "config": {
+      "env_type": "production",
+      "simulations_count": 5,
+      "evals": [
+        {
+          "eval_agent_id": "3fec6d8e-053b-4d6b-9544-4bf559a13a1a",
+          "eval_agent_version_id": "f3a84fb2-81d9-41e7-95e3-3d1f7e44fb31",
+          "passing_level": "pass"
+        }
+      ]
+    }
+  },
+  "errors": null
+}
+```
+
+```json Nothing To Remove
+{
+  "data": {
+    "removed": false,
+    "config": null
+  },
+  "errors": null
+}
+```
+
+```json Invalid Environment
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "env must be 'staging' or 'production'"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

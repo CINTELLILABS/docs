@@ -1,0 +1,115 @@
+---
+title: "Get Judge Catalog"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/judge-catalog"
+description: "List the judges a disposition can pin for this agent."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+A judge is an evaluation rubric applied to call evidence; a disposition value pins a published judge version and records the level it selects. Returns the judges this agent can pin, organization-wide judges plus judges scoped to this agent, limited to those with a published version, ordered by name. Read the full rubric with [Get Judge Version](/api-v2/get/agents-id-dispositions-judges-judge-id-versions-version-id).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.judges" type="array">
+  Array of judge catalog entries. Empty when no judge has a published version.
+
+  <Expandable title="judge entry">
+    <ResponseField name="judgeId" type="string">
+      Unique identifier for the judge.
+    </ResponseField>
+    <ResponseField name="judgeVersionId" type="string">
+      The published version a disposition pins. Use it together with `judgeId` in a disposition value's `judge` source.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Stable machine key, unique within your organization.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The judge's display name.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Optional description.
+    </ResponseField>
+    <ResponseField name="modality" type="string">
+      `text` when the judge reads the transcript, `audio` when it listens to the call recording. Audio judges require a recording to run.
+    </ResponseField>
+    <ResponseField name="levelKeys" type="array">
+      The rubric's outcome levels, in rubric order. The judge selects one of them per call, or none when the evidence is insufficient.
+    </ResponseField>
+    <ResponseField name="targetLevelKeys" type="array">
+      The subset of `levelKeys` the judge treats as a target (passing) outcome. Empty for a rubric with no target.
+    </ResponseField>
+    <ResponseField name="scopedToAgent" type="boolean">
+      `true` when the judge is scoped to this agent, `false` when it is organization-wide.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "judges": [
+      {
+        "judgeId": "3cab912a-0103-42b1-8c58-019f7697701f",
+        "judgeVersionId": "5888ae45-6a6e-4eb2-97ec-7ae44103b0bf",
+        "key": "caller_sentiment",
+        "name": "Caller sentiment",
+        "description": "How the caller felt by the end of the conversation.",
+        "modality": "text",
+        "levelKeys": ["positive", "neutral", "negative"],
+        "targetLevelKeys": ["positive", "neutral"],
+        "scopedToAgent": false
+      },
+      {
+        "judgeId": "abf6b6e2-e981-4ce5-905e-4eecb5c48ba8",
+        "judgeVersionId": "69d7f2a9-ad92-4176-b0da-f46e481ab355",
+        "key": "greeting_compliance",
+        "name": "Greeting compliance",
+        "description": null,
+        "modality": "audio",
+        "levelKeys": ["pass", "fail"],
+        "targetLevelKeys": ["pass"],
+        "scopedToAgent": true
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

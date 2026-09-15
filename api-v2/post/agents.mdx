@@ -1,0 +1,127 @@
+---
+title: "Create Agent"
+api: "POST https://api.bland.ai/v2/agents"
+description: "Create an agent with empty dev, staging, and production environments."
+---
+
+### Overview
+
+Creates an agent and its three environments (`dev`, `staging`, `production`) in one step. The environments start unpinned; save a version with [Create Agent Version](/api-v2/post/agents-id-versions) and promote it to pin one. To build an agent from the dashboard instead, see [Build your first agent](/build-your-first-agent).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the agent. Must be non-empty after trimming whitespace. Returns `400 INVALID_NAME` otherwise.
+</ParamField>
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data.agent" type="object">
+  The new agent.
+
+  <Expandable title="agent object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the agent.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The agent's display name.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who created the agent, or `null` when created with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+    <ResponseField name="deleted_at" type="null">
+      Always `null` on a live agent.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.environments" type="array">
+  The agent's three environments, all unpinned.
+
+  <Expandable title="environment object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the environment.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      One of `dev`, `staging`, `production`.
+    </ResponseField>
+    <ResponseField name="current_version_id" type="string | null">
+      The version this environment is pinned to. `null` until a version is published or promoted into it.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent": {
+      "id": "2f2750b7-fed3-4798-992a-421ccf8b93b2",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "name": "Front desk",
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-10T22:59:51.569Z",
+      "updated_at": "2026-09-10T22:59:51.569Z",
+      "deleted_at": null
+    },
+    "environments": [
+      {
+        "id": "7a043546-b896-4680-80e4-5eb9cbde6977",
+        "env_type": "dev",
+        "current_version_id": null
+      },
+      {
+        "id": "ab412aa2-8827-4e12-ad45-9a964c2c8690",
+        "env_type": "staging",
+        "current_version_id": null
+      },
+      {
+        "id": "1595512d-ea18-4692-a40b-6c90932396b4",
+        "env_type": "production",
+        "current_version_id": null
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Invalid Name
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_NAME",
+      "message": "name must be a non-empty string"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

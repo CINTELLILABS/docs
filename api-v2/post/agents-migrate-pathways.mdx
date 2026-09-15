@@ -1,0 +1,285 @@
+---
+title: "Migrate Pathways"
+api: "POST https://api.bland.ai/v2/agents/migrate/pathways"
+description: "Convert stored or inline pathways into agent scenarios."
+---
+
+### Overview
+
+Deterministically converts up to 20 pathways into complex scenarios, one per pathway, with no AI planning involved. Each pathway is either referenced by ID or supplied inline as an exported graph (the JSON-file import). By default the scenarios are wrapped in a new agent whose system prompt is built from the pathways' global prompts, and the agent plus its first version are created (`201`). Set `create` to `false` to receive just the scenario nodes for insertion into an existing agent (`200`). For planner-driven translation, use [Start Pathway Translation](/api-v2/post/agents-migrate-translations).
+
+Limited to 60 imports per hour per organization. Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="pathways" type="array" required>
+  One to 20 entries. Each entry must contain exactly one of `pathway_id` or `pathway`. Returns `400 INVALID_PATHWAYS` for an empty array or a malformed entry, and `400 TOO_MANY_PATHWAYS` beyond 20.
+
+  <Expandable title="entry fields">
+    <ParamField body="pathway_id" type="string">
+      UUID of a pathway your organization owns. Returns `422 PATHWAYS_MIGRATION_FAILED` if the pathway is not found in your organization.
+    </ParamField>
+    <ParamField body="version" type="integer">
+      Stored pathways only. Pin a specific version number (a positive integer). Defaults to the pathway's published production version, or its live graph when nothing is published. Returns `422 PATHWAYS_MIGRATION_FAILED` if the version does not exist, and `400 INVALID_PATHWAYS` if set on an inline entry.
+    </ParamField>
+    <ParamField body="mode" type="string" default="one_to_one">
+      `one_to_one` or `translate`. This endpoint only performs `one_to_one`; a `translate` entry returns `400 TRANSLATE_NOT_SUPPORTED`. Inline entries must be `one_to_one`.
+    </ParamField>
+    <ParamField body="pathway" type="object">
+      An exported pathway graph sent inline. Accepts both the legacy export (`nodes`, `edges`) and the current builder export (`nodes`, `edges`, `globalPrompt`, `memoryEnabled`, `startNodeId`, `analysisOptions`; the last two are ignored). Fields: `nodes` (required, non-empty array of objects, at most 2,000), `edges` (array of objects, at most 4,000, defaults to empty), `name` (string, defaults to `Imported pathway`), `description` (string), `globalPrompt` (string), `memoryEnabled` (boolean). Returns `400 INVALID_PATHWAYS` for a shape or size violation, and `422 INVALID_PATHWAYS` when node or edge data inside the graph cannot be converted.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent. Whitespace is trimmed. Defaults to the pathway's name when exactly one pathway is given, otherwise `Migrated pathways`.
+</ParamField>
+
+<ParamField body="create" type="boolean" default="true">
+  When `false`, no agent is created; the response carries the converted scenario nodes instead, ready to add to an existing agent's `behavior.nodes` with [Create Agent Version](/api-v2/post/agents-id-versions).
+</ParamField>
+
+### Response
+
+Returns `201` when an agent was created and `200` in convert-only mode. Returns `422` with `INVALID_MIGRATED_SNAPSHOT` or `MIGRATION_LINT_FAILED` when the converted result does not validate.
+
+<ResponseField name="data.created" type="boolean">
+  `true` when an agent and first version were saved, `false` in convert-only mode.
+</ResponseField>
+
+<ResponseField name="data.agent" type="object">
+  Present when `created` is `true`. The new agent record: `id`, `org_id`, `name`, `created_by` (`string | null`), `created_at`, `updated_at`, and `deleted_at` (`null`). See [Get Agent](/api-v2/get/agents-id) for its environments.
+</ResponseField>
+
+<ResponseField name="data.version" type="object">
+  Present when `created` is `true`. The agent's first version: `id`, `org_id`, `agent_id`, `branch_id` (`null`), `snapshot` (the full agent configuration, abbreviated in the example below), `name` (`Migrated from N pathway(s)`), `created_via` (`manual`), `revision` (`0`), `created_by` (`string | null`), and `created_at`.
+</ResponseField>
+
+<ResponseField name="data.scenarios" type="array">
+  Present when `created` is `false`. One `complex-scenario` node per pathway, each with `id`, `type`, `position`, and `data` (including the nested `data.flow`). IDs are unique within the response; remap them if they collide with nodes already in your agent.
+</ResponseField>
+
+<ResponseField name="data.warnings" type="array">
+  Human-readable notes about constructs the conversion could not carry faithfully. In convert-only mode this also notes each pathway whose global prompt or memory setting was not carried, since those belong to the agent rather than a scenario. When several pathways have global prompts in create mode, a warning notes they were merged into the system prompt.
+</ResponseField>
+
+<ResponseField name="data.lint" type="object">
+  Structural checks on the converted result: `errors` (always empty on success) and `warnings` (array of strings).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "created": true,
+    "agent": {
+      "id": "a5cac058-df94-428d-b0e8-2db52b8eff1b",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "name": "Migrated pathways",
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-10T19:30:41.118Z",
+      "updated_at": "2026-09-10T19:30:41.118Z",
+      "deleted_at": null
+    },
+    "version": {
+      "id": "34db303a-e928-4821-901f-8be9c60f9fe2",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "agent_id": "a5cac058-df94-428d-b0e8-2db52b8eff1b",
+      "branch_id": null,
+      "snapshot": {
+        "behavior": {
+          "nodes": [
+            {
+              "id": "inbound",
+              "type": "inbound",
+              "position": { "x": 360, "y": -180 },
+              "data": { "number": "" }
+            },
+            {
+              "id": "agent",
+              "type": "agent",
+              "position": { "x": 192, "y": 0 },
+              "data": {
+                "prompt": "Greet the caller and find out what they need.\n\n## Routing\n\nAfter each user turn, enter the scenario that matches where the conversation is now. The scenarios you can enter:\n\n- \"Order status\": Look up an existing order\n- \"Returns\": Start a return",
+                "loopWhile": "",
+                "variables": []
+              }
+            },
+            {
+              "id": "8fcbc0f5-6756-444b-b4b0-0355e883ea20",
+              "type": "complex-scenario",
+              "position": { "x": -380, "y": 260 },
+              "data": {
+                "name": "Order status",
+                "rule": "Look up an existing order",
+                "target": { "kind": "dialogue", "label": "Order status" },
+                "entry": {
+                  "mode": "llm",
+                  "label": "Order status",
+                  "description": "Look up an existing order",
+                  "alwaysPick": false,
+                  "conditions": []
+                },
+                "flow": {
+                  "nodes": [
+                    { "id": "start", "type": "start", "position": { "x": 0, "y": 0 }, "data": {} },
+                    {
+                      "id": "b325a789-9ddc-422c-a8cf-4840853f4147",
+                      "type": "prompt",
+                      "position": { "x": 0, "y": 160 },
+                      "data": {
+                        "name": "Get order number",
+                        "prompt": "Ask for the order number and read it back to confirm.",
+                        "useStaticText": false,
+                        "loopWhile": "",
+                        "variables": [],
+                        "useAudioExtraction": false,
+                        "ignorePreviousExtractions": false,
+                        "settings": {}
+                      }
+                    },
+                    { "id": "end", "type": "end", "position": { "x": 0, "y": 320 }, "data": {} }
+                  ],
+                  "edges": [
+                    { "id": "e-start-order", "source": "start", "target": "b325a789-9ddc-422c-a8cf-4840853f4147" },
+                    { "id": "e-order-end", "source": "b325a789-9ddc-422c-a8cf-4840853f4147", "target": "end" }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "5bea25e9-89b5-49c5-813d-5929d01f03f3",
+              "type": "complex-scenario",
+              "position": { "x": 0, "y": 260 },
+              "data": {
+                "name": "Returns",
+                "rule": "Start a return",
+                "target": { "kind": "dialogue", "label": "Returns" },
+                "entry": {
+                  "mode": "llm",
+                  "label": "Returns",
+                  "description": "Start a return",
+                  "alwaysPick": false,
+                  "conditions": []
+                },
+                "flow": {
+                  "nodes": [
+                    { "id": "start", "type": "start", "position": { "x": 0, "y": 0 }, "data": {} },
+                    {
+                      "id": "db3149cc-131b-40ed-a39e-8e4f8cec6bd8",
+                      "type": "prompt",
+                      "position": { "x": 0, "y": 160 },
+                      "data": {
+                        "name": "Reason for return",
+                        "prompt": "Ask why the caller is returning the item.",
+                        "useStaticText": false,
+                        "loopWhile": "",
+                        "variables": [],
+                        "useAudioExtraction": false,
+                        "ignorePreviousExtractions": false,
+                        "settings": {}
+                      }
+                    },
+                    { "id": "end", "type": "end", "position": { "x": 0, "y": 320 }, "data": {} }
+                  ],
+                  "edges": [
+                    { "id": "e-start-reason", "source": "start", "target": "db3149cc-131b-40ed-a39e-8e4f8cec6bd8" },
+                    { "id": "e-reason-end", "source": "db3149cc-131b-40ed-a39e-8e4f8cec6bd8", "target": "end" }
+                  ]
+                }
+              }
+            }
+          ],
+          "edges": [
+            { "id": "e-inbound-agent", "source": "inbound", "target": "agent" },
+            {
+              "id": "e-agent-orders",
+              "source": "agent",
+              "target": "8fcbc0f5-6756-444b-b4b0-0355e883ea20",
+              "data": { "mode": "llm", "label": "Order status", "description": "Look up an existing order", "alwaysPick": false, "conditions": [] }
+            },
+            {
+              "id": "e-agent-returns",
+              "source": "agent",
+              "target": "5bea25e9-89b5-49c5-813d-5929d01f03f3",
+              "data": { "mode": "llm", "label": "Returns", "description": "Start a return", "alwaysPick": false, "conditions": [] }
+            }
+          ]
+        },
+        "settings": {
+          "displayName": "Migrated pathways",
+          "systemPrompt": "",
+          "voice": "",
+          "languages": ["english"],
+          "enableMemory": false,
+          "interruptionSensitivity": 350,
+          "backgroundNoise": "off"
+        },
+        "contact": { "inboundNumbers": [] }
+      },
+      "name": "Migrated from 2 pathway(s)",
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-10T19:30:41.118Z"
+    },
+    "warnings": [],
+    "lint": {
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "errors": null
+}
+```
+
+```json Invalid Pathways
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PATHWAYS",
+      "message": "every body.pathways entry needs exactly one of pathway_id or pathway"
+    }
+  ]
+}
+```
+
+```json Translate Not Supported
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TRANSLATE_NOT_SUPPORTED",
+      "message": "AI-translated pathway migration runs as a job — POST /v2/agents/migrate/translations, or switch those pathways to 1:1 to migrate synchronously"
+    }
+  ]
+}
+```
+
+```json Rate Limited
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TOO_MANY_REQUESTS",
+      "message": "Too many pathway imports for this organization — please wait before importing another."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

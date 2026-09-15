@@ -1,0 +1,125 @@
+---
+title: "Get Extractor Catalog"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/extractor-catalog"
+description: "List the published extractors a disposition can pin."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns one entry per extractor that has a published version, organization-wide extractors plus extractors scoped to this agent, ordered by name. Each entry describes the published version only, which is the version a disposition value pins. Unpublished extractors appear in [List Disposition Extractors](/api-v2/get/agents-id-dispositions-extractors) but not here; publish one with [Publish Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors-extractor-id-publish).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of extractor catalog entries. Empty when no extractor has been published.
+
+  <Expandable title="catalog entry">
+    <ResponseField name="extractorId" type="string">
+      Unique identifier for the extractor. Use it as `extractorId` in a disposition value's `structured_extraction` source.
+    </ResponseField>
+    <ResponseField name="extractorVersionId" type="string">
+      The published version to pin as `extractorVersionId`. Read its full body with [Get Disposition Extractor Version](/api-v2/get/agents-id-dispositions-extractors-extractor-id-versions-version-id).
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Stable machine key, unique within your organization.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the published version.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Description of the published version.
+    </ResponseField>
+    <ResponseField name="outputSchema" type="object">
+      The value schema the published version produces: a `kind` of `boolean`, `string`, `number`, `enum`, `array`, or `object` plus kind-specific fields. A disposition value pinning this extractor uses this as its schema.
+    </ResponseField>
+    <ResponseField name="inputSourceIds" type="array">
+      The evidence the published version reads, from `transcript`, `audio_recording`, `call_metadata`, `pathway_logs`, `tool_logs`, `variables`, `agent_config`, `call_config`.
+    </ResponseField>
+    <ResponseField name="scopedToAgent" type="boolean">
+      `true` when the extractor is scoped to this agent, `false` when it is organization-wide.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "extractorId": "f4e932c3-4a1d-4551-9a28-235eb2b85ac5",
+      "extractorVersionId": "5b346f5f-ed6e-4282-b41b-48ebca9f9baf",
+      "key": "appointment_outcome",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "outputSchema": {
+        "kind": "enum",
+        "description": "Final appointment outcome for this call.",
+        "options": [
+          { "key": "booked", "label": "Booked" },
+          { "key": "rescheduled", "label": "Rescheduled" },
+          { "key": "declined", "label": "Declined" },
+          { "key": "unclear", "label": "Unclear" }
+        ]
+      },
+      "inputSourceIds": ["transcript", "call_metadata"],
+      "scopedToAgent": false
+    },
+    {
+      "extractorId": "8d207a81-fa1e-4210-b9c2-c1e708bb4327",
+      "extractorVersionId": "9c63687a-fa6c-4613-8c22-e72c63aa4fa4",
+      "key": "callback_window",
+      "name": "Callback window",
+      "description": null,
+      "outputSchema": {
+        "kind": "object",
+        "properties": {
+          "requested": { "kind": "boolean", "description": "Whether the caller asked for a callback." },
+          "window_start": { "kind": "string", "format": "date-time" },
+          "window_end": { "kind": "string", "format": "date-time" }
+        },
+        "required": ["requested"]
+      },
+      "inputSourceIds": ["transcript"],
+      "scopedToAgent": true
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

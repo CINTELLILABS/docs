@@ -1,0 +1,96 @@
+---
+title: "List Agent Environments"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/environments"
+description: "List an agent's environments with their pinned versions."
+---
+
+### Overview
+
+Returns the agent's `dev`, `staging`, and `production` environments, each with the name and semver of the version it is pinned to. `dev` is never pinned: it always runs the newest saved version. Move the `staging` pointer with [Publish Agent to Staging](/api-v2/post/agents-id-publish) and the `production` pointer with [Promote Agent to Production](/api-v2/post/agents-id-promote) or [Roll Back Agent](/api-v2/post/agents-id-rollback).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  The agent's three environments.
+
+  <Expandable title="environment object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the environment.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      One of `dev`, `staging`, `production`.
+    </ResponseField>
+    <ResponseField name="current_version_id" type="string | null">
+      ID of the version this environment is pinned to. `null` when unpinned. Always `null` for `dev`.
+    </ResponseField>
+    <ResponseField name="current_version" type="object | null">
+      Details of the pinned version, or `null` when unpinned. Contains `name` (the version's saved name, or `null` if it was never named) and `semver` (the version number minted when it was first published, or `null` if it has never been published).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "3f16480d-528f-4861-9e23-c2f40ceaf895",
+      "env_type": "dev",
+      "current_version_id": null,
+      "current_version": null
+    },
+    {
+      "id": "2d2740be-28ce-4a2b-bcfc-9ad947bb9faa",
+      "env_type": "staging",
+      "current_version_id": "54bc3ac6-7481-429f-8995-e7b119cf3b06",
+      "current_version": {
+        "name": "Holiday hours",
+        "semver": "1.4.0"
+      }
+    },
+    {
+      "id": "bf884f61-5034-48b4-9a2e-2f38fd0af537",
+      "env_type": "production",
+      "current_version_id": "7a971ff5-3ff8-41bd-a21e-fc3e3537cb6b",
+      "current_version": {
+        "name": null,
+        "semver": "1.3.2"
+      }
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

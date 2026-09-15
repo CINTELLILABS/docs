@@ -1,0 +1,99 @@
+---
+title: "List Agent Branches"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/branches"
+description: "List an agent's open branches."
+---
+
+### Overview
+
+Returns the agent's open branches (not yet merged or deleted), oldest first. A branch is a dev workspace cut from the dev head; `behind` tells you whether dev has moved past the branch's base since it was cut. Create one with [Create Agent Branch](/api-v2/post/agents-id-branches) and land it with [Merge Agent Branch](/api-v2/post/agents-id-branches-branch-id-merge).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of branch objects ordered by `created_at` ascending. Empty when the agent has no open branches.
+
+  <Expandable title="branch object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the branch.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the branch belongs to.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The branch name.
+    </ResponseField>
+    <ResponseField name="base_version_id" type="string | null">
+      The dev version the branch was cut from, or last rebased onto. `null` when the branch was cut from an agent with no saved versions.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who created the branch, or `null` when created with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="behind" type="boolean">
+      `true` when dev's newest version is no longer the branch's base. A merge returns `409 BRANCH_BEHIND` until the branch is rebased.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "d403963c-b555-4911-8c29-d33e6268d844",
+      "agent_id": "fe16b944-1d94-46bd-ba4a-7360aa311ded",
+      "name": "billing-questions",
+      "base_version_id": "bdd5b157-7617-448a-850d-b799cb22c0a1",
+      "created_by": "a941d24e-f0ac-4d0b-82df-b1fe34bf1715",
+      "created_at": "2026-09-08T16:21:09.412Z",
+      "behind": true
+    },
+    {
+      "id": "fc323133-b2c7-49bf-9cf4-a35188caa10e",
+      "agent_id": "fe16b944-1d94-46bd-ba4a-7360aa311ded",
+      "name": "spanish-greeting",
+      "base_version_id": "b55be31f-dd53-4587-b4ba-1bf761ff7717",
+      "created_by": null,
+      "created_at": "2026-09-10T09:03:44.870Z",
+      "behind": false
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

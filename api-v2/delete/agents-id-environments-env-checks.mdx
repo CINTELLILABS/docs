@@ -1,0 +1,76 @@
+---
+title: "Delete Checks"
+api: "DELETE https://api.bland.ai/v2/agents/{agent_id}/environments/{env}/checks"
+description: "Remove an environment's check config."
+---
+
+### Overview
+
+Removes the check config for one environment, including its scenario and judge attachments. Past check runs are kept and still readable with [List Check Runs](/api-v2/get/agents-id-check-runs). When the environment has no config, the response is `200` with `deleted: false`, not `404`.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="env" type="string" required>
+  `staging` or `production`. Any other value returns `400 BAD_REQUEST`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.deleted" type="boolean">
+  `true` when a config was removed, `false` when the environment had none.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "deleted": true
+  },
+  "errors": null
+}
+```
+
+```json Invalid Environment
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "env must be 'staging' or 'production'"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,160 @@
+---
+title: "Estimate Disposition Cost"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/estimates"
+description: "Estimate a disposition's per-call cost before publishing."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Prices the current draft as it would execute once published and returns a per-value and total cost range in USD per processed call. The request takes no body. The estimate is stateless: its `id` is a digest of the draft, its pinned dependencies, and the current pricing basis, so the same draft always yields the same `id`, and any change yields a new one. Pass the `id` as `estimateId` to [Publish Disposition](/api-v2/post/agents-id-dispositions-disposition-id-publish), which recomputes it and rejects a stale one.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Response
+
+All money fields are USD per processed call, formatted as decimal strings with four places (for example `"0.0198"`, just under two cents). They include Bland's margin. `min`, `expected`, and `max` are usage scenarios at 0.6x, 1x, and 1.6x of the assumed input and output volumes for a representative call; they are forecasts, not caps.
+
+<ResponseField name="data.id" type="string">
+  Deterministic estimate id, UUID-shaped. Identical for identical inputs. Pass it as `estimateId` when publishing.
+</ResponseField>
+
+<ResponseField name="data.dispositionId" type="string">
+  The disposition that was priced.
+</ResponseField>
+
+<ResponseField name="data.draftRevision" type="number">
+  The draft revision that was priced. Pass the same value as `expectedDraftRevision` when publishing.
+</ResponseField>
+
+<ResponseField name="data.perValue" type="array">
+  One entry per value in the draft, in definition order.
+
+  <Expandable title="per-value object">
+    <ResponseField name="valueId" type="string">
+      The value's id.
+    </ResponseField>
+    <ResponseField name="executionPath" type="string">
+      Human-readable label of how the value is produced and billed, for example `Judge · Automatic Intelligence`, `Structured extraction · Medium Intelligence`, `Variable extraction · High Intelligence`, or `Custom code · metered invocation`. When two values share one judge invocation, the second reads `Judge · shared invocation already included` and is priced at zero. The one value that carries the once-per-call corrected transcript pass has ` + corrected transcript (once per call, shared)` appended.
+    </ResponseField>
+    <ResponseField name="usdPerCall" type="object">
+      `{ "min", "expected", "max" }` in USD per call for this value alone.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.totalUsdPerCall" type="object">
+  `{ "min", "expected", "max" }` in USD per call, the sum across `perValue`.
+</ResponseField>
+
+<ResponseField name="data.assumptions" type="object">
+  The fixed inputs behind the forecast.
+
+  <Expandable title="assumptions object">
+    <ResponseField name="averageDurationSeconds" type="number">
+      Assumed call length in seconds, currently `254`. Drives audio input volume and the corrected transcript charge.
+    </ResponseField>
+    <ResponseField name="timing" type="string">
+      The draft's `timing`: `immediate` or `within_24h`.
+    </ResponseField>
+    <ResponseField name="modelCostRange" type="string">
+      Always `usage_scenarios`: `min`, `expected`, and `max` are 0.6x, 1x, and 1.6x of the assumed token volumes.
+    </ResponseField>
+    <ResponseField name="customCode" type="object">
+      How `custom_code` values are billed. `billingPolicy` is `monthly_free_tier` (metered at list price after a free monthly allowance) or `enterprise_included` (included, quoted at zero). `monthlyFreeInvocations` is the allowance, currently `1000`. `listPriceUsdPerInvocation` is the list price as a decimal string, currently `"0.0010"`. `freeTierScope` is always `organization`. Under `monthly_free_tier` a code value's `min` is `0.0000` and its `expected` and `max` equal the list price.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.quoteConfigVersion" type="string">
+  Version tag of the pricing assumptions, currently `v3-intelligence-routing`. Changes when the forecast model changes.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "541b9cf3-77fa-4f99-95de-356e656c5670",
+    "dispositionId": "16fc16fe-92af-4e8b-9459-28e10b05f287",
+    "draftRevision": 3,
+    "perValue": [
+      {
+        "valueId": "91b9a987-ee08-4018-a433-5a7a5d03dade",
+        "executionPath": "Judge · Automatic Intelligence",
+        "usdPerCall": { "min": "0.0121", "expected": "0.0198", "max": "0.0312" }
+      },
+      {
+        "valueId": "a1756910-0ff1-48be-8eb9-635c8bdfd533",
+        "executionPath": "Structured extraction · Medium Intelligence + corrected transcript (once per call, shared)",
+        "usdPerCall": { "min": "0.0018", "expected": "0.0031", "max": "0.0049" }
+      }
+    ],
+    "totalUsdPerCall": { "min": "0.0139", "expected": "0.0229", "max": "0.0361" },
+    "assumptions": {
+      "averageDurationSeconds": 254,
+      "timing": "immediate",
+      "modelCostRange": "usage_scenarios",
+      "customCode": {
+        "billingPolicy": "monthly_free_tier",
+        "monthlyFreeInvocations": 1000,
+        "listPriceUsdPerInvocation": "0.0010",
+        "freeTierScope": "organization"
+      }
+    },
+    "quoteConfigVersion": "v3-intelligence-routing"
+  },
+  "errors": null
+}
+```
+
+```json Pricing Unavailable
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SERVICE_UNAVAILABLE",
+      "message": "Disposition pricing is temporarily unavailable"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,65 @@
+---
+title: "Delete Agent"
+api: "DELETE https://api.bland.ai/v2/agents/{agent_id}"
+description: "Soft-delete an agent. Versions and history are kept."
+---
+
+### Overview
+
+Marks the agent deleted. It disappears from [List Agents](/api-v2/get/agents) and returns `404` from [Get Agent](/api-v2/get/agents-id), but its versions, deployments, and history are retained. Alerts scoped to the agent are deleted with it.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  The deleted agent's ID.
+</ResponseField>
+
+<ResponseField name="data.deleted" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "bc526394-c150-4983-bbfb-c84d1d9653f4",
+    "deleted": true
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

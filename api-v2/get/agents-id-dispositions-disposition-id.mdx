@@ -1,0 +1,120 @@
+---
+title: "Get Disposition"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}"
+description: "Retrieve a disposition's summary and lifecycle state."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns one disposition's summary: its `state`, the published version pointer, and the draft revision counter. A disposition is created `disabled` with only a draft. [Publish Disposition](/api-v2/post/agents-id-dispositions-disposition-id-publish) freezes the draft into an immutable version and sets `state` to `enabled`, after which it runs on every new completed call. [Disable Disposition](/api-v2/post/agents-id-dispositions-disposition-id-disable) sets `state` back to `disabled` without touching the draft or version history; publishing again re-enables it.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The disposition summary.
+
+  <Expandable title="disposition object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the disposition.
+    </ResponseField>
+    <ResponseField name="agentId" type="string">
+      The agent this disposition belongs to.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Stable slug, unique per agent. Set at creation and never changes.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      `disabled` or `enabled`. Only `enabled` dispositions run on new calls.
+    </ResponseField>
+    <ResponseField name="publishedVersionId" type="string | null">
+      The most recently published version, or `null` if never published. Disabling does not clear it.
+    </ResponseField>
+    <ResponseField name="publishedVersionNumber" type="number | null">
+      Sequential number of that version, starting at `1`, or `null` if never published.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="number">
+      Optimistic-concurrency counter for the draft. Starts at `1` and increments on every draft update and publish. Pass it back as `expectedDraftRevision` when writing.
+    </ResponseField>
+    <ResponseField name="draftValueCount" type="number">
+      Number of values in the current draft definition.
+    </ResponseField>
+    <ResponseField name="hasUnpublishedChanges" type="boolean">
+      `true` when the draft differs from the published version, or when nothing has been published yet.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The draft definition's name.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      The draft definition's description. May be an empty string.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "98f84865-1c4e-402e-a94b-8b8b19e2d82b",
+    "agentId": "e32e3af8-a938-44d6-9cf5-8877e59229c7",
+    "key": "appointment_outcome",
+    "state": "enabled",
+    "publishedVersionId": "e5460335-b787-4ec2-b015-f2527b526326",
+    "publishedVersionNumber": 2,
+    "draftRevision": 5,
+    "draftValueCount": 2,
+    "hasUnpublishedChanges": true,
+    "name": "Appointment outcome",
+    "description": "Did the caller book, and did they ask for a callback?",
+    "createdAt": "2026-08-30T15:21:04.118Z",
+    "updatedAt": "2026-09-10T08:12:40.077Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

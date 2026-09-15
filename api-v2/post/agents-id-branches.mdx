@@ -1,0 +1,122 @@
+---
+title: "Create Agent Branch"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/branches"
+description: "Create a branch off the agent's dev head."
+---
+
+### Overview
+
+Cuts a new branch from the agent's newest dev version. Versions saved to the branch stay off the dev timeline until you land them with [Merge Agent Branch](/api-v2/post/agents-id-branches-branch-id-merge). Use [List Agent Branches](/api-v2/get/agents-id-branches) to see what is open.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  The branch name. Trimmed, then must be 1 to 64 characters using only letters, numbers, dots, underscores, and dashes. The names `dev`, `latest`, `staging`, and `production` (any casing) and anything shaped like a version number (for example `1.2.0`) are reserved for version selectors. Any of these problems returns `400 INVALID_NAME` with a message naming the rule. Returns `409 BRANCH_EXISTS` when an open branch already has this name; names of merged or deleted branches can be reused.
+</ParamField>
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data" type="object">
+  The new branch.
+
+  <Expandable title="branch object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the branch. Pass it as `{branch_id}` on the other branch endpoints.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the branch belongs to.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The trimmed branch name.
+    </ResponseField>
+    <ResponseField name="base_version_id" type="string | null">
+      The dev version the branch was cut from. `null` when the agent has no saved versions yet.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who created the branch, or `null` when created with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="behind" type="boolean">
+      Always `false` on a newly created branch.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "08aacbb3-6f83-4542-a7c0-1fd07b5b3d47",
+    "agent_id": "f4f9fe3f-a996-49a6-934d-6b78b144d43b",
+    "name": "billing-questions",
+    "base_version_id": "0b6b3dba-0c8c-4ee2-a992-4a7bc2f35e25",
+    "created_by": "0d5eee46-6f39-462b-b347-79ff13cf3cf2",
+    "created_at": "2026-09-10T17:42:18.093Z",
+    "behind": false
+  },
+  "errors": null
+}
+```
+
+```json Invalid Name
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_NAME",
+      "message": "\"staging\" is reserved for version selectors"
+    }
+  ]
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BRANCH_EXISTS",
+      "message": "An open branch with this name already exists"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

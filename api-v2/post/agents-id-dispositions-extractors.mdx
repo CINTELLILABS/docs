@@ -1,0 +1,290 @@
+---
+title: "Create Disposition Extractor"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/extractors"
+description: "Create an extractor with its first editable version."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Creates an extractor and its version `1` in the `editable` state. An extractor is a prompt plus an output schema that pulls a structured value out of call evidence; a disposition value pins a published extractor version to run it after each call. Edit the draft with [Update Disposition Extractor Draft](/api-v2/patch/agents-id-dispositions-extractors-extractor-id-draft), then make it pinnable with [Publish Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors-extractor-id-publish).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+### Body Parameters
+
+Unknown fields are rejected. A body that fails shape validation returns `400` with the message `Invalid request body`; a body that passes shape validation but breaks a prompt, schema, or model-profile rule returns `400` with the message `Extractor definition failed validation`. In both cases the error's `ext` field is a JSON string listing each problem.
+
+<ParamField body="key" type="string" required>
+  Stable machine key for the extractor. 1 to 64 characters matching `^[a-z][a-z0-9_]*$`. Must be unique within your organization; a duplicate returns `409 CONFLICT`.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Display name. 1 to 120 characters.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Optional description, up to 2000 characters.
+</ParamField>
+
+<ParamField body="scopedToAgent" type="boolean" default="false">
+  `true` limits the extractor to this agent. When `false` or omitted, the extractor is organization-wide and available to every agent's dispositions.
+</ParamField>
+
+<ParamField body="systemPromptMd" type="string" default="">
+  Optional system prompt in Markdown. Up to 8000 characters and 8000 UTF-8 bytes.
+</ParamField>
+
+<ParamField body="promptMd" type="string" required>
+  The extraction prompt in Markdown. 1 to 8000 characters, up to 8000 UTF-8 bytes, and must contain non-whitespace text. `systemPromptMd` and `promptMd` together may not exceed 16000 UTF-8 bytes.
+</ParamField>
+
+<ParamField body="outputSchema" type="object" required>
+  The shape of the value the extractor produces. A schema node is an object with a `kind` plus kind-specific fields; `array` and `object` nodes nest further schema nodes. The whole schema may nest at most 8 levels deep, contain at most 200 nodes, and serialize to at most 64 KB.
+
+  <Expandable title="outputSchema fields">
+    <ParamField body="kind" type="string" required>
+      One of `boolean`, `string`, `number`, `enum`, `array`, `object`.
+    </ParamField>
+    <ParamField body="description" type="string">
+      Optional guidance for the model, up to 2000 characters. Allowed on every kind.
+    </ParamField>
+    <ParamField body="format" type="string">
+      `string` only. The single accepted value is `date-time`.
+    </ParamField>
+    <ParamField body="options" type="array">
+      `enum` only, required for that kind. 1 to 24 objects of the form `{ "key": "booked", "label": "Booked" }`. `key` is 1 to 64 characters and must be unique within the enum; `label` is 1 to 120 characters.
+    </ParamField>
+    <ParamField body="items" type="object">
+      `array` only, required for that kind. A nested schema node describing each element.
+    </ParamField>
+    <ParamField body="minItems" type="integer">
+      `array` only. Minimum `0`, at most 1000, and not greater than `maxItems`.
+    </ParamField>
+    <ParamField body="maxItems" type="integer">
+      `array` only. Minimum `1`, at most 1000.
+    </ParamField>
+    <ParamField body="properties" type="object">
+      `object` only, required for that kind. Map of property names (up to 64 characters each, at most 64 properties) to nested schema nodes. `__proto__`, `constructor`, and `prototype` are not allowed as names.
+    </ParamField>
+    <ParamField body="required" type="array">
+      `object` only, required for that kind. Property names that must be present in the produced value. Each must be declared in `properties`, with no duplicates. Pass `[]` when nothing is required.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="inferenceConfig" type="object" required>
+  How the extractor runs. Unknown fields are rejected.
+
+  <Expandable title="inferenceConfig fields">
+    <ParamField body="contextSources" type="array" required>
+      Evidence the extractor reads. 1 to 8 unique values from `transcript`, `audio_recording`, `call_metadata`, `pathway_logs`, `tool_logs`, `variables`, `agent_config`, `call_config`. Including `audio_recording` requires a model profile whose `supportsAudio` is `true`.
+    </ParamField>
+    <ParamField body="modelProfileKey" type="string" default="balanced">
+      One of the `key` values returned by [Get Model Profile Catalog](/api-v2/get/agents-id-dispositions-model-profile-catalog). 1 to 120 characters. A key that is not in the catalog returns `400` with the message `Extractor model profile is not available`.
+    </ParamField>
+    <ParamField body="temperature" type="number | null">
+      Sampling temperature between `0` and `2`.
+    </ParamField>
+    <ParamField body="maxOutputTokens" type="integer | null">
+      Output token cap between `1` and `64000`.
+    </ParamField>
+    <ParamField body="thinking" type="string | null">
+      Reasoning effort: `low`, `medium`, or `high`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data.extractor" type="object">
+  The new extractor.
+
+  <Expandable title="extractor object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the extractor.
+    </ResponseField>
+    <ResponseField name="agentId" type="string | null">
+      `null` for an organization-wide extractor. Otherwise this agent's id.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      The `key` you supplied.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The extractor's display name.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Optional description.
+    </ResponseField>
+    <ResponseField name="currentVersionId" type="string">
+      The `editable` draft version, the same id as `data.currentVersion.id`. Pass it as `expectedVersionId` when updating or publishing.
+    </ResponseField>
+    <ResponseField name="activeVersionId" type="null">
+      Always `null` on a new extractor; set by the first publish.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="integer">
+      Always `1` on a new extractor. Pass it as `expectedDraftRevision` when updating or publishing.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.currentVersion" type="object">
+  Version `1`, in the `editable` state.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="extractorId" type="string">
+      The extractor this version belongs to.
+    </ResponseField>
+    <ResponseField name="versionNumber" type="integer">
+      `1` for a new extractor. Increments on each publish.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      `editable` for the live draft, `archived` once published.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name at this version.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Description at this version.
+    </ResponseField>
+    <ResponseField name="systemPromptMd" type="string">
+      The system prompt. Empty string when none was supplied.
+    </ResponseField>
+    <ResponseField name="promptMd" type="string">
+      The extraction prompt.
+    </ResponseField>
+    <ResponseField name="outputSchema" type="object">
+      The schema you supplied.
+    </ResponseField>
+    <ResponseField name="inferenceConfig" type="object">
+      The configuration you supplied, with `modelProfileKey` always populated (defaulted to `balanced` when omitted). `temperature`, `maxOutputTokens`, and `thinking` are omitted when you did not send them.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "extractor": {
+      "id": "d6486956-e583-448f-9cb2-3f98dcc0fada",
+      "agentId": null,
+      "key": "appointment_outcome",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "currentVersionId": "ca112e02-a762-49b0-ba0e-dff4c57ee8ad",
+      "activeVersionId": null,
+      "draftRevision": 1,
+      "createdAt": "2026-09-10T16:20:45.312Z",
+      "updatedAt": "2026-09-10T16:20:45.318Z"
+    },
+    "currentVersion": {
+      "id": "ca112e02-a762-49b0-ba0e-dff4c57ee8ad",
+      "extractorId": "d6486956-e583-448f-9cb2-3f98dcc0fada",
+      "versionNumber": 1,
+      "state": "editable",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "systemPromptMd": "",
+      "promptMd": "Decide whether the caller booked, rescheduled, or declined an appointment. Return unclear if the call ended before a decision.",
+      "outputSchema": {
+        "kind": "enum",
+        "description": "Final appointment outcome for this call.",
+        "options": [
+          { "key": "booked", "label": "Booked" },
+          { "key": "rescheduled", "label": "Rescheduled" },
+          { "key": "declined", "label": "Declined" },
+          { "key": "unclear", "label": "Unclear" }
+        ]
+      },
+      "inferenceConfig": {
+        "modelProfileKey": "balanced",
+        "thinking": "low",
+        "contextSources": ["transcript", "call_metadata"]
+      },
+      "createdAt": "2026-09-10T16:20:45.312Z",
+      "updatedAt": "2026-09-10T16:20:45.312Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Invalid request body",
+      "ext": "{\"errors\":[\"/promptMd: Expected required property\"]}"
+    }
+  ]
+}
+```
+
+```json Invalid Definition
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Extractor definition failed validation",
+      "ext": "{\"problems\":[\"Call audio extraction requires an audio-capable model profile\"]}"
+    }
+  ]
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "An extractor with key \"appointment_outcome\" already exists"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

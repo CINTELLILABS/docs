@@ -1,0 +1,109 @@
+---
+title: "Infer Agent Memory Schema"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/memory/schema/infer"
+description: "Generate a suggested memory schema by reading the agent."
+---
+
+### Overview
+
+Reads the agent and proposes what it should remember about each contact. The proposal is returned and nothing is saved: to keep it, put it on `settings.memorySchema` and save a version with [Create Agent Version](/api-v2/post/agents-id-versions).
+
+By default it reads the agent's newest dev version. Send a `snapshot` to have it read an unsaved configuration instead, which is what the builder does while you are still editing.
+
+This runs a language model over the compiled agent, so it is limited to 6 requests per minute per agent and it is not instant. The agent must have a saved version, or a `snapshot` in the body, and that configuration must compile.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="snapshot" type="object">
+  A full agent configuration to read instead of the saved dev version, in the same shape [Create Agent Version](/api-v2/post/agents-id-versions) accepts. Validated before use: structural problems return `400 INVALID_SNAPSHOT` with one entry per problem. Omit the field entirely to use the newest dev version.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.entity_schemas" type="array">
+  The proposed entity types, in the same shape as [Get Agent Memory Schema](/api-v2/get/agents-id-memory-schema). Nothing is persisted.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. An agent with no saved version returns `404 AGENT_VERSION_NOT_FOUND`, and a configuration that cannot be compiled returns `400 AGENT_SNAPSHOT_INVALID`.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "entity_schemas": [
+      {
+        "entity_type": "appointment",
+        "description": "A dental appointment the caller books, moves, or cancels.",
+        "identifier_field": "confirmation_number",
+        "fields": [
+          {
+            "name": "confirmation_number",
+            "description": "The booking reference given to the caller.",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "outcomes": ["booked", "cancelled"]
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json No Saved Version
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_VERSION_NOT_FOUND",
+      "message": "Agent has no saved versions yet (agent_version: \"dev\")"
+    }
+  ]
+}
+```
+
+```json Will Not Compile
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_SNAPSHOT_INVALID",
+      "message": "Agent version snapshot failed to compile"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

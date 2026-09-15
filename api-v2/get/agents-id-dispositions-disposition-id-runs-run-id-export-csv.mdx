@@ -1,0 +1,132 @@
+---
+title: "Export Test Run CSV"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/runs/{run_id}/export.csv"
+description: "Download a test run's results as CSV."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Streams the whole test run as a CSV file, one row per call and value, with the engine's result, its evidence, and the latest correction saved for that cell. This is the same data as [Get Test Run Rows](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-rows) without paging. Unlike the other endpoints here, the success response is CSV, not JSON; errors still use the JSON envelope.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+<ParamField path="run_id" type="string" required>
+  The test run's unique identifier. Must be a UUID; otherwise returns `400` with the message `runId must be a valid UUID`. Returns `404 Test run not found` if it does not belong to this disposition.
+</ParamField>
+
+### Response
+
+Returns `200` with `Content-Type: text/csv; charset=utf-8` and `Content-Disposition: attachment; filename="disposition-run-{run_id}.csv"`. The body starts with a UTF-8 byte order mark, rows end in CRLF, and cells containing commas, quotes, or line breaks are quoted with doubled inner quotes. A text cell that begins with `=`, `+`, `@`, or `-` and is not a number is prefixed with an apostrophe so spreadsheets do not treat it as a formula.
+
+Rows are sorted by `call_id`, then by definition order of the values, so a run with 50 calls and 3 values yields 150 rows. Only the latest correction for each call and value appears; the export reads at most the 25,000 most recent correction revisions, which covers a full 250-call, 50-value run twice over.
+
+<ResponseField name="run_id" type="string">
+  Identifier of this call's execution within the run. It matches `testRunCaseId` on correction objects.
+</ResponseField>
+
+<ResponseField name="call_id" type="string">
+  The call.
+</ResponseField>
+
+<ResponseField name="run_status" type="string">
+  Execution status for the call: `pending`, `running`, `complete`, `failed`, or `cancelled`.
+</ResponseField>
+
+<ResponseField name="run_error_code" type="string">
+  When the call's execution failed as a whole, one of the run error codes (for example `disposition_run_failed`); otherwise empty.
+</ResponseField>
+
+<ResponseField name="run_error_message" type="string">
+  Human-readable message for `run_error_code`, or empty.
+</ResponseField>
+
+<ResponseField name="value_id" type="string">
+  The definition value this row is about.
+</ResponseField>
+
+<ResponseField name="value_key" type="string">
+  The value's `key`.
+</ResponseField>
+
+<ResponseField name="value_label" type="string">
+  The value's `label`.
+</ResponseField>
+
+<ResponseField name="original_state" type="string">
+  The engine's result state: `produced`, `no_value`, `error`, or `missing` when the call produced no result for this value.
+</ResponseField>
+
+<ResponseField name="original_value" type="string">
+  The engine's produced value, JSON-encoded (so a string appears in quotes, a boolean as `true` or `false`). Empty when there is no value.
+</ResponseField>
+
+<ResponseField name="evidence" type="string">
+  JSON-encoded array of evidence quotes, each with `source`, `speaker`, `start_ms`, `end_ms`, and `text`. Empty when none.
+</ResponseField>
+
+<ResponseField name="corrected_state" type="string">
+  State of the latest correction, `produced` or `no_value`, or empty if the cell was never corrected.
+</ResponseField>
+
+<ResponseField name="corrected_value" type="string">
+  The corrected value, JSON-encoded, or empty.
+</ResponseField>
+
+<ResponseField name="correction_revision" type="string">
+  Revision number of the latest correction, or empty.
+</ResponseField>
+
+<ResponseField name="correction_explanation" type="string">
+  The explanation supplied with the latest correction, or empty.
+</ResponseField>
+
+<ResponseField name="value_error_code" type="string">
+  When `original_state` is `error`, the value-level error code (for example `judge_failed`); otherwise empty.
+</ResponseField>
+
+<ResponseField name="value_error_message" type="string">
+  Message for `value_error_code`, always `This value could not be produced.` when set; otherwise empty.
+</ResponseField>
+
+<ResponseExample>
+```text Response
+run_id,call_id,run_status,run_error_code,run_error_message,value_id,value_key,value_label,original_state,original_value,evidence,corrected_state,corrected_value,correction_revision,correction_explanation,value_error_code,value_error_message
+92439a35-422b-4768-a2b4-b21d7ca5a54f,290e7a5f-8d36-4a9f-bd1b-5593096f9fdb,complete,,,7dd68009-f644-4961-bc4d-418cf6c73692,booked,Appointment booked,produced,true,"[{""source"":""transcript"",""speaker"":""customer"",""start_ms"":84200,""end_ms"":88900,""text"":""Tuesday at three works for me.""}]",,,,,,
+b01b10a0-dd1a-4901-a755-95af97407733,ba6d1eb0-d9de-46b9-a85a-2e756a1ce4e4,complete,,,7dd68009-f644-4961-bc4d-418cf6c73692,booked,Appointment booked,produced,false,,produced,true,1,The caller agreed to the slot at the very end of the call after the agent's recap.,,
+f76f5e28-f0d8-42b3-a760-67c73cece843,f3ae11ce-e39f-4566-bc91-d697012e055b,failed,disposition_run_failed,Disposition execution could not be completed.,7dd68009-f644-4961-bc4d-418cf6c73692,booked,Appointment booked,missing,,,,,,,,
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Test run not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

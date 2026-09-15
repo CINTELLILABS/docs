@@ -1,0 +1,118 @@
+---
+title: "List Disposition Extractors"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/extractors"
+description: "List the extractors available to an agent's dispositions."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns every extractor this agent can use, published or not: organization-wide extractors plus extractors scoped to this agent, most recently updated first. Each entry is the extractor record without its version bodies; call [Get Disposition Extractor](/api-v2/get/agents-id-dispositions-extractors-extractor-id) for those. For only the published extractors a disposition can pin, use [Get Extractor Catalog](/api-v2/get/agents-id-dispositions-extractor-catalog).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of extractor objects.
+
+  <Expandable title="extractor object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the extractor.
+    </ResponseField>
+    <ResponseField name="agentId" type="string | null">
+      `null` for an organization-wide extractor available to every agent. Otherwise the id of the one agent it is scoped to.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Stable machine key, unique within your organization.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The extractor's display name.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Optional description.
+    </ResponseField>
+    <ResponseField name="currentVersionId" type="string">
+      The `editable` draft version. Pass it as `expectedVersionId` when updating or publishing.
+    </ResponseField>
+    <ResponseField name="activeVersionId" type="string | null">
+      The most recently published version, or `null` if the extractor has never been published. Only published extractors appear in the extractor catalog.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="integer">
+      Concurrency counter. Starts at `1` and increments on every draft update and publish. Pass it as `expectedDraftRevision` when updating or publishing.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "a3d48658-9827-4726-8560-1da7c46402ed",
+      "agentId": null,
+      "key": "appointment_outcome",
+      "name": "Appointment outcome",
+      "description": "Whether an appointment was booked, rescheduled, or declined.",
+      "currentVersionId": "1164a759-ad0c-4e44-aeb9-f7b1e3ea1704",
+      "activeVersionId": "7146de47-7558-47b9-b690-82fca5ef50a9",
+      "draftRevision": 3,
+      "createdAt": "2026-09-01T15:02:11.480Z",
+      "updatedAt": "2026-09-09T18:44:03.117Z"
+    },
+    {
+      "id": "dca50693-63e3-4ffd-a7c1-8511df6aa6f2",
+      "agentId": "eaf4ec8e-74d9-4bbc-a5e6-7cf10e4ff151",
+      "key": "callback_window",
+      "name": "Callback window",
+      "description": null,
+      "currentVersionId": "cde3f9e9-8448-4e1a-ad26-6f3f245f8d00",
+      "activeVersionId": null,
+      "draftRevision": 1,
+      "createdAt": "2026-09-08T10:21:37.902Z",
+      "updatedAt": "2026-09-08T10:21:37.902Z"
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

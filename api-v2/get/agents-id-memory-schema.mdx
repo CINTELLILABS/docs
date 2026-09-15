@@ -1,0 +1,126 @@
+---
+title: "Get Agent Memory Schema"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/memory/schema"
+description: "Read what the agent remembers about each contact between calls."
+---
+
+### Overview
+
+Returns the memory entity schema the agent runs with today: the kinds of things it tracks per contact, such as a booking or an order, and the fields it fills in for each one.
+
+The schema comes from one of two places, and `source` tells you which. When the newest dev version carries `settings.memorySchema`, that is returned and `source` is `settings`. Otherwise the last schema the runtime inferred and cached is returned with `source` set to `cached_version`. An agent with neither returns an empty list and `source` of `null`, which means nothing is known yet rather than that the agent remembers nothing.
+
+To produce a schema for an agent that has none, use [Infer Agent Memory Schema](/api-v2/post/agents-id-memory-schema-infer).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.entity_schemas" type="array">
+  The entity types the agent tracks per contact. Empty when nothing is known yet.
+
+  <Expandable title="entity schema object">
+    <ResponseField name="entity_type" type="string">
+      Name of the entity, for example `trip`, `order`, or `quote`.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      What this entity represents.
+    </ResponseField>
+    <ResponseField name="identifier_field" type="string">
+      The field used to tell one instance from another, for example `confirmation_number`.
+    </ResponseField>
+    <ResponseField name="fields" type="array">
+      Field definitions. Each has `name`, `description`, and `type`, plus optional `enum_values`, `required`, `array_item_type`, `array_item_schema`, `type_conversion`, and `conversational_format`.
+    </ResponseField>
+    <ResponseField name="status_field" type="string">
+      Which field tracks the entity's lifecycle. Present only when one is set.
+    </ResponseField>
+    <ResponseField name="outcomes" type="array">
+      Possible end states for this entity. Present only when any are set.
+    </ResponseField>
+    <ResponseField name="metadata" type="object">
+      Extra context about the entity type. Present only when set.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.source" type="string | null">
+  Where the schema came from: `settings` when it is saved on the agent's newest dev version, `cached_version` when it was inferred by the runtime, or `null` when `entity_schemas` is empty.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "entity_schemas": [
+      {
+        "entity_type": "appointment",
+        "description": "A dental appointment the caller books, moves, or cancels.",
+        "identifier_field": "confirmation_number",
+        "fields": [
+          {
+            "name": "confirmation_number",
+            "description": "The booking reference given to the caller.",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "starts_at",
+            "description": "When the appointment starts.",
+            "type": "string",
+            "type_conversion": {
+              "natural_language_examples": ["tomorrow at 2", "next Tuesday morning"],
+              "target_format": "ISO 8601 date-time"
+            }
+          }
+        ],
+        "status_field": "state",
+        "outcomes": ["booked", "rescheduled", "cancelled"]
+      }
+    ],
+    "source": "settings"
+  },
+  "errors": null
+}
+```
+
+```json Nothing Known Yet
+{
+  "data": {
+    "entity_schemas": [],
+    "source": null
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
