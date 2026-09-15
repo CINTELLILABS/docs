@@ -10,21 +10,65 @@ Setting up a different assistant? See [Personal AI Agents](/integrations/mcp/per
 
 ## Prerequisites
 
-- Access to Grok Bot with its agent wallet connected, to let it set itself up
+- Access to Grok Bot with Stripe Link connected and the Link CLI available to it, to let it set itself up. The payment is a shared payment token from the CLI, not a virtual card.
 - Or: a Bland API key from the [dashboard](https://app.bland.ai/dashboard/settings) and a custom MCP connection that accepts a URL and headers, to configure the connection yourself
 - Either way, an active [Agent Phone Plan](/platform/agent-phone-plan) gets you a dedicated number and texting; headless self-setup pays for the first month as part of signup
 
 ## Option 1: Let Grok Bot set itself up
 
+<Warning>
+**A Link virtual card is not accepted.** `/complete` takes two payment credentials: a shared payment token (`spt_`) from the Link CLI, or the Link CLI answering the payment challenge that `/complete` returns. Grok Bot's default Link tool, `request_virtual_card`, mints a virtual card, which `/complete` refuses. If Grok Bot can only get a virtual card, it can't finish headless: it has to show you the browser link from the response and let you open it. It must not open that link itself; the page is for the human owner and has a bot check.
+</Warning>
+
 Tell Grok Bot:
 
 ```text
-Read https://docs.bland.ai/platform/agent-headless-onboarding and set yourself up with a Bland account. Use my phone number and email, and send client_name "grok". A verification code will arrive at my phone by text; ask me for it and send it back. If you can approve a payment with my agent wallet, pay for the Agent Phone Plan in the same step so you get your own phone number; otherwise start on free credits. Then add the account's API key as a custom MCP connection and confirm it works by listing my pathways.
+Read https://docs.bland.ai/integrations/mcp/grok-bot and set up a new Bland account for me with headless onboarding. Use my phone number and email, and send client_name "grok".
+Pay for the Agent Phone Plan with a Link shared payment token through the Link CLI, never a virtual card. Ask me for the SMS code, and show me any link instead of opening it.
+When you have the API key, add it as a custom MCP connection and confirm it works by listing my pathways.
 ```
 
-A verification code arrives at your phone by text. Relay it back to Grok Bot, and it finishes setup and receives its API key in the same conversation. With your agent wallet connected, it also approves the first month of the Agent Phone Plan with you and receives a phone number. Without a wallet, the account starts on free credits: Grok Bot can call from a shared Bland number right away, and when you ask it for texting or its own number it shows you a link where you add a card and start the plan (see [Adding the plan later](/platform/agent-headless-onboarding#adding-the-plan-later)). If a wallet payment is declined, Grok Bot falls back to that same link.
+To start on free credits instead, replace the second line with: "Don't pay for anything. Ask me for the SMS code, and show me any link instead of opening it." The account then calls from a shared Bland number right away, and when you ask Grok Bot for texting or its own number it shows you a link where you add a card and start the plan (see [Adding the plan later](/platform/agent-headless-onboarding#adding-the-plan-later)). If a wallet payment is declined, Grok Bot falls back to that same link.
 
-See [Headless agent onboarding](/platform/agent-headless-onboarding) for the full request and response shapes, in case you want to follow along with what Grok Bot is doing.
+A verification code arrives at your phone by text. Relay it back to Grok Bot. On the paid path it then asks you to approve the first month of the Agent Phone Plan in the Link app, and it finishes with its API key and a phone number in the same conversation.
+
+### What Grok Bot does
+
+The paid path is four requests and one Link approval. [Headless agent onboarding](/platform/agent-headless-onboarding) has the full request and response shapes, and [Paying with an agent wallet](/platform/agent-headless-onboarding#paying-with-an-agent-wallet) is the detailed payment reference.
+
+<Steps>
+  <Step title="Start the session">
+    `POST /v1/agent/onboarding/headless/start` with your phone, your email, `client_name: "grok"`, and `payment_intent: "shared_payment_token"`. A 6-digit code is texted to your phone.
+  </Step>
+  <Step title="Get the code">
+    Grok Bot asks you for the code.
+  </Step>
+  <Step title="Request the payment challenge">
+    `POST /v1/agent/onboarding/headless/complete` with the session, the code, and `payment: { "request_challenge": true }`. This verifies the code, keeps the session alive, and answers `402 PLAN_REQUIRED` with a `WWW-Authenticate: Payment` header. The header carries the amount, the currency, and the Stripe network profile id of the seller.
+
+    Grok Bot reads those values from the challenge, not from a doc: the price comes from the plan catalog and can change. At the time of writing the challenge names `profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8` and `2999` `usd`.
+  </Step>
+  <Step title="Pay, one of two ways">
+    Both need `link-cli auth login` once, which you approve in the Link app.
+
+    **Preferred:** `npx @stripe/link-cli mpp pay` with the same `/complete` request. The CLI reads the challenge, asks you to approve the amount in Link, and retries `/complete` with the credential. The `200` carries the API key.
+
+    ```bash
+    npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/onboarding/headless/complete \
+      -X POST \
+      -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913", "payment": {"request_challenge": true}}' \
+      --header "Content-Type: application/json" \
+      --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed monthly."
+    ```
+
+    **Manual:** decode the challenge with `link-cli mpp decode`, mint a shared payment token with `link-cli spend-request create` using the `network_id` and amount it prints (see [Mint the token with Stripe Link](/platform/agent-headless-onboarding#mint-the-token-with-stripe-link)), then repeat `/complete` with `payment: { "shared_payment_token": "spt_..." }` in place of `request_challenge`.
+  </Step>
+  <Step title="Confirm">
+    [`GET /v1/me`](/api-v1/get/me) with the returned `api_key`, then add the key as a custom MCP connection (the values are under Option 2).
+  </Step>
+</Steps>
+
+The headless session lasts 10 minutes from `/start`, and the code check in step 3 restarts that window once. A re-issued challenge doesn't restart it again, so your Link approval has to land inside it. If the session expires, Grok Bot starts over with a new code.
 
 ## Option 2: Configure the connection yourself
 

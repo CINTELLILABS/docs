@@ -18,6 +18,10 @@ Nothing is created until the code is verified and the payment settles. A decline
 This is a different path to the same result as the [Agent onboarding API](/platform/connect-your-agent), not a replacement for it. Use headless onboarding when your agent can present a payment token from an agent wallet. Use the link-based flow when it can't, or when the payment is declined.
 </Note>
 
+<Warning>
+**A Link virtual card is not accepted.** `/complete` takes two payment credentials: a shared payment token (`spt_`) from the Link CLI in `payment.shared_payment_token`, or the Link CLI answering the `WWW-Authenticate: Payment` challenge that `/complete` returns. A virtual card, such as the one a `request_virtual_card` tool mints, is refused. If your agent can only get a virtual card, it can't finish headless: show the owner the `fallback` link from the response and let them open it. Don't open that link from your own browser; the page is for the human owner and has a bot check.
+</Warning>
+
 ## Which flow to use
 
 | Your agent | Use |
@@ -27,7 +31,7 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
 ## Prerequisites
 
-- An agent wallet that can approve a single-use shared payment token (`spt_`) scoped to a Stripe business profile and an exact amount. Stripe Link's wallet for agents does this; see [Paying with an agent wallet](#paying-with-an-agent-wallet) for the values to use.
+- An agent wallet that can approve a single-use shared payment token (`spt_`) scoped to a Stripe business profile and an exact amount, or answer a Machine Payments Protocol challenge. The Link CLI does both; a Link virtual card does not work here. See [Paying with an agent wallet](#paying-with-an-agent-wallet).
 - The owner's phone number, to send the verification code to
 - The owner present in the conversation to relay that code back
 
@@ -65,7 +69,7 @@ This is a different path to the same result as the [Agent onboarding API](/platf
   </Step>
 
   <Step title="Complete the flow">
-    Call `POST /v1/agent/onboarding/headless/complete` with the session, the code, and a payment approval from your agent wallet.
+    Call `POST /v1/agent/onboarding/headless/complete` with the session, the code, and a payment. Two payment credentials are accepted: a shared payment token in `payment.shared_payment_token`, shown here, or a Machine Payments Protocol credential answering the challenge `/complete` returns. If you don't yet know the amount or the seller, send `payment: { "request_challenge": true }` first. That verifies the code, keeps the session alive, and returns a `402` whose `WWW-Authenticate: Payment` header carries the amount, the currency, and the seller's network profile id. See [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment).
 
     ```bash
     curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/complete \
@@ -100,7 +104,9 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     }
     ```
 
-    `payment.shared_payment_token` is the only supported payment credential today: the single-use token your agent wallet issued for this charge. This settles the first month of the Agent Phone Plan (\$29.99).
+    `payment.shared_payment_token` is the single-use token your agent wallet issued for this charge. The other accepted credential is an `Authorization: Payment` header built from the challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Card details, including a Link virtual card, are refused. Either credential settles the first month of the Agent Phone Plan (\$29.99).
+
+    The session lasts 10 minutes from `/start`. The first successful code check, whether from a `request_challenge` call or a paying call, restarts that window once. A re-issued challenge doesn't restart it again, so the wallet approval has to complete inside it. If the session expires, start over with a new `/start` call and a new code.
 
     `next_steps` is a short list of things your agent should know before its first call. It's optional on the wire: treat a missing field the same as an empty list.
   </Step>
@@ -112,7 +118,7 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
 ## Paying with an agent wallet
 
-The first month of the Agent Phone Plan costs \$29.99. The token you present must be scoped to these values:
+The first month of the Agent Phone Plan costs \$29.99. The token you present must be scoped to the seller and the amount named in the payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Read them from the challenge rather than from this page: the price comes from the plan catalog and can change. At the time of writing the challenge names:
 
 | Field | Value |
 | --- | --- |
@@ -122,9 +128,17 @@ The first month of the Agent Phone Plan costs \$29.99. The token you present mus
 
 A token is spent by one settled charge. If the payment fails, request a new token rather than retrying the same one.
 
+Prefer `link-cli mpp pay`, which reads the challenge and retries `/complete` for you (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Mint the token yourself when you need to control the spend request.
+
 ### Mint the token with Stripe Link
 
-With Stripe's wallet CLI, create a spend request and wait for the owner to approve it in the Link app:
+With the Link CLI (`link-cli auth login` once, approved by the owner in the Link app), decode the challenge to read the seller and the amount:
+
+```bash
+npx @stripe/link-cli mpp decode --challenge 'Payment id="...", realm="api.bland.ai", method="stripe", intent="charge", request="eyJhbW91bnQiOiIyOTk5Ii...", expires="2026-09-13T06:12:59.687Z"'
+```
+
+Then create a spend request with those values and wait for the owner to approve it in the Link app:
 
 ```bash
 npx @stripe/link-cli spend-request create \
@@ -146,7 +160,7 @@ HTTP/1.1 402 Payment Required
 WWW-Authenticate: Payment id="...", realm="api.bland.ai", method="stripe", intent="charge", request="eyJhbW91bnQiOiIyOTk5Ii...", expires="2026-09-13T06:12:59.687Z"
 ```
 
-`request` is base64url JSON with the amount, the currency, and the seller profile under `methodDetails.networkId`. A wallet that speaks the protocol reads the challenge, mints the token, and repeats the same request with `Authorization: Payment <credential>`; the credential wins over `request_challenge` on the retry. Stripe's wallet CLI does the whole round trip:
+`request` is base64url JSON with the amount, the currency, and the seller profile under `methodDetails.networkId`. A wallet that speaks the protocol reads the challenge, mints the token, and repeats the same request with `Authorization: Payment <credential>`; the credential wins over `request_challenge` on the retry. The Link CLI does the whole round trip, after `link-cli auth login` once:
 
 ```bash
 npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/onboarding/headless/complete \
@@ -211,7 +225,7 @@ A declined payment, a payment that needs extra verification from the owner's ban
 }
 ```
 
-`fallback` carries everything [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent) returns except `verification_url`. Show `verification_url_complete` (or `user_code`) to the owner exactly as you would from that flow, then poll [`POST /v1/agent/onboarding/poll`](/platform/connect-your-agent) with `device_code` until the owner approves. `fallback` also rides along on `402 PLAN_REQUIRED` and `409 ACCOUNT_EXISTS`.
+`fallback` carries everything [`POST /v1/agent/onboarding/start`](/platform/connect-your-agent) returns except `verification_url`. Show `verification_url_complete` (or `user_code`) to the owner exactly as you would from that flow, then poll [`POST /v1/agent/onboarding/poll`](/platform/connect-your-agent) with `device_code` until the owner approves. The page behind that link is for the human owner and has a bot check: show the link, don't open it from your own browser. `fallback` also rides along on `402 PLAN_REQUIRED` and `409 ACCOUNT_EXISTS`.
 
 ## Error codes
 
@@ -239,8 +253,8 @@ Both endpoints:
 | --- | --- | --- |
 | `INVALID_SESSION` | 404 | The session is unknown, expired, or already used. Start over with a fresh `/start` call. |
 | `OTP_INVALID` | 400 | The code is wrong or expired. The session is still usable; ask the owner for the code again. |
-| `PAYMENT_METHOD_UNSUPPORTED` | 400 | The request included a card-based payment field. Only `payment.shared_payment_token` is accepted. |
-| `PLAN_REQUIRED` | 402 | `payment.request_challenge` was sent, or no `payment` while free signup is off. Plus fallback, and a `WWW-Authenticate: Payment` challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session is still usable. On `/start`, only with `payment_intent: "none"` while free signup is off; plus fallback, and no text is sent. |
+| `PAYMENT_METHOD_UNSUPPORTED` | 400 | The body carried `payment.stripe_payment_method`. Card details, including a Link virtual card, can't pass through this endpoint. Send `payment.shared_payment_token` or answer the payment challenge instead. |
+| `PLAN_REQUIRED` | 402 | The code verified but no accepted payment arrived: `payment.request_challenge` was sent, or no `payment` while free signup is off. The message names the two ways to pay: `payment.shared_payment_token` (`spt_`), or the `WWW-Authenticate: Payment` challenge on this response answered with `link-cli mpp pay` (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). A Link virtual card is not accepted. Plus fallback, for the owner's own browser. The session is still usable. On `/start`, only with `payment_intent: "none"` while free signup is off; plus fallback, and no text is sent. |
 | `PAYMENT_CREDENTIAL_INVALID` | 402 | The `Authorization: Payment` credential didn't verify: expired, altered, for another method, or missing the token. Plus fallback and a fresh challenge. The session is still usable. |
 | `PLAN_UNAVAILABLE` / `BAD_REQUEST` | 503 / 400 | The plan can't be sold right now. The session is still usable. |
 | `PURCHASE_IN_PROGRESS` | 409 | Another `/complete` call for this phone number is already running. Retry the same session in a moment. |
