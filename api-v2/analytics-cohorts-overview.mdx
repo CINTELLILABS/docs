@@ -1,0 +1,63 @@
+---
+title: "Analytics cohorts"
+description: "Build a saved, paginable set of conversations selected by outcome, day, or hour, then read it back many times without re-typing the filter."
+---
+
+A **cohort** is a materialized, expiring set of call ids that Bland builds once in the analytics lake and lets you page many times. Use a cohort when you want to work with the same slice of conversations across multiple requests — for example "every escalated call from last Tuesday" — instead of re-typing the same predicate on every list call.
+
+Cohorts are an enterprise feature. Contact your account team to enable them for your organization.
+
+## When to use a cohort
+
+- You need a set of conversations selected by outcome (for example `escalated_warm`, `voicemail`, `not_connected`). Regular list filters cannot express the outcome taxonomy.
+- You want a stable, paginable list you can hand to another tool or export, without re-running a filter on every page.
+- You need to page through more conversations than a single filtered list call comfortably returns.
+
+If you only need a one-off count or the first page of a simple filter, keep using the standard call list — a cohort is heavier because it runs a background build first.
+
+## How a cohort is built
+
+1. You call `POST /v2/analytics/cohorts` with a window and an optional predicate. Bland writes the cohort row, starts the background build, and returns an `id` and `status: "building"` immediately.
+2. Poll `GET /v2/analytics/cohorts/{id}` until `status` is `ready`. A failed build reports `status: "failed"`.
+3. Once ready, page the call ids with `GET /v2/analytics/cohorts/{id}/ids?cursor=&limit=` (up to 1,000 ids per request), or open the conversations in the conversations list with `GET /user/logs?cohort={id}`.
+
+Cohorts expire **7 days after they become ready** and are read-scoped to the organization that created them.
+
+## Size, visible size, and truncation
+
+A cohort has a hard ceiling of **50,000 conversations**. If a build hits that ceiling, the response reports `truncated: true` and you should narrow the window or the predicate.
+
+The status response returns two counts:
+
+- **`size`** — how many conversations the build materialized.
+- **`visible_size`** — how many of those the conversations list can actually render. Conversations that never connected are members of the cohort but cannot be rendered by the conversations list, so a cohort selected by `outcomes: ["not_connected"]` returns `size > 0` and `visible_size: 0`.
+
+`visible_size` is reported as `null` until the cohort is `ready`, and is also `null` on a `failed` cohort.
+
+## Predicate keys
+
+Every predicate key is optional. An empty predicate means "every conversation in this window".
+
+- **`outcomes`** — a non-empty array of outcome codes: `contained`, `escalated_cold`, `escalated_warm`, `ai_abandoned`, `abandoned`, `agent_ended`, `voicemail`, `not_connected`, `errored`.
+- **`day`** — a UTC calendar day as `YYYY-MM-DD`. Narrows to that whole day.
+- **`hour_utc`** — an ISO-8601 instant. Narrows to the one UTC hour it falls in.
+
+`waypoint` is accepted by the request schema but rejected by the handler with `COHORT_PREDICATE_UNSUPPORTED` in this release.
+
+## Window limits
+
+- `window.end` must be after `window.start`.
+- The window may span at most **92 days**.
+- `window.start` may be at most **400 days** ago.
+
+## Errors
+
+- `400 COHORT_INVALID_REQUEST` — the request body failed validation. The message names the offending field.
+- `400 COHORT_PREDICATE_UNSUPPORTED` — the predicate uses `waypoint`, which is not supported yet.
+- `404 COHORT_EXPIRED` — the cohort does not exist, belongs to another organization, or has expired. Foreign and expired cohorts are indistinguishable by design.
+- `409 COHORT_NOT_READY` — the cohort is still `building` or has `failed`; ids are only available once it is `ready`.
+- `503 COHORT_START_FAILED` — Bland could not start the background build. The cohort id is still resolvable and is marked `failed`.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
