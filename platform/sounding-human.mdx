@@ -1,0 +1,130 @@
+---
+title: "Making calls sound human"
+description: "The dispatch settings and prompt-writing rules that decide whether a call sounds like a person or like a robot reading copy."
+---
+
+## Overview
+
+An agent can place a technically perfect call that is still a bad experience: flat, roomless audio, a mangled business name, and a script that reads like a press release. The person who picked up does not blame the model. They blame the business whose name is on the call.
+
+Two separate things decide how a call sounds, and both are easy to leave on the floor:
+
+1. **The settings you dispatch with.** Noise handling, background ambience, and transcription hints are parameters on [`POST /v1/calls`](/api-v1/post/calls).
+2. **The way the prompt is written.** The voice model was trained on recordings of people actually talking, so text that reads like a transcript performs dramatically better than text that reads like writing.
+
+New to the call lifecycle itself? Start with the [Agent quickstart](/platform/agent-quickstart).
+
+## Dispatch settings
+
+<Warning>
+  If you are driving Bland through an MCP tool that only accepts a phone number, a task, a voice, a caller ID, and a first sentence, none of the settings below can be set on that tool. Dispatch through `POST /v1/calls` instead whenever a call needs them.
+</Warning>
+
+| Parameter | Send | Why it matters |
+|---|---|---|
+| `noise_cancellation` | `true` | Filters background noise out of the caller's audio. Set it explicitly on every call rather than relying on the default. |
+| `background_track` | `office` for a room-tone feel | Ambience under the agent. The default (`null`) is quiet phone static and `none` minimizes background noise, while `office`, `cafe`, and `restaurant` put a room behind the voice, which softens the jump between silence and speech. |
+| `keywords` | Every proper noun the call depends on | The transcriber garbles names it has not heard before, and the agent then confidently repeats the wrong one back. Business, product, and person names belong here. |
+| `voicemail` | Decide before dialing | The default is to hang up silently. On cold outbound that can be most of your calls. See [Call recipes](/platform/agent-call-recipes). |
+| `record` | `true` when someone will want to review the call | A call only has a recording if it was dispatched with this. It cannot be added afterward. |
+
+```json
+{
+  "phone_number": "+15551234567",
+  "task": "Ask whether they carry 10mm hex keys.",
+  "noise_cancellation": true,
+  "background_track": "office",
+  "keywords": ["Komeya", "Koshihikari"],
+  "record": true
+}
+```
+
+## Write the prompt like a transcript
+
+Put these rules in the prompt, and write the prompt's own example lines this way too. A prompt written in polished prose teaches the agent to speak in polished prose.
+
+- **Contractions, always.** "I'm", "don't", "it's".
+- **Fillers where they genuinely land.** "um", "uh", "you know", "I mean". Sparingly, at a rate a real person would actually use.
+- **False starts and self-corrections.** "I just- I don't even know what to say." "the thing with the 25th is... well, actually, depends which one you're going to."
+- **Trailing off.** "and I just... yeah."
+- **Emphasis the way a transcript captures it.** CAPS on the punched word ("that is NOT what happened"), a repeated word for real emphasis ("no, no, no, listen"), a stretched beat used rarely ("wait... what?").
+- **Spoken rhythm.** Short clauses. Fragments. Real interruptions. Not long literary sentences.
+- **Cut the written-English tells.** No semicolons, no nested subclauses, and no words nobody says out loud ("moreover", "utilize", "delve", "additionally").
+
+Read every line aloud in your head. If it sounds like an essay, rewrite it until it sounds like a person.
+
+## Tone on the phone
+
+The goal is to convey what needs conveying in as few words as possible, the way people actually speak on a phone call.
+
+- **Fewest words that still land.** Ask what the most accurate reply is, then reduce it until reducing further would be rude.
+- **No recontextualizing.** Cut "just to confirm", "as you mentioned", "so what I'm hearing is". Assume the person remembers what they just said.
+- **Back-channel while they talk.** "mhmm", "uh huh", "right". Lead with one, or drop one in when the person pauses mid-thought.
+- **Empathy in stride.** When someone says something heavy, react before continuing. Never "Got it, and your first name?" straight after bad news.
+- **Ultra-concise when collecting information.** "Yup and last?" beats "Thank you, could I please have your last name as well?"
+- **Topic transitions can be slightly more formal.** "awesome, thanks. And how can I help you today?"
+- **Personality sparingly.** A light joke is fine when it does not interrupt the flow.
+
+The default is still calm efficiency. Reach for a human moment when something genuinely warrants one, then move on.
+
+## Performance tags
+
+Bracketed tags shift delivery. A tag colors the words from its position until the next tag or the end of the line:
+
+```
+I know, I know. [say angrily] But this is the THIRD time!
+```
+
+<Warning>
+  Performance tags are supported on Bland's current-generation voices. Older voice providers strip bracketed text before it reaches the model, so a tag written for one of those voices is silently lost. Check the voice before relying on tags.
+</Warning>
+
+Use these strings verbatim. They are the set the model was trained on. Invented variants such as `[say sarcastically]` or `[sound amused]` are ignored or garbled, so convey sarcasm through wording instead.
+
+<Tabs>
+  <Tab title="Emotion">
+    `[say angrily]` `[say angrily with force]` `[say warmly]` `[say excitedly]` `[say quietly]` `[say in a whisper]` `[say nervously]` `[say sadly]` `[say wearily]` `[say playfully]` `[say confidently]` `[say loudly]`
+  </Tab>
+  <Tab title="Intensity">
+    `[very loud]` `[very fast]` `[voice lowered]`
+  </Tab>
+  <Tab title="Vocalizations">
+    `[laughs]` `[chuckles]` `[sighs]` `[clears throat]` `[gasps]` `[coughs]` `[sniffles]` `[scoffs]` `[exhales]` `[inhales deeply]` `[groans]` `[stammers]` `[yawns]` `[humming]` `[clicks tongue]`
+  </Tab>
+</Tabs>
+
+Rules of thumb:
+
+- **Two per line at most.** Tags are seasoning. A prompt stuffed with them sounds theatrical, which is its own bad call.
+- **Tags amplify what the words already license.** `[say angrily] You went behind my back?!` lands hard. An angry tag on flat words barely moves. To change a line's emotion, change the wording and the tag together.
+- **Never invent tag syntax, and never nest tags.**
+- On a live call the agent's replies are generated turn by turn, so tags belong in the prompt as instructions and examples of how to speak, not as a script you expect back word for word.
+
+## Before you dial
+
+1. Dispatching through `POST /v1/calls` if the call needs anything beyond a number, a task, and a voice.
+2. `noise_cancellation` set explicitly.
+3. `background_track` chosen deliberately.
+4. Every proper noun in `keywords`.
+5. The prompt reads like a transcript, not like copy.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Call recipes for agents" icon="list-check" href="/platform/agent-call-recipes">
+    Voicemail, proper nouns, and escalating to a human.
+  </Card>
+  <Card title="Send Call API reference" icon="code" href="/api-v1/post/calls">
+    Every parameter on this page, in full.
+  </Card>
+  <Card title="Agent quickstart" icon="bolt" href="/platform/agent-quickstart">
+    Place a call, learn how it ended, read the transcript.
+  </Card>
+  <Card title="Conversational Pathways" icon="diagram-project" href="/tutorials/pathways">
+    Structured flows when a prompt stops being enough.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
