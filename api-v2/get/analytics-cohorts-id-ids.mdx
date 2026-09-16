@@ -1,0 +1,100 @@
+---
+title: "Get Cohort Ids"
+api: "GET https://api.bland.ai/v2/analytics/cohorts/{id}/ids"
+description: "Page through the call ids in a ready cohort, 1,000 per request."
+---
+
+Read the cohort's call ids in the cohort's own order. Page with `cursor` and `limit`, and stop when `next_cursor` is `null`.
+
+The cohort must be `ready`. A `building` or `failed` cohort returns `409 COHORT_NOT_READY`. See [Analytics cohorts](/api-v2/analytics-cohorts-overview) for concepts and error codes.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The cohort id.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer">
+  Optional. Page size. Defaults to `1000` and is clamped to the range `[1, 1000]`.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Optional. The `next_cursor` from the previous page. Omit or pass `1` to read the first page. A junk cursor falls back to the beginning.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.ids" type="string[]">
+  Call ids in the cohort's own order, up to `limit` entries.
+</ResponseField>
+
+<ResponseField name="data.next_cursor" type="string | null">
+  Pass this value as `cursor` on the next request to get the following page. `null` when this page is the last one.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success. On failure, the response carries `data: null` and an `errors` array.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url 'https://api.bland.ai/v2/analytics/cohorts/b0d8e1a2-6a1e-4d3f-8c7b-2f9c1a4d5e6f/ids?limit=1000' \
+  --header 'authorization: <YOUR_API_KEY>'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 Page
+{
+  "data": {
+    "ids": [
+      "5f2b1a3c-7d4e-4a1b-8c9d-0e1f2a3b4c5d",
+      "6a3c2b4d-8e5f-4b2c-9d0e-1f2a3b4c5d6e"
+    ],
+    "next_cursor": "1001"
+  },
+  "errors": null
+}
+```
+
+```json 200 Last page
+{
+  "data": {
+    "ids": [
+      "9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a"
+    ],
+    "next_cursor": null
+  },
+  "errors": null
+}
+```
+
+```json 409 Not ready
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "COHORT_NOT_READY",
+      "message": "Cohort is building; ids are available once it is ready"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

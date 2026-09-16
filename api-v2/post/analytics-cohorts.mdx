@@ -1,0 +1,134 @@
+---
+title: "Create Cohort"
+api: "POST https://api.bland.ai/v2/analytics/cohorts"
+description: "Start a background build of a saved, paginable set of conversations selected by outcome, day, or hour."
+---
+
+Kick off a cohort build. Bland writes the cohort row, starts the background materialization, and returns an `id` and `status: "building"` immediately. Poll [Get Cohort](/api-v2/get/analytics-cohorts-id) until the status is `ready`, then read the ids with [Get Cohort Ids](/api-v2/get/analytics-cohorts-id-ids).
+
+See [Analytics cohorts](/api-v2/analytics-cohorts-overview) for concepts, expiry, and error codes.
+
+Cohorts are an enterprise feature. The caller must have an `admin`, `owner`, or `operator` role on the organization.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+<ParamField body="window" type="object" required>
+  The half-open `[start, end)` call window the cohort selects from. Both bounds are ISO-8601 instants. The window may span at most 92 days, and `window.start` may be at most 400 days ago.
+
+  ```json Example
+  "window": {
+    "start": "2026-09-01T00:00:00Z",
+    "end": "2026-09-08T00:00:00Z"
+  }
+  ```
+</ParamField>
+
+<ParamField body="agent_key" type="string">
+  Optional. Narrow the cohort to a single agent. Omit to include every agent in the organization.
+</ParamField>
+
+<ParamField body="predicate" type="object">
+  Optional. Filter conversations inside the window. An empty predicate — or omitting the field — means "every conversation in this window".
+
+  <Expandable title="predicate">
+    <ParamField body="outcomes" type="string[]">
+      A non-empty array of outcome codes. Valid values: `contained`, `escalated_cold`, `escalated_warm`, `ai_abandoned`, `abandoned`, `agent_ended`, `voicemail`, `not_connected`, `errored`.
+    </ParamField>
+
+    <ParamField body="day" type="string">
+      A UTC calendar day as `YYYY-MM-DD`. Narrows the cohort to that whole day.
+    </ParamField>
+
+    <ParamField body="hour_utc" type="string">
+      An ISO-8601 instant. Narrows the cohort to the one UTC hour it falls in.
+    </ParamField>
+  </Expandable>
+
+  ```json Example
+  "predicate": {
+    "outcomes": ["escalated_warm", "voicemail"]
+  }
+  ```
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  The cohort id. Pass it to the status and ids endpoints, or to `GET /user/logs?cohort=<id>`.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Always `"building"` on a successful create. Poll [Get Cohort](/api-v2/get/analytics-cohorts-id) to watch it move to `ready` or `failed`.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success. On failure, the response carries `data: null` and an `errors` array.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v2/analytics/cohorts \
+  --header 'authorization: <YOUR_API_KEY>' \
+  --header 'content-type: application/json' \
+  --data '{
+    "window": {
+      "start": "2026-09-01T00:00:00Z",
+      "end": "2026-09-08T00:00:00Z"
+    },
+    "predicate": {
+      "outcomes": ["escalated_warm", "voicemail"]
+    }
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 202 Accepted
+{
+  "data": {
+    "id": "b0d8e1a2-6a1e-4d3f-8c7b-2f9c1a4d5e6f",
+    "status": "building"
+  },
+  "errors": null
+}
+```
+
+```json 400 waypoint predicate
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "COHORT_PREDICATE_UNSUPPORTED",
+      "message": "waypoint predicates are not supported yet; use outcomes, day or hour_utc"
+    }
+  ]
+}
+```
+
+```json 503 workflow start failed
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "COHORT_START_FAILED",
+      "message": "Could not start the cohort build. The cohort id is still resolvable and is marked failed."
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
