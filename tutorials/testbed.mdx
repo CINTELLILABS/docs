@@ -89,17 +89,51 @@ Switch to the review view to see a diff of your changes alongside batch test res
 
 Publishing both creates a [Standard](/tutorials/standards) and publishes your prompt changes.
 
+## Compare with production
+
+For calls made against a pathway, the testbed shows how the configuration behind the selected turn compares with the current production version. The comparison covers the node prompt, the global prompt, upstream nodes, and any routes the call traversed. If telemetry is incomplete, the panel falls back to comparing just the target node.
+
+Each component is labeled:
+
+- **No change** — the call ran on the same configuration that is in production today.
+- **Changed** — the production version differs from what ran on the call.
+- **Deleted** — the node no longer exists in production.
+
+Use the comparison to decide whether the prompt you are editing is still the one that shipped, or whether production has already moved on.
+
+## Push a change into the agent builder
+
+Once you have edited a node prompt or global prompt and run a simulation you are happy with, you can carry that edit into the agent builder without leaving the testbed. Under the prompt you edited, click **Push change** to open the matching agent in a new tab with your edit staged as an unsaved change on the development draft.
+
+The button stays visible even when a push is refused, and the reason is shown inline. Common reasons a push is blocked:
+
+- The prompt has not been edited or the simulation has not been run.
+- The production or development version has changed since the call was recorded.
+- The call turn used interpolated text that cannot be safely mapped back to a template.
+
+Node prompts and the global prompt are evaluated independently, so one can be pushable while the other is not.
+
+### Development draft has unpublished changes
+
+If the development draft has diverged from production, the button changes to **Push change anyway** and requires a separate **Review and confirm** step before opening the builder. This prevents a one-click push from silently layering your prompt on top of a teammate's unsaved work.
+
+### Unsaved edits in the builder
+
+When the builder opens and you already have unsaved edits on that agent, the testbed handoff pauses and asks whether to load the latest development version (discarding your local edits) or keep them. Nothing is applied until you choose.
+
+Once applied, the staged edit lands on the development draft and the builder stays dirty. **Save** and **Publish** remain separate actions you take in the builder — pushing a change from the testbed never publishes on its own.
+
 ## End-to-End Workflow
 
-1. Open a pathway call in call logs or a test chat in the pathway editor
-2. Find the turn you want to test — an agent response, loop condition, or variable extraction
-3. Toggle on expanded call logs
-4. Hover the transcript bubble and click the testbed button
-4. Edit the prompt, condition, or extraction
-5. Run simulations to see how the change performs
-6. Adjust the threshold and success criteria
-7. Review the diff and batch results
-8. Publish to create a standard that prevents future regressions
+1. Open a pathway call in call logs or a test chat in the pathway editor.
+2. Find the turn you want to test — an agent response, loop condition, or variable extraction.
+3. Toggle on expanded call logs.
+4. Hover the transcript bubble and click the testbed button.
+5. Edit the prompt, condition, or extraction.
+6. Run simulations to see how the change performs.
+7. Either:
+   - Adjust the threshold and success criteria, review the diff, and publish to create a standard that prevents future regressions, or
+   - Click **Push change** to carry the edit into the agent builder as an unsaved development-draft change, then save and publish it from there.
 
 ## Related
 
