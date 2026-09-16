@@ -1,0 +1,105 @@
+---
+title: "Preview Publish Semver"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/publish-preview"
+description: "See the version number a publish will record, without changing anything."
+---
+
+### Overview
+
+Returns the semver a call to [Publish Agent to Staging](/api-v2/post/agents-id-publish) will record, without saving or repointing anything. Use it to show the user what they're about to publish before they confirm. The response has the agent-wide highest number already minted, the next number per `bump` choice, and — when you pass `version_id` — the number originally recorded for that version, if any. Republishing a version that already has a semver re-records its original number, so `version_semver` is what will be shown; a fresh publish uses `next_semver[bump]`.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Returns `404` if the agent is not found.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="version_id" type="string">
+  ID of an existing version on this agent. When set, the response includes `version_semver` — the number this version was minted with, or `null` if it has never been published. May be a version on the dev timeline or on a branch. Returns `404` if the ID does not belong to this agent.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.current_semver" type="string | null">
+  The highest semver ever minted for this agent, for example `1.4.2`, or `null` if nothing has been published yet.
+</ResponseField>
+
+<ResponseField name="data.next_semver" type="object">
+  The next semver for each bump choice, computed off `current_semver`. On a fresh agent the values are `0.0.1`, `0.1.0`, and `1.0.0`.
+
+  <Expandable title="next_semver object">
+    <ResponseField name="patch" type="string">
+      The number a `patch` publish will record.
+    </ResponseField>
+    <ResponseField name="minor" type="string">
+      The number a `minor` publish will record.
+    </ResponseField>
+    <ResponseField name="major" type="string">
+      The number a `major` publish will record.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.version_semver" type="string | null">
+  The semver already recorded on the version named by `version_id`, or `null` if the version has never been published. Omitted (or `null`) when `version_id` is not sent.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "current_semver": "1.4.2",
+    "next_semver": {
+      "patch": "1.4.3",
+      "minor": "1.5.0",
+      "major": "2.0.0"
+    },
+    "version_semver": null
+  },
+  "errors": null
+}
+```
+
+```json Existing Version
+{
+  "data": {
+    "current_semver": "1.4.2",
+    "next_semver": {
+      "patch": "1.4.3",
+      "minor": "1.5.0",
+      "major": "2.0.0"
+    },
+    "version_semver": "1.3.0"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent or version not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
