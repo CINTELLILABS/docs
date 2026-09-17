@@ -7,7 +7,9 @@ Knowledge is how an agent answers from your content rather than from its prompt.
 
 You add a source, attach it to an agent, and the agent searches it during the call.
 
-A source is one thing you added: a file, a site, a block of text, a synced document. The URL still says knowledge base, and so does the tester, and they mean the same thing.
+A source is one thing you added: a file, a site, a block of text, a synced document.
+
+The URL still says knowledge base, and so does the tester. They mean the same thing.
 
 The examples here build knowledge for a front desk agent at Northwind Dental, a fictional practice.
 
@@ -43,7 +45,7 @@ Most of the table is a rolling 30-day window.
 | **Hits / misses** | How many of those queries came back with an answer, and how many did not. |
 | **Coverage** | The share of queries against that source that came back with an answer. |
 | **Resolved coverage** | The same figure counting the gaps you have since answered, so the distance between the two is your backlog. |
-| **Contexts** | Not a 30-day number. Who is using this source: agents and pathway nodes, plus a mark for one only ever reached over the API or from testing, which is the case where a row that looks unused is not. |
+| **Contexts** | Not a 30-day number. Who is using this source: agents, pathway nodes, the API and testing, each with its own mark. |
 
 The list opens sorted by least coverage, so your weakest sources are on top.
 
@@ -51,14 +53,16 @@ The list opens sorted by least coverage, so your weakest sources are on top.
 
 ## Add a source
 
-On the **Sources** tab, **Add sources** opens a dialog with four kinds along the top. Three of them carry a **Description** field. Integration does not, and takes only a name.
+On the **Sources** tab, **Add sources** opens a dialog with four kinds along the top: Upload, Website, Text and Integration. The first three carry a **Description** field. Integration takes only a name.
 
 <Warning>
 Fill in **Description** here, even though it says optional, because this dialog is the only place you can.
 
 At call time the agent sees each attached source as a tool it can choose to use, and the name and description you gave it are what the agent reads when deciding. "Insurance, billing and payment plan policies" gets searched when a caller asks about a copay. "Practice information" does not, and neither does `Doc 3 final.pdf`.
 
-You can rename a source, which the agent also reads, but the description you type now is the one it keeps. Write it in the caller's words rather than yours.
+Renaming is the one thing you can change later, and the agent reads the name too. Write both in the caller's words rather than yours.
+
+If a description turns out wrong, the fix is to re-add the source, not to edit it. See **Common failures**.
 </Warning>
 
 ### Upload
@@ -117,17 +121,17 @@ Pick the source from the list rather than typing the tag yourself. Picking write
 
 ### Tag a source in the prompt
 
-Tagging is worth doing on top of attaching, because it tells the agent where in the conversation you expect the source to matter. It is not what makes the source reachable, and it does not confine the source to that one prompt. It does change how the source can come off, which is the paragraph after next.
+Tagging is worth doing on top of attaching, because it tells the agent where in the conversation you expect the source to matter. It is not what makes the source reachable, and it does not confine the source to that one prompt. It does change how the source can be detached, which is the rule at the end of this section.
 
 The **Knowledge references** section below the prompt lists what you tagged. Unlike **Tool references**, it is not the full list of what the agent can reach.
 
 <Note>
 [Tools](/agents/tools) work the other way. A tool belongs to the one prompt you attached it to. A source belongs to the whole agent.
-
-The exception is a **Knowledge** step inside a complex scenario, which retrieves from its own list rather than from the agent's.
 </Note>
 
-Deleting the last `@` mention of a source detaches it, whatever attached it in the first place. Only a source that has never been tagged in any prompt is safe from a prompt edit. If you check a source on the Sources tab and also tag it, untagging it everywhere takes it off the agent.
+Deleting the last `@` mention of a source detaches it, whatever attached it in the first place. Only a source that has never been tagged in any prompt is safe from a prompt edit.
+
+One surface does not follow the agent-wide rule: a **Knowledge** step inside a complex scenario retrieves from its own list, not the agent's.
 
 ## Test what it retrieves
 
@@ -153,16 +157,18 @@ When the tester decides a question is a gap, a banner offers to answer it on the
 
 ## Edit a source
 
-Open a source from the list. What you get depends on what it is.
+Open a source from the list. The editor changes with the kind:
 
 | Source | Editor |
 |---|---|
 | Text and Markdown | One editor, full width |
 | PDF and DOCX | The original on the left, the text Bland extracted on the right |
-| JSON | The same split. A JSON source that opens as raw JSON instead was added before the conversion step existed |
+| JSON | The same split |
 | CSV | A grid |
 | Website | The URL list, plus **Sync now** and a daily auto-sync switch |
 | Integration | Read-only, with a link out to the app it syncs from |
+
+A JSON source that opens as raw JSON instead of a split was added before the conversion step existed.
 
 Saving is two steps. **Save** shows you a diff, and you commit from there. Content has to stay under 10 MB.
 
@@ -184,12 +190,12 @@ CSV, JSON and website sources can carry a **Retrieval settings** button that doe
 
 Leave it alone unless retrieval is missing things it obviously should find. It is a fix for a specific problem, not a setup step.
 
+The button is gone on a past version, and on some workspaces it is not there at all. If it is missing on a source you are editing now, nothing below applies to you. Where it does appear depends on the source:
+
 | Source | Where the button is | While the source is processing |
 |---|---|---|
 | CSV and JSON | The editing bar. Gone in **Viewing** mode. | Greyed out |
 | Website | Beside **Sync now**, spelled **Retrieval Settings** | Pressable, but the modal will not save until it finishes |
-
-Both are gone on a past version, and on some workspaces the button is not there at all. If it is missing on a source you are editing now, nothing below applies to you.
 
 On a CSV you boost up to three columns and exclude the ones that are noise, like IDs and URLs. On JSON it is the same idea with paths. On a website source it is one switch, for using each page's title and description.
 
@@ -219,9 +225,7 @@ Inside an agent, **Query logs** starts empty on an agent whose traffic predates 
   <Accordion title="It is attached and still never gets used">
     The agent decides whether to search a source from its name and its description. Both are set when you add it, and only the name can be changed afterwards.
 
-    Rename it first, because renaming is free. Say what is in it, in the words a caller would use.
-
-    If the description is the problem, you are re-adding the source. Add it again with a better description, attach the new one everywhere the old one was, then delete the old one. Read the old source's **Contexts** cell before you delete, because deleting takes it off every agent that has it attached.
+    Rename it first, because renaming is free: say what is in it, in the words a caller would use. If the description itself is the problem, re-add the source, attach the new one everywhere the old one was, and delete the old one only after reading its **Contexts** cell.
   </Accordion>
 
   <Accordion title="Save fails and says the agent was updated somewhere else">
@@ -233,7 +237,7 @@ Inside an agent, **Query logs** starts empty on an agent whose traffic predates 
   </Accordion>
 
   <Accordion title="It retrieves the wrong passage">
-    Test the question in **Source testing** and read the top chunk's score. A low score is a content fix. A good score on the wrong passage means the source covers two things at once, so split the second one out into its own source.
+    Test the question in **Source testing** and read the top chunk's score. A low score means your source does not use the caller's words, so rewrite that passage in the words a caller would use. A good score on the wrong passage means the source covers two things at once, so split the second one out into its own source.
   </Accordion>
 
   <Accordion title="A caller got a bad answer and you cannot reproduce it">

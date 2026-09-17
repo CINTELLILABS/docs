@@ -91,6 +91,8 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
   <Step title="Point it at your endpoint">
     URL, method, headers, body. Anywhere a value should change per call, write a token: `{{date}}`, `{{phone}}`.
 
+    The tabs under the URL are **Query**, **Authorization**, **Headers** and **Body**. Query mirrors whatever is already in the URL, and Body is not there at all until you pick a method that has one.
+
     The method list offers five verbs. Webhook tools run **GET** and **POST**. Pick one of the other three and the tool tests fine and then refuses to save, with a message that says only `Failed to create tool`. The reason is the method.
 
     For an API key, do not type it here. Reference a [secret](#store-credentials-as-secrets), and create it before you reach the test step.
@@ -100,6 +102,8 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
     Every token you write shows up under **Detected variables**. Each one needs a decision.
 
     **Add input variable** means the agent fills the token from the conversation. Set its instructions, its type, and whether it is required. The instruction is what the agent reads, so write it for a person: "The day to check, as YYYY-MM-DD."
+
+The last column, **Audio**, pulls the value from what the caller said rather than from the transcript. It costs latency and it is worth it for the things transcription gets wrong: spoken numbers, dates, spellings.
 
     The **X** beside a token ignores it, leaving it to resolve from [variables already on the call](/agents/agent-builder#extract-variables).
 
@@ -111,7 +115,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
 
     Only the fields you check are available to the agent. Everything else is ignored.
 
-    The response you pick from looks like this:
+    The table opens on three rows, `ok`, `message` and `data`. The `data` row has a chevron: expand it for the three below.
 
     | Path | What it holds |
     |---|---|
@@ -121,11 +125,13 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
     | `$.data.rest_api_get_status_text` | The status text |
     | `$.data.rest_api_get_data` | The response body from your endpoint |
 
-    `ok` and `message` come pre-checked. The rest is yours to choose.
+    `ok` and `message` come pre-checked. The rest is yours to choose, and the rows below the table are yours to write: give one a name and a JSONPath and you can pull a single field straight out of the response body.
 
     The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now. Save it, reopen, and check the `rest_api_post_*` rows then.
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
+
+    Each row shows its name wrapped as `{{output.name}}`. That is the table's label, not the token. What you reference in a prompt is the bare name, `{{name}}`.
 
     <Warning>
     Checking at least one output field is what makes the tool wait for a response.
@@ -139,7 +145,9 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
   </Step>
 </Steps>
 
-Three settings sit below the request. **Timeout** is how long to wait before giving up, in milliseconds, from 1,000 to 60,000. **Cooldown** is the minimum gap between calls, in seconds, from 1 to 30. **Cache responses** is for data that does not change within a conversation.
+Three settings sit below the output fields. **Timeout** is how long to wait before giving up, in milliseconds, from 1,000 to 60,000. **Cooldown** is the minimum gap between calls, in seconds, from 1 to 30, and a tool with the field left empty still gets 4 seconds.
+
+**Cache responses** is the third, and it does nothing on a tool. The switch saves, and nothing at call time reads it. Leave it alone and assume every call reaches your endpoint.
 
 ## Store credentials as secrets
 
@@ -155,7 +163,9 @@ There are two kinds, and each row on the tab is labelled with which it is.
 
 Three ways to reference one:
 
-**The Authorization tab** has a picker. Choose a secret and the builder stores a reference to it.
+**The Authorization tab** starts on **No Auth**, and the secret picker only appears once you choose **Bearer Token** or **API Key**. Choose a secret there and the builder stores a reference to it. **API Key** adds a **Header name** field, which falls back to `X-API-Key` if you leave it blank.
+
+The picker also has a **Create New Secret** link, which opens the same dialog without leaving the tool. It stays clickable without the role, and the server refuses the save.
 
 **In a header**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it. Copy it rather than typing it: the copied reference points at the secret by id, so a rename leaves every header working.
 
