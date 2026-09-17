@@ -87,7 +87,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
   <Step title="Point it at your endpoint">
     URL, method, headers, body. Anywhere a value should change per call, write a token: `{{date}}`, `{{phone}}`.
 
-    The method list offers five verbs. Webhook tools run **GET** and **POST**. The other three save without complaint, pass the test step, and then fail on the first real call, logging `Action 'put' not found for integration 'rest_api'` under Analytics.
+    The method list offers five verbs. Webhook tools run **GET** and **POST**. The other three save without complaint and pass the test step. They fail on the first real call, logging `Action 'put' not found for integration 'rest_api'` under Analytics.
 
     For an API key, do not type it here. Reference a [secret](#store-credentials-as-secrets), and create it before you reach the test step.
   </Step>
@@ -119,7 +119,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
 
     `ok` and `message` come pre-checked. The rest is yours to choose.
 
-    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now, then save it and reopen: the builder shows the `rest_api_post_*` names, and those are the ones to check.
+    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now. Save it, reopen, and check the `rest_api_post_*` rows then.
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
 
@@ -141,7 +141,7 @@ Three settings sit below the request. **Timeout** is how long to wait before giv
 
 Do not paste an API key into a tool. Put it in **Secrets** and reference it.
 
-Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one the button is there and disabled, and the same secrets under **Settings**, in **Developer**, are behind an admin-only page.
+Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one, **Add Secret** is visible but disabled. The same secrets under **Settings**, in **Developer**, sit behind an admin-only page.
 
 There are two kinds, and each row on the tab is labelled with which it is.
 
@@ -149,13 +149,15 @@ There are two kinds, and each row on the tab is labelled with which it is.
 
 **Refresh.** A value Bland fetches on a schedule, so the agent never holds an expired token mid-call. You give it a URL, a method, headers or body, how often to refresh, and the path to the value in the response. The interval runs from 10 minutes to 24 hours.
 
-Two ways to reference one:
+Three ways to reference one:
 
 **The Authorization tab** has a picker. Choose a secret and the builder stores a reference to it.
 
-**In a header**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it. Copy it rather than typing it: the copied reference points at the secret by id, so a rename leaves every tool working.
+**In a header**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it. Copy it rather than typing it: the copied reference points at the secret by id, so a rename leaves every header working.
 
-**In a body field**, the copied reference does not work. Write `{{secret.NAME}}` instead, using the secret's name. Headers resolve both forms; bodies resolve the name form only, and an id reference in a body is sent to your endpoint as the literal text `{{secret.id.…}}`. Nothing flags it, and the builder's test passes, because the test takes a different path from a real call.
+**In a body field**, the copied reference does not work. Write `{{secret.NAME}}` instead, using the secret's name. Headers resolve both forms. Bodies resolve the name form only: an id reference reaches your endpoint as the literal text `{{secret.id.…}}`. Nothing flags it, and the builder's test passes, because the test takes a different path from a real call.
+
+The name form is the one a rename breaks, so a secret referenced from a body is worth renaming carefully.
 
 Secrets are organization-wide. Store one and every agent can use it. Rotate the value and every tool that references it follows.
 
@@ -172,14 +174,14 @@ Tagging attaches a copy, not a link. Where you edit decides what changes.
 
 Open the tool from its **Tool references** row and your edit is saved twice, to the agent's copy and to the tool in the library. That is the path to use once an agent has the tool tagged.
 
-Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, and the agent has nothing to pull the change in with. A node inside a complex scenario does: its **Tools** tab carries **Update from library** on each attached tool.
+Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, with no way to pull the change in. Only a node inside a complex scenario has one: its **Tools** tab carries **Update from library** on each attached tool.
 
 Secrets work the other way. They resolve centrally, every time.
 </Warning>
 
 The check is **Tool references** itself. Only tagged tools appear there, so the list is the attachment. A tool you built that is missing from it is tagged in no prompt and will never be called.
 
-**Knowledge references**, directly below it, does not work this way. A source can be attached without being tagged, so that list is not the whole set. See [Knowledge](/agents/knowledge#attach-a-source-to-an-agent).
+**Knowledge references**, directly below it, is not that kind of list. A source can be attached without being tagged, so what it shows is not the whole set. See [Knowledge](/agents/knowledge#attach-a-source-to-an-agent).
 
 ## Watch how tools perform
 
@@ -199,7 +201,7 @@ The number worth watching is the failure rate. A tool that fails quietly leaves 
   </Accordion>
 
   <Accordion title="You edited a tool and the agent still uses the old version">
-    Tagging attached a copy. An edit made on the **Tools** page changes the library only, and nothing on the agent pulls it in. Open the tool from **Tool references** and make the same change there, which saves the agent's copy and the library together. Do it in that order: an edit made from the agent writes its copy over the library row.
+    Tagging attached a copy. An edit made on the **Tools** page changes the library only, and nothing on the agent pulls it in. Open the tool from **Tool references** and make the same change there. That saves the agent's copy and the library together. Keep editing it there from then on: an edit made from the agent writes its copy over the library row.
   </Accordion>
 
   <Accordion title="The tool fires at the wrong moment">
