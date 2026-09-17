@@ -3,9 +3,11 @@ title: 'Knowledge'
 description: 'Add the sources your agent answers from, attach them to an agent, and test what it retrieves'
 ---
 
-Knowledge is how an agent answers from your content rather than from what it was told in a prompt. You add a source, attach it to an agent, and the agent searches it during the call when a caller asks something it covers.
+Knowledge is how an agent answers from your content rather than from its prompt. A caller asks which plans you take, or what a cleaning costs, and the agent reads the answer out of the documents you gave it.
 
-A source is one thing you added: a file, a site, a block of text, a synced document. The product calls it a source everywhere, so this page does too.
+You add a source, attach it to an agent, and the agent searches it during the call.
+
+A source is one thing you added: a file, a site, a block of text, a synced document. The URL still says knowledge base, and so does the tester, and they mean the same thing.
 
 The examples here build knowledge for a front desk agent at Northwind Dental, a fictional practice.
 
@@ -13,36 +15,39 @@ The examples here build knowledge for a front desk agent at Northwind Dental, a 
 
 - An agent to attach sources to, from [Agent builder](/agents/agent-builder)
 - The content you want the agent to answer from
+- For a synced document, an account already linked under [Connections](/agents/tools#integration)
 
 ## Where knowledge lives
 
 **Knowledge** appears at two scopes, and the difference is what is attached rather than what exists.
 
-The selector at the top of the sidebar decides which one you are on. It reads **All agents** for the whole organization, or the agent's name when you are inside one.
+The selector at the top of the sidebar decides which one you are on. At **All agents** it sits under **Resources**. Inside an agent it sits under **Build**.
 
 Both scopes show the same five tabs.
 
-| Tab | What it is for |
+| Tab | What it holds |
 |---|---|
-| **Sources** | Everything you have added. At an agent, also where you attach. |
+| **Sources** | Everything you have added. Inside an agent, also where you attach. |
 | **Questions** | Questions callers asked that the agent could not answer. |
-| **Query logs** | Every retrieval, what it searched, and what came back. |
-| **Knowledge map** | A picture of which sources are carrying the questions. |
+| **Query logs** | Every retrieval: what it searched, and what came back. |
+| **Knowledge map** | Your sources plotted against the questions asked of them. |
 | **Source testing** | Ask a question and see what the agent would retrieve. |
 
-Sources themselves belong to the organization, never to one agent. The list is the same at both scopes. What changes inside an agent is that each row gains a checkbox, and the other four tabs narrow to the sources that agent has attached.
+Sources belong to the organization, never to one agent. What changes inside an agent is that each row gains a checkbox, and Questions, Knowledge map and Source testing narrow to the sources that agent has attached. Query logs narrows differently, to the retrievals that agent's own calls made.
+
+The table's numbers are all a rolling 30-day window: queries, share, hits, misses, and coverage, which is the share of queries against that source that came back with an answer. The list opens sorted by least coverage, so your weakest sources are on top.
 
 {/* IMAGE: The Sources tab at All agents scope, with several sources and their coverage columns. */}
 
 ## Add a source
 
-**Add sources** opens a dialog with four kinds along the top.
+**Add sources** opens a dialog with four kinds along the top, and a **Description** field under all of them.
 
 ### Upload
 
 Drag files in, or click to pick them. PDF, TXT, CSV, JSON and DOCX, up to 10 MB each and 10 files at a time.
 
-Each file becomes its own source. Drop five files and you get five sources, not one with five parts.
+Each file becomes its own source. Drop five files and you get five sources, not one with five parts. They share the description you typed, so a mixed drop is worth doing in batches.
 
 A file over the limit is skipped and the rest still upload, with a message naming the one that did not make it.
 
@@ -62,14 +67,12 @@ Use it for the things that live nowhere else yet: a policy someone wrote in a me
 
 Pick a document from an app you have connected, currently Notion or Google Docs. Bland reads it and keeps reading it.
 
-An integration source is read-only in Bland. Edit the document where it lives, then re-sync.
+An integration source is read-only in Bland. Open it and you get a link out to the app instead of an editor, and that is where you make changes.
 
 <Warning>
 Fill in **Description**, even though it says optional.
 
-At call time the agent sees each attached source as a tool it can choose to use, and your description is what it reads when deciding. "Insurance, billing and payment plan policies" gets consulted. An empty description leaves the agent guessing.
-
-This is the single cheapest thing you can do to make retrieval work.
+At call time the agent sees each attached source as a tool it can choose to use, and the name and description you gave it are what the agent reads when deciding. "Insurance, billing and payment plan policies" gets searched when a caller asks about a copay. "Practice information" does not, and neither does `Doc 3 final.pdf`. Name the source for what is in it, and write the description for the caller's words rather than yours.
 </Warning>
 
 Whichever kind you pick, the source starts processing in the background. It is not searchable until it finishes, and the **Status** column tells you where it is.
@@ -77,6 +80,8 @@ Whichever kind you pick, the source starts processing in the background. It is n
 ## Attach a source to an agent
 
 Adding a source does not give it to an agent. Attach it.
+
+There are two ways. Check it on the agent's Sources tab, or type `@` in the agent's prompt and pick it by name, which leaves `@service-menu` in the text. Either way the row ends up checked, and the source is available on every call, everywhere in the agent, including inside every scenario.
 
 <Steps>
   <Step title="Open the agent's Knowledge page">
@@ -87,54 +92,48 @@ Adding a source does not give it to an agent. Attach it.
     The header counts them as you go.
   </Step>
 
-  <Step title="Press Save">
-    Nothing is attached until you do. The checkboxes are an edit to the agent, like any other, and they ship when the agent does.
+  <Step title="Save">
+    The save control is the floppy disk icon beside **Add sources**. It stays dimmed until you have changed something.
+
+    Nothing is attached until you press it. The checkboxes are an edit to the agent, so they reach a live call the same way any other edit does, when you [publish and promote](/agents/agent-builder#publish-and-promote).
   </Step>
 </Steps>
 
-An attached source is available on every call, everywhere in the agent, including inside every scenario. There is no per prompt version of this.
+### Tag a source in the prompt
 
-### Tagging, and how it relates
+Tagging is worth doing on top of attaching, because it tells the agent where in the conversation you expect the source to matter. It is not what makes the source reachable, and it does not confine the source to that one prompt.
 
-You can also type `@` in the agent's prompt and pick a source by name. That attaches it too, and it shows up checked the next time you look at the Sources tab.
-
-Tagging is worth doing on top of attaching, because it tells the agent where in the conversation you expect the source to matter. It is not what makes the source reachable.
+The **Knowledge references** section below the prompt lists what you tagged. Unlike **Tool references**, it is not the full list of what the agent can reach.
 
 <Note>
-This is the opposite of how [tools](/agents/tools) work. A tool is only available where you tagged it. A source is available once it is attached, tagged or not.
-
-If you remember one difference between the two, make it this one.
+[Tools](/agents/tools) work the other way. A tool belongs to the one prompt you attached it to. A source belongs to the whole agent.
 </Note>
 
-<Warning>
-Untagging can detach, but only a source you attached by tagging.
+Deleting the last `@` mention of a source detaches it, whatever attached it in the first place. Only a source that has never been tagged in any prompt is safe from a prompt edit. If you check a source on the Sources tab and also tag it, untagging it everywhere takes it off the agent.
 
-Remove the last `@` mention of a source you never checked on the Sources tab and it is detached. A source you checked on the Sources tab stays attached no matter what you do to the prompt.
-</Warning>
+A **Knowledge** step inside a complex scenario is the one place a source is scoped to a single point in the flow. It takes source ids in its own **Sources** field, and what it retrieves sits alongside whatever the agent has attached rather than replacing it.
 
 ## Test what it retrieves
 
-**Source testing** is where you find out what the agent would actually do with a question, before a caller asks it.
+**Source testing** answers a question the way the agent would, before a caller asks it.
 
 Pick your sources in the bar at the bottom, type a question, and press Enter. Inside an agent the picker starts with everything that agent has attached, so you are testing the real set.
 
 The answer comes back with **Show diagnostics** underneath it, and the diagnostics are the point.
 
-| What it shows | Why you care |
+| Diagnostic | What it tells you |
 |---|---|
 | **Generated query** | What it actually searched for, which is rarely word for word what you typed. |
 | **Gap evaluation** | `answerable` or `gap`, plus the reason. |
-| **Retrieved chunks** | The passages it found, each with a score, best first. |
+| **Retrieved chunks** | The passages it found, in the order retrieval ranked them, usually with a score. |
 
 A low score on the top chunk means the wording in your source and the wording of the question are too far apart. A good chunk that produced a bad answer is a different problem, usually a source that says two things at once.
 
 <Note>
-The diagnostics show which passages came back, not which source they came from. With several sources selected you cannot tell which one answered.
-
-To pin it down, clear the picker and test one source at a time.
+The diagnostics show which passages came back, not which source they came from. To tell which source answered, clear the picker and test one at a time.
 </Note>
 
-When the tester decides a question is a gap, a banner offers to answer it on the spot. The answer is written into a source you pick, so the next caller who asks gets it.
+When the tester decides a question is a gap, a banner offers to answer it on the spot. You write the answer and pick a source to keep it in, so the next caller who asks gets it.
 
 ## Edit a source
 
@@ -144,28 +143,28 @@ Open a source from the list. What you get depends on what it is.
 |---|---|
 | Text and Markdown | One editor, full width |
 | PDF and DOCX | The original on the left, the text Bland extracted on the right |
-| JSON | The same split, for sources converted to Markdown. Older JSON sources open as plain JSON |
+| JSON | The same split. A JSON source that opens as raw JSON instead was added before the conversion step existed |
 | CSV | A grid |
 | Website | The URL list, plus **Sync now** and a daily auto-sync switch |
 | Integration | Read-only, with a link out to the app it syncs from |
 
-Saving is two steps. **Save** shows you a diff of what changed, and you commit from there. Content has to stay under 10 MB.
+Saving is two steps. **Save** shows you a diff, and you commit from there. Content has to stay under 10 MB.
 
 <Warning>
 On a PDF, DOCX or JSON source you are editing extracted text, not the file.
 
-Bland asks you to confirm, because after you save, the text your agent searches no longer matches the document a person would open. That is often what you want, for fixing a bad table or a garbled heading. It is worth knowing you are doing it.
+Bland asks you to confirm, because after you save, the text your agent searches no longer matches the document a person would open. That is often what you want, for fixing a bad table or a garbled heading.
 </Warning>
 
 Every content save creates a version. Past versions are read-only, and restoring one writes it forward as a new version rather than rewinding, so nothing is lost either way. Renaming a source and changing its retrieval settings do not create versions.
 
 ### Retrieval settings
 
-CSV, JSON and website sources have a **Retrieval settings** button that does one job: tell retrieval which parts of the source carry the meaning.
+Where your workspace has it, CSV, JSON and website sources get a **Retrieval settings** button that does one job: mark which parts of the source carry the meaning. If you do not see it on a source of one of those kinds, your workspace does not have it, and nothing below applies.
 
 On a CSV you boost up to three columns and exclude the ones that are noise, like IDs and URLs. On JSON it is the same idea with paths. On a website source it is one switch, for using each page's title and description.
 
-Everything here starts off. **Suggest** fills it in for you on CSV and JSON, and explains its reasoning. Saving reindexes the source.
+Everything here starts off. **Suggest** fills it in for you on CSV and JSON, and explains its reasoning. Saving reindexes a file source, and re-scrapes a website one, so it is not a free change.
 
 Leave it alone unless retrieval is missing things it obviously should find. It is a fix for a specific problem, not a setup step.
 
@@ -173,17 +172,15 @@ Leave it alone unless retrieval is missing things it obviously should find. It i
 
 Three tabs matter once you have real traffic.
 
-**Questions** collects what callers asked and the agent could not answer, mined out of live conversations, with how many times each one came up. Answer one and the answer is written into a source you choose. Dismiss the ones that are not your job. The list opens on **Open** and sorts by how often each was asked, so the top of it is your work queue.
+**Questions** collects what callers asked and the agent could not answer, with a count of how often each came up. Answer one and it is written into a source you choose. Dismiss the ones that are not your job. The list opens on **Open**, newest first. Sort by **Most asked** to turn it into a work queue.
 
-**Query logs** is every retrieval: the query, whether it was answered, where it came from, and the chunks that came back. Open a row for the full picture. The default window is the last 7 days.
+**Query logs** is every retrieval: the query, whether it was answered, where it came from, and the chunks that came back. Open a row when you need to know what really happened on a specific call rather than what happens when you test now. The default window is the last 7 days.
 
-**Knowledge map** draws your sources against the questions raised against them over 30 days, colored by how often they answered. Red is a source that is being asked and failing. Grey is a source nothing has asked in a month.
+**Knowledge map** shows which sources are carrying the questions over a 30-day window, colored by how often each one answered. Red is a source that is being asked and failing. Grey is a source nothing has asked in a month.
 
 <Note>
-Inside an agent, **Query logs** only shows calls made since agent attribution shipped. Older traffic is still there, on the same tab at **All agents**.
+Inside an agent, **Query logs** starts empty on an agent whose traffic predates per-agent attribution. Those retrievals are still recorded on the same tab at **All agents**.
 </Note>
-
-Everything on the Sources table is a rolling 30-day window: queries, share, hits, misses, coverage. The list opens sorted by least coverage, so your weakest sources are on top.
 
 ## Common failures
 
@@ -197,11 +194,15 @@ Everything on the Sources table is a rolling 30-day window: queries, share, hits
   </Accordion>
 
   <Accordion title="It retrieves the wrong passage">
-    Test the question and look at the top chunk's score. A low score means your source and the question do not share vocabulary, which is a content fix. A good score on the wrong passage usually means one source is covering two topics, which is a splitting fix.
+    Test the question in **Source testing** and read the top chunk's score. A low score is a content fix. A good score on the wrong passage is a splitting fix.
+  </Accordion>
+
+  <Accordion title="A caller got a bad answer and you cannot reproduce it">
+    Find the call in **Query logs** and open it. It records the query the agent actually generated and the chunks that came back at the time, which is what testing now cannot tell you.
   </Accordion>
 
   <Accordion title="A source sits on Processing">
-    Large files take a while, and the row shows a percentage and an estimate. A source that has gone to **Failed** shows why on hover.
+    Large files take a while. Check the row for its percentage and estimate before you assume it is stuck. A source that failed reads **Failed** instead, and hovering shows why.
   </Accordion>
 
   <Accordion title="The site source is out of date">
@@ -209,7 +210,7 @@ Everything on the Sources table is a rolling 30-day window: queries, share, hits
   </Accordion>
 
   <Accordion title="The answer was right last week and is wrong now">
-    Open the source and check its version history. Every content save made a version, and you can read what changed.
+    Open the source and check its version history. Every content save made a version, so you can read what changed and restore the one that was right.
   </Accordion>
 </AccordionGroup>
 

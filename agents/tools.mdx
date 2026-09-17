@@ -11,7 +11,7 @@ The examples here build tools for a front desk agent at Northwind Dental, a fict
 
 ## Prerequisites
 
-- An agent to attach tools to, from [Agent builder](/agents/agent-builder)
+- An agent to tag tools into, from [Agent builder](/agents/agent-builder)
 - The API you want to call, and a key for it if it needs one
 
 ## Where tools live
@@ -65,7 +65,7 @@ You connect an account once, under **Connections**, and then build as many tools
 
 ## Build a webhook tool
 
-Open **Create tool** and choose **Webhook**.
+From inside your agent, open **Tools**, then **Create tool**, and choose **Webhook**.
 
 If you already have a working `curl`, choose **Import from cURL** instead, in the same list. Paste the command and it opens the builder with the request filled in.
 
@@ -119,7 +119,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
 
     `ok` and `message` come pre-checked. The rest is yours to choose.
 
-    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`, and the builder shows those names once you save the tool and reopen it.
+    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now, then save it and reopen: the builder shows the `rest_api_post_*` names, and those are the ones to check.
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
 
@@ -172,12 +172,14 @@ Tagging attaches a copy, not a link. Where you edit decides what changes.
 
 Open the tool from its **Tool references** row and your edit is saved twice, to the agent's copy and to the tool in the library. That is the path to use once an agent has the tool tagged.
 
-Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, and nothing on the agent pulls the change in. The next edit you make from the agent then writes that old copy back over the library.
+Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, and nothing on the agent pulls the change in.
 
 Secrets work the other way. They resolve centrally, every time.
 </Warning>
 
 The check is **Tool references** itself. Only tagged tools appear there, so the list is the attachment. A tool you built that is missing from it is tagged in no prompt and will never be called.
+
+**Knowledge references**, directly below it, does not work this way. A source can be attached without being tagged, so that list is not the whole set. See [Knowledge](/agents/knowledge#attach-a-source-to-an-agent).
 
 ## Watch how tools perform
 
@@ -196,6 +198,10 @@ The number worth watching is the failure rate. A tool that fails quietly leaves 
     Tools do not follow the agent into scenarios. Tag it again in that scenario's prompt.
   </Accordion>
 
+  <Accordion title="You edited a tool and the agent still uses the old version">
+    Tagging attached a copy. An edit made on the **Tools** page changes the library only, and nothing on the agent pulls it in. Open the tool from **Tool references** and make the same change there, which saves the agent's copy and the library together. Do it in that order: an edit made from the agent writes its copy over the library row.
+  </Accordion>
+
   <Accordion title="The tool fires at the wrong moment">
     The agent chooses from the description. Rewrite it to say when to use the tool and when not to, rather than what the endpoint does.
   </Accordion>
@@ -205,7 +211,7 @@ The number worth watching is the failure rate. A tool that fails quietly leaves 
   </Accordion>
 
   <Accordion title="The endpoint returns 401 or 403">
-    The tool is reaching your API and your API is refusing it. Check that the key comes from **Secrets** rather than being pasted in, and that the reference still matches a secret that exists. On a Refresh secret, check that the interval is shorter than the token's lifetime.
+    The tool is reaching your API and your API is refusing it. Check that the reference in the header still matches a secret that exists: renaming a secret breaks the `{{secret.NAME}}` form. On a **Refresh** secret, check that the interval is shorter than the token's lifetime.
   </Accordion>
 
   <Accordion title="The call times out">
