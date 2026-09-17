@@ -13,8 +13,10 @@ Read this before anything else on the page. **Dispatch** holds different things 
 |---|---|
 | **Phone numbers** | **Channels** |
 | **Triggers** | **Triggers** |
-| **Batches** | **Identity** |
+| **Batches** | **Identity**, on enterprise plans |
 | | **Batches** |
+
+The **Messages** tab inside **Channels** is enterprise only too. Both are hidden rather than locked, so on other plans they are simply not there.
 
 The selector at the top of the sidebar is what switches between them. It reads **All agents** for the whole organization, or the agent's name when you are inside one.
 
@@ -23,13 +25,13 @@ The selector at the top of the sidebar is what switches between them. It reads *
 - **Phone numbers**, at **All agents**, is the inventory. Get a number, name it, see what it costs, and decide which agent owns it. Reaching SIP is here too.
 - **Channels**, inside an agent, is the behavior. How that agent answers, what it does on messages, what its web chat looks like.
 
-You cannot get a number from inside an agent. An agent can pick up a number that belongs to nobody, and nothing else.
+You cannot get a number from inside an agent. An agent can pick up a number that belongs to nobody, and no other number.
 
 <Note>
 The sidebar remembers the scope you were last in. If you open Dispatch and find **Channels** where this page says **Phone numbers**, you are inside an agent. Switch the selector to **All agents**.
 </Note>
 
-**Identity** is an agent-scope item this page does not cover. So are the parts of Dispatch that only appear on an enterprise plan: **Identity** itself, and the **Messages** tab under Channels. They are hidden rather than locked, so on other plans they are simply not in the sidebar.
+**Identity** is an agent-scope item this page does not cover.
 
 {/* IMAGE: The Dispatch section of the sidebar at All agents scope, and the same section inside an agent. */}
 
@@ -50,7 +52,7 @@ The sidebar remembers the scope you were last in. If you open Dispatch and find 
 
     **The free one.** A new organization gets one. If the banner reading "You have a free phone number available" is on the page, pick a country, optionally an area code, and press **Activate**. Its absence is not proof you used it, so check your list.
 
-    **Buy one.** **Buy number** opens a drawer. Pick a country, an area code, choose from the results, and **Confirm purchase**. United States and Canada, 15 dollars a month. You need a payment method on file: without one the drawer says so and the confirm button stays disabled.
+    **Buy one.** **Buy number** opens a drawer. Pick a country, an area code, choose from the results, and **Confirm purchase**. United States and Canada only, $15/month. You need a payment method on file: without one the drawer says so and the confirm button stays disabled. Anywhere else, bring your own.
 
     **Bring your own.** **Connect Twilio** takes an Account SID and an Auth Token, then **Import numbers**.
   </Step>
@@ -58,7 +60,7 @@ The sidebar remembers the scope you were last in. If you open Dispatch and find 
   <Step title="Point it at the agent">
     Press **Configure** on the number's row. In the sheet, find the line that reads **Not assigned to an agent** and use the dropdown beside it.
 
-    That dropdown has no visible label, so look for the line rather than a field name. It splits into two sections. Pick from **Agents**. **Classic agents** is something else, and picking from it sends your calls somewhere you did not mean.
+    That dropdown has no visible label, so look for the line rather than a field name. It splits into two sections. Pick from **Agents**. **Classic agents** is your V1 personas, and picking from there sends your calls at one of those instead.
 
     If the number already has an owner, you get a dialog headed **Replace this number's current behavior?**. **Replace and assign** takes it.
   </Step>
@@ -80,7 +82,7 @@ It will not offer a number another agent holds, and it cannot buy one. Both of t
 
 ## Set how the agent behaves
 
-Inside an agent, **Channels** has three tabs. **Messages** is enterprise only and is not in the strip on other plans.
+Switch the sidebar selector back to the agent and open **Channels**, under Dispatch. It has three tabs, and **Messages** is enterprise only.
 
 | Tab | What it covers |
 |---|---|
@@ -89,6 +91,8 @@ Inside an agent, **Channels** has three tabs. **Messages** is enterprise only an
 | **Web chat** | The widget you embed on a site. |
 
 The **Numbers** list sits above the tabs on **Calls** and **Messages**, and is gone on **Web chat**.
+
+**Channels** has no **Save** button. If a setting matters, reload the page and confirm it is still there before you rely on it.
 
 <Warning>
 Voice settings apply to every number the agent holds. Messaging settings are saved separately for each number.
@@ -102,11 +106,13 @@ Depth for the other two channels lives outside this page. See [Messaging](/tutor
 
 **Batches** dials or texts a list of people with one agent.
 
-It is in both sidebars and they are not the same. At **All agents** you choose the agent and can send calls or messages. Inside an agent, that agent is filled in and locked, and the list shows only its batches. **Batches inside an agent are calls only**: the SMS option is not there.
+It is in both sidebars and they are not the same. At **All agents** you choose the agent and can send calls or messages. Inside an agent, that agent is filled in and locked, and the list shows only its batches. Batches inside an agent are calls only: the SMS option is not there.
+
+The wizard runs in three steps, **Recipients**, **Script**, then **Review & send**.
 
 <Steps>
-  <Step title="Create Batch">
-    Three steps: **Recipients**, **Script**, then **Review & send**.
+  <Step title="Open Batches and press Create Batch">
+    In either sidebar. The button is in the top bar, and in the empty state if you have never run one.
   </Step>
 
   <Step title="Upload a CSV">
@@ -114,7 +120,7 @@ It is in both sidebars and they are not the same. At **All agents** you choose t
 
     Numbers need a country code. `+14155550100` works, `4155550100` does not.
 
-    Every other column is yours. Under **How your columns are used** on the next step, say what each one is for, and anything you leave as request data is available in the prompt as `{{column_name}}`.
+    Every other column is yours. Under **How your columns are used** on the next step, each one gets a dropdown. Leave it on **Use as {{column}}** and the value is available in the prompt as `{{column_name}}`. The other options map the column onto a call setting, or ignore it.
   </Step>
 
   <Step title="Write the script">
@@ -140,9 +146,9 @@ Files go up to 125 MB and there is no row limit. Anything over 1,000 calls runs 
 
 The list shows **Status**, **Name**, **Batch ID** and **Created**, newest first with the active ones on top. There is no search and no filter.
 
-**View call logs** on a row opens [Conversations](/agents/conversations) already filtered to that batch. **Stop batch** stops the calls that have not been placed yet, and asks first.
+**View call logs** on a row opens [Conversations](/agents/conversations) already filtered to that batch. **Stop batch** on a row stops the calls that have not been placed yet, and asks first.
 
-Select a row for the detail panel, which adds the event log.
+Select a row for the detail panel, which adds the event log. It carries its own **Stop Batch**, and that one fires straight away with no dialog.
 
 | Status | What it means |
 |---|---|
@@ -153,14 +159,13 @@ Select a row for the detail panel, which adds the event log.
 | **Completed** | Finished. |
 | **Completed Partial** | Ended early, usually because you stopped it. |
 | **Failed** | Ended on an error. |
+| **Unknown** | A batch past its first thousand calls. It is still running. See Common failures. |
 
 ## Triggers
 
 **Triggers** start conversations on their own, from an incoming webhook or a schedule rather than from you pressing anything. It is in both sidebars.
 
-An action that places a call has to name an agent. An action that calls a webhook does not.
-
-That is the whole of it here. See [Triggers](/agents/triggers).
+See [Triggers](/agents/triggers).
 
 ## SIP
 
@@ -184,7 +189,7 @@ See [SIP](/agents/sip).
   </Accordion>
 
   <Accordion title="The agent you want is not in the assignment dropdown">
-    Check which section you are looking at. **Agents** is the list you want. **Classic agents** is a different kind of thing that happens to be in the same menu.
+    Check which section you are looking at. **Agents** is the list you want. **Classic agents** is your V1 personas, in the same menu.
   </Accordion>
 
   <Accordion title="Channels will not offer a number you own">
@@ -197,6 +202,12 @@ See [SIP](/agents/sip).
 
   <Accordion title="A large batch shows Unknown and its Stop button is gone">
     A batch past its first thousand calls reports a state the list does not have a label for. It is still running. Select the row and use **Stop Batch** in the detail panel, which does not ask for confirmation.
+  </Accordion>
+
+  <Accordion title="The batch wizard will not let you continue">
+    You are over a call limit. An alert headed **Over your call limit** appears on the Recipients step and blocks **Next**, and it names whether the hourly or the daily limit is the one you hit. Remove recipients or come back later.
+
+    If the check itself cannot run you get **Rate-limit check unavailable. Sending is not blocked.** instead, and the wizard lets you through.
   </Accordion>
 
   <Accordion title="The SMS option is missing from a batch">
