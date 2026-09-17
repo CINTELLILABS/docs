@@ -19,12 +19,14 @@ Searching for call logs? This is it. Voice, messaging, and web chat all land in 
 
 **Conversations** appears at two scopes, under **Monitor** in the sidebar.
 
+The selector at the top of the sidebar decides which one you are on. It reads **All agents** for the whole organization, or the agent's name when you are inside one.
+
 | Scope | Tabs |
 |---|---|
 | **All agents** | Conversations, Active, Contacts |
 | Inside an agent | Conversations, Contacts |
 
-**Active** is organization-wide only. It watches calls that are happening right now, and the stream behind it has no per-agent view.
+**Active** is at **All agents** only. It watches calls that are happening right now, and the stream behind it has no per-agent view.
 
 <Warning>
 At **All agents**, the list holds calls and message threads. It does not hold web chat.
@@ -58,17 +60,27 @@ Scroll further, or use **Load more**, before you conclude that someone only call
 
 ## Find a conversation
 
-The toolbar has five ways to narrow the list, and it is worth knowing which run on the server and which run in your browser.
+The list opens on the newest conversations and pages as you scroll, with a **Load more** button under the table. There is no date filter, so reaching something from last week means loading your way back to it.
+
+Five controls narrow the list, and a sixth changes how it is sorted and what it shows. Whether a control survives an export depends on where it runs, so each one below is labelled.
 
 ### The search box
 
-Searches the rows already loaded, across four things: the contact's number, the contact's name, the agent or pathway name, and the conversation ID.
+In your browser. Searches the rows already loaded, across four things: the contact's number, the contact's name, the agent or pathway name, and the conversation ID.
 
 It does not search transcripts. For that, open a conversation and use the search field inside it.
 
+If you know the conversation exists and search finds nothing, it is almost always still unloaded. Press **Load more** and search again.
+
+### Agent
+
+On the server. At **All agents**, the button beside the search box reads **All agents** until you pick one, then the agent's name. Pick several and it reads the first name and a count.
+
+It is not there inside an agent, because you are already narrowed to one.
+
 ### Call source
 
-The select beside the search box reads **Live calls**, and that is a filter.
+On the server. The select beside the search box reads **Live calls**, and that is a filter.
 
 <Warning>
 Simulated calls are hidden by default.
@@ -80,33 +92,31 @@ Picking **Simulated calls** also empties the list of message threads and web cha
 
 ### Filter
 
-The **Filter** button opens a condition builder. Pick a channel, then add conditions on **Status**, **Direction**, **Escalation**, **QC tags**, or **Contact**. With more than one condition you get an **All** and **Any** switch, and it starts on **All**.
+In your browser. The **Filter** button opens a condition builder. Pick a channel, then add conditions on **Status**, **Direction**, **Escalation**, **QC tags**, or **Contact**. With more than one condition you get an **All** and **Any** switch, and it starts on **All**.
+
+The status filter offers seven values and the list can show more than that. A status the chip does not recognize reads **No Answer**, so filter on Status to narrow, not to conclude.
 
 Name a set of conditions under **Saved filters** and it stays in this browser.
 
 ### Saved views
 
-The chips above the toolbar are one-click filter presets. Two ship with the product: **Failed & No-Answer** and **Escalated**.
+In your browser. The chips above the toolbar are one-click filter presets. Two ship with the product: **Failed & No-Answer** and **Escalated**.
 
-<Warning>
-A saved view you create does not survive a page reload. Saved filters, under the **Filter** button, do.
-
-If you built something you want to keep, build it as a saved filter.
-</Warning>
+A view you create lives for one page load. If you want to keep it, build it under **Filter** as a saved filter instead.
 
 ### Sort and columns
 
 Sorting is behind the **Sort** button, not the column headers. Clicking a header does nothing. There are two fields to sort on, **Started** and **Last activity**, and a **Newest** and **Oldest** switch.
 
-The **Columns** button shows all twenty. Eleven are on to start with. The ones worth knowing about:
+The **Columns** button shows all twenty. Eleven are on to start with, and one of those, **Issues**, does not fill in yet, so you may want it off. The ones worth turning on:
 
 | Column | Why you would turn it on |
 |---|---|
 | **To** and **From** | The literal numbers on the record. **Contact** shows the other party, which is usually what you want, but not when you are chasing a specific line. |
-| **Dispositions** | The outcomes the call was tagged with. |
-| **QC tags** | Your own review tags. |
+| **Dispositions** | How the call was tagged, when you are auditing a batch without opening each one. |
+| **QC tags** | Your own review tags, when you are working a review queue off the list. |
 | **Error** | Why a failed call failed, without opening it. |
-| **Batch ID** | Which batch a call came from. |
+| **Batch ID** | Which batch a call came from, when one batch behaved differently from the rest. |
 
 Your choice is stored in this browser, not on your account.
 
@@ -116,13 +126,15 @@ Click a row and a panel opens on the right. The page behind it stays live, so yo
 
 Drag the left edge to make it wider, and use the chevrons at the top to step to the previous or next conversation in the list you filtered.
 
+Three controls in the panel header get one conversation's evidence out, which is a different job from Export below. The copy icon offers **Copy Conversation ID**, and on a call **Copy all Logs**. Beside it, **Copy transcript** takes the whole transcript to your clipboard, and it is disabled until the transcript has loaded. On a call there is also a **Flag**, the same one as on the row.
+
 ### A call
 
 The middle of the panel is the call itself: an event strip across the top, the timeline under it, and the recording pinned to the bottom if there is one. Click an event in the strip and both the timeline and the audio jump to it.
 
 The timeline has its own search, and on a call that ran a pathway it has three views: **Transcript**, **Detail**, and **Logs**. It opens on **Transcript**.
 
-Each turn carries actions worth knowing: **Raw LLM context** shows exactly what the agent was given to work from, **Edit node** takes you to the step that produced the turn, and **Open turn in Testbed** opens [Testbed](/agents/testbed) pinned to that node with that turn's input.
+Each turn carries actions worth knowing: **Raw LLM context** shows exactly what the agent was given to work from, **Edit node** takes you to the step in the [agent builder](/agents/agent-builder) that produced the turn, and **Open turn in Testbed** opens [Testbed](/agents/testbed) pinned to that node with that turn's input.
 
 ### A message thread or web chat
 
@@ -134,7 +146,11 @@ A message that failed to send can be retried from its own bubble.
 
 ### The right-hand column
 
-Eleven collapsible sections, and only **Metadata** starts open. **Notes**, **Memory**, **Variables**, **Outcomes**, **Webhook & Tools**, **Citations**, **Pathway Tags**, **QC Tags**, **Guardrails & Alerts**, and **Metrics** follow it.
+Eleven collapsible sections, and only **Metadata** starts open. That is the one that answers how the conversation went: the ID, the channel, the direction, the agent, when it started and ended, how long it ran, its disposition, what it cost, and a written summary at the end of the section.
+
+**Notes**, **Memory**, **Variables**, **Outcomes**, **Webhook & Tools**, **Citations**, **Pathway Tags**, **QC Tags**, **Guardrails & Alerts**, and **Metrics** follow it, closed.
+
+Two of those are easy to confuse with each other and with the list. **Dispositions**, the column, and the **Disposition** row in Metadata are the tag the call ended on. **Outcomes**, the section, is the outcome runs the agent recorded during it. **Status** is a third thing again: whether the call connected.
 
 **Notes** are a voice-only feature. On a message thread the section says so.
 
@@ -238,6 +254,9 @@ Click a row for a live transcript as it happens.
   </Card>
   <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
     Phone numbers and channels, which decide what lands here.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Change the prompt, the variables, or the guardrails a conversation showed you.
   </Card>
 </CardGroup>
 
