@@ -22,7 +22,7 @@ The selector at the top of the sidebar is what switches between them. It reads *
 
 **Phone numbers** and **Channels** are the pair that causes trouble. Both are about how a number reaches an agent, and you only ever see one of them.
 
-- **Phone numbers**, at **All agents**, is the inventory. Get a number, name it, see what it costs, and decide which agent it belongs to.
+- **Phone numbers**, at **All agents**, is the inventory. Get a number, name it, and decide which agent it belongs to.
 - **Channels**, inside an agent, is the behavior. How that agent answers, what it does on messages, what its web chat looks like.
 
 You cannot get a number from inside an agent. All it can attach is one that belongs to nobody.
@@ -58,9 +58,9 @@ The sidebar remembers the scope you were last in. If you open Dispatch and find 
   <Step title="Attach it to the agent">
     Press **Configure** on the number's row. In the sheet, find the line that reads **Not assigned to an agent** and use the dropdown beside it. It has no label of its own.
 
-    It splits into two sections. Pick from **Agents**. **Classic agents** is your V1 personas, and picking from there routes the number to one of them instead.
+    Pick from the **Agents** section. If your organization still has V1 personas there is a **Classic agents** section too, and picking from there routes the number to one of those instead.
 
-    If the number is already attached somewhere, you get a dialog headed **Replace this number's current behavior?**. **Replace and assign** is the one that goes through.
+    You get a dialog headed **Replace this number's current behavior?** if the number is already attached somewhere, and also if it belongs to nobody but carries settings from V1. **Replace and assign** is the one that goes through.
   </Step>
 
   <Step title="Publish the agent to production">
@@ -84,13 +84,17 @@ Switch the sidebar selector back to the agent and open **Channels**, under Dispa
 
 | Tab | What it covers |
 |---|---|
-| **Calls** | How the agent answers the phone: maximum call length, recording, what to do with voicemail, and a fallback number. |
+| **Calls** | How the agent answers the phone: maximum call length, recording, and what to do with voicemail. |
 | **Messages** | SMS, RCS and iMessage behavior, set per number. |
 | **Web chat** | The widget you embed on a site. |
 
-The **Numbers** list sits above the tabs on **Calls** and **Messages**, and is gone on **Web chat**.
+The **Numbers** list sits under the tab strip on **Calls** and **Messages**, above whichever tab you are on, and is gone on **Web chat**. The agent's fallback number is in that section, so it is there on both tabs rather than belonging to Calls.
 
-**Channels** has no **Save** button. If a setting matters, reload the page and confirm it is still there before you rely on it.
+**Calls** and **Messages** have no **Save** button of their own. What you set there is an edit to the agent, held with the rest of your unsaved work and written when the builder next saves.
+
+So finish in the builder rather than in the browser's back button: open **Agent**, **Scenarios** or the agent's **Settings** and let it save. Reloading Channels discards the change instead of confirming it.
+
+**Web chat** is the exception. The widget editor has its own **Save**, and **Publish** beside it.
 
 <Warning>
 Voice settings apply to every number the agent has. Messaging settings are saved separately for each number.
@@ -116,11 +120,13 @@ The wizard runs in three steps, **Recipients**, **Script**, then **Review & send
 
     Numbers need a country code. `+14155550100` works, `4155550100` does not.
 
-    Every other column is yours. Under **How your columns are used** on the next step, each one gets a dropdown. Leave it on **Use as {{column}}** and the value is available in the prompt as `{{column_name}}`. The other options map the column onto a call setting, or ignore it.
+    Every other column is yours. Under **How your columns are used** on the next step, each one gets a dropdown, and **Use as {{column}}** makes the value available in the prompt as `{{column_name}}`.
+
+Watch the defaults. A column named after a call setting, like `from` or `voice`, defaults to setting that field per call rather than becoming a variable, and it cannot be ignored. Rename the column if you meant it as a variable.
   </Step>
 
   <Step title="Write the script">
-    Pick the agent that staffs the batch and write the instructions for this run. Maximum call length is 1 to 120 minutes, and recording is on.
+    Pick the agent that staffs the batch and write the instructions for this run. Maximum call length is 1 to 120 minutes, and recording starts on.
   </Step>
 
   <Step title="Review and send">
@@ -142,7 +148,7 @@ Files go up to 125 MB and there is no row limit. Anything over 1,000 calls runs 
 
 The list shows **Status**, **Name**, **Batch ID** and **Created**, newest first with the active ones on top. There is no search and no filter.
 
-**View call logs** on a row opens [Conversations](/agents/conversations) already filtered to that batch. **Stop batch** on a row stops the calls that have not been placed yet, and asks first.
+A row carries two icon buttons with no labels. The first opens [Conversations](/agents/conversations) already filtered to that batch. The second stops the calls that have not been placed yet, and asks first.
 
 Select a row for the detail panel, which adds the event log. It carries its own **Stop Batch**, and that one fires straight away with no dialog.
 
@@ -159,13 +165,13 @@ Select a row for the detail panel, which adds the event log. It carries its own 
 
 ## Triggers
 
-**Triggers** start conversations on their own, from an incoming webhook or a schedule rather than from you pressing anything. It is in both sidebars.
+A trigger watches for an event in Bland or in a connected app, and runs an action when it happens. One of the actions is placing a call, which is how a trigger starts a conversation without you pressing anything. It is in both sidebars.
 
 See [Triggers](/agents/triggers).
 
 ## SIP
 
-SIP is the second tab of **Phone numbers**, so it is at **All agents** only and cannot be reached from inside an agent.
+SIP is the second tab of **Phone numbers**, so it is at **All agents** only. It is not in an agent's sidebar at all.
 
 See [SIP](/agents/sip).
 
