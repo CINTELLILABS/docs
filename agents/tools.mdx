@@ -61,7 +61,7 @@ This is not the custom code node you place inside a complex scenario. Same name,
 
 Talks to a service you have connected, like a CRM. Pick the connection and the action, and the fields come from the service rather than from you.
 
-You connect an account once, under **Connections**, and then build as many tools on it as you need. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call.
+You connect an account once with **Add connection**, under **Connections**, and then build as many tools on it as you need. The integration builder also offers **New connection** at the top of its connection list, which opens the same flow without leaving the tool. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call.
 
 ## Build a webhook tool
 
@@ -87,7 +87,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
   <Step title="Point it at your endpoint">
     URL, method, headers, body. Anywhere a value should change per call, write a token: `{{date}}`, `{{phone}}`.
 
-    The method list offers five verbs. Webhook tools run **GET** and **POST**. The other three save without complaint and then fail at call time.
+    The method list offers five verbs. Webhook tools run **GET** and **POST**. The other three save without complaint, pass the test step, and then fail on the first real call, logging `Action 'put' not found for integration 'rest_api'` under Analytics.
 
     For an API key, do not type it here. Reference a [secret](#store-credentials-as-secrets), and create it before you reach the test step.
   </Step>
@@ -141,7 +141,7 @@ Three settings sit below the request. **Timeout** is how long to wait before giv
 
 Do not paste an API key into a tool. Put it in **Secrets** and reference it.
 
-Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. The same secrets sit under **Settings**, in **Developer**, but only an organization admin can open that page.
+Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one the button is there and disabled, and the same secrets under **Settings**, in **Developer**, are behind an admin-only page.
 
 There are two kinds, and each row on the tab is labelled with which it is.
 
@@ -153,9 +153,9 @@ Two ways to reference one:
 
 **The Authorization tab** has a picker. Choose a secret and the builder stores a reference to it.
 
-**In a header or a body field**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it.
+**In a header**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it. Copy it rather than typing it: the copied reference points at the secret by id, so a rename leaves every tool working.
 
-Copy it rather than typing it. The copied reference points at the secret by id, so a rename leaves every tool working. The older `{{secret.NAME}}` form still resolves, but a rename breaks it.
+**In a body field**, the copied reference does not work. Write `{{secret.NAME}}` instead, using the secret's name. Headers resolve both forms; bodies resolve the name form only, and an id reference in a body is sent to your endpoint as the literal text `{{secret.id.…}}`. Nothing flags it, and the builder's test passes, because the test takes a different path from a real call.
 
 Secrets are organization-wide. Store one and every agent can use it. Rotate the value and every tool that references it follows.
 
@@ -172,7 +172,7 @@ Tagging attaches a copy, not a link. Where you edit decides what changes.
 
 Open the tool from its **Tool references** row and your edit is saved twice, to the agent's copy and to the tool in the library. That is the path to use once an agent has the tool tagged.
 
-Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, and nothing on the agent pulls the change in.
+Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, and the agent has nothing to pull the change in with. A node inside a complex scenario does: its **Tools** tab carries **Update from library** on each attached tool.
 
 Secrets work the other way. They resolve centrally, every time.
 </Warning>
