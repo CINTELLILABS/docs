@@ -3,81 +3,79 @@ title: 'Dispatch'
 description: 'Put a published agent into service: attach a phone number, set how it behaves on each channel, and run batches'
 ---
 
-Dispatch is how work reaches an agent. A number it answers, the channels it handles, and the batches you send out.
+Dispatch is how work reaches an agent. A caller dials your main line and the agent picks up, or you hand it a list of four hundred numbers and it starts dialing.
 
-## The two Dispatch sections
+You get a number, attach it to an agent, and publish.
 
-Read this before anything else on the page. **Dispatch** holds different things depending on which scope you are in, and the two never appear together.
+## Where Dispatch lives
 
-| At **All agents** | Inside an agent |
+**Dispatch** holds different things depending on which scope you are in, and the two never appear together.
+
+| Scope | Dispatch holds |
 |---|---|
-| **Phone numbers** | **Channels** |
-| **Triggers** | **Triggers** |
-| **Batches** | **Identity**, on enterprise plans |
-| | **Batches** |
+| **All agents** | Phone numbers, Triggers, Batches |
+| Inside an agent | Channels, Triggers, Identity, Batches |
 
-The **Messages** tab inside **Channels** is enterprise only too. Both are hidden rather than locked, so on other plans they are simply not there.
+On any plan but enterprise, **Identity** and the **Messages** tab inside Channels are not there at all. They are hidden rather than locked, so nothing on screen explains the difference.
 
 The selector at the top of the sidebar is what switches between them. It reads **All agents** for the whole organization, or the agent's name when you are inside one.
 
 **Phone numbers** and **Channels** are the pair that causes trouble. Both are about how a number reaches an agent, and you only ever see one of them.
 
-- **Phone numbers**, at **All agents**, is the inventory. Get a number, name it, see what it costs, and decide which agent owns it. Reaching SIP is here too.
+- **Phone numbers**, at **All agents**, is the inventory. Get a number, name it, see what it costs, and decide which agent it belongs to.
 - **Channels**, inside an agent, is the behavior. How that agent answers, what it does on messages, what its web chat looks like.
 
-You cannot get a number from inside an agent. An agent can pick up a number that belongs to nobody, and no other number.
+You cannot get a number from inside an agent. All it can attach is one that belongs to nobody.
 
 <Note>
-The sidebar remembers the scope you were last in. If you open Dispatch and find **Channels** where this page says **Phone numbers**, you are inside an agent. Switch the selector to **All agents**.
+The sidebar remembers the scope you were last in. If you open Dispatch and find **Channels** instead of **Phone numbers**, you are inside an agent. Switch the selector to **All agents**.
 </Note>
-
-**Identity** is an agent-scope item this page does not cover.
 
 {/* IMAGE: The Dispatch section of the sidebar at All agents scope, and the same section inside an agent. */}
 
 ## Prerequisites
 
-- An agent that has been saved at least once in [Agent builder](/agents/agent-builder). Attaching a number reads the agent's latest saved version, and a save made on a branch does not count
+- An agent you have saved at least once in [Agent builder](/agents/agent-builder). A save made on a branch does not count
 - A payment method, if you are buying a number rather than claiming the free one
 
 ## Put an agent on a phone number
 
 <Steps>
   <Step title="Switch to All agents">
-    Use the selector at the top of the sidebar. Dispatch should now show **Phone numbers**.
+    Use the selector at the top of the sidebar. Dispatch now lists **Phone numbers**.
   </Step>
 
   <Step title="Get a number">
     Three ways in, cheapest first.
 
-    **The free one.** A new organization gets one. If the banner reading "You have a free phone number available" is on the page, pick a country, optionally an area code, and press **Activate**. Its absence is not proof you used it, so check your list.
+    **The free one.** A new organization gets one. If the page carries a banner saying "You have a free phone number available", pick a country, optionally an area code, and press **Activate**. Its absence is not proof you used it, so check your list.
 
-    **Buy one.** **Buy number** opens a drawer. Pick a country, an area code, choose from the results, and **Confirm purchase**. United States and Canada only, $15/month. You need a payment method on file: without one the drawer says so and the confirm button stays disabled. Anywhere else, bring your own.
+    **Buy one.** The **Buy number** button opens a drawer. Pick a country and an area code, choose from the results, and press **Confirm purchase**. United States and Canada only, $15/month. You need a payment method on file: without one the drawer says so and the confirm button stays disabled. Anywhere else, bring your own.
 
-    **Bring your own.** **Connect Twilio** takes an Account SID and an Auth Token, then **Import numbers**.
+    **Bring your own.** **Connect Twilio** takes an Account SID and an Auth Token. Then press **Import numbers**.
   </Step>
 
-  <Step title="Point it at the agent">
-    Press **Configure** on the number's row. In the sheet, find the line that reads **Not assigned to an agent** and use the dropdown beside it.
+  <Step title="Attach it to the agent">
+    Press **Configure** on the number's row. In the sheet, find the line that reads **Not assigned to an agent** and use the dropdown beside it. It has no label of its own.
 
-    That dropdown has no visible label, so look for the line rather than a field name. It splits into two sections. Pick from **Agents**. **Classic agents** is your V1 personas, and picking from there sends your calls at one of those instead.
+    It splits into two sections. Pick from **Agents**. **Classic agents** is your V1 personas, and picking from there routes the number to one of them instead.
 
-    If the number already has an owner, you get a dialog headed **Replace this number's current behavior?**. **Replace and assign** takes it.
+    If the number is already attached somewhere, you get a dialog headed **Replace this number's current behavior?**. **Replace and assign** is the one that goes through.
   </Step>
 
   <Step title="Publish the agent to production">
     Attaching a number is not the same as putting the current agent into service. Publish and promote it, from [Agent builder](/agents/agent-builder#publish-and-promote) or [Environments](/agents/environments).
 
-    This is the step people miss, and it is the most common reason a new number does not behave the way the builder does.
+    It is the most common reason a new number does not behave the way the builder does.
   </Step>
 </Steps>
 
 You know it worked when the number's **Assignment** column shows the agent's name, and the agent's **Channels** page lists the number under **Numbers**.
 
 <Note>
-A number that belongs to nobody can also be picked up from the agent's side. On **Channels**, **Add a number** lists the free ones under **Attach a number**.
+A number that belongs to nobody can also be attached from the agent's side. On **Channels**, **Add a number** lists the ones that belong to nobody, under **Attach a number**.
 
-It will not offer a number another agent holds, and it cannot buy one. Both of those are jobs for **All agents**.
+It will not offer a number another agent has, and it cannot buy one. Both of those are jobs for **All agents**.
 </Note>
 
 ## Set how the agent behaves
@@ -95,12 +93,10 @@ The **Numbers** list sits above the tabs on **Calls** and **Messages**, and is g
 **Channels** has no **Save** button. If a setting matters, reload the page and confirm it is still there before you rely on it.
 
 <Warning>
-Voice settings apply to every number the agent holds. Messaging settings are saved separately for each number.
-
-So changing the maximum call length changes it everywhere, and changing a messaging setting changes it on one line.
+Voice settings apply to every number the agent has. Messaging settings are saved separately for each number.
 </Warning>
 
-Depth for the other two channels lives outside this page. See [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
+Messaging and web chat each have a guide of their own: [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
 
 ## Run a batch
 
@@ -135,7 +131,7 @@ The wizard runs in three steps, **Recipients**, **Script**, then **Review & send
 <Warning>
 A CSV with one bad row is rejected whole.
 
-The upload checks every number before the batch exists, names up to three of the offending rows, and counts the rest. Nothing is dialed until the file is clean.
+The upload checks every number before the batch exists, names up to three of the bad rows, and counts the rest.
 
 Duplicates and numbers on your do-not-call list are different: those are dropped at dial time and the rest of the batch runs.
 </Warning>
@@ -159,7 +155,7 @@ Select a row for the detail panel, which adds the event log. It carries its own 
 | **Completed** | Finished. |
 | **Completed Partial** | Ended early, usually because you stopped it. |
 | **Failed** | Ended on an error. |
-| **Unknown** | A batch past its first thousand calls. It is still running. See Common failures. |
+| **Unknown** | A batch past its first thousand calls, still running. |
 
 ## Triggers
 
@@ -169,14 +165,14 @@ See [Triggers](/agents/triggers).
 
 ## SIP
 
-SIP is the second tab of **Phone numbers**, so it is at **All agents** only. There is no way to reach it from inside an agent.
+SIP is the second tab of **Phone numbers**, so it is at **All agents** only and cannot be reached from inside an agent.
 
 See [SIP](/agents/sip).
 
 ## Common failures
 
 <AccordionGroup>
-  <Accordion title="Dispatch shows Channels and this page says Phone numbers">
+  <Accordion title="Dispatch shows Channels, not Phone numbers">
     You are inside an agent. The sidebar remembers your last scope. Switch the selector at the top to **All agents**.
   </Accordion>
 
@@ -185,15 +181,15 @@ See [SIP](/agents/sip).
   </Accordion>
 
   <Accordion title="The number is attached and the agent behaves like an old version">
-    Publish and promote the agent. Attaching a number and putting the current agent into service are two different acts, and the first does not do the second.
+    Publish and promote the agent. Attaching a number does not do it for you.
   </Accordion>
 
   <Accordion title="The agent you want is not in the assignment dropdown">
-    Check which section you are looking at. **Agents** is the list you want. **Classic agents** is your V1 personas, in the same menu.
+    Check which section you are looking at. **Agents** is the list you want. **Classic agents** is your V1 personas, and picking from there routes the number to one of them instead.
   </Accordion>
 
   <Accordion title="Channels will not offer a number you own">
-    It only offers numbers that belong to nobody. Go to **All agents**, open the number, and reassign it there.
+    It only offers numbers that belong to nobody. Go to **All agents**, open the number, and attach it to this agent there.
   </Accordion>
 
   <Accordion title="The CSV will not upload">
@@ -205,7 +201,7 @@ See [SIP](/agents/sip).
   </Accordion>
 
   <Accordion title="The batch wizard will not let you continue">
-    You are over a call limit. An alert headed **Over your call limit** appears on the Recipients step and blocks **Next**, and it names whether the hourly or the daily limit is the one you hit. Remove recipients or come back later.
+    You are over a call limit. An alert headed **Over your call limit** appears on the Recipients step and blocks **Next**. It names which limit you hit, hourly or daily. Remove recipients or come back later.
 
     If the check itself cannot run you get **Rate-limit check unavailable. Sending is not blocked.** instead, and the wizard lets you through.
   </Accordion>
