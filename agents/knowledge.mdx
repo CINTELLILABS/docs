@@ -35,7 +35,7 @@ Both scopes show the same five tabs.
 
 Sources belong to the organization, never to one agent. What changes inside an agent is that each row gains a checkbox, and Questions, Knowledge map and Source testing narrow to the sources that agent has attached. Query logs narrows differently, to the retrievals that agent's own calls made.
 
-Most of the table is a rolling 30-day window: queries, share, hits, misses, and coverage, which is the share of queries against that source that came back with an answer. **Resolved coverage** is the same figure counting the gaps you have since answered, so the distance between the two is your backlog. **Contexts** is not a 30-day number at all: it is how many agents and pathway nodes use this source, which is the column to read before you change one.
+Most of the table is a rolling 30-day window: queries, share, hits, misses, and coverage, which is the share of queries against that source that came back with an answer. **Resolved coverage** is the same figure counting the gaps you have since answered, so the distance between the two is your backlog. **Contexts** is not a 30-day number at all: it answers who is using this source. It counts agents and pathway nodes, and it also marks a source that has only ever been reached over the API or from testing, which is the case where a row that looks unused is not.
 
 The list opens sorted by least coverage, so your weakest sources are on top.
 
@@ -43,7 +43,7 @@ The list opens sorted by least coverage, so your weakest sources are on top.
 
 ## Add a source
 
-**Add sources** opens a dialog with four kinds along the top, and a **Description** field under all of them.
+**Add sources** opens a dialog with four kinds along the top. Three of them carry a **Description** field. Integration does not, and takes only a name.
 
 ### Upload
 
@@ -72,9 +72,11 @@ Pick a document from an app you have connected, currently Notion or Google Docs.
 An integration source is read-only in Bland. Open it and you get a link out to the app instead of an editor, and that is where you make changes.
 
 <Warning>
-Fill in **Description**, even though it says optional.
+Fill in **Description** here, because this dialog is the only place you can.
 
-At call time the agent sees each attached source as a tool it can choose to use, and the name and description you gave it are what the agent reads when deciding. "Insurance, billing and payment plan policies" gets searched when a caller asks about a copay. "Practice information" does not, and neither does `Doc 3 final.pdf`. Name the source for what is in it, and write the description for the caller's words rather than yours.
+At call time the agent sees each attached source as a tool it can choose to use, and the name and description you gave it are what the agent reads when deciding. "Insurance, billing and payment plan policies" gets searched when a caller asks about a copay. "Practice information" does not, and neither does `Doc 3 final.pdf`.
+
+Nothing in the dashboard edits a description afterwards. You can rename a source, which the agent also reads, but the description you type now is the one it keeps. Write it in the caller's words rather than yours.
 </Warning>
 
 Whichever kind you pick, the source starts processing in the background. It is not searchable until it finishes, and the **Status** column tells you where it is.
@@ -88,6 +90,8 @@ There are two ways. Check it on the agent's Sources tab, or type `@` in the agen
 <Steps>
   <Step title="Open the agent's Knowledge page">
     Switch the sidebar selector to the agent, then open **Knowledge**. You get the same source list with a checkbox on every row.
+
+    Check the environment selector in the top bar reads **Development**. These tabs carry it, and on a published environment the checkboxes still look editable and the save will fail.
   </Step>
 
   <Step title="Check the sources it should use">
@@ -160,13 +164,15 @@ On a file source, **Replace file** swaps the underlying document for a new one o
 
 Every content save creates a version. Past versions are read-only, and restoring one writes it forward as a new version rather than rewinding, so nothing is lost either way. Renaming a source and changing its retrieval settings do not create versions.
 
-The menu at the end of a source's row deletes it. Read its **Contexts** count first: a source belongs to the organization, so deleting it takes it off every agent that has it attached, and there is no undo.
+The menu at the end of a source's row deletes it. Read its **Contexts** cell first, and read all of it: a row with no agents and no nodes can still be carrying API traffic. A source belongs to the organization, so deleting it takes it off every agent that has it attached, and there is no undo.
 
 ### Retrieval settings
 
 CSV, JSON and website sources can carry a **Retrieval settings** button that does one job: mark which parts of the source carry the meaning.
 
-On a CSV or JSON source it sits in the editing bar. On a website source it sits beside **Sync now**. It greys out while the source is processing, it is gone on a past version or in **Viewing** mode, and on some workspaces it is not there at all. If it is missing on a source you are editing now, nothing below applies to you.
+On a CSV or JSON source it sits in the editing bar, greys out while the source is processing, and is gone in **Viewing** mode. On a website source it sits beside **Sync now**, spelled **Retrieval Settings**, and stays pressable while the source is processing, though the modal will not let you save until it finishes.
+
+Both are gone on a past version, and on some workspaces the button is not there at all. If it is missing on a source you are editing now, nothing below applies to you.
 
 On a CSV you boost up to three columns and exclude the ones that are noise, like IDs and URLs. On JSON it is the same idea with paths. On a website source it is one switch, for using each page's title and description.
 
@@ -196,7 +202,9 @@ Inside an agent, **Query logs** starts empty on an agent whose traffic predates 
   </Accordion>
 
   <Accordion title="It is attached and still never gets used">
-    Read the description you gave the source. The agent chooses whether to search it from that line alone. Rewrite it to say what the source covers, in the words a caller would use.
+    The agent decides whether to search a source from its name and its description. Both are set when you add it, and only the name can be changed afterwards.
+
+    So rename the source to say what is in it, in the words a caller would use. If the description is the problem, add the source again with a better one and delete the old one.
   </Accordion>
 
   <Accordion title="It retrieves the wrong passage">
