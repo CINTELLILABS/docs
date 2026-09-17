@@ -15,6 +15,7 @@ Searching for automations? That is this page. Automations are **Triggers** now, 
 
 - An agent, from [Agent builder](/agents/agent-builder), if the trigger will place a call
 - A connected Salesforce or HubSpot account, if the trigger starts from a CRM event
+- A connected Slack workspace, if the trigger posts a Slack message
 
 ## Where triggers live
 
@@ -26,7 +27,7 @@ Nothing here is gated by plan, role or permission.
 
 A grid of cards rather than a table. Each card carries the trigger's name, its event, its action and its status.
 
-Clicking a card opens that trigger's run history, not its settings. To change it, use the **Trigger actions** menu in the card's corner and pick **Edit**. The same menu pauses and activates it without opening anything.
+Clicking a card opens that trigger's run history, not its settings. To change it, use the **Trigger actions** menu in the card's corner and pick **Edit**. The same menu pauses and activates it without opening anything, and **Edit trigger** in the top bar of Runs gets you there too.
 
 Search runs on the server and covers everything you have. Sort does not: it orders the page you are looking at, so past 50 triggers **Most runs** and **Name A-Z** are sorting a slice.
 
@@ -44,7 +45,9 @@ There is nothing to drag, connect or add. Clicking a card opens that step in the
 
 The panel's header carries those three steps and a **Test** button. They unlock in order: Conditions and Action stay disabled until the event is chosen.
 
-Each card also reports its own state. An Action card that is not finished reads **Setup required** until it reads **Ready**, a Conditions card that needs one says so, and clicking either jumps straight to the step that needs work.
+Each card also reports its own state. An Action card reads **Not configured** under the action name until every required field is filled.
+
+The **Ready** and **Setup required** badges are slower: they appear only once you have opened that step and moved off it, so on a first pass through the builder there is nothing on the cards to read.
 
 <Steps>
   <Step title="Pick the event">
@@ -55,7 +58,7 @@ Each card also reports its own state. An Action card that is not finished reads 
     | **Post-call webhook** | A call finishes and its summary is ready |
     | **Call started**, **Inbound call received** | A call begins, outbound or in |
     | **Voicemail detected** | A call reaches voicemail instead of a person |
-    | **Warm transfer started**, **Cold transfer started** | A call is handed to a human |
+    | **Warm transfer started**, **Cold transfer started** | A call is handed to a human, announced or not |
     | **Pathway node reached** | A conversation arrives at a node you name |
     | **SMS received**, **Post-SMS webhook** | A message arrives, or a thread closes |
     | **Batch completed** | A batch finishes dialing |
@@ -67,7 +70,7 @@ Each card also reports its own state. An Action card that is not finished reads 
 
     Picking an event clears any conditions and action settings you had already set, because the fields available depend on the event. Your agent choice survives.
 
-    A non-Bland event then asks which connection to use, and offers to make one if you have none.
+    A non-Bland event then asks which connection to use. If you have none, **Connect** opens a panel whose only button takes you to **Tools** in a new tab, which is where connections are actually made. Create it there, come back, and reopen the step.
   </Step>
 
   <Step title="Narrow it with conditions">
@@ -83,51 +86,57 @@ Each card also reports its own state. An Action card that is not finished reads 
   </Step>
 
   <Step title="Choose the action">
-    Five kinds: **Call**, **SMS**, **Webhook**, **Slack message**, and **Custom code**. The list shows only the ones your event supports.
+    Five kinds: **Call**, **SMS**, **Webhook**, **Slack message**, and **Custom code**. The list shows only the ones your event supports, and if you change the event to one that does not support the action you had picked, it quietly reselects the first that fits.
 
-    Every CRM event offers **Call** and **SMS** and nothing else, because the record it carries is a person to reach. Bland's own events mostly offer all five, and the ones with nobody on the other end (**Batch completed**, **Knowledge gap detected**, **Tool success**, **Tool failure**) drop **Call**.
+    Every CRM event offers **Call** and **SMS** and nothing else, because the record it carries is a person to reach. Bland's own events vary, and seven of the fourteen offer less than all five:
 
-    On a **Call**, the agent picker sits above the action type, because it is the first thing to decide. Below it, **Send from** picks the number the call goes out on, from the numbers in [Dispatch](/agents/dispatch), and **Send to** is the number it dials.
+    | Event | What it cannot do |
+    | --- | --- |
+    | **Warm transfer started**, **Cold transfer started**, **Eval completed** | Call |
+    | **Batch completed**, **Knowledge gap detected** | Call, SMS |
+    | **Tool success**, **Tool failure** | Call, SMS, Custom code |
+
+    On a **Call**, the agent picker sits above the action type, because it is the first thing to decide. Below it, **Send from** picks the number the call goes out on, from the numbers in [Dispatch](/agents/dispatch), and **Send to** is the number it dials. Picking the agent fills **Send from** in with that agent's own number. If you own no numbers at all the field is replaced by a note saying calls go out from a shared Bland number, which is not an error.
+
+    A **Slack message** picks its own workspace and channel, whichever event started it.
   </Step>
 
   <Step title="Point the action at the event">
-    Every field that takes a value carries a **Static** / **Event** switch.
+    Still in **Action**. This is the part that makes a trigger worth building: a field can read its value off the event instead of holding something you typed.
 
-    **Static** is a value you type, the same on every run. **Event** reads it off the payload that fired the trigger, so **Send to** can be the phone number on the case rather than one number you typed once.
+    **Send to**, and each **Request data** row, carries a **Static** / **Event** switch on a **Call** and on an **SMS**. **Static** is a value you type, the same on every run. **Event** reads it off the payload that fired the trigger. So **Send to** can be the phone number on the case rather than one number you typed once.
 
-    **Request data** is the other half: key and value pairs handed to the agent as context, each one static or read from the event the same way. The agent sees both the keys and the values, so name them the way you would say them.
+    **Request data** is key and value pairs handed to the agent as context. The agent sees both the keys and the values, so name them the way you would say them.
+
+    A **Webhook**'s URL and its headers carry the same switch with a third option, **Org Default**, which uses the webhook URL from your organization settings.
+
+    The other two actions reach the event a different way. An **SMS** or **Slack** message body has no switch: use **Insert field** above the box, which writes a `{{field.path}}` token into the text. **Custom code** gets the whole payload as `input`.
   </Step>
 
   <Step title="Save, then test, then turn it on">
     **Save** lands the trigger **Paused**. That is the intended order: you cannot test a trigger that has never been saved.
-
-    If you set it **Active** first, saving asks you to confirm, and names what it is about to start firing.
   </Step>
 </Steps>
 
 <Warning>
 If a required field is missing, **Save** does nothing and says nothing.
 
-The button is not disabled and no message appears. What you get is the field label turning red, and the card on the canvas reading **Setup required** instead of **Ready**.
+The button is not disabled and no message appears. What you get is the field label turning red, in whichever step you are looking at, and the Action card on the canvas reading **Not configured**.
 
-So when Save appears to do nothing, read the canvas first. The card that is not **Ready** is the step to open.
+The **Setup required** badge is the signal you would want and the one you cannot count on, because it waits until you have opened that step and left it. So when Save does nothing and nothing on screen is flagged, click each card on the canvas in turn. That takes you to the step and marks it visited, which is what makes the badges start working.
 </Warning>
 
 ## Agent attribution
 
-A **Call** action needs an agent. The field is marked required, the card will not read as ready without it, and **Save** will not go through.
+A **Call** action needs an agent. The field is marked required and **Save** will not go through without it.
 
 No other action has an agent field. A **Webhook** needs a URL, an **SMS** needs a number and a message, and neither asks who is responsible for it.
 
+That has a consequence worth knowing before you build one: only a **Call** trigger is ever filed under an agent. A webhook, SMS, Slack or custom code trigger lives at **All agents** and nowhere else, even when you build it from inside an agent.
+
 Inside an agent, the picker is a locked card rather than a list: the trigger runs on the agent you are editing. If it currently points somewhere else, or nowhere, a warning appears with a **Use this agent** button that repoints it.
 
-That is the rule in the dashboard. The API is looser, so a trigger built elsewhere may not follow it.
-
-<Note>
-A call trigger built at **All agents** is not filed under its agent until you save it a second time.
-
-The first save writes the trigger and the call itself; the attribution the agent's own Triggers list filters on is written by the update that follows. So build it, save, then save again from the page it lands on, and it will appear in both places.
-</Note>
+Requiring an agent is a dashboard rule. The API is looser, so a trigger built elsewhere may not follow it.
 
 <Note>
 Deleting an agent does not delete the triggers pointed at it. They stay in the list, still trying to run, and the agent picker shows **Unknown agent**.
@@ -144,7 +153,9 @@ If you retire an agent, go through **Triggers** and repoint or pause anything at
 
 With it on, pressing **Fire Test Trigger** evaluates your conditions and stops. Nothing is called, sent or posted, and the message you get back says **Conditions evaluated** rather than that the trigger fired.
 
-Turn it off to exercise the action for real. A call action then places a real call to the number in **Send to**, billed like any other, so point it at yourself the first time. It is forced on, and says so, for a trigger that does not fire immediately.
+Turn it off to exercise the action for real. A call action then places a real call to the number in **Send to**, billed like any other, so point it at yourself the first time.
+
+**Conditions only** is forced on, and says so, for a trigger that does not fire immediately.
 </Warning>
 
 A test runs the configuration on your screen, including edits you have not saved. So it is a real answer about what you are looking at, and not necessarily about what is live.
@@ -153,16 +164,18 @@ For a CRM trigger you can paste a real record ID and Bland fetches it, or switch
 
 A Bland event has no record to fetch. It gives you an editable payload instead, and **Fire Test Trigger** waits until that payload is valid JSON.
 
+If your conditions use a change operator, the panel adds **Simulate field changes**, on by default, with a previous value for each field. Without it there is no change for the condition to see.
+
 ## Turn it on
 
 The status control at the top switches between **Active** and **Paused**.
 
 <Warning>
-Status and the trigger's name save themselves the moment you change them. Everything else on the screen waits for **Save**.
+On a trigger that already exists, status and the trigger's name save themselves the moment you change them. Everything else on the screen waits for **Save**.
 
-So flipping to **Active** and then navigating away leaves it Active.
+So flipping to **Active** and then navigating away leaves it Active. Setting it **Active** and then pressing **Save** asks you to confirm, and names what it is about to start firing.
 
-Both only work on a trigger that already exists. While you are building a new one the status control is greyed out, and the name rides the first **Save** with everything else.
+While you are building a new trigger neither applies. The status control is greyed out until the trigger exists, and the name rides the first **Save** with everything else.
 </Warning>
 
 ## Watch it run
@@ -175,7 +188,7 @@ Failures are not the same on every action. A failed webhook is recorded and neve
 
 <AccordionGroup>
   <Accordion title="Save does nothing">
-    A required field is empty. Look at the canvas for the card that does not read **Ready**, open that step, and find the red label. A call action needs both an agent and a **Send to** number.
+    A required field is empty. Walk **Trigger**, **Conditions** and **Action**, looking for the red label in each: visiting them is also what makes the canvas badges appear, so the second pass tells you more than the first. A call action needs both an agent and a **Send to** number.
   </Accordion>
 
   <Accordion title="Test is greyed out">
@@ -187,7 +200,13 @@ Failures are not the same on every action. A failed webhook is recorded and neve
   </Accordion>
 
   <Accordion title="The card does not show the conditions you set">
-    The count on the list card does not fill in for a trigger built here. It is not telling you the conditions are missing, and the conditions themselves work. Open **Trigger actions** on the card and pick **Edit** to see them, since clicking the card goes to Runs.
+    The count on the list card does not fill in for a trigger built here. It is not telling you the conditions are missing, and the conditions themselves work. Clicking the card goes to Runs, so open it from **Trigger actions** then **Edit**, or press **Edit trigger** once you are in Runs.
+  </Accordion>
+
+  <Accordion title="The trigger is not in the agent's list">
+    If it places calls, save it a second time. Save, then save again from the page it lands on, and it appears in both places: the first save writes the trigger and its call settings, and the agent it is filed under is written by the update that follows.
+
+    If it does anything else, it is not missing. Only call triggers are filed under an agent, so a webhook, SMS, Slack or custom code trigger lives at **All agents** only.
   </Accordion>
 
   <Accordion title="Changing the event emptied everything">
