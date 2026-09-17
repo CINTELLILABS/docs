@@ -61,7 +61,9 @@ This is not the custom code node you place inside a complex scenario. Same name,
 
 Talks to a service you have connected, like a CRM. Pick the connection and the action, and the fields come from the service rather than from you.
 
-You connect an account once with **Add connection**, under **Connections**, and then build as many tools on it as you need. The integration builder also offers **New connection** at the top of its connection list, which opens the same flow without leaving the tool. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call.
+You connect an account once with **Add connection**, under **Connections**, and then build as many tools on it as you need. The integration builder also offers **New connection** at the top of its connection list, which opens the same flow without leaving the tool.
+
+Bland's own actions are the exception. They are integration tools too, which is why **End Call** sits in your tool list with a different icon, and they need no connection. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call.
 
 ## Build a webhook tool
 
@@ -87,7 +89,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
   <Step title="Point it at your endpoint">
     URL, method, headers, body. Anywhere a value should change per call, write a token: `{{date}}`, `{{phone}}`.
 
-    The method list offers five verbs. Webhook tools run **GET** and **POST**. The other three save without complaint and pass the test step. They fail on the first real call, logging `Action 'put' not found for integration 'rest_api'` under Analytics.
+    The method list offers five verbs. Webhook tools run **GET** and **POST**. Pick one of the other three and the tool tests fine and then refuses to save, with a message that says only `Failed to create tool`. The reason is the method.
 
     For an API key, do not type it here. Reference a [secret](#store-credentials-as-secrets), and create it before you reach the test step.
   </Step>
@@ -141,7 +143,7 @@ Three settings sit below the request. **Timeout** is how long to wait before giv
 
 Do not paste an API key into a tool. Put it in **Secrets** and reference it.
 
-Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one, **Add Secret** is visible but disabled. The same secrets under **Settings**, in **Developer**, sit behind an admin-only page.
+Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one, **Add Secret** is visible but disabled. The same secrets under **Settings**, in **Developer**, sit behind a page only an owner or admin can open.
 
 There are two kinds, and each row on the tab is labelled with which it is.
 
@@ -174,7 +176,7 @@ Tagging attaches a copy, not a link. Where you edit decides what changes.
 
 Open the tool from its **Tool references** row and your edit is saved twice, to the agent's copy and to the tool in the library. That is the path to use once an agent has the tool tagged.
 
-Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, with no way to pull the change in. Only a node inside a complex scenario has one: its **Tools** tab carries **Update from library** on each attached tool.
+Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, with no way to pull the change in. A scenario node does have one: its **Tools** tab carries **Update from library** on each attached tool.
 
 Secrets work the other way. They resolve centrally, every time.
 </Warning>
@@ -213,7 +215,7 @@ The number worth watching is the failure rate. A tool that fails quietly leaves 
   </Accordion>
 
   <Accordion title="The endpoint returns 401 or 403">
-    The tool is reaching your API and your API is refusing it. Check that the reference in the header still matches a secret that exists: renaming a secret breaks the `{{secret.NAME}}` form. On a **Refresh** secret, check that the interval is shorter than the token's lifetime.
+    The tool is reaching your API and your API is refusing it. If the credential is in a body, check whether the secret has been renamed, because a body reference names the secret and a rename breaks it. If it is in a header, check the secret still exists at all. On a **Refresh** secret, check that the interval is shorter than the token's lifetime.
   </Accordion>
 
   <Accordion title="The call times out">
