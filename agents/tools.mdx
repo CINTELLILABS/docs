@@ -1,0 +1,229 @@
+---
+title: 'Tools'
+description: 'Build the tools an agent calls during a conversation, and store the credentials they need'
+---
+
+A tool is something your agent can do mid-conversation that it could not do with words alone: check a calendar, look up an account, write a record back to your CRM.
+
+You build a tool, then tag it into every prompt that should call it.
+
+The examples here build tools for a front desk agent at Northwind Dental, a fictional practice.
+
+## Prerequisites
+
+- An agent to attach tools to, from [Agent builder](/agents/agent-builder)
+- The API you want to call, and a key for it if it needs one
+
+## Where tools live
+
+**Tools** appears at two scopes, and they are not the same view.
+
+The selector at the top of the sidebar decides which one you are on. It reads **All agents** for the whole organization, or the agent's name when you are inside one. Switching it leaves you on Tools.
+
+**At All agents**, under **Resources**, you get four tabs:
+
+| Tab | What it holds |
+|---|---|
+| **Tools** | Every tool in the organization. |
+| **Analytics** | How often each tool is called, and how often it fails. |
+| **Secrets** | Credentials your tools use, stored once and referenced by name. |
+| **Connections** | Accounts you have linked, like a CRM. |
+
+**Inside an agent**, under **Build**, you get only that agent's tools, and no tabs: the other three live at All agents.
+
+Which scope you create from decides which list the tool appears in. Create from inside an agent and the tool shows on that agent's Tools page. Create from All agents and it shows only there, on no agent's page, though any agent can still tag it in a prompt.
+
+On an agent's Tools page, the **Library** toggle beside the search lists tools from your other agents, each with a **+** that copies it onto this one. It appears once the organization has more than one agent.
+
+{/* IMAGE: The Tools page at All agents scope, showing the four tabs and a populated tool list. */}
+
+## Three kinds of tool
+
+Which one you want depends on what is on the other end.
+
+### Webhook
+
+Calls an HTTP endpoint you already have. You supply the request, and you describe what comes back.
+
+This is the common case. Start here unless you know you need one of the other two.
+
+<Note>
+Searching for custom APIs? That is a webhook tool.
+</Note>
+
+### Custom code
+
+Runs code you write, for the cases a single HTTP call cannot cover: reshaping a response, calling two services and combining them, or a calculation the agent should not be doing in its head.
+
+This is not the custom code node you place inside a complex scenario. Same name, different thing: a tool is called from a prompt, a node is a step in a flow.
+
+### Integration
+
+Talks to a service you have connected, like a CRM. Pick the connection and the action, and the fields come from the service rather than from you.
+
+You connect an account once, under **Connections**, and then build as many tools on it as you need. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call.
+
+## Build a webhook tool
+
+Open **Create tool** and choose **Webhook**.
+
+If you already have a working `curl`, choose **Import from cURL** instead, in the same list. Paste the command and it opens the builder with the request filled in.
+
+<Steps>
+  <Step title="Name it">
+    The name is what you type after `@` in a prompt, so make it the thing it does. `Check calendar` reads better in a prompt than `GET /availability`.
+  </Step>
+
+  <Step title="Describe when to use it">
+    The description is not documentation. The agent reads it to decide whether this is the moment to call the tool.
+
+    Write the trigger, not the mechanism:
+
+    > Look up open appointment slots for a given day. Use this when the caller asks what times are available, before offering any specific time.
+
+    A vague description is the most common cause of a tool firing at the wrong moment.
+  </Step>
+
+  <Step title="Point it at your endpoint">
+    URL, method, headers, body. Anywhere a value should change per call, write a token: `{{date}}`, `{{phone}}`.
+
+    The method list offers five verbs. Webhook tools run **GET** and **POST**. The other three save without complaint and then fail at call time.
+
+    For an API key, do not type it here. Reference a [secret](#store-credentials-as-secrets), and create it before you reach the test step.
+  </Step>
+
+  <Step title="Say which tokens the agent fills in">
+    Every token you write shows up under **Detected variables**. Each one needs a decision.
+
+    **Add input variable** means the agent fills the token from the conversation. Set its instructions, its type, and whether it is required. The instruction is what the agent reads, so write it for a person: "The day to check, as YYYY-MM-DD."
+
+    The **X** beside a token ignores it, leaving it to resolve from [variables already on the call](/agents/agent-builder#extract-variables).
+
+    A token you neither add nor ignore is treated as ignored. The agent never fills it, and nothing tells you.
+  </Step>
+
+  <Step title="Declare what comes back">
+    **Output fields**, sometimes called request variables, name the parts of the response the agent can use. Each one has a name, a path into the response, and a line of context explaining what it is.
+
+    Only the fields you check are available to the agent. Everything else is ignored.
+
+    The response you pick from looks like this:
+
+    | Path | What it holds |
+    |---|---|
+    | `$.ok` | Whether the call succeeded |
+    | `$.message` | A short result message |
+    | `$.data.rest_api_get_status` | The HTTP status |
+    | `$.data.rest_api_get_status_text` | The status text |
+    | `$.data.rest_api_get_data` | The response body from your endpoint |
+
+    `ok` and `message` come pre-checked. The rest is yours to choose.
+
+    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`, and the builder shows those names once you save the tool and reopen it.
+
+    Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
+
+    <Warning>
+    Checking at least one output field is what makes the tool wait for a response.
+
+    Check nothing and the tool fires and moves on, which is right for logging and wrong for anything the agent needs an answer from.
+    </Warning>
+  </Step>
+
+  <Step title="Test it">
+    Run the tool with sample values and check the response before you attach it to anything.
+  </Step>
+</Steps>
+
+Three settings sit below the request. **Timeout** is how long to wait before giving up, in milliseconds, from 1,000 to 60,000. **Cooldown** is the minimum gap between calls, in seconds, from 1 to 30. **Cache responses** is for data that does not change within a conversation.
+
+## Store credentials as secrets
+
+Do not paste an API key into a tool. Put it in **Secrets** and reference it.
+
+Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. The same secrets sit under **Settings**, in **Developer**, but only an organization admin can open that page.
+
+There are two kinds, and each row on the tab is labelled with which it is.
+
+**Static.** A value you paste in, like an API key. It changes only when you change it.
+
+**Refresh.** A value Bland fetches on a schedule, so the agent never holds an expired token mid-call. You give it a URL, a method, headers or body, how often to refresh, and the path to the value in the response. The interval runs from 10 minutes to 24 hours.
+
+Two ways to reference one:
+
+**The Authorization tab** has a picker. Choose a secret and the builder stores a reference to it.
+
+**In a header or a body field**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it.
+
+Copy it rather than typing it. The copied reference points at the secret by id, so a rename leaves every tool working. The older `{{secret.NAME}}` form still resolves, but a rename breaks it.
+
+Secrets are organization-wide. Store one and every agent can use it. Rotate the value and every tool that references it follows.
+
+## Tag a tool into a prompt
+
+Building a tool does not give it to an agent. Tag it.
+
+In the agent's **Prompt**, type `@` and pick the tool by name. The **Tool references** section below the prompt then lists it.
+
+Tools attach per prompt, not per agent. A tool tagged in the agent's prompt is available while the conversation is on the agent, and it does not follow the agent into a [scenario](/agents/agent-builder#extend-the-agent-with-scenarios), a branch of the agent's behavior that has a prompt of its own. If booking lives in its own scenario, tag the calendar tool in that scenario's prompt too. Nothing warns you when this is wrong. The agent simply behaves as though the tool does not exist.
+
+<Warning>
+Tagging attaches a copy, not a link. Where you edit decides what changes.
+
+Open the tool from its **Tool references** row and your edit is saved twice, to the agent's copy and to the tool in the library. That is the path to use once an agent has the tool tagged.
+
+Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, and nothing on the agent pulls the change in. The next edit you make from the agent then writes that old copy back over the library.
+
+Secrets work the other way. They resolve centrally, every time.
+</Warning>
+
+The check is **Tool references** itself. Only tagged tools appear there, so the list is the attachment. A tool you built that is missing from it is tagged in no prompt and will never be called.
+
+## Watch how tools perform
+
+**Analytics** shows call volume and failure rate per tool.
+
+The number worth watching is the failure rate. A tool that fails quietly leaves the agent improvising in the middle of a call, and the caller hears an agent that has lost the thread rather than an error.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="The agent never calls the tool">
+    Look at **Tool references** under the prompt. If the tool is not listed, it is not tagged, and it will never be called. Tag it in the prompt where it should run.
+  </Accordion>
+
+  <Accordion title="It works on the agent but not inside a scenario">
+    Tools do not follow the agent into scenarios. Tag it again in that scenario's prompt.
+  </Accordion>
+
+  <Accordion title="The tool fires at the wrong moment">
+    The agent chooses from the description. Rewrite it to say when to use the tool and when not to, rather than what the endpoint does.
+  </Accordion>
+
+  <Accordion title="The agent calls it but ignores the answer">
+    Check **Output fields**. Only the fields you checked are available to the agent, and each needs a line of context saying what it means.
+  </Accordion>
+
+  <Accordion title="The endpoint returns 401 or 403">
+    The tool is reaching your API and your API is refusing it. Check that the key comes from **Secrets** rather than being pasted in, and that the reference still matches a secret that exists. On a Refresh secret, check that the interval is shorter than the token's lifetime.
+  </Accordion>
+
+  <Accordion title="The call times out">
+    Raise **Timeout**, or make the endpoint faster. A caller is waiting in silence while the tool runs.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Tag tools into a prompt, and the rest of building an agent.
+  </Card>
+  <Card title="Knowledge" icon="book" href="/agents/knowledge">
+    Answer from documents rather than by calling an API.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
