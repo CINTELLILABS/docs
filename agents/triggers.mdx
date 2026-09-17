@@ -1,0 +1,175 @@
+---
+title: 'Triggers'
+description: 'Start conversations automatically from an event: pick what fires it, filter on the payload, and choose what happens'
+---
+
+A trigger watches for something to happen and acts on it. A support case is created and an agent calls the customer. A call ends and a webhook posts the outcome to your system. An inbound SMS arrives and a Slack channel hears about it.
+
+Three parts, always: the event that starts it, the conditions that narrow it, and the action.
+
+<Note>
+Searching for automations? These are they. The word is still in the URL inside an agent.
+</Note>
+
+## Where triggers live
+
+**Triggers** is under **Dispatch**, in both sidebars. At **All agents** it lists every trigger in the organization; inside an agent it lists that agent's.
+
+Nothing here is gated. There is no plan, role or permission check on any of it.
+
+## The list
+
+A grid of cards rather than a table. Each card carries the trigger's name, its event, its action and its status.
+
+Search runs on the server and covers everything you have. Sort does not: it orders the page you are looking at, so past 50 triggers **Most runs** and **Name A-Z** are sorting a slice.
+
+{/* IMAGE: The Triggers list at All agents scope, with several trigger cards. */}
+
+## Build one
+
+**New trigger** opens a two-pane screen. The canvas on the left, the panel on the right.
+
+<Note>
+The canvas is a picture, not an editor. Three cards, stacked, joined by two lines: the event, the conditions, the action.
+
+There is nothing to drag, connect or add. Clicking a card opens that step in the panel, which is where all the work happens.
+</Note>
+
+The panel's header carries the three steps and a **Test** button. The steps unlock in order: Conditions and Action stay disabled until the event is chosen.
+
+<Steps>
+  <Step title="Pick the event">
+    Search, or filter by integration. Bland's own events sort to the top.
+
+    Picking an event clears any conditions and action settings you had already set, because the fields available depend on the event. Your agent choice survives.
+
+    A non-Bland event then asks which connection to use, and offers to make one if you have none.
+  </Step>
+
+  <Step title="Narrow it with conditions">
+    **Trigger must meet** is set to **All conditions** and can be **Any condition**.
+
+    **Add condition** gives you a row with three controls: **Field**, **Condition**, and **Value**, which disappears for operators that do not take one. A new row starts with no field selected on purpose, so nothing meaningless is filtering for you.
+
+    The field list comes from the event, and you can type a path that is not in it. Some CRM events will not save without at least one condition, and some require one that watches for a change.
+
+    On a call action, **Timing** is in this step too: **Immediately**, **Business hours**, or **Custom** days and hours with a timezone. A Bland event only offers Immediately.
+  </Step>
+
+  <Step title="Choose the action">
+    Five kinds: **Call**, **SMS**, **Webhook**, **Slack message**, and **Custom code**. The list shows only the ones your event supports, which is not all five for every event.
+
+    On a **Call**, the agent picker sits above the action type, because it is the first thing to decide.
+  </Step>
+
+  <Step title="Save, then test, then turn it on">
+    **Save** lands the trigger **Paused**. That is the intended order: you cannot test a trigger that has never been saved.
+  </Step>
+</Steps>
+
+<Warning>
+If a required field is missing, **Save** does nothing and says nothing.
+
+The button is not disabled and there is no message. One field label turns red, and if that field is in a step you are not looking at, you get no signal at all.
+
+When Save appears to do nothing, walk the three steps and look for the red label.
+</Warning>
+
+## Agent attribution
+
+A **Call** action needs an agent. The field is marked required, the card will not read as ready without it, and **Save** will not go through.
+
+No other action has an agent field. A **Webhook** needs a URL, an **SMS** needs a number and a message, and neither asks who is responsible for it.
+
+That is the rule in the dashboard. The API is looser, so a trigger built elsewhere may not follow it.
+
+<Note>
+Deleting an agent does not delete the triggers pointed at it. They stay in the list, still trying to run, and the agent picker shows **Unknown agent**.
+
+If you retire an agent, go through **Triggers** and repoint or pause anything attributed to it.
+</Note>
+
+## Test it
+
+**Test** hands the whole right panel over to the test flow. The steps stay along the top and are how you get back out.
+
+<Warning>
+**Conditions only** is on by default.
+
+With it on, pressing **Fire Test Trigger** evaluates your conditions and stops. Nothing is called, sent or posted, and the message you get back says **Conditions evaluated** rather than that the trigger fired.
+
+Turn it off to exercise the action for real. It is forced on, and says so, for a trigger that does not fire immediately.
+</Warning>
+
+A test runs the configuration on your screen, including edits you have not saved. So it is a real answer about what you are looking at, and not necessarily about what is live.
+
+For a CRM trigger you can paste a real record ID and Bland fetches it, or switch to **Manual** and type the fields yourself. For a Bland event you get an editable payload to work from.
+
+## Turn it on
+
+The status control at the top switches between **Active** and **Paused**.
+
+<Warning>
+Status and the trigger's name save themselves the moment you change them. Everything else on the screen waits for **Save**.
+
+So flipping to **Active** and then navigating away leaves it Active.
+</Warning>
+
+## Watch it run
+
+**Runs** in the top bar opens the history for that trigger: when it fired, what happened, and why it stopped if it did.
+
+Failures are not the same on every action. A failed webhook is recorded and never retried. A failed call is retried up to five times when the failure looks temporary.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Save does nothing">
+    A required field is empty. Nothing tells you which, so walk **Trigger**, **Conditions** and **Action** and look for the red label. A call action needs both an agent and a number.
+  </Accordion>
+
+  <Accordion title="Test is greyed out">
+    You have not saved yet. Save first, which leaves the trigger Paused, and test from there.
+  </Accordion>
+
+  <Accordion title="The test passed and nothing happened">
+    **Conditions only** was on, which is its default. It evaluates the conditions and stops before the action. Turn it off and fire again.
+  </Accordion>
+
+  <Accordion title="The card does not show the conditions you set">
+    The count on the list card does not fill in for a trigger built here. It is not telling you the conditions are missing, and the conditions themselves work. Open the trigger to see them.
+  </Accordion>
+
+  <Accordion title="Changing the event emptied everything">
+    Expected. Conditions and action settings are specific to an event, so changing it clears them. Pick the event first and build outward.
+  </Accordion>
+
+  <Accordion title="A trigger runs twice for one thing">
+    Bland events are not de-duplicated. Two events for the same call produce two runs and two calls. CRM syncs are de-duplicated, so this does not happen there.
+  </Accordion>
+
+  <Accordion title="A saved trigger fails with only 'Please try again'">
+    The server's real message does not reach the screen. The usual causes are an event that needs at least one condition, or one that needs a condition watching for a change, so check those first.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Phone numbers, channels, and batches.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Read the calls your triggers placed.
+  </Card>
+  <Card title="Tools" icon="wrench" href="/agents/tools">
+    Call an API from inside a conversation rather than from an event.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Build the agent a call trigger will hand its calls to.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
