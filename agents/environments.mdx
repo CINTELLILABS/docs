@@ -10,8 +10,8 @@ An agent exists in three places at once. You edit one of them. The other two hol
 ## Prerequisites
 
 - An agent you have built, from [Agent builder](/agents/agent-builder)
-- An owner, admin, operator or prompter role. A viewer can read this page in the product but cannot publish, promote, roll back or save a variable
-- Evaluations configured on staging, if you want them to gate both the publish into staging and the promotion out of it. See [Evaluations](/agents/evaluations). Nothing requires one
+- An owner, admin, operator or prompter role. A viewer can see the Environments tab but cannot publish, promote, roll back or save a variable
+- Optional: evaluations configured on staging, if you want them to gate the publish into staging and the promotion out of it. See [Evaluations](/agents/evaluations)
 
 ## Where environments live
 
@@ -31,17 +31,17 @@ Building and saving is not shipping.
 
 ## Your first publish goes straight to production
 
-Until production holds a version, the page works differently from everything described below, and this is the state a new agent is in.
+A new agent is in this state. Until production holds a version, the Environments tab offers one move instead of two.
 
-The Staging and Evaluations cards are stood down, greyed with a line explaining why, and the Development card carries a single **Publish** that releases development **directly to production**. There is no staging hop to make, which is the point: staging cannot usefully hold anything before production has a baseline to compare against.
+The Staging card and the **Evaluations** card that reports on it are both greyed out, and the staging card explains why: *"Not in use until Production has a version. Publish sends Development straight to Production."* The Development card carries a single **Publish** that releases development **directly to production**.
 
-The product says this on the staging card itself: *"Not in use until Production has a version. Publish sends Development straight to Production."*
+There is no staging hop to make, which is the point: staging cannot usefully hold anything before production has a baseline to compare against.
 
-Once production is pinned, the page changes to the flow below and stays there.
+Once production is pinned, the Environments tab switches to the two-step flow and stays there.
 
 ## Publish to staging
 
-On the Development card, **Publish** takes your current work, saves it as a new version, and pins that version to staging.
+Once production holds a version, **Publish** on the Development card takes your current work, saves it as a new version, and pins that version to staging. Publishing to staging does not move production, so callers keep getting the version production already holds.
 
 ## Promote to production
 
@@ -49,11 +49,9 @@ On the Development card, **Publish** takes your current work, saves it as a new 
 
 Staging is the normal path but not the only one. **Force promote**, also on the Development card, releases a development version straight to production without the staging hop.
 
-<Warning>
-**Force promote** skips the evaluation gate as well as the staging hop. That is its purpose, and the bypass is recorded on the deployment.
+**Force promote** skips the evaluation gate as well as the staging hop. That is its purpose, and the bypass is recorded on the deployment. It is the control that puts unevaluated work in front of live callers.
 
-It is the control that puts unevaluated work in front of live callers, so treat it as the exception rather than a shortcut.
-</Warning>
+## Roll back
 
 To go back, **Rollback** on the Production card lists the versions production held before and repins to one you choose. It is a repoint, not a rebuild.
 
@@ -61,7 +59,7 @@ To go back, **Rollback** on the Production card lists the versions production he
 
 Evaluations on staging can gate both moves, and the two directions fail differently.
 
-With no evaluations configured, neither move is gated and both happen immediately. The same is true if you have configured them and marked none of them **Required**: a judge that is not required reports its verdict and never blocks.
+With no evaluations configured, neither move is gated and both happen immediately. The same is true if you have configured them and marked none of them **Required**: a judge, the evaluation that scores a run, reports its verdict and never blocks when it is not required.
 
 <Note>
 One evaluation configuration does both jobs. The one saved on **staging** gates the publish into staging and the promotion out of it. There is no separate production gate to configure.
@@ -83,7 +81,7 @@ A judge scores a rate, not a verdict per conversation. It passes when more than 
 
 The **Variables** tab holds keys and values that belong to an environment rather than to the agent. Pick **Development**, **Staging** or **Production** to choose which set you are editing.
 
-Reference one anywhere in the agent's configuration as `{"{{env.KEY}}"}`. It resolves to the running environment's value when a call starts, which is how an agent points at a test system while it is on staging and a real one once it is promoted. A variable nothing references does nothing.
+The same key can carry a different value in development, staging and production. Reference one anywhere in the agent's configuration as `{"{{env.KEY}}"}`, and it resolves to the running environment's value when a call starts, which is how an agent points at a test system while it is on staging and a real one once it is promoted. A variable nothing references does nothing.
 
 Marking a value **Secret** stores it in your secret vault and keeps only a reference here. It cannot be read back afterwards.
 
