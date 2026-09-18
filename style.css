@@ -1,0 +1,175 @@
+/*
+  Bland docs, welcome page styles.
+
+  Mintlify auto-loads and inlines this file into every page, so everything here
+  is prefixed `splash-` and cannot reach anything else. It exists for the three
+  things a Tailwind utility inside an .mdx cannot do: load a webfont, expose
+  font-role variables, and declare keyframes. A <style> block inside an .mdx is
+  stripped by Mintlify without saying so.
+
+  FONT SWAP SEAM
+  Change the two variables below and the page follows. When Soehne is cleared
+  for docs.bland.ai, self-host the woff2 files, add an @font-face here, and
+  point --splash-font-display at it. No .mdx changes.
+
+  MOTION POLICY
+  Every animation and transition sits inside
+  @media (prefers-reduced-motion: no-preference), so the still state is the
+  DEFAULT and motion is added only for readers who have not asked for less of
+  it. Nothing animates width, height, top or left, so no animation can shift
+  layout, and nothing here is required in order to read the page.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --splash-font-display: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --splash-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.splash-display { font-family: var(--splash-font-display); }
+.splash-mono { font-family: var(--splash-font-mono); }
+
+/* Modules arriving. Opacity and transform only, so nothing can reflow. */
+@keyframes splash-settle {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+
+/*
+  Ambient life in the field. A second deck colour sits underneath a living cell
+  and this fades the cell's own colour away and back, so the module appears to
+  change colour without anything moving. Opacity only.
+
+  Long cycle, long per-cell offset, and only a few cells carry it, so at any
+  moment one or two modules are mid-change rather than the field pulsing.
+*/
+@keyframes splash-breathe {
+  0%, 38%   { opacity: 1; }
+  50%, 76%  { opacity: 0; }
+  88%, 100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .splash-settle {
+    animation: splash-settle 380ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    transform-origin: center;
+  }
+
+  .splash-breathe {
+    animation: splash-breathe var(--splash-breathe-dur, 19s) ease-in-out infinite;
+    animation-delay: var(--splash-breathe-delay, 0s);
+  }
+
+  /* Modules answer the cursor. Transform only, so nothing reflows. */
+  .splash-cell {
+    transition: transform 240ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .splash-cell:hover {
+    transform: scale(1.09);
+    z-index: 1;
+  }
+}
+
+/*
+  The field, at DECK MODULE SCALE.
+
+  The brand deck runs roughly 24 columns across a 1920px page, so its module is
+  about 4.17 percent of page width. Measured, not guessed. At a docs viewport
+  that is 60 to 67px, and 72px here so a single block is unmistakably a
+  deliberate shape rather than grain.
+
+  There is deliberately NO mask. Masking a hard-edged grid with a soft gradient
+  smears each module into a blur. The field dissolves by DROPPING CELLS instead:
+  coverage thins as it travels, while every cell that remains is full size and
+  full saturation. Cells sit on explicit grid lines so a dropped cell leaves a
+  real gap rather than letting the rest reflow.
+
+  40 columns is 2880px. It was 26, which left a bare strip on the right of
+  anything wider than about 1900px. The overhang is clipped by the hero's
+  overflow, so the only cost of the extra columns is the cells that carry them.
+*/
+.splash-frame-a,
+.splash-diffuse { display: none; }
+
+.splash-ballast-inset {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.splash-ballast-herotext {
+  padding-top: 4rem;
+  padding-bottom: 3.5rem;
+}
+
+.splash-ballast-h1 {
+  font-size: 40px;
+  line-height: 1.06;
+}
+
+@media (min-width: 1152px) {
+  .splash-frame-a {
+    display: grid;
+    grid-template-columns: repeat(40, 72px);
+    grid-template-rows: repeat(8, 72px);
+  }
+
+  /* Rows are implicit here: the scatter starts at row 10, so the two fields
+     never collide even though both are positioned from the same origin.
+
+     DISABLED to match the design as approved. To turn the scatter on, delete
+     the display line; the cells are in the page and the grid is defined. */
+  .splash-diffuse {
+    display: none;
+    grid-template-columns: repeat(40, 72px);
+    grid-auto-rows: 72px;
+  }
+
+  /*
+    Align the headline and the card grid to the Bland logo.
+
+    Measured, not guessed: Mintlify's navbar is `.max-w-8xl.mx-auto` (1472px)
+    wrapping a row with 48px of padding, so the logo's left edge sits at
+    (container width - 1472) / 2 + 48. Tracking that expression keeps the two
+    aligned at every width instead of matching at one.
+
+    The 432px floor is the pattern. The L's vertical arm is 5 columns, 360px,
+    and the hero has to clear it. Below roughly 2240px of viewport the logo
+    falls inside the field, and there clearance wins over alignment.
+  */
+  .splash-ballast-inset {
+    padding-left: max(432px, calc((100% - 1472px) / 2 + 48px));
+    padding-right: max(1.5rem, calc((100% - 1472px) / 2 + 48px));
+  }
+
+  .splash-ballast-hero { height: 606px; }
+
+  .splash-ballast-herotext {
+    padding-top: 284px;
+    padding-bottom: 0;
+  }
+
+  .splash-ballast-h1 {
+    font-size: 58px;
+    line-height: 62px;
+  }
+}
+
+/*
+  Mintlify's sticky header carries its own backdrop layer:
+
+    header > div.backdrop-blur   ->   backdrop-filter: blur(8px)
+
+  On an ordinary docs page that blurs body text, which is what it is for. On
+  this one it blurs the colour field as it scrolls under, and hard-edged 72px
+  modules smearing into each other is the one effect this design refuses
+  everywhere else. The field dissolves by dropping cells, never by blurring.
+
+  Scoped with :has() to pages that actually carry a field, because this file is
+  inlined into every page in the docs and the blur is correct on all of them.
+  The header keeps its translucency and its border; only the blur goes.
+*/
+body:has(.splash-display) header .backdrop-blur {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
