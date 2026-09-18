@@ -1,0 +1,168 @@
+---
+title: 'Migrate from V1'
+description: 'Where every V1 feature went, what the migration tool moves, and what changes on the way across'
+---
+
+Nothing you have is deleted, moved or switched off by migrating.
+
+The migration tool reads your V1 work and writes a new agent. It never writes back. Your pathways keep running, your personas keep answering, and the V1 pages for both stay exactly where they are while you work.
+
+## Prerequisites
+
+- An owner, admin, operator or prompter role
+- A V1 pathway or persona to move
+
+## What the tool actually moves
+
+Two things: **pathways** and **personas**.
+
+Everything else is rebuilt by hand. Dispositions, triggers, phone number settings, test cases and test configurations do not come across, because they are not part of a pathway or a persona.
+
+That is worth knowing before you start, because "migration" sounds like it covers the account.
+
+## Where everything went
+
+### Building
+
+| V1 | V2 | Where |
+| --- | --- | --- |
+| Pathways | An **agent**, or a **scenario** inside one | Agent, then **Build** |
+| Personas | An **agent** | The agent itself |
+| Nodes | **Flow steps** inside a complex scenario | Inside the scenario |
+| Global prompt, the "golden node" | The agent's system prompt | Agent **Settings** |
+| Knowledge bases | **Knowledge** | **Resources** |
+| Tools and custom tools | **Tools**, now with tabs | **Resources**, or inside an agent |
+| Integrations | **Connections**, a tab under Tools | **Resources** |
+| Secrets | A tab under Tools | **Resources** |
+| Voices | **Voices**, read-only now | **Resources** |
+| Custom code nodes | A `customCode` flow step | Inside a scenario |
+
+There is no Pathways page in V2 and no top-level node graph. A pathway becomes an agent, or a scenario within one, and its nodes become steps inside that scenario. See [Agent builder](/agents/agent-builder).
+
+### Watching
+
+| V1 | V2 | Where |
+| --- | --- | --- |
+| Call logs, call history | **Conversations** | **Monitor** |
+| Transcripts | Inside a conversation | **Monitor** |
+| Contacts, memory | A tab under Conversations | **Monitor** |
+| Triage | **Issues** | **Monitor** |
+| Alerts | **Alerts** | **Monitor** |
+| Analytics, reports, boards | **Analytics** | **Monitor**, organization scope |
+| Citations and outcomes | **Dispositions** | Agent, **Configure** |
+
+Conversations absorbed three separate V1 log pages. See [Conversations](/agents/conversations).
+
+### Dispatching
+
+| V1 | V2 | Where |
+| --- | --- | --- |
+| Phone numbers | **Phone numbers** | **Dispatch**, organization scope |
+| SIP | A tab under Phone numbers | **Dispatch** |
+| Automations | **Triggers** | **Dispatch** |
+| Batches | **Batches** | **Dispatch** |
+| SMS, messaging | A tab under **Channels** | Agent, **Dispatch** |
+| Web widget | A tab under **Channels** | Agent, **Dispatch** |
+
+See [Dispatch](/agents/dispatch), [Triggers](/agents/triggers) and [SIP](/agents/sip).
+
+### Testing and shipping
+
+| V1 | V2 | Where |
+| --- | --- | --- |
+| Evals, scorecards | **Evaluations**, at `/judges` | **Validate** |
+| Scenarios, the V1 test object | Split between test cases and judges | **Validate** |
+| Testbed | **Testbed**, from a conversation | **Validate** |
+
+Environments, versions and promotion have no V1 equivalent. See [Environments](/agents/environments).
+
+<Note>
+Two words changed meaning rather than moving.
+
+A **scenario** in V1 was a test. In V2 it is a branch of agent behavior, and the V1 test object split into test cases and judges.
+
+A **call** is now a **conversation**, because the same surface carries phone, messaging and web chat.
+</Note>
+
+## Run the migration
+
+<Steps>
+  <Step title="Open the scope selector and choose New agent">
+    Then **Migrate**. This is the only way in. There is an import control inside the builder as well, but it adds to an agent that already exists, so it cannot be your first step.
+  </Step>
+
+  <Step title="Pick pathways, or one persona">
+    A persona becomes one agent: its prompts, voice and call settings become the agent, each pathway condition becomes a complex scenario, and each skill becomes a simple scenario.
+  </Step>
+
+  <Step title="Choose how each one comes across">
+    This is the step to slow down on. Each row has a switch under the column **Migrate with AI**, and it is **on**.
+
+    Leave it on and the pathway is rewritten into simplified agent scenarios. Turn it off and the pathway is copied across as it is, one for one, same steps.
+  </Step>
+
+  <Step title="Create the agent">
+    You can cancel while it runs, up until it starts finalizing.
+  </Step>
+</Steps>
+
+<Warning>
+**End Call nodes stop ending the call.**
+
+However you migrate, including the exact-copy path, an End Call node becomes a wrap-up step that hands control back to the agent instead of hanging up. The migration reports it as a warning and continues.
+
+If a pathway relied on ending calls at a particular point, that behavior is not in the agent until you put it back.
+</Warning>
+
+Three smaller things are dropped, each reported as a warning: a pathway's own global prompt when you migrate a persona, exit pointers on fanned-out components, and tool overrides on a persona's skills.
+
+## Do it twice and you get two agents
+
+The migration has no memory of having run. Running it again on the same pathway produces a second agent rather than updating the first.
+
+That is safe, since nothing is overwritten, but it does mean a hesitant second attempt leaves you tidying up.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="My pathway looks nothing like it did">
+    **Migrate with AI** was on, which is the default. It rewrites rather than copies. Migrate the pathway again with the switch off to get a step-for-step copy, then delete the agent you do not want.
+  </Accordion>
+
+  <Accordion title="The agent will not hang up">
+    End Call nodes do not survive as end-call behavior. They became wrap-up steps. Add the ending back in the scenario.
+  </Accordion>
+
+  <Accordion title="I cannot find Import pathways">
+    It is inside an agent, not on the agent list, because it imports into an agent that already exists. To start from nothing, use **New agent** then **Migrate**.
+  </Accordion>
+
+  <Accordion title="My dispositions and triggers did not come across">
+    They were never in scope. The tool moves pathways and personas only; everything else is rebuilt.
+  </Accordion>
+
+  <Accordion title="My V1 pathway disappeared">
+    It did not. The migration never writes to V1, and the V1 pathways and personas pages are still there. Check you are not looking at the V2 agent list expecting to see it.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Where the migrated pathway lands.
+  </Card>
+  <Card title="Environments" icon="layer-group" href="/agents/environments">
+    Publish the agent before it can take a call.
+  </Card>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Give it a number.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Where your call logs went.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
