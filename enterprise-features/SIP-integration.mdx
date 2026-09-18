@@ -38,6 +38,14 @@ Navigate to the [SIP Trunks dashboard](https://app.bland.ai/dashboard/sip-trunks
 
 Each trunk has its own page with call volume, answer rate, and tabs for **Connection**, **Calls**, **Numbers**, **Headers**, and **Diagnostics** — including a one-click **connection test** that sends a SIP OPTIONS ping to your endpoint over TLS.
 
+Trunk health is shown as one of three badges on the trunk header:
+
+- **Healthy** — the endpoint replied to the SIP OPTIONS ping.
+- **Mutual TLS** *(amber)* — the endpoint completed the TLS handshake but requested a client certificate instead of replying to the OPTIONS ping. Calls are still expected to work; this is common for carrier SBCs that gate signaling with mutual TLS.
+- **Unreachable** *(red)* — no response over TLS.
+
+You can also delete a trunk or detach individual numbers directly from the dashboard. Both actions open a confirmation modal that names the trunk (and, for deletion, the number of attached numbers that will stop routing).
+
 **[3] Create a Trunk**
 
 Click **"Add trunk"** to launch the SIP Setup Wizard. The wizard walks you through your provider, endpoint, firewall, and authentication, then leaves you with a live trunk.
@@ -139,6 +147,8 @@ The discovery engine:
 
 The recommended port, transport, and system are displayed once discovery completes. You can also skip discovery and configure settings manually.
 
+When your DNS `_sips._tcp` SRV record resolves the endpoint, the port is left unpinned and shown as **Auto (SRV)**. This lets Bland re-resolve SRV per call for load balancing and failover — pin an explicit port only if you need to override that. If the endpoint answers TLS but requests a client certificate instead of replying to the SIP OPTIONS ping, discovery reports it as **Endpoint reachable (mutual TLS)** rather than a failure.
+
 <Accordion title="API">
   Run discovery with [`POST /v1/sip/discover`](/api-v1/post/sip-discover). It runs the full probe and returns the result directly:
 
@@ -181,6 +191,11 @@ Two authentication modes are available:
 - **Registration-based** — Bland registers with your server using a username and password via SIP REGISTER. A derived password is returned that you configure in your PBX.
 
 You can also optionally provide **call authentication** credentials (SIP username/password) included on SIP INVITE requests.
+
+**Outbound routing.** For outbound trunks, choose how calls leave Bland:
+
+- **Via Bland's carrier (default)** — outbound calls are placed through Bland's upstream carrier.
+- **Direct to your carrier (BYOC)** — outbound calls bridge straight to your own SIP carrier and Bland answers the carrier's digest challenge natively. Requires SIP credentials (`sip_username`, `sip_password`) on the trunk; the wizard shows a carrier-side checklist and warns if credentials are missing. See [Direct carrier egress (BYOC)](#direct-carrier-egress-byoc) for details.
 
 <Accordion title="API">
   Set `auth_mode` on the trunk or in the inbound direction of [`POST /v1/sip/attach`](/api-v1/post/sip-attach):
@@ -257,6 +272,41 @@ Open a trunk's **Calls** tab and select a call to see the full **SIP trace** —
 />
 
 The trace shows the INVITE / 100 Trying / 180 Ringing / 200 OK / ACK flow with full headers and SDP, including transfers and new legs — copy or export it for debugging. Call logs auto-refresh and include direction, status, SIP response code, duration, and timestamps.
+
+### Direct carrier egress (BYOC)
+
+By default, outbound calls placed through Bland are routed via Bland's upstream carrier. If you have your own SIP carrier — such as **Bandwidth**, **Telnyx**, or any provider that supports standard SIP digest authentication — you can bridge outbound calls **directly** to that carrier from Bland's SIP edge instead.
+
+To enable direct carrier egress on a trunk, set your carrier credentials in the outbound `options` when creating or updating it:
+
+- `sip_username` — the SIP username your carrier expects
+- `sip_password` — the SIP password your carrier expects
+- `sip_realm` *(optional)* — pin the digest realm. Leave unset to accept whatever realm the carrier returns in its `401` / `407` challenge (the common case).
+
+Once these are set, outbound calls placed on numbers attached to that trunk are bridged straight to your carrier and Bland answers the carrier's digest challenge natively — no Twilio hairpin.
+
+```json Example (attach with direct carrier credentials)
+{
+  "phone_numbers": ["+14150000000"],
+  "directions": [
+    {
+      "type": "outbound",
+      "sip_endpoint": "sip:your-carrier.example.com",
+      "options": {
+        "transport": "tls",
+        "secure_media": true,
+        "sip_username": "your-carrier-username",
+        "sip_password": "your-carrier-password",
+        "sip_realm": "your-carrier.example.com"
+      }
+    }
+  ],
+  "service": "sip",
+  "trunk_id": "<trunk-id>"
+}
+```
+
+Direct egress is available for outbound (`outbound` or `both`) trunks. Inbound routing is unchanged.
 
 ### Advanced configuration
 
