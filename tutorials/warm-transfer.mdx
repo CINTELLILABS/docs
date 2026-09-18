@@ -242,6 +242,39 @@ Perfect! I now have one of our specialists joining the call. They've been briefe
 
 ---
 
+### 11. SIP REFER (attended transfer)
+
+**What it does**: Hands the merged call off to your PBX using a SIP `REFER` with a `Replaces` header, so your PBX joins the human agent and the caller directly and owns the resulting call. This behaves like a native attended transfer on your phone system, with Bland out of the media path once the merge completes.
+
+**Why it matters**: Teams on a carrier-direct SIP trunk often need the final call to live on their own PBX for recording, reporting, and follow-on transfers. Standard warm transfer keeps the merged call bridged through Bland; attended REFER + Replaces returns full control to your PBX.
+
+**How it works**:
+
+1. The inbound caller arrives over your carrier-direct SIP trunk.
+2. Bland dials the consult leg to your PBX over the same trunk, so the human agent is briefed just like a standard warm transfer.
+3. When the agent merges the call, Bland sends a SIP `REFER` with a `Replaces` header on the consult leg. Your PBX joins the agent and the original caller directly and takes ownership.
+4. If the transfer cannot be completed cleanly, Bland falls back to a standard warm transfer merge so the customer is never dropped.
+
+Custom SIP headers on the `Refer-To` URI come from your SIP trunk's outbound header configuration — the same mapping used for outbound INVITEs and `<Dial><Sip>` transfers. Nothing is configured per node.
+
+**Configuration**:
+- **Location**: Transfer Call node → toggle **SIP REFER**
+- **Default**: Disabled (uses the standard warm transfer merge)
+- **API field**: `enable_sip_refer` on the `warm_transfer_call` action and on the persona `call_config`
+
+**When it applies**: Attended REFER + Replaces runs only when all of the following are true:
+- The toggle (or `enable_sip_refer`) is on.
+- The inbound call arrived over a carrier-direct SIP trunk.
+- The trunk's host can be resolved to your PBX.
+
+Calls that do not qualify — Twilio-terminated SIP, PSTN, a trunk whose host cannot be resolved, and direct-carrier-egress trunks — keep the standard warm transfer merge, unchanged.
+
+<Note>
+Your PBX must accept INVITEs from Twilio's SIP IP ranges for the consult leg, the same requirement as a `<Dial><Sip>` transfer. See [Firewall allow-list](/enterprise-features/SIP-integration#firewall-allow-list).
+</Note>
+
+---
+
 ## Testing Your Configuration
 
 Every warm transfer configuration includes a built-in testing panel where you can send a real proxy agent call to verify your settings work correctly.
