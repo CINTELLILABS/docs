@@ -1,12 +1,19 @@
 ---
 title: "Promote Agent to Production"
 api: "POST https://api.bland.ai/v2/agents/{agent_id}/promote"
-description: "Pin production to the version currently in staging."
+description: "Pin production to a version, from staging or straight from a development or branch version."
 ---
 
 ### Overview
 
-Moves the agent's `production` pointer to whatever `staging` is pinned to and records a deployment carrying that version's original semver; promoting never mints a new number. Phone numbers attached to the agent begin answering with the promoted version. No request body. The server does not run checks here: start one with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) beforehand and gate on its result yourself.
+Moves the agent's `production` pointer and records a deployment. Phone numbers attached to the agent begin answering with the promoted version.
+
+The body picks one of two modes:
+
+- Send an empty body to promote whatever `staging` is pinned to. This never mints a new number; the deployment carries the version's original semver.
+- Send `version_id` to promote an exact version straight to production without going through staging. The version can be on the dev timeline or on an open branch. The server pins `staging` and `production` to that version in the same transaction so every production release stays on record as a staging release. If the version has never been published, its semver is minted now using `bump`.
+
+The server enforces the agent's saved evaluation policy against the version being promoted. Set `force: true` to skip that check for this one call; the audit event records the bypass. To gate a promotion yourself, start a check run first with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) and only call promote after it passes.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -22,6 +29,24 @@ Requires an admin, owner, operator, or prompter role.
   The agent's unique identifier.
 </ParamField>
 
+### Body Parameters
+
+<ParamField body="version_id" type="string">
+  ID of an existing version on this agent to promote straight to production. May be on the dev timeline or on an open branch. Returns `404 VERSION_NOT_FOUND` if the ID does not belong to this agent. Omit to promote the version currently pinned to staging.
+</ParamField>
+
+<ParamField body="branch_id" type="string">
+  Optional. When promoting from a branch, pass the branch's ID alongside `version_id`. It must match the branch the version was saved onto exactly; a mismatch returns `404 VERSION_NOT_FOUND`. If the branch has already been merged or archived, the request is refused with `409 BRANCH_CLOSED`. Requires `version_id`; sending it alone returns `400 INVALID_BRANCH`.
+</ParamField>
+
+<ParamField body="bump" type="string" default="patch">
+  Which component to increment when a promoted version needs a semver minted: `patch`, `minor`, or `major`. Applies only in `version_id` mode when the version has never been published. The increment is applied to the highest number ever minted for the agent. Ignored when the version already has a number. Returns `400 INVALID_BUMP` for any other value.
+</ParamField>
+
+<ParamField body="force" type="boolean" default="false">
+  Skip the saved evaluation policy for this promote. The bypass is recorded on the audit event. Returns `400 INVALID_FORCE` if not a boolean.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data.semver" type="string">
@@ -32,8 +57,12 @@ Requires an admin, owner, operator, or prompter role.
   The agent's three environments after the promote. Each has `id`, `env_type` (`dev`, `staging`, or `production`), and `current_version_id` (the pinned version, or `null` if unpinned). `staging` and `production` now point at the same version.
 </ResponseField>
 
+<ResponseField name="data.production_moved" type="boolean">
+  `true` when this call actually repointed production. `false` when production was already pinned to the named version and the call only brought staging into line with it — no production deployment or audit event is written in that case.
+</ResponseField>
+
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when nothing has been published to staging yet.
+  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when the body is empty and nothing has been published to staging yet, `400 ALREADY_IN_PRODUCTION` when both staging and production already pin the named version, `409 CHECKS_BLOCKED` when the saved evaluation policy has not been satisfied for the named version (unless `force: true`), `409 BRANCH_CLOSED` when the version's branch has been merged or archived, and `409 PUBLISH_IN_PROGRESS` when another publish or promote for the same agent is still running; retry after a moment.
 </ResponseField>
 
 <ResponseExample>
@@ -57,7 +86,8 @@ Requires an admin, owner, operator, or prompter role.
         "env_type": "production",
         "current_version_id": "46201abd-c8e6-4095-a65f-d5135a673627"
       }
-    ]
+    ],
+    "production_moved": true
   },
   "errors": null
 }
@@ -70,6 +100,42 @@ Requires an admin, owner, operator, or prompter role.
     {
       "error": "STAGING_UNPINNED",
       "message": "Publish to staging before promoting to production"
+    }
+  ]
+}
+```
+
+```json Already in Production
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ALREADY_IN_PRODUCTION",
+      "message": "Production is already pinned to this version"
+    }
+  ]
+}
+```
+
+```json Checks Blocked
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CHECKS_BLOCKED",
+      "message": "A required evaluation failed. Promotion is blocked"
+    }
+  ]
+}
+```
+
+```json Branch Closed
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BRANCH_CLOSED",
+      "message": "This branch was merged or archived; publish from development instead"
     }
   ]
 }
