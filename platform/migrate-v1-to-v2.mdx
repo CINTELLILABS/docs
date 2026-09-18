@@ -1,6 +1,6 @@
 ---
 title: "Migrate a v1 pathway to a v2 agent"
-description: "A dedicated flow for converting an existing conversational pathway into a v2 agent: install the Bland plugin, drop in one prompt, and review the migrated agent."
+description: "A dedicated flow for converting an existing conversational pathway into a v2 agent: drop one prompt into Claude Code — it installs the Bland plugin for you — and review the migrated agent."
 ---
 
 v2 agents are the successor to conversational pathways: the same conversation engine, with a cleaner model built around scenarios, versioned snapshots, environments, and first-class testing. This page is the dedicated flow for moving a pathway across — you drop one prompt into Claude Code and an agent session does the migration end to end, with checkpoints where you stay in control.
@@ -25,50 +25,44 @@ v2 agents are the successor to conversational pathways: the same conversation en
 
 The rest of this page is the Claude Code flow.
 
-## 1. Install the plugin
+## The prompt
 
-You need [Claude Code](https://claude.com/claude-code) and a Bland API key for the organization that owns the pathway ([app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys)).
+You need [Claude Code](https://claude.com/claude-code) and a Bland API key for the organization that owns the pathway ([app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys)). That's it — the prompt below handles the rest, including installing the plugin for you.
 
-Inside a Claude Code session:
+Find your pathway ID (it's in the pathway's URL in the dashboard), fill in the two blanks, and paste:
 
 ```text
-/plugin marketplace add CINTELLILABS/bland-plugins
-/plugin install norm@bland
+Migrate my Bland v1 pathway <PATHWAY_ID> into a new v2 agent named "<AGENT NAME>".
+
+If the Bland migration plugin is not available in this session (no /norm:migrate
+command), set it up for me:
+  claude plugin marketplace add CINTELLILABS/bland-plugins
+  claude plugin install norm@bland
+Do not ask me for my API key in this chat, ever. After installing, tell me to run
+/plugin configure norm@bland to enter my key, restart the session, and paste this
+same prompt again.
+
+If the plugin IS available, run the /norm:migrate command with this request: fetch
+the pathway export through the Bland MCP server, show me the proposed scenario
+architecture before authoring anything, ask me before the first version push, and
+finish with the full simulation suite and the migration report.
 ```
 
-The install prompts for your API key and stores it outside the conversation. Scripted installs pass it on the command line instead:
-
-```bash
-claude plugin marketplace add CINTELLILABS/bland-plugins
-claude plugin install norm@bland --config bland_api_key=YOUR_KEY
-```
-
-Restart the session after installing.
+First paste on a fresh machine: Claude installs the plugin, then hands back to you for the two things only you can do — enter your API key (stored by the host, outside the conversation) and restart the session. Paste the same prompt again and the migration starts. If the plugin is already set up, the first paste goes straight into the migration.
 
 <Warning>
-Never paste your API key into the chat. The install prompt and the `--config` flag keep it out of the model context. To set or rotate it later, run `/plugin configure norm@bland`.
+Never paste your API key into the chat — the prompt above tells Claude not to ask for it. `/plugin configure norm@bland` stores it in your OS keychain, where the MCP connection reads it without it ever entering the model context.
 </Warning>
 
 `norm@bland` is the v2-focused plugin: it carries the full migration playbook, a deterministic snapshot builder and parity audit, and a convergence loop that won't declare the migration done until the checks are actually green. It talks to your account through the hosted [Bland MCP server](/integrations/mcp/overview) — there is nothing else to configure. (The general-purpose [`bland@bland` plugin](/integrations/mcp/norm) covers the v1 surface; install both if you work on both.)
 
-## 2. Drop in the prompt
-
-Find your pathway ID — it's in the pathway's URL in the dashboard. Then paste this, filled in:
-
-```text
-/norm:migrate Migrate my v1 pathway <PATHWAY_ID> into a new v2 agent named "<AGENT NAME>".
-Fetch the pathway export through the Bland MCP server. Show me the proposed scenario
-architecture before authoring anything, ask me before the first version push, and finish
-with the full simulation suite and the migration report.
-```
-
-That's the whole flow. Variations:
+Variations on the migration request:
 
 - **Persona attached to the pathway?** Add its ID: `…and include my persona <PERSONA_ID>.`
 - **Prefer to hand over files?** Export the pathway JSON and attach it instead of the ID: `/norm:migrate Migrate the attached v1 export into a new v2 agent named "…"`.
 - **Migrating into an existing agent?** Say so — versions are additive, so a migration can land as a new version on an agent you already created.
 
-## 3. What the session does
+## What the session does
 
 <Steps>
   <Step title="Discover">
@@ -96,7 +90,7 @@ That's the whole flow. Variations:
 
 Expect a complex pathway to take a while — the session is mostly hands-off after you approve the architecture, and it will not report success it can't prove.
 
-## 4. After the migration
+## After the migration
 
 - **Read the report**, especially the "needs verification with your data" list — lanes gated on your CRM records or live integrations that simulations couldn't exercise safely.
 - **Test-chat the agent** in the dashboard against your real scenarios.
