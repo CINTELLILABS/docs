@@ -23,11 +23,13 @@ v2 agents are the successor to conversational pathways: the same conversation en
   </Card>
 </CardGroup>
 
-The rest of this page is the Claude Code flow.
+The rest of this page is the Claude Code flow, two ways: **Option 1** is one prompt that has Claude set everything up itself; **Option 2** is the step-by-step walkthrough if you'd rather do the setup yourself and understand each piece.
 
-## The prompt
+The engine behind both is `norm@bland`, the v2-focused Bland plugin: it carries the full migration playbook, a deterministic snapshot builder and parity audit, and a convergence loop that won't declare the migration done until the checks are actually green. It talks to your account through the hosted [Bland MCP server](/integrations/mcp/overview) — there is nothing else to run or configure. (The general-purpose [`bland@bland` plugin](/integrations/mcp/norm) covers the v1 surface; install both if you work on both.)
 
-You need [Claude Code](https://claude.com/claude-code) and a Bland API key for the organization that owns the pathway ([app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys)). That's it — the prompt below handles the rest, including installing the plugin for you.
+## Option 1 — one prompt, Claude sets everything up
+
+You need [Claude Code](https://claude.com/claude-code) and a Bland API key for the organization that owns the pathway ([app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys)). The prompt handles the rest, including installing the plugin for you.
 
 Find your pathway ID (it's in the pathway's URL in the dashboard), fill in the two blanks, and paste:
 
@@ -54,13 +56,60 @@ First paste on a fresh machine: Claude installs the plugin, then hands back to y
 Never paste your API key into the chat — the prompt above tells Claude not to ask for it. `/plugin configure norm@bland` stores it in your OS keychain, where the MCP connection reads it without it ever entering the model context.
 </Warning>
 
-`norm@bland` is the v2-focused plugin: it carries the full migration playbook, a deterministic snapshot builder and parity audit, and a convergence loop that won't declare the migration done until the checks are actually green. It talks to your account through the hosted [Bland MCP server](/integrations/mcp/overview) — there is nothing else to configure. (The general-purpose [`bland@bland` plugin](/integrations/mcp/norm) covers the v1 surface; install both if you work on both.)
+## Option 2 — the step-by-step walkthrough
 
-Variations on the migration request:
+The same flow with you doing the setup, so you know exactly what's installed and where your key lives.
 
-- **Persona attached to the pathway?** Add its ID: `…and include my persona <PERSONA_ID>.`
-- **Prefer to hand over files?** Export the pathway JSON and attach it instead of the ID: `/norm:migrate Migrate the attached v1 export into a new v2 agent named "…"`.
-- **Migrating into an existing agent?** Say so — versions are additive, so a migration can land as a new version on an agent you already created.
+<Steps>
+  <Step title="Get your Bland API key">
+    Go to [app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys) and create (or copy) a key. It must belong to the **organization that owns the pathway** — if you're in several orgs, check the org switcher in the dashboard first. Treat the key like a password: it grants full API access to that org.
+  </Step>
+  <Step title="Install Claude Code">
+    If you don't have it yet: [claude.com/claude-code](https://claude.com/claude-code). Open a session in any empty folder — the migration works entirely through the Bland API; no codebase is needed.
+  </Step>
+  <Step title="Install the plugin">
+    Inside the session:
+
+    ```text
+    /plugin marketplace add CINTELLILABS/bland-plugins
+    /plugin install norm@bland
+    ```
+
+    The install prompts for your API key and stores it in your OS keychain — outside the conversation. If it doesn't prompt (or you skipped it), set it with:
+
+    ```text
+    /plugin configure norm@bland
+    ```
+
+    From a shell instead, pass the key on the command line so it never enters a chat:
+
+    ```bash
+    claude plugin marketplace add CINTELLILABS/bland-plugins
+    claude plugin install norm@bland --config bland_api_key=YOUR_KEY
+    ```
+
+    Then **restart the session** — plugins load on startup. Typing `/norm` should now show the plugin's commands (`/norm:migrate`, `/norm:validate`, `/norm:simulate`, `/norm:build`).
+  </Step>
+  <Step title="Find your pathway ID">
+    Open the pathway in the dashboard — the ID is the UUID in the URL, e.g. `app.bland.ai/dashboard/convo-pathways?id=<PATHWAY_ID>`.
+  </Step>
+  <Step title="Start the migration">
+    Paste, filled in:
+
+    ```text
+    /norm:migrate Migrate my v1 pathway <PATHWAY_ID> into a new v2 agent named "<AGENT NAME>".
+    Fetch the pathway export through the Bland MCP server. Show me the proposed scenario
+    architecture before authoring anything, ask me before the first version push, and finish
+    with the full simulation suite and the migration report.
+    ```
+
+    Variations:
+
+    - **Persona attached to the pathway?** Add its ID: `…and include my persona <PERSONA_ID>.`
+    - **Prefer to hand over files?** Export the pathway JSON and attach it instead of the ID: `/norm:migrate Migrate the attached v1 export into a new v2 agent named "…"`.
+    - **Migrating into an existing agent?** Say so — versions are additive, so a migration can land as a new version on an agent you already created.
+  </Step>
+</Steps>
 
 ## What the session does
 
