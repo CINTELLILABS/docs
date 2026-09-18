@@ -21,7 +21,7 @@ There is no organization-wide view. Environments belong to one agent, and you re
 
 {/* IMAGE: the Environments tab inside an agent, showing the Production, Staging and Development cards. */}
 
-Staging and production each show the **Version** they are pinned to and when it arrived, **Deployed** on production and **Created** on staging. Development shows neither, because it is the live head rather than a pin. An environment holding nothing shows no version and no buttons at all.
+Staging and production each show the **Version** they are pinned to, and usually when it arrived, **Deployed** on production and **Created** on staging. Development shows neither, because it is the live head rather than a pin. Production holding nothing shows no version and no buttons. An empty staging card still offers **Promote**, greyed out.
 
 <Warning>
 A call runs the **production** version by default. An agent with nothing pinned to production has nothing to serve, and an API call is refused with a 400 and the code `AGENT_ENV_UNPINNED`.
@@ -31,11 +31,11 @@ Building and saving is not shipping.
 
 ## Your first publish goes straight to production
 
-A new agent is in this state. Until production holds a version, the Environments tab offers one move instead of two.
+A new agent is usually in this state. It applies while production holds no version **and** no evaluation is marked required: configuring a required evaluation puts the agent back on the ordinary staging chain, deliberately, because a one-press release would have nothing to evaluate against.
 
 The Staging card and the **Evaluations** card that reports on it are both greyed out, and the staging card explains why: *"Not in use until Production has a version. Publish sends Development straight to Production."* The Development card carries a single **Publish** that releases development **directly to production**.
 
-There is no staging hop to make, which is the point: staging cannot usefully hold anything before production has a baseline to compare against.
+Staging is still repointed to whatever you release, so it does not fall behind. What you skip is having to publish there first.
 
 Once production is pinned, the Environments tab switches to the two-step flow and stays there.
 
@@ -47,9 +47,9 @@ Once production holds a version, **Publish** on the Development card takes your 
 
 **Promote** on the Staging card points production at the version staging is holding. Nothing is copied and nothing is rebuilt.
 
-Staging is the normal path but not the only one. **Force promote**, also on the Development card, releases a development version straight to production without the staging hop.
+Staging is the normal path but not the only one. **Force promote**, also on the Development card, releases a development version straight to production without publishing to staging first. Staging is repointed to that version on the way, which the confirmation says outright.
 
-**Force promote** skips the evaluation gate as well as the staging hop. That is its purpose, and the bypass is recorded on the deployment. It is the control that puts unevaluated work in front of live callers.
+What **Force promote** actually skips is the evaluation gate. That is its purpose, and the bypass is recorded in the audit log rather than on the deployment, so the deployment history will not show you which releases were forced. It is the control that puts unevaluated work in front of live callers.
 
 ## Roll back
 
@@ -59,13 +59,15 @@ To go back, **Rollback** on the Production card lists the versions production he
 
 Evaluations on staging can gate both moves, and the two directions fail differently.
 
-With no evaluations configured, neither move is gated and both happen immediately. The same is true if you have configured them and marked none of them **Required**: a judge, the evaluation that scores a run, reports its verdict and never blocks when it is not required.
+With no evaluations configured at all, neither move is gated and both happen immediately.
+
+Configuring any evaluation changes that, even one you have not marked **Req'd**. The run still executes and the publish waits for it, which takes as long as the conversations take. What the required flag decides is whether a verdict can stop you: a judge, the evaluation that scores a run, reports its result and blocks nothing when it is not required.
 
 <Note>
 One evaluation configuration does both jobs. The one saved on **staging** gates the publish into staging and the promotion out of it. There is no separate production gate to configure.
 </Note>
 
-Publishing to staging saves your changes as a new version, runs the evaluations against that exact version, and only assigns it a version number and pins it to staging once every required evaluation passes. A blocked publish says so, with a toast reading **Publish blocked** and the number of required evaluations that failed.
+Publishing to staging saves your changes as a new version, runs the evaluations against that exact version, and only assigns it a version number and pins it to staging once every required evaluation passes. When a required evaluation fails, a toast reads **Publish blocked** with the number that failed. A run that times out or errors stops the publish too, with its own message.
 
 <Warning>
 A blocked publish is not a rollback. The version is already saved on development, without a number and without a pin, and it stays there.
@@ -73,9 +75,9 @@ A blocked publish is not a rollback. The version is already saved on development
 Nothing is undone and nothing is lost. Fix what failed and publish again.
 </Warning>
 
-Promotion is enforced on the server rather than in the dashboard, so a blocked promotion is refused outright: production keeps serving the version it already had, and nothing about staging changes.
+A blocked promotion is stopped twice. The dashboard dims **Promote**, explains why on hover, and does nothing if you press it. The server enforces the same rule again on the wire, which is what catches an API caller. Either way production keeps serving the version it already had.
 
-A judge scores a rate, not a verdict per conversation. It passes when more than half of the scored conversations match the target, so a single bad conversation does not necessarily fail the run.
+A judge scores a rate, not a verdict per conversation. It passes when half or more of the scored conversations match the target, so a single bad conversation does not necessarily fail the run. Test cases default to an odd number of conversations, which keeps ties rare.
 
 ## Variables
 
@@ -107,7 +109,7 @@ So a variable added on development and never set on production breaks production
   </Accordion>
 
   <Accordion title="Promotion is blocked although the evaluations passed">
-    The configuration changed after that run. Promotion compares the run against the whole configuration saved now, which covers the required evaluations and the shared test inputs, so changing the scenarios or the conversation count invalidates a pass just as editing an evaluation does. Publish to staging again to run them against the current configuration.
+    The configuration changed after that run. Promotion compares the run against the whole configuration saved now, which covers the required evaluations and the shared test inputs, so changing the test cases or the conversation count invalidates a pass just as editing an evaluation does. Publish to staging again to run them against the current configuration.
   </Accordion>
 
   <Accordion title="A button does nothing and the error says nothing">
