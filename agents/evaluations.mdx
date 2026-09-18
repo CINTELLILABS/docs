@@ -1,0 +1,154 @@
+---
+title: 'Evaluations'
+description: 'Score an agent before it ships: write a judge, build a test case, read a run, and make a passing run a condition of promotion'
+---
+
+An evaluation is a judge reading a conversation and saying whether the agent did the thing you wanted.
+
+Three objects do the work. A **judge** scores a conversation. A **test case** is a simulated caller that produces conversations to score. A **run** pairs them and gives you a result. A test case carries no judges of its own; you pick both when you start a run.
+
+## Prerequisites
+
+- An agent you have built, from [Agent builder](/agents/agent-builder)
+- An owner, admin, operator or prompter role to make an evaluation a required check
+
+## Where evaluations live
+
+Inside an agent, **Evaluations** is under **Validate**, with three tabs: **Judges**, **Test cases** and **Runs**.
+
+<Note>
+Searching for evals? That is this page. The word is still in the URL, which reads `/judges` rather than `/evaluations`.
+</Note>
+
+At **All agents** there is a shorter version of the same page: **Judges** only. Test cases and runs belong to an agent, so those two tabs do not exist at organization scope.
+
+{/* IMAGE: the Evaluations surface inside an agent, showing the Judges, Test cases and Runs tabs. */}
+
+## Write a judge
+
+**New judge** opens a form with five sections. Only **Judge task** is required, and it is the one that does the work: it is the question you are asking about the conversation.
+
+| Section | What it sets |
+| --- | --- |
+| **Judge mode** | **Transcript** or **Audio**. Transcript reads what was said, audio hears how |
+| **Context** | What the judge should know before it reads, such as what the agent was for |
+| **Judge task** | The question. Required |
+| **Verdicts** | The answers it may give, and which one you are hoping for |
+| **Advanced** | Model and retry behaviour |
+
+The button reads **Create judge** the first time and **Update** afterwards. There is no Save.
+
+<Note>
+**Save as draft** keeps your work without making the judge live. A draft is not used by any run, so a judge you drafted and forgot will not quietly start scoring things.
+</Note>
+
+## Write a test case
+
+**New test case** starts either from scratch or from your own traffic.
+
+**Generate based on production calls** reads up to 50 real calls and writes one test case per call, which is the faster way to get a suite that resembles what actually happens to you.
+
+Then set a **Title**, a **Prompt** describing who the simulated caller is and what they want, and optionally **Labels**, **Max turns** (20 by default), a **Start node** and **Request data**. **Save** finishes it.
+
+## Run them
+
+A run pairs judges with test cases. Pick both, choose how many conversations each test case should produce, and start it.
+
+<Warning>
+A run you start here is stored in your browser, not on Bland.
+
+Your teammates cannot see it, and neither can you from another machine or another browser. Only the runs that happen as part of a publish are kept on the server.
+</Warning>
+
+<Warning>
+The version picker in the new run dialog does not change which version runs.
+
+Every conversation runs the agent's current version. The picker records your choice on the run for reference, and the tooltip says so.
+</Warning>
+
+## Read a run
+
+A conversation passes only if **every** judge passed it. A judge that could not tell counts against it here.
+
+This is worth holding onto, because the promotion gate scores the same run differently: there, each judge is scored on its own, across conversations. So a run can show failed conversations in the results and still clear the gate.
+
+## Make it a required check
+
+An evaluation becomes a gate from the agent's **Environments** tab rather than from this page. The **Evaluations** card sits between Development and Staging, and **Add evaluations** opens the picker.
+
+Attach the judges you want, up to five test cases, and choose **1**, **3** or **5** conversations per test case.
+
+<Warning>
+Attaching a judge makes it required by default. Clear **Req'd** on the row to make it advisory instead.
+
+An advisory judge reports its verdict and blocks nothing.
+</Warning>
+
+Only staging has a configuration, and it gates both hops: the publish into staging and the promotion out of it. See [Environments](/agents/environments) for what each of those does when it is blocked.
+
+## How a judge passes
+
+A judge does not pass or fail per conversation. It takes the share of conversations that matched the verdict you were hoping for, and passes when that share is **half or more**.
+
+Conversations where the judge could not reach a verdict are left out of the share entirely, rather than counted against it.
+
+<Note>
+You cannot change the half. It is fixed, so there is no target-rate setting to look for.
+
+What you choose is how many conversations each test case produces, and the options are odd numbers for a reason: with 3 or 5, a tie cannot happen.
+</Note>
+
+## Simulation
+
+**Simulation**, in the builder under **Testing**, runs one conversation against a test case so you can watch the agent handle it.
+
+It is the same machinery, used for looking rather than scoring. Those conversations are not kept and never appear in **Runs**.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="A run I started yesterday is gone">
+    Manual runs are stored in the browser that started them. A different machine, a different browser, or cleared site data all lose them. Runs attached to a publish are on the server and survive.
+  </Accordion>
+
+  <Accordion title="The results show failures but promotion went through">
+    The two screens score differently. Results fail a conversation if any judge failed it; the gate scores each judge across conversations and passes at half or more. Both numbers are right, and they answer different questions.
+  </Accordion>
+
+  <Accordion title="A judge I wrote is not scoring anything">
+    It is still a draft, or it is not attached. **Save as draft** keeps a judge out of every run, and attaching happens on the Environments tab rather than when you write it.
+  </Accordion>
+
+  <Accordion title="An evaluation failed and nothing was blocked">
+    **Req'd** is cleared on that row, so the judge is advisory. Advisory judges report and never block.
+  </Accordion>
+
+  <Accordion title="Promote looks enabled but does nothing">
+    A required evaluation failed. The button dims rather than disabling, and the reason is on hover.
+  </Accordion>
+
+  <Accordion title="I chose a version in the run dialog and it ran a different one">
+    It ran the current one. The picker records a version on the run and does not select what executes.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Environments" icon="layer-group" href="/agents/environments">
+    Where an evaluation becomes a condition of shipping.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Change the agent the judges keep failing.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Read the real calls a test case was generated from.
+  </Card>
+  <Card title="Testbed" icon="flask" href="/agents/testbed">
+    Try an agent by hand before you score it.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
