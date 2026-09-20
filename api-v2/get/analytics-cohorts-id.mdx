@@ -1,0 +1,121 @@
+---
+title: "Get Cohort"
+api: "GET https://api.bland.ai/v2/analytics/cohorts/{id}"
+description: "Poll a cohort's build status, size, visible size, and expiry."
+---
+
+Read a cohort's current status. Use this endpoint to poll a build until `status` is `ready`, then read the ids with [Get Cohort Ids](/api-v2/get/analytics-cohorts-id-ids).
+
+See [Analytics cohorts](/api-v2/analytics-cohorts-overview) for concepts and error codes.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The cohort id returned by [Create Cohort](/api-v2/post/analytics-cohorts).
+</ParamField>
+
+### Response
+
+<ResponseField name="data.id" type="string">
+  The cohort id.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  One of `"building"`, `"ready"`, or `"failed"`.
+</ResponseField>
+
+<ResponseField name="data.size" type="integer">
+  How many conversations the build materialized. `0` while the cohort is `building` or `failed`.
+</ResponseField>
+
+<ResponseField name="data.visible_size" type="integer | null">
+  How many of those conversations the conversations list can actually render. Conversations that never connected are members of the cohort but are not shown by the conversations list, so `visible_size` can be less than `size` — and is `0` for a cohort selected by `outcomes: ["not_connected"]`.
+
+  `null` until the cohort is `ready`, and also `null` on a `failed` cohort. May be `null` on a `ready` cohort if the bounded count could not finish; a follow-up poll normally reports a number.
+</ResponseField>
+
+<ResponseField name="data.truncated" type="boolean">
+  `true` when the build hit the 50,000-conversation ceiling. Narrow the window or the predicate and create a new cohort if you see this.
+</ResponseField>
+
+<ResponseField name="data.predicate" type="object">
+  The predicate the cohort was created with. An empty object means "every conversation in this window".
+</ResponseField>
+
+<ResponseField name="data.window" type="object">
+  The call window the cohort was built over. Contains `start` and `end` as ISO-8601 instants.
+</ResponseField>
+
+<ResponseField name="data.expires_at" type="string (ISO 8601)">
+  When the cohort stops being readable. Set to 7 days after the cohort became `ready`. After this timestamp the endpoint returns `404 COHORT_EXPIRED`.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  `null` on success. On failure, the response carries `data: null` and an `errors` array.
+</ResponseField>
+
+<ResponseExample>
+
+```json 200 Ready
+{
+  "data": {
+    "id": "b0d8e1a2-6a1e-4d3f-8c7b-2f9c1a4d5e6f",
+    "status": "ready",
+    "size": 1247,
+    "visible_size": 1244,
+    "truncated": false,
+    "predicate": {
+      "outcomes": ["escalated_warm", "voicemail"]
+    },
+    "window": {
+      "start": "2026-09-01T00:00:00.000Z",
+      "end": "2026-09-08T00:00:00.000Z"
+    },
+    "expires_at": "2026-09-15T14:32:08.000Z"
+  },
+  "errors": null
+}
+```
+
+```json 200 Building
+{
+  "data": {
+    "id": "b0d8e1a2-6a1e-4d3f-8c7b-2f9c1a4d5e6f",
+    "status": "building",
+    "size": 0,
+    "visible_size": null,
+    "truncated": false,
+    "predicate": { "outcomes": ["escalated_warm"] },
+    "window": {
+      "start": "2026-09-01T00:00:00.000Z",
+      "end": "2026-09-08T00:00:00.000Z"
+    },
+    "expires_at": "2026-09-15T14:32:08.000Z"
+  },
+  "errors": null
+}
+```
+
+```json 404 Expired or not found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "COHORT_EXPIRED",
+      "message": "Cohort not found or expired"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
