@@ -409,6 +409,14 @@ Open **TLS 5061** to the signaling IPs and **UDP 16384–32768** to the media IP
   Whitelisting is mutual: Bland allow-lists your source ranges, and you allow-list Bland's signaling and media IPs. Open RTP (UDP 16384–32768) to the media IPs in addition to TLS 5061 to the signaling IPs, or audio will not flow.
 </Note>
 
+### Cold transfers to a SIP or DID target
+
+When an agent transfers a call to a SIP or DID target on one of your trunks and SIP REFER is turned off, Bland's SIP edge dials your SBC directly over TLS. The INVITE arrives from the signaling and media IPs listed by [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips), so no additional allow-list entries are required as long as your SBC admits all IPs returned for your region.
+
+The custom outbound SIP headers configured on the trunk are included on that INVITE, so downstream systems (PBX, call routing, analytics) see the same header block they receive on trunk-originated outbound calls. Warm transfer consult legs to a SIP target also carry these headers.
+
+Transfers using SIP REFER, warm transfers merged in Bland, and transfers to regular phone numbers are unchanged.
+
 ---
 
 ## Requirements and Security
