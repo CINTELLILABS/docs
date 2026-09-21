@@ -3,9 +3,13 @@ title: 'Migrate from V1'
 description: 'Where every V1 feature went, what the migration tool moves, and what changes on the way across'
 ---
 
-Nothing you have is deleted, moved or switched off by migrating.
+Migrating never edits your V1 work. It reads your pathways and personas and writes a new agent beside them. Your pathways keep running, your personas keep answering, and the V1 pages for both stay where they are.
 
-The migration tool reads your V1 work and writes a new agent. It never writes back. Your pathways keep running, your personas keep answering, and the V1 pages for both stay exactly where they are while you work.
+<Warning>
+**Migrate with Bland** is the exception worth reading twice. It tests the rebuilt agent by holding real conversations, and those conversations call the tools your pathway already has configured, so they can create bookings, send messages or update records in your own systems.
+
+The product warns you before it starts. Check what your pathway is connected to first.
+</Warning>
 
 ## Prerequisites
 
@@ -95,24 +99,32 @@ A **call** is now a **conversation**, because the same surface carries phone, me
     A persona becomes one agent: its prompts, voice and call settings become the agent, each pathway condition becomes a complex scenario, and each skill becomes a simple scenario.
   </Step>
 
-  <Step title="Choose how each one comes across">
-    This is the step to slow down on. Each row has a switch under the column **Migrate with AI**, and it is **on**.
+  <Step title="Choose a method">
+    **Select your migration** offers three.
 
-    Leave it on and the pathway is rewritten into simplified agent scenarios. Turn it off and the pathway is copied across as it is, one for one, same steps.
+    **Import as v2** copies your pathway across as it is, one agent per pathway, with no rewriting and no simulation. It is the fastest and the most predictable.
+
+    **Migrate with Bland** rebuilds the agent from the pathway and checks its behavior against test conversations before handing it over. It runs in the background and takes a while.
+
+    **Migrate with your agent** hands you a prompt to run in your own coding agent, so you watch every step and can steer. See [Migrate a v1 pathway to a v2 agent](/platform/migrate-v1-to-v2).
   </Step>
 
-  <Step title="Create the agent">
-    You can cancel while it runs, up until it starts finalizing.
+  <Step title="Finish">
+    **Import as v2** ends on **Migrate agent** and cannot be cancelled once it starts, though it is quick. **Migrate with Bland** ends on **Start migration** and can be cancelled while it runs, until it begins finalizing.
   </Step>
 </Steps>
 
 <Warning>
-**End Call nodes stop ending the call.**
+**Check what happened to your End Call nodes.**
 
-However you migrate, including the exact-copy path, an End Call node becomes a wrap-up step that hands control back to the agent instead of hanging up. The migration reports it as a warning and continues.
+**Import as v2** keeps them hanging up, but only when every exit from the pathway is an End Call. If some exits end the call and others fall out of a component, the two cannot be told apart, so the whole flow returns to the agent instead of hanging up.
 
-If a pathway relied on ending calls at a particular point, that behavior is not in the agent until you put it back.
+On every other path an End Call node becomes a wrap-up step that hands control back to the agent.
+
+Either way the migration says so and continues. If a pathway relied on ending calls at a particular point, add an End call node at the agent level.
 </Warning>
+
+Warnings do not appear in the modal. You get a toast saying how many items are flagged, and then a banner over the builder canvas naming the pathway and the count, which you can dismiss.
 
 Three smaller things are dropped, each reported as a warning: a pathway's own global prompt when you migrate a persona, exit pointers on fanned-out components, and tool overrides on a persona's skills.
 
@@ -126,11 +138,13 @@ That is safe, since nothing is overwritten, but it does mean a hesitant second a
 
 <AccordionGroup>
   <Accordion title="My pathway looks nothing like it did">
-    **Migrate with AI** was on, which is the default. It rewrites rather than copies. Migrate the pathway again with the switch off to get a step-for-step copy, then delete the agent you do not want.
+    You used a method that rebuilds rather than copies. **Import as v2** is the one that copies step for step. Run it again with that method and delete the agent you do not want.
+
+    The same split exists inside the builder: **Import pathways** there has a **Migrate with AI** switch on each row, on by default, and turning it off copies the pathway as it is.
   </Accordion>
 
   <Accordion title="The agent will not hang up">
-    End Call nodes do not survive as end-call behavior. They became wrap-up steps. Add the ending back in the scenario.
+    Your End Call nodes became wrap-up steps. That happens on every method except **Import as v2**, and on that one too if the pathway mixes End Call exits with component exits. Add an End call node at the agent level.
   </Accordion>
 
   <Accordion title="I cannot find Import pathways">
