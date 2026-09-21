@@ -1,0 +1,158 @@
+---
+title: "Migrate your existing pathways and personas to an Agent"
+description: "The three ways to migrate your existing pathways and personas to an agent."
+---
+
+This page introduces the three ways you can migrate your existing pathways and personas to an agent. It goes into detail on managing the migration yourself.
+
+Agents are the successor to conversational pathways: the same conversation engine, with a new architecture that places more emphasis on the agent, but still offers the control of pathways using "scenarios", versioned snapshots, environments, and first-class testing. Every path below hands you an agent to review before it takes traffic, so run the simulation suite, test-chat the agent in the dashboard, and verify the lanes that depend on your live data.
+
+<Note>
+**Migration is additive.** The migration will only create new agents; your existing assets will not be disrupted. Your pathways, their phone numbers, tools, snippets, and live traffic are never modified. You switch traffic to the new agent only when you decide to by promoting your agent to production.
+</Note>
+
+## Pick your path
+
+Every migration starts the same way: in the dashboard, open the agent dropdown in the upper left corner, choose **New agent**, then **Migrate**. From there you select the pathway or persona you want to migrate, and choose one of three options. Everything below on this page is downstream of that selection.
+
+<CardGroup cols={3}>
+  <Card title="Migrate with your agent" icon="terminal">
+    Use your own agent (like Claude Code, Codex or Grok Bot) with the Bland MCP plugin to rebuild, test, and iterate. Full control over your migration.
+  </Card>
+  <Card title="Migrate with Bland" icon="server">
+    Bland runs the full agent-driven migration described below on our infrastructure, and you watch live status. Expect 30–90 minutes for a complex pathway.
+  </Card>
+  <Card title="Import" icon="bolt">
+    A mechanical 1:1 conversion, good for simple pathways you want to start iterating on as agents.
+  </Card>
+</CardGroup>
+
+The rest of this page covers the **Migrate with your agent** flow. **Option 1** is a single prompt that lets your agent drive the whole setup. **Option 2** is a step-by-step walkthrough for doing the setup yourself, so you understand each piece.
+
+The engine behind both is `norm@bland`, the new Bland plugin: it carries the full migration playbook, a deterministic snapshot builder and parity audit, and a convergence loop that will not declare the migration done until the checks are actually green. It talks to your account through the hosted [Bland MCP server](/integrations/mcp/overview) — there is nothing else to run or configure. (The general-purpose [`bland@bland` plugin](/integrations/mcp/norm) covers pathways and the rest of the platform; install both if you work with both.)
+
+## Option 1 — one prompt, your agent sets everything up
+
+You need a coding agent (for example [Claude Code](https://claude.com/claude-code)) and a Bland API key for the organization that owns the pathway ([app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys)). The prompt handles the rest, including installing the plugin for you.
+
+In the dashboard steps above you selected the pathway or persona you want to migrate, and its ID fills in the first line of the prompt below. If you are copying the prompt directly instead, fetch the ID of the pathway you are migrating first: it is in the pathway's URL in the dashboard. Fill in the two blanks and paste:
+
+```text
+Migrate my Bland v1 pathway <PATHWAY_ID> into a new v2 agent named "<AGENT NAME>".
+
+If the Bland migration plugin is not available in this session (no /norm:migrate
+command), set it up for me:
+  claude plugin marketplace add CINTELLILABS/bland-plugins
+  claude plugin install norm@bland
+Do not ask me for my API key in this chat, ever. If norm@bland cannot be installed,
+stop and tell me what failed — do not substitute a different plugin or command.
+After installing, tell me to run /plugin configure norm@bland to enter my key,
+restart the session, and paste this same prompt again.
+
+If the plugin IS available, run the /norm:migrate command with this request: fetch
+the pathway export through the Bland MCP server, show me the proposed scenario
+architecture before authoring anything, ask me before the first version push, and
+finish with the full simulation suite and the migration report.
+
+My v1 pathways, personas, snippets, tools, and phone numbers are LIVE and
+read-only — never modify them; only create v2 agent versions and test artifacts.
+```
+
+First paste on a fresh machine: the agent installs the plugin, then hands back to you for the two things only you can do — enter your API key (stored by the host, outside the conversation) and restart the session. Paste the same prompt again and the migration starts. If the plugin is already set up, the first paste goes straight into the migration.
+
+<Warning>
+Never paste your API key into the chat — the prompt above tells the agent not to ask for it. `/plugin configure norm@bland` stores it in your OS keychain, where the MCP connection reads it without it ever entering the model context.
+</Warning>
+
+## Option 2 — the step-by-step walkthrough
+
+The same flow with you doing the setup, so you know exactly what's installed and where your key lives.
+
+<Steps>
+  <Step title="Get your Bland API key">
+    Go to [app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys) and create (or copy) a key. It must belong to the **organization that owns the pathway** — if you're in several orgs, check the org switcher in the dashboard first. Treat the key like a password: it grants full API access to that org.
+  </Step>
+  <Step title="Install your coding agent">
+    If you don't have one yet, Claude Code is at [claude.com/claude-code](https://claude.com/claude-code); the commands below are its syntax. Open a session in any empty folder — the migration works entirely through the Bland API; no codebase is needed.
+  </Step>
+  <Step title="Install the plugin">
+    Inside the session:
+
+    ```text
+    /plugin marketplace add CINTELLILABS/bland-plugins
+    /plugin install norm@bland
+    ```
+
+    The install prompts for your API key and stores it in your OS keychain — outside the conversation. If it doesn't prompt (or you skipped it), set it with:
+
+    ```text
+    /plugin configure norm@bland
+    ```
+
+    From a shell instead, pass the key on the command line so it never enters a chat:
+
+    ```bash
+    claude plugin marketplace add CINTELLILABS/bland-plugins
+    claude plugin install norm@bland --config bland_api_key=YOUR_KEY
+    ```
+
+    Then **restart the session** — plugins load on startup. Typing `/norm` should now show the plugin's commands (`/norm:migrate`, `/norm:validate`, `/norm:simulate`, `/norm:build`).
+  </Step>
+  <Step title="Find your pathway ID">
+    Open the pathway in the dashboard — the ID is the UUID in the URL, e.g. `app.bland.ai/dashboard/convo-pathways?id=<PATHWAY_ID>`.
+  </Step>
+  <Step title="Start the migration">
+    Paste, filled in:
+
+    ```text
+    /norm:migrate Migrate my v1 pathway <PATHWAY_ID> into a new v2 agent named "<AGENT NAME>".
+    Fetch the pathway export through the Bland MCP server. Show me the proposed scenario
+    architecture before authoring anything, ask me before the first version push, and finish
+    with the full simulation suite and the migration report.
+    ```
+
+    Variations:
+
+    - **Persona attached to the pathway?** Add its ID: `…and include my persona <PERSONA_ID>.`
+    - **Prefer to hand over files?** Export the pathway JSON and attach it instead of the ID: `/norm:migrate Migrate the attached v1 export into a new v2 agent named "…"`.
+    - **Migrating into an existing agent?** Say so — versions are additive, so a migration can land as a new version on an agent you already created.
+  </Step>
+</Steps>
+
+## What the session does
+
+<Steps>
+  <Step title="Discover">
+    Censuses the export: every node and edge, webhooks and their auth, code snippets and their pinned versions, transfers, knowledge bases, and the variables your callers' request data must supply.
+  </Step>
+  <Step title="Architect — you approve">
+    Proposes the agent shape: which nodes become which scenarios, where the hub routes, what each entry means. It presents this before authoring anything; this is your main steering point.
+  </Step>
+  <Step title="Author">
+    A deterministic builder carries every byte of your content — prompts, route rules, webhook configs, snippet pins, tools — from your pathway export into the agent snapshot. Your prompts arrive verbatim, not paraphrased. Known pathway quirks are carried bug-for-bug so behavior doesn't silently change.
+  </Step>
+  <Step title="Audit">
+    A machine parity audit checks the snapshot against your pathway source — structure, routing, byte-level prompt carriage, and that every snippet and tool made it across — before any write to your account.
+  </Step>
+  <Step title="Push — asks first">
+    Pushes the audited snapshot as a new agent version. This is the first write, and the session asks before doing it.
+  </Step>
+  <Step title="Simulate">
+    Designs and runs a simulation suite over the migrated agent's lanes — intake, transfers, voicemail, edge cases — and grades results on engine traces, not vibes. Failures loop back into fixes; the loop only completes when the suite is green on the exact bytes that were pushed.
+  </Step>
+  <Step title="Report">
+    A migration report: what mapped where, documented behavioral deltas, carried pathway quirks, the request-data contract, and — honestly — any lanes that can only be verified with your real data.
+  </Step>
+</Steps>
+
+Expect a complex pathway to take a while — the session is mostly hands-off after you approve the architecture, and it will not report success it can't prove.
+
+## After the migration
+
+- **Read the report**, especially the "needs verification with your data" list — lanes gated on your CRM records or live integrations that simulations couldn't exercise safely.
+- **Test-chat the agent** in the dashboard against your real scenarios.
+- **Move traffic when ready.** Attach or move phone numbers in the dashboard — the migration never touches routing, so your existing pathway keeps answering until you promote the agent to production.
+
+## Using the MCP server without the plugin
+
+Any MCP client can connect to the Bland MCP server directly — `https://api.bland.ai/v1/mcp` with your API key as a bearer token (see [MCP clients](/integrations/mcp/clients)). That gives an agent the raw tools: reading pathways, creating agents, pushing versions, running tests. The migration playbook, parity audit, and convergence loop ship in the plugin, though — for migrations, use the plugin.
