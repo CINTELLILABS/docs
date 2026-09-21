@@ -11,6 +11,14 @@ Agents are the successor to conversational pathways: the same conversation engin
 **Migration is additive.** The migration will only create new agents; your existing assets will not be disrupted. Your pathways, their phone numbers, tools, snippets, and live traffic are never modified. You switch traffic to the new agent only when you decide to by promoting your agent to production.
 </Note>
 
+## What it moves
+
+Two things: **pathways** and **personas**.
+
+Everything else is rebuilt by hand. Dispositions, triggers, phone number settings, test cases and test configurations do not come across, because they are not part of a pathway or a persona. That is worth knowing before you start, because "migration" sounds like it covers the account.
+
+You need an owner, admin, operator or prompter role, and a V1 pathway or persona to move.
+
 ## What's different
 
 Pathways and personas both become **agents**. A pathway's node graph becomes a **complex scenario** inside one, and the branches you used to draw as edges are collapsed into the scenario itself, so there is no node graph at the top level. A persona's skills become **simple scenarios**. The global prompt that floated beside the graph is now the agent's system prompt, in its settings.
@@ -109,7 +117,11 @@ The import says so when it happens. Add an End call node at the agent level if t
 
 It also carries a few call-level settings from the number bound to your pathway, such as voice, language and max duration. Anything with no home in agent settings is reported rather than dropped silently, and the number itself is not attached to the agent.
 
-An import cannot be cancelled once it starts, though it is quick. Running it twice gives you two agents, since nothing is deduplicated.
+An import cannot be cancelled once it starts, though it is quick. Running it twice gives you two agents, since nothing is deduplicated: the migration has no memory of having run, so a hesitant second attempt leaves you tidying up. That is safe, because nothing is overwritten.
+
+Warnings do not appear in the modal. You get a toast saying how many items are flagged, then a banner over the builder canvas naming the pathway and the count, which you can dismiss.
+
+Three smaller things are dropped, each reported as a warning: a pathway's own global prompt when you migrate a persona, exit pointers on fanned-out components, and tool overrides on a persona's skills.
 
 ## Migrate with Bland
 
@@ -284,6 +296,23 @@ Every failure runs the pathway: an error, a slow lookup, or no split configured 
     It did not. The migration never writes to V1, and the V1 pathways and personas pages are still there. Check you are not looking at the V2 agent list expecting to see it.
   </Accordion>
 </AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Where the migrated pathway lands.
+  </Card>
+  <Card title="Environments" icon="layer-group" href="/agents/environments">
+    Publish the agent before it can take a call.
+  </Card>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Give it a number.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Where your call logs went.
+  </Card>
+</CardGroup>
 
 ## Using the MCP server without the plugin
 
