@@ -9,6 +9,14 @@ Bland sends outbound HTTP requests from the source IPs below, based on your orga
 
 These IPs apply to webhooks, custom API requests, and similar HTTP traffic. SIP signaling and media use separate IPs; see [SIP Connection Endpoints](/enterprise-features/SIP-integration#connection-endpoints) or [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips).
 
+<Warning>
+The table below is not the whole allow-list.
+
+Outbound requests to your endpoints can leave Bland by two routes: directly from the regional IPs below, or through an egress proxy. A firewall that allows only the addresses in this table will intermittently return 403 to traffic that took the other route, which looks like a Bland outage and is not one.
+
+Allow the addresses in the next section as well.
+</Warning>
+
 ## Current IPs
 
 | Data center | Residency region | AWS region       | Source IPs                        |
@@ -18,6 +26,21 @@ These IPs apply to webhooks, custom API requests, and similar HTTP traffic. SIP 
 | dc10        | Sydney           | `ap-southeast-2` | `13.210.163.103`, `3.105.64.237`  |
 | dc11        | Ireland          | `eu-west-1`      | `34.248.58.192`, `54.73.237.185`  |
 
----
+## Proxy egress addresses
+
+Requests that leave through the egress proxy come from Cloudflare addresses rather than the regional IPs above. Allow these four in addition to the table:
+
+```
+104.28.1.169/32
+104.28.1.170/32
+104.28.1.204/32
+104.28.1.205/32
+```
+
+These are the addresses seen in practice, not a guarantee of the full range. If you need to allow the whole set, Cloudflare publishes its current ranges at [cloudflare.com/ips](https://www.cloudflare.com/ips/).
+
+<Note>
+If a webhook or custom API request is failing with a 403 and your own logs show a source address that is not in either list, that is the symptom of an incomplete allow-list rather than a Bland fault. Send the call ID and the blocked address to [support@bland.ai](mailto:support@bland.ai) and we can confirm which route the request took.
+</Note>
 
 Docs for agents: [llms.txt](/llms.txt)
