@@ -1,9 +1,11 @@
 ---
 title: "Migrate your existing pathways and personas to an Agent"
-description: "A dedicated flow for converting an existing conversational pathway into an agent: drop one prompt into your agent of choice (e.g. Claude Code or Codex) and it will install and run the Bland plugin for you. You simply need to review the outputted agent."
+description: "The three ways to migrate your existing pathways and personas to an agent."
 ---
 
-Agents are the successor to conversational pathways: the same conversation engine, with a new architecture that places more emphasis on the agent, but still offers the control of pathways using "scenarios", versioned snapshots, environments, and first-class testing. This document will walk you through how to migrate an existing pathway or persona to our agent architecture on your own, giving you maximum control and visibility into how your agent is built.
+This page introduces the three ways you can migrate your existing pathways and personas to an agent. It goes into detail on managing the migration yourself.
+
+Agents are the successor to conversational pathways: the same conversation engine, with a new architecture that places more emphasis on the agent, but still offers the control of pathways using "scenarios", versioned snapshots, environments, and first-class testing. Every path below hands you an agent to review before it takes traffic, so run the simulation suite, test-chat the agent in the dashboard, and verify the lanes that depend on your live data.
 
 <Note>
 **Migration is additive.** The migration will only create new agents; your existing assets will not be disrupted. Your pathways, their phone numbers, tools, snippets, and live traffic are never modified. You switch traffic to the new agent only when you decide to by promoting your agent to production.
@@ -15,17 +17,17 @@ Every migration starts the same way: in the dashboard, open the agent dropdown i
 
 <CardGroup cols={3}>
   <Card title="Migrate with your agent" icon="terminal">
-    **This guide.** A self-managed flow where you use your agent of choice to run the migration on your own. The same rigor as a managed migration, but you watch every step, approve the architecture, and can steer. Runs on your own agent subscription.
+    Use your own agent (like Claude Code, Codex or Grok Bot) with the Bland MCP plugin to rebuild, test, and iterate. Full control over your migration.
   </Card>
   <Card title="Migrate with Bland" icon="server">
     Bland runs the full agent-driven migration described below on our infrastructure, and you watch live status. Expect 30–90 minutes for a complex pathway.
   </Card>
   <Card title="Import" icon="bolt">
-    **Fastest.** A mechanical 1:1 conversion, good for simple pathways you want to start iterating on as agents.
+    A mechanical 1:1 conversion, good for simple pathways you want to start iterating on as agents.
   </Card>
 </CardGroup>
 
-The rest of this page is the **Migrate with your agent** flow, two ways: **Option 1** is one prompt that lets your agent drive the setup; **Option 2** is the step-by-step walkthrough if you'd rather do the setup yourself and understand each piece.
+The rest of this page covers the **Migrate with your agent** flow. **Option 1** is a single prompt that lets your agent drive the whole setup. **Option 2** is a step-by-step walkthrough for doing the setup yourself, so you understand each piece.
 
 The engine behind both is `norm@bland`, the new Bland plugin: it carries the full migration playbook, a deterministic snapshot builder and parity audit, and a convergence loop that will not declare the migration done until the checks are actually green. It talks to your account through the hosted [Bland MCP server](/integrations/mcp/overview) — there is nothing else to run or configure. (The general-purpose [`bland@bland` plugin](/integrations/mcp/norm) covers pathways and the rest of the platform; install both if you work with both.)
 
@@ -33,7 +35,7 @@ The engine behind both is `norm@bland`, the new Bland plugin: it carries the ful
 
 You need a coding agent (for example [Claude Code](https://claude.com/claude-code)) and a Bland API key for the organization that owns the pathway ([app.bland.ai/settings/api-keys](https://app.bland.ai/settings/api-keys)). The prompt handles the rest, including installing the plugin for you.
 
-Find your pathway ID (it's in the pathway's URL in the dashboard), fill in the two blanks, and paste:
+In the dashboard steps above you selected the pathway or persona you want to migrate, and its ID fills in the first line of the prompt below. If you are copying the prompt directly instead, fetch the ID of the pathway you are migrating first: it is in the pathway's URL in the dashboard. Fill in the two blanks and paste:
 
 ```text
 Migrate my Bland v1 pathway <PATHWAY_ID> into a new v2 agent named "<AGENT NAME>".
