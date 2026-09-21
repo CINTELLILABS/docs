@@ -13,6 +13,7 @@ This guide covers:
 
 * Creating **SIP trunks** via the **Setup Wizard** or API
 * Attaching **numbers and DIDs** for inbound and outbound routing
+* **Transferring calls** to DIDs, extensions, and SIP URIs on your trunk
 * **Auto-discovery** of endpoint settings, **connection tests**, and live **SIP tracing**
 * **Number porting** to bring existing numbers to Bland
 * **Connection endpoints**, firewall allow-listing, and security requirements
@@ -177,7 +178,7 @@ Choose how the two sides authenticate.
 
 Two authentication modes are available:
 
-- **IP-based (recommended)** — Bland's signaling IPs are allow-listed on your server, and Bland trusts your endpoint by source IP. No credentials to manage.
+- **IP-based (recommended):** your server trusts Bland's signaling and media IPs as SIP peers, and Bland trusts your endpoint by source IP. No credentials to manage. Transfers and warm transfer consult calls that Bland sends to your server connect from the media IPs, so trust all of the IPs listed under [Connection Endpoints](#connection-endpoints).
 - **Registration-based** — Bland registers with your server using a username and password via SIP REGISTER. A derived password is returned that you configure in your PBX.
 
 You can also optionally provide **call authentication** credentials (SIP username/password) included on SIP INVITE requests.
@@ -267,6 +268,47 @@ From a number's configuration you can also manage:
 - **Alerts** — thresholds for unreachable duration, failure rate, and response time, with email, SMS, and webhook channels.
 
 Set these with [`PATCH /v1/sip/config`](/api-v1/patch/sip-config).
+
+---
+
+## Transferring Calls over SIP
+
+A **Transfer Call** node can send the caller to a DID, an extension, or a SIP URI on your trunk instead of a phone number. On the node, turn on **Allow SIP/DID targets** and enter the target, for example `2001` or `sip:2001@pbx.example.com`.
+
+Bland resolves the target over the trunk the call arrived on. For a call that did not arrive over SIP, Bland uses your organization's outbound trunk.
+
+You choose how the transfer is delivered:
+
+| | SIP REFER hand-off | New INVITE (REFER off) | Warm transfer |
+|---|---|---|---|
+| Node setting | **Hand off via SIP REFER** on | **Hand off via SIP REFER** off | **Warm transfer** on |
+| What your SBC receives | A `REFER` inside the call your SBC already opened to Bland | A new `INVITE` from Bland to your trunk endpoint | A new `INVITE` from Bland for the consult call |
+| Who places the call to the target | Your PBX | Bland | Bland |
+| Bland after the transfer | Leaves the call | Stays in the call path and bridges the audio | Joins the caller once the briefing ends |
+| Requires | A call that arrived over SIP, and a PBX that supports `REFER` | Your SBC trusting Bland's media IPs as SIP peers | Your SBC trusting Bland's media IPs as SIP peers |
+
+**SIP REFER hand-off.** Bland sends the `REFER` on the existing dialog, so no new connection reaches your SBC and no firewall change is needed. Custom headers travel as header parameters on the `Refer-To` URI (`sip:2001@pbx.example.com?X-Account=42`). Your PBX must copy them onto the `INVITE` it sends to the target. If your PBX cannot do that, use a new INVITE instead.
+
+**New INVITE.** Bland's SIP infrastructure sends the `INVITE` to your trunk endpoint over TLS with SRTP, and your custom headers arrive as SIP headers on that `INVITE`. If your SBC answers with a `401` or `407` challenge, Bland responds with the outbound call credentials saved on the trunk.
+
+**Warm transfer.** Bland places the consult call to your trunk the same way as a new INVITE, briefs whoever answers, then joins the caller. With **Attended transfer via SIP REFER + Replaces** on, Bland completes the merge by sending your PBX a `REFER` with `Replaces`, which requires a call that arrived over SIP.
+
+<Note>
+  Bland sends your trunk's credentials and custom headers only to the trunk's own host. A full SIP URI that points at a different host is dialed as written, without them.
+</Note>
+
+### Custom headers on transfers
+
+Headers on a transfer come from the trunk's **outbound** header mapping, set on the trunk's **Headers** tab or with the `headers` object in [`POST /v1/sip/attach`](/api-v1/post/sip-attach). Each entry maps a call variable to a SIP header name. If the trunk has no outbound header mapping, no custom headers are sent on any transfer method.
+
+### Troubleshooting transfers
+
+| What you see on your SBC | Likely cause | Fix |
+|---|---|---|
+| An immediate `403 Forbidden` with no `401` or `407` first | The `INVITE` arrived from an IP your SBC does not trust as a SIP peer | Trust every IP listed under [Connection Endpoints](#connection-endpoints) as a SIP peer, including the media IPs |
+| No `INVITE` at all, and the caller's transfer fails after a few seconds | A firewall is dropping TLS from Bland's media IPs | Allow the media IPs to reach your SBC's SIP TLS port |
+| `488 Not Acceptable Here` | Your SBC offered or required plain RTP | Enable SRTP on the trunk toward Bland |
+| Headers missing after a SIP REFER hand-off | Your PBX does not copy `Refer-To` header parameters onto the new `INVITE` | Turn **Hand off via SIP REFER** off so Bland sends the `INVITE` |
 
 ---
 
@@ -389,8 +431,9 @@ Bland operates regional SIP edges. Connect to the endpoint closest to your infra
 
 Bland separates **signaling** from **media**, and they use different IP addresses:
 
-- **Signaling (connection):** SIP runs **exclusively over TLS on TCP port 5061** — there is no plaintext UDP/5060 listener. Each region has **two signaling IPs** (one per availability zone) behind its FQDN for high availability; send SIP to the FQDN and it balances across both.
-- **Media (RTP):** Audio is carried over **SRTP** on a **separate set of media IPs** per region, over UDP ports **16384–32768**.
+- **Signaling (calls you send to Bland):** SIP runs **exclusively over TLS on TCP port 5061**. There is no plaintext UDP/5060 listener. Each region has **two signaling IPs** (one per availability zone) behind its FQDN for high availability. Send SIP to the FQDN and it balances across both.
+- **Media (RTP):** Audio is carried over **SRTP** on a **separate set of media IPs** per region, over UDP ports **16384 to 32768**.
+- **Calls Bland places to you:** When Bland's SIP infrastructure originates an `INVITE` toward your SBC, for example a [transfer](#transferring-calls-over-sip) or a warm transfer consult call, the TLS connection comes from one of the region's **media IPs**, not from a signaling IP.
 
 | Region | Endpoint (TLS 5061) | Signaling IPs | Media IPs (RTP) |
 |--------|---------------------|---------------|-----------------|
@@ -403,11 +446,21 @@ Connect using the full SIP URI for your region — for example `us2.sip.bland.ai
 
 ### Firewall allow-list
 
-Open **TLS 5061** to the signaling IPs and **UDP 16384–32768** to the media IPs for your region. You can also copy the list from the **Firewall & Ports** panel on the trunk page, or fetch it with [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips).
+For your region:
+
+- Allow outbound **TLS 5061** from your SBC to the signaling IPs.
+- Allow **UDP 16384 to 32768** to and from the media IPs, or audio will not flow.
+- Allow inbound SIP over TLS from **all six IPs**, signaling and media, to your SBC's SIP TLS port, and configure all six as trusted SIP peers on the SBC. A firewall rule alone is not enough: an SBC that accepts the connection but does not recognize the source as a peer rejects the `INVITE` with `403 Forbidden`.
+
+You can also copy the list from the **Firewall & Ports** panel on the trunk page, or fetch it with [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips).
 
 <Note>
-  Whitelisting is mutual: Bland allow-lists your source ranges, and you allow-list Bland's signaling and media IPs. Open RTP (UDP 16384–32768) to the media IPs in addition to TLS 5061 to the signaling IPs, or audio will not flow.
+  Whitelisting is mutual: Bland allow-lists your source ranges, and you allow-list Bland's signaling and media IPs.
 </Note>
+
+<Warning>
+  Match Bland by **source IP**, not by the `Via` or `Contact` header. On an `INVITE` that Bland originates, those headers carry a signaling IP while the connection itself comes from a media IP.
+</Warning>
 
 ---
 
@@ -433,7 +486,7 @@ Open **TLS 5061** to the signaling IPs and **UDP 16384–32768** to the media IP
 - Methods: `INVITE`, `ACK`, `BYE`, `CANCEL`, `OPTIONS`, `REFER`
 - DTMF: RFC 2833 (out-of-band via RTP telephone-event)
 - Number format: E.164 for PSTN; DIDs and extensions supported on trunk-bound numbers
-- Authentication: IP-based (default) or SIP REGISTER digest auth
+- Authentication: IP-based (default) or SIP REGISTER digest auth. On calls Bland places to you, Bland answers a `401` or `407` digest challenge with the trunk's outbound call credentials
 
 ---
 
