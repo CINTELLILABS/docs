@@ -1,0 +1,41 @@
+---
+title: 'Initialization step'
+description: 'Run custom code once at the start of every conversation, before your agent speaks'
+---
+
+The Initialization step is agent-scoped custom code that runs one time when a new conversation starts, before your agent takes its first turn. Use it when every conversation with the agent needs the same preparation, like fetching a caller's account details, looking up a booking, or setting up variables the rest of the agent will reference.
+
+Whatever the snippet returns is available as `{{variables}}` in the agent's greeting and in every node that follows.
+
+## When to use it
+
+Reach for the Initialization step when the setup applies to every conversation, not to a specific branch mid-call. Common uses:
+
+- Look up the caller by their phone number and load their record.
+- Pull the reservation, order, or ticket tied to the number that was dialed.
+- Fetch fresh business hours, wait times, or inventory before the agent greets.
+- Set defaults or feature flags that later nodes read.
+
+If the code should only run in one branch of the conversation, use a Custom Code node inside the flow instead.
+
+## Configure it
+
+1. Open your agent in the [Bland dashboard](https://v2.app.bland.ai/dashboard) and go to **Configure**.
+2. In the graph, select the **Initialization** node on the connector between the Channels cluster and your agent.
+3. Turn on **Run on every conversation**.
+4. Write your snippet in the code editor, map any variables it needs, and click **Save code**.
+5. Use **Run test** with mock values to confirm the snippet returns what you expect.
+
+The step only runs once the snippet has been saved. Turning the switch on without a saved snippet does nothing at call time.
+
+## What the snippet can read
+
+Only the variables you map in the **Variables** table are sent to the snippet, not the full conversation state. Declare any call metadata you want explicitly, for example `{{call_id}}`, `{{from}}`, and `{{to}}`.
+
+## Behavior on inbound calls
+
+On inbound calls configured to wait for the caller to speak first, the Initialization step runs after the caller's first utterance rather than the moment the call connects.
+
+## Timing
+
+The Initialization step blocks the agent's first turn until the snippet returns, so keep it fast. Anything the snippet spends is silence on the line before the greeting.
