@@ -1,0 +1,140 @@
+---
+title: "List Models (Public)"
+api: "GET https://api.bland.ai/v2/models"
+description: "List Bland's TTS models in an OpenAI-compatible catalog. No API key required, so tooling can discover models before authenticating."
+---
+
+## Overview
+
+Returns Bland's TTS model catalog in the OpenAI `list` format. No authentication is required.
+
+Use it when your tooling expects an OpenAI-style `GET /models` endpoint, or when you need to discover models before a user has entered an API key. Each entry carries the same capabilities manifest as [List TTS Models](/api-v2/get/tts-models): supported encodings, sample rates, containers, and voice controls.
+
+If you are already authenticated and only need the manifests, [List TTS Models](/api-v2/get/tts-models) returns them without the OpenAI wrapper. Its behavior is unchanged.
+
+Responses are cacheable for up to 5 minutes (`Cache-Control: public, max-age=300`).
+
+---
+
+## Response
+
+<ResponseField name="object" type="string">
+  Always `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of model entries.
+
+  <Expandable title="Model fields">
+    <ResponseField name="id" type="string">
+      Model identifier, for example `btts-3`. Same value as the `x-model` header on [Synthesize Speech](/api-v2/post/tts).
+    </ResponseField>
+
+    <ResponseField name="object" type="string">
+      Always `model`.
+    </ResponseField>
+
+    <ResponseField name="created" type="number">
+      Always `0`. Present for OpenAI compatibility.
+    </ResponseField>
+
+    <ResponseField name="owned_by" type="string">
+      Always `bland`.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Human-readable name. Currently matches `id`.
+    </ResponseField>
+
+    <ResponseField name="modality" type="string">
+      Always `text-to-speech`.
+    </ResponseField>
+
+    <ResponseField name="capabilities" type="object">
+      The model's capabilities manifest.
+
+      <Expandable title="Capability fields">
+        <ResponseField name="encodings" type="string[]">
+          Supported audio codecs. Pass one as `audio.encoding`.
+        </ResponseField>
+
+        <ResponseField name="sample_rates" type="number[]">
+          Supported PCM sample rates in Hz. `mulaw` is fixed at 8000 regardless of this list.
+        </ResponseField>
+
+        <ResponseField name="containers" type="string[]">
+          Supported byte framings (`raw`, `wav`).
+        </ResponseField>
+
+        <ResponseField name="controls" type="object">
+          Supported voice controls and their allowed ranges. Each entry is an object with `min` and `max`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "btts-3",
+      "object": "model",
+      "created": 0,
+      "owned_by": "bland",
+      "name": "btts-3",
+      "modality": "text-to-speech",
+      "capabilities": {
+        "encodings": ["pcm_s16le", "mulaw"],
+        "sample_rates": [8000, 16000, 24000, 44100, 48000],
+        "containers": ["raw", "wav"],
+        "controls": {
+          "expressiveness": { "min": 0, "max": 1 },
+          "stability": { "min": 0, "max": 1 }
+        }
+      }
+    },
+    {
+      "id": "btts-2",
+      "object": "model",
+      "created": 0,
+      "owned_by": "bland",
+      "name": "btts-2",
+      "modality": "text-to-speech",
+      "capabilities": {
+        "encodings": ["pcm_s16le", "mulaw"],
+        "sample_rates": [8000, 16000, 24000, 44100, 48000],
+        "containers": ["raw", "wav"],
+        "controls": {
+          "expressiveness": { "min": 0, "max": 1 },
+          "stability": { "min": 0, "max": 1 }
+        }
+      }
+    }
+  ]
+}
+```
+
+```json Error
+{
+  "error": {
+    "message": "Failed to list models.",
+    "type": "api_error",
+    "param": null,
+    "code": "internal_error"
+  }
+}
+```
+</ResponseExample>
+
+### Error codes
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `internal_error` | 500 | Catalog generation failed. Retry the request. |
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

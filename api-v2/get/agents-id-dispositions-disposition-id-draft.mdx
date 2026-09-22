@@ -1,0 +1,145 @@
+---
+title: "Get Disposition Draft"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/draft"
+description: "Retrieve a disposition's live draft definition."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns the editable draft definition and its current `revision`. Send that revision back as `expectedDraftRevision` when you call [Update Disposition Draft](/api-v2/patch/agents-id-dispositions-disposition-id-draft) or [Publish Disposition](/api-v2/post/agents-id-dispositions-disposition-id-publish). Compare the draft against its published base with [Get Disposition Version](/api-v2/get/agents-id-dispositions-disposition-id-versions-version-id).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.dispositionId" type="string">
+  The disposition this draft belongs to.
+</ResponseField>
+
+<ResponseField name="data.revision" type="number">
+  The draft's current revision. Every draft update and publish increments it.
+</ResponseField>
+
+<ResponseField name="data.baseVersionId" type="string | null">
+  The most recently published version, which is the base this draft is edited against. `null` if the disposition has never been published.
+</ResponseField>
+
+<ResponseField name="data.definition" type="object">
+  The draft definition. Same shape as the `definition` body parameter of [Create Disposition](/api-v2/post/agents-id-dispositions).
+
+  <Expandable title="definition object">
+    <ResponseField name="name" type="string">
+      Display name, 1 to 120 characters.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Free-text description, up to 2000 characters. May be empty.
+    </ResponseField>
+    <ResponseField name="timing" type="string">
+      `immediate` or `within_24h`.
+    </ResponseField>
+    <ResponseField name="values" type="array">
+      Up to 50 value objects, each with `id`, `key`, `label`, `schema`, and `source`. A `structured_extraction` source that has been through publish also carries a server-written `frozen` copy of the extractor's prompt, output schema, and inference configuration; its `inferenceConfig.modelProfileKey`, when present, is one of `balanced`, `fast`, or `high_accuracy`.
+    </ResponseField>
+    <ResponseField name="transformation" type="object">
+      `{ "version": 1, "root": node }`, where the root node assembles the delivered payload from value ids and literals.
+    </ResponseField>
+    <ResponseField name="postCallWebhook" type="object">
+      `{ "mode": "hold" }` or `{ "mode": "emit_followup" }`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "dispositionId": "88b81ef5-3a12-4294-89a1-6cb88f111e05",
+    "revision": 4,
+    "baseVersionId": "dfc54fe8-59e1-4722-8123-2fc186ea7fd9",
+    "definition": {
+      "name": "Appointment outcome",
+      "description": "Did the caller book, and did they ask for a callback?",
+      "timing": "immediate",
+      "values": [
+        {
+          "id": "aab72385-5852-4da8-aeff-703ddfc4105d",
+          "key": "booked",
+          "label": "Appointment booked",
+          "schema": { "kind": "boolean" },
+          "source": {
+            "kind": "judge",
+            "judgeId": "4bddc575-a6b2-4257-b75f-0963b24dd55f",
+            "judgeVersionId": "4baad4cc-814b-4555-bbe6-58eeb9611e84",
+            "execution": { "reasoningEffort": "auto", "inputSourceIds": ["transcript"] }
+          }
+        },
+        {
+          "id": "d6d00a32-836b-4e50-9619-f2d11d988659",
+          "key": "callback_time",
+          "label": "Requested callback time",
+          "schema": {
+            "kind": "string",
+            "description": "When the caller asked to be called back. Preserve exact character-by-character spelling."
+          },
+          "source": {
+            "kind": "variable_extraction",
+            "variableKey": "callback_time",
+            "execution": { "reasoningEffort": "auto" }
+          }
+        }
+      ],
+      "transformation": {
+        "version": 1,
+        "root": {
+          "kind": "object",
+          "fields": {
+            "booked": { "kind": "value", "valueId": "aab72385-5852-4da8-aeff-703ddfc4105d" },
+            "callback_time": { "kind": "value", "valueId": "d6d00a32-836b-4e50-9619-f2d11d988659" }
+          }
+        }
+      },
+      "postCallWebhook": { "mode": "hold" }
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,109 @@
+---
+title: "Upload Agent Logo"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/identity/logo"
+description: "Upload the logo shown on the agent's contact card."
+---
+
+### Overview
+
+Replaces the agent's logo. Send the image as a multipart form upload in a field named `file`, not as JSON. Uploading a logo rebuilds the contact card, so `vcf_file_id` and `vcf_url` change in the response.
+
+Requires an admin, owner, operator, or prompter role.
+
+```bash
+curl -X POST https://api.bland.ai/v2/agents/{agent_id}/identity/logo \
+  -H "authorization: YOUR_API_KEY" \
+  -F "file=@logo.png;type=image/png"
+```
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  `multipart/form-data`. Most HTTP clients set this for you when you attach a file.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="file" type="file" required>
+  The logo image. PNG or JPEG only, at most 2 MB, one file per request. A request with no file returns `400 BAD_REQUEST`, and any other image type is rejected with `Logo must be a PNG or JPEG image`.
+</ParamField>
+
+### Response
+
+Returns the full identity in the same shape as [Get Agent Identity](/api-v2/get/agents-id-identity), with the new `logo_file_id` and a fresh `logo_url`.
+
+<ResponseField name="data" type="object">
+  The updated identity. See [Get Agent Identity](/api-v2/get/agents-id-identity) for every field.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "b88c3ce2-54d4-406c-bd21-733c61556151",
+    "org_id": "4bb834b5-8e95-487a-908d-d712a201008c",
+    "agent_id": "ec74c83e-5370-450b-9aa0-59757ec25a81",
+    "display_name": "Northwind Dental",
+    "tagline": "Front desk",
+    "support_email": "help@northwind.example",
+    "website": "https://northwind.example",
+    "address": "",
+    "logo_file_id": "5db9aecc-5013-4f97-8592-b0330617a6d0",
+    "vcf_file_id": "2ee5217f-562e-477c-8e30-0b1a68e44c2f",
+    "vcf_delivery_enabled": false,
+    "rcs_enabled": true,
+    "bcid_enabled": false,
+    "bcid_status": "not_submitted",
+    "bcid_submission": null,
+    "phone_numbers": [],
+    "logo_url": "https://files.bland.ai/agent-identity/5db9aecc-5013-4f97-8592-b0330617a6d0?signature=...",
+    "vcf_url": "https://files.bland.ai/agent-identity/2ee5217f-562e-477c-8e30-0b1a68e44c2f?signature=...",
+    "created_at": "2026-09-15T05:08:35.092Z",
+    "updated_at": "2026-09-15T05:09:02.118Z"
+  },
+  "errors": null
+}
+```
+
+```json No File
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "A `file` image field is required"
+    }
+  ]
+}
+```
+
+```json Wrong Type
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Logo must be a PNG or JPEG image"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

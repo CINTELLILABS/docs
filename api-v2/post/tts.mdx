@@ -1,0 +1,238 @@
+---
+title: "Synthesize Speech (HTTP)"
+api: "POST https://api.bland.ai/v2/tts"
+description: "Generate speech from a complete input string over HTTP."
+---
+
+## Overview
+
+Use this endpoint when the complete text is available before synthesis begins. It returns a streaming raw response or a complete WAV file in one HTTP request.
+
+For LLM tokens, multiple conversational turns, and interruption support, use [Realtime Speech (WebSocket)](/api-v2/post/tts-ws). It is the primary endpoint for realtime TTS.
+
+`text` and `voice` are the only required fields. You get 48 kHz PCM frames by default, ready to play or forward to a client. Set `audio.container` to `wav` for a file you can download and open.
+
+<Note>
+  Use a **`BTTS_V3`** voice. `expressiveness` and `stability` are calibrated for
+  it, and 48 kHz is the rate it renders natively. `BTTS_V2` voices synthesize, but the
+  controls are not tuned for them. Read `x-model` to see which model a voice resolved to.
+</Note>
+
+<Warning>
+  **Coming from `/v1/speak`?** `container: "raw"` returns bare audio frames. The v1
+  endpoints wrapped `pcm_<rate>` in a WAV header, so v1 clients usually skip 44 bytes
+  before playback. Doing that here removes 44 bytes of real audio. Drop the header
+  handling, or ask for `container: "wav"`.
+</Warning>
+
+## Pricing
+
+Text-to-speech is currently billed at **\$0.015 per 1,000 characters**, the same rate on every plan. This is a limited-time launch offer, discounted from the standard \$0.04 per 1,000 characters. Each request carries a minimum charge of \$0.001, so very short generations bill at the minimum rather than the per-character rate.
+
+Some public-library voices carry an additional per-character creator fee. For a completed response, the charge comes back in the `x-cost` header. An interrupted raw stream can bill less because delivery accounting happens after that header is sent.
+
+Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If a raw response is interrupted mid-stream, billing estimates the delivered characters at synthesized-chunk granularity. Individual audio bytes cannot be mapped to exact source characters.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="text" type="string" required>
+  The text to speak. Maximum 5,000 characters.
+
+  Insert a pause with `<|N|>`, where N is a positive number of seconds: `"Welcome to Bland. <|0.8|> How can I help?"`
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Voice UUID. Names are not accepted. Get a UUID from [List Voices](/api-v1/get/voices).
+</ParamField>
+
+<ParamField body="audio" type="object">
+  Output format. All fields optional.
+
+  <Expandable title="audio fields">
+    <ParamField body="encoding" type="string" default="pcm_s16le">
+      Audio codec.
+
+      - `pcm_s16le`: 16-bit signed little-endian PCM.
+      - `mulaw`: 8-bit mu-law, 8 kHz only. For telephony.
+    </ParamField>
+
+    <ParamField body="sample_rate" type="number" default="48000">
+      Output sample rate in Hz: `8000`, `16000`, `24000`, `44100`, or `48000`.
+
+      48 kHz is what `BTTS_V3` renders natively, so it is the fastest path. With `mulaw`, the rate is fixed at `8000` and any other value returns a `400`.
+    </ParamField>
+
+    <ParamField body="container" type="string" default="raw">
+      How the bytes are framed.
+
+      - `raw`: bare audio frames. For streaming and voice agents.
+      - `wav`: one RIFF/WAVE file with a correct-length header. The full render is buffered before the first byte goes out, since a valid header needs the final size. For downloads.
+
+      Trying the endpoint by hand? Use `wav`. `raw` returns bare samples that most players cannot open.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="controls" type="object">
+  How the voice performs. Both are optional and range from `0.0` to `1.0`.
+
+  <Expandable title="controls fields">
+    <ParamField body="expressiveness" type="number">
+      Higher is more varied intonation; lower is flatter and more monotone.
+    </ParamField>
+
+    <ParamField body="stability" type="number">
+      Higher is more consistent between renders; lower is more creative and varied.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+---
+
+## Response
+
+Audio in the encoding and container you asked for.
+
+- `raw` + `pcm_s16le` → `Content-Type: audio/pcm`
+- `raw` + `mulaw` → `Content-Type: audio/basic`
+- `wav` (any encoding) → `Content-Type: audio/wav`
+
+These headers arrive with the first byte.
+
+<ResponseField name="x-request-id" type="string">
+  Unique ID for this request. Include it in support tickets.
+</ResponseField>
+
+<ResponseField name="x-model" type="string">
+  The model that produced the audio, for example `btts-3`. Set by the voice you chose.
+</ResponseField>
+
+<ResponseField name="x-voice-id" type="string">
+  The voice UUID used.
+</ResponseField>
+
+<ResponseField name="x-sample-rate" type="string">
+  Output sample rate in Hz.
+</ResponseField>
+
+<ResponseField name="x-cost" type="string">
+  Full-response cost in USD. It matches the final charge when the response completes; an interrupted raw stream may have a lower delivery-based charge.
+</ResponseField>
+
+<ResponseField name="x-latency" type="string">
+  Milliseconds to the first audio byte. For `wav`, the full render time.
+</ResponseField>
+
+### Errors
+
+Every error returns the same shape, with a stable machine-readable code:
+
+```json
+{ "error": { "code": "voice_not_found", "message": "Voice … was not found or is not accessible." } }
+```
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `invalid_request` | 400 | A required field is missing or has the wrong shape. |
+| `text_too_long` | 400 | `text` exceeds 5,000 characters. |
+| `unsupported_encoding` | 400 | `audio.encoding` is not an allowed value. |
+| `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the encoding. |
+| `unsupported_container` | 400 | `audio.container` is not `raw` or `wav`. |
+| `unsupported_voice` | 400 | The voice exists but is not a `BTTS_V2` or `BTTS_V3` voice. |
+| `insufficient_credits` | 402 | The account is out of credits. |
+| `voice_not_live` | 403 | The professional voice is still a draft. Promote it to live first. |
+| `voice_not_found` | 404 | The voice UUID does not exist, or you cannot access it. |
+| `synthesis_failed` | 500 | Synthesis failed before or during streaming. |
+
+---
+
+## Examples
+
+### Downloadable WAV file
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello world.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "encoding": "pcm_s16le", "sample_rate": 24000, "container": "wav" },
+    "controls": { "expressiveness": 0.7, "stability": 0.5 }
+  }' \
+  --output hello.wav
+```
+
+### Default (48 kHz PCM, raw)
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Welcome to Bland.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e"
+  }' \
+  --output out.pcm
+```
+
+### Telephony (μ-law, 8 kHz)
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Your appointment is confirmed for Tuesday at 3 PM.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "encoding": "mulaw", "sample_rate": 8000 }
+  }' \
+  --output prompt.ulaw
+```
+
+<ResponseExample>
+```http Response headers
+HTTP/2 200
+content-type: audio/pcm
+x-request-id: 5f9c…-…-…
+x-model: btts-3
+x-voice-id: 29158307-9893-4149-8a75-bc9ce313d64e
+x-sample-rate: 48000
+x-cost: 0.001000
+x-latency: 312
+
+<audio bytes>
+```
+
+```json voice_not_found
+{
+  "error": {
+    "code": "voice_not_found",
+    "message": "Voice f04af0e5-… was not found or is not accessible."
+  }
+}
+```
+
+```json invalid_request
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "`voice` is required and must be a voice UUID."
+  }
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

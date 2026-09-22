@@ -1,0 +1,180 @@
+---
+title: "List Check Runs"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/check-runs"
+description: "List an agent's check runs for one environment."
+---
+
+### Overview
+
+Returns the agent's check runs for one environment, newest first, including runs still in flight. Use it for history or to see which run is active. To poll a single run, use [Get Check Run](/api-v2/get/agents-id-check-runs-run-id).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="env" type="string" default="production">
+  The environment to list runs for: `staging` or `production`. Any other value falls back to `production`.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="25">
+  Maximum number of runs to return. Minimum `1`, maximum `100`. Values outside that range are clamped.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of check run objects, newest first.
+
+  <Expandable title="check run object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the check run.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the run belongs to.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      The environment whose checks were run: `staging` or `production`.
+    </ResponseField>
+    <ResponseField name="agent_version_id" type="string">
+      The candidate version the run scored.
+    </ResponseField>
+    <ResponseField name="semver" type="string | null">
+      The candidate's published version number, or `null` if it has never been published.
+    </ResponseField>
+    <ResponseField name="version_name" type="string | null">
+      The candidate's saved name, or `null` if it has none.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `PENDING`, `RUNNING`, `PASSED`, `FAILED`, `ERROR`, or `CANCELLED`. The last four are terminal.
+    </ResponseField>
+    <ResponseField name="judge_names" type="array">
+      Display names of the judges frozen into the run when it started.
+    </ResponseField>
+    <ResponseField name="scenario_count" type="integer">
+      Number of scenarios the run drove conversations from.
+    </ResponseField>
+    <ResponseField name="simulations_count" type="integer">
+      Conversations generated per scenario.
+    </ResponseField>
+    <ResponseField name="overall_passed" type="boolean | null">
+      `true` when the run `PASSED`, `false` when it `FAILED`, `null` otherwise.
+    </ResponseField>
+    <ResponseField name="verdicts" type="array | null">
+      Per-judge results, or `null` until the run completes. Each has `eval_agent_id`, `eval_agent_version_id`, `name`, `required`, `target_level_keys`, `match_rate`, `score`, and `passed`. See [Get Check Run](/api-v2/get/agents-id-check-runs-run-id) for field details.
+    </ResponseField>
+    <ResponseField name="simulation_set_id" type="string | null">
+      ID of the generated conversation set. `null` until generation starts.
+    </ResponseField>
+    <ResponseField name="eval_run_id" type="string | null">
+      ID of the scoring run. `null` until scoring starts.
+    </ResponseField>
+    <ResponseField name="error_message" type="string | null">
+      Why the run ended in `ERROR`, or `null`.
+    </ResponseField>
+    <ResponseField name="triggered_by" type="string | null">
+      ID of the user who started the run, or `null` when started with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp the run was created.
+    </ResponseField>
+    <ResponseField name="started_at" type="string | null">
+      When scoring began. `null` while `PENDING`.
+    </ResponseField>
+    <ResponseField name="completed_at" type="string | null">
+      When the run reached a terminal status. `null` while in flight.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "id": "ac5df482-7883-412b-b8a8-bb6496d500ec",
+      "agent_id": "35675d2f-3e9d-4d61-a43c-4cf4db5bddc9",
+      "env_type": "staging",
+      "agent_version_id": "dacfbe0a-bc77-4d0c-9c27-b969ed928dcd",
+      "semver": null,
+      "version_name": "Add callback offer",
+      "status": "RUNNING",
+      "judge_names": ["Resolution quality"],
+      "scenario_count": 2,
+      "simulations_count": 5,
+      "overall_passed": null,
+      "verdicts": null,
+      "simulation_set_id": "c4f2e783-688c-41b0-ae2f-b77773805771",
+      "eval_run_id": null,
+      "error_message": null,
+      "triggered_by": "4bf4c1d6-b1f0-4a29-809f-3fcee3709a07",
+      "created_at": "2026-09-10T18:41:02.774Z",
+      "started_at": "2026-09-10T18:41:05.309Z",
+      "completed_at": null
+    },
+    {
+      "id": "f0024822-5696-4392-929b-88a88a966e71",
+      "agent_id": "35675d2f-3e9d-4d61-a43c-4cf4db5bddc9",
+      "env_type": "staging",
+      "agent_version_id": "6b2027df-5727-4feb-8215-2d57a1cfe82b",
+      "semver": "1.3.0",
+      "version_name": null,
+      "status": "PASSED",
+      "judge_names": ["Resolution quality"],
+      "scenario_count": 2,
+      "simulations_count": 5,
+      "overall_passed": true,
+      "verdicts": [
+        {
+          "eval_agent_id": "bcb07d72-36f0-49db-8fdf-f922d7b0a736",
+          "eval_agent_version_id": "0754e124-3915-4666-bd22-aa7f5f6d06cb",
+          "name": "Resolution quality",
+          "required": true,
+          "target_level_keys": ["good", "excellent"],
+          "match_rate": 0.9,
+          "score": 84.6,
+          "passed": true
+        }
+      ],
+      "simulation_set_id": "698e65a5-dd49-448f-8db9-6c5e7e667bec",
+      "eval_run_id": "b1aa992f-3503-42b0-b3f5-6c376d037090",
+      "error_message": null,
+      "triggered_by": null,
+      "created_at": "2026-09-09T11:15:48.020Z",
+      "started_at": "2026-09-09T11:15:50.611Z",
+      "completed_at": "2026-09-09T11:27:13.488Z"
+    }
+  ],
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,221 @@
+---
+title: "Call recipes for agents"
+description: "Named patterns for the three things agents hit first: voicemail handling, getting proper nouns transcribed correctly, and escalating to a human during open hours."
+---
+
+## Overview
+
+Three things reliably surprise an agent placing its first real calls: half of them reach an answering machine, the shop's name comes back from the transcriber as something else entirely, and there is no obvious knob for "hand this to a person if someone is there."
+
+Each of these has an answer. Two are parameters on [`POST /v1/calls`](/api-v1/post/calls). The third is a pattern you assemble, and this page says so plainly rather than pretending otherwise.
+
+New to the call lifecycle itself? Start with the [Agent quickstart](/platform/agent-quickstart).
+
+## Voicemail
+
+**By default, Bland hangs up on voicemail.** If you dispatch a call and no one picks up, the agent detects the answering machine and ends the call without saying anything. Nothing is left behind. This is usually not what you want.
+
+Configure it with the `voicemail` object.
+
+<Tabs>
+  <Tab title="Leave a message">
+    Play a message after the beep, then end the call.
+
+    ```json
+    {
+      "phone_number": "+15551234567",
+      "task": "Ask whether they carry 10mm hex keys.",
+      "voicemail": {
+        "action": "leave_message",
+        "message": "Hi, this is Ada calling about a parts question. I'll try again tomorrow, no need to call back."
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Message plus an SMS copy">
+    Leave the voicemail and text a copy, so there is something the recipient can act on without replaying audio. `action` is `leave_message_and_sms`. Inside `sms`, `message` is required and `from` is optional; `from` must be a number you own with SMS permissions. There is no `to` field, because the destination is resolved by Bland rather than set on the request.
+
+    ```json
+    {
+      "phone_number": "+15551234567",
+      "task": "Ask whether they carry 10mm hex keys.",
+      "voicemail": {
+        "action": "leave_message_and_sms",
+        "message": "Hi, this is Ada calling about a parts question. I'm sending the details by text.",
+        "sms": {
+          "from": "+15559876543",
+          "message": "Ada here, following up on 10mm hex keys. Reply any time."
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Push through an IVR">
+    `ignore` tells the agent to carry on as if nothing was detected. Use it when the "answering machine" is really a phone tree you intend to navigate, and do not pair it with a message.
+
+    If the callee is a phone menu rather than a person, prefer [`ivr_mode`](/api-v1/post/calls#param-ivr-mode): it sets this for you and also stops the agent responding on the conversational timing it uses with a human.
+
+    ```json
+    {
+      "phone_number": "+15551234567",
+      "task": "Navigate the phone menu to reach the parts department, then ask whether they carry 10mm hex keys.",
+      "voicemail": {
+        "action": "ignore"
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### The action you pass is not always the action that runs
+
+Bland derives the effective action from the whole request, not from `action` alone. This trips people up, so it is worth knowing before you debug a call that "ignored" your setting.
+
+| What you send | What actually runs |
+| --- | --- |
+| `ivr_mode: true`, with any `action` | `ignore`. A phone menu has no voicemail, so IVR mode suppresses voicemail handling entirely. The legacy `amd` alias sets the same switch. |
+| A `message`, plus an `sms` config | `leave_message_and_sms` |
+| A `message`, with no `sms` config | `leave_message` |
+| No `message` and no `ivr_mode` | The `action` you passed |
+
+The practical rule: **supplying a message implies leaving one, and `ivr_mode` overrides the action entirely.** So `{"action": "hangup", "message": "..."}` leaves the message rather than hanging up, and `{"action": "ignore", "message": "..."}` abandons your IVR pushthrough. If you want `hangup` or `ignore`, send no message alongside it.
+
+### Retrying instead of leaving a message
+
+If you would rather try again later than leave anything, the `retry` object redials after a delay and can use a different voicemail action on the second attempt.
+
+```json
+{
+  "retry": {
+    "wait": 3600,
+    "voicemail_action": "leave_message",
+    "voicemail_message": "Second attempt, sorry to miss you. I'll stop calling after this one."
+  }
+}
+```
+
+Full parameter details are in the [Send Call reference](/api-v1/post/calls#param-voicemail).
+
+## Proper nouns
+
+Transcription is where a business name becomes something that is not a business name. "Carmine and Co" comes back as "Carmiano Bank", your agent repeats it back on the call, and the conversation quietly derails.
+
+`keywords` is the lever. It boosts the words you list inside the transcription engine, so they win against phonetically similar alternatives.
+
+```json
+{
+  "phone_number": "+15551234567",
+  "task": "Ask Carmine and Co whether the Vitale order shipped.",
+  "keywords": ["Carmine and Co", "Vitale"]
+}
+```
+
+Add a colon and a number for a stronger boost. The default factor is `2`, and higher values push harder:
+
+```json
+{
+  "keywords": ["Carmine and Co:3", "Vitale"]
+}
+```
+
+Practical guidance:
+
+- **Seed it from what you already know.** If your agent is calling a business, it knows the business name. If it is asking for a person, it knows the person's name. Pass them before the first call rather than after the first bad transcript.
+- **Boost the ones that actually matter.** Company names, product SKUs, street names, surnames, anything invented or non-English.
+- **Limits:** at most 20 keywords per call, each under 100 characters, each formatted as `word` or `word:boost`.
+- Do not boost common words. Raising a word's odds everywhere makes the transcript worse, not better.
+
+See [`keywords`](/api-v1/post/calls#param-keywords) for the full parameter.
+
+## Escalating to a human during open hours
+
+**This one is a pattern, not a platform knob.** There is no `business_hours` field, and no setting that means "transfer if someone is at the desk." What Bland gives you is the transfer itself: deciding *when* it is allowed is yours to assemble. Written down, it is short.
+
+You need two pieces: a way to transfer, and a decision about whether transferring is allowed right now.
+
+### The transfer
+
+| Agent type | How to transfer |
+| --- | --- |
+| Prompt-based (`task`) | `transfer_phone_number`, or `transfer_list` for several destinations with a `default`. |
+| Pathway (`pathway_id`) | A [Transfer Call node](/tutorials/pathways#transfer-call-node). `transfer_phone_number` is ignored for pathways. |
+
+If you need the human to be briefed before the caller is handed over, that is a [warm transfer](/tutorials/warm-transfer).
+
+When you use `transfer_phone_number`, the `task` has to say when to use it, and it has to use the word "transfer". Alternate phrasing like "switch" or "hand off" can cause the agent to skip the action entirely.
+
+### The decision
+
+<Steps>
+  <Step title="Decide before you dial (recommended)">
+    Your code knows the wall clock and the on-call roster. Bland does not. So resolve "is anyone there?" at dispatch time and send a different call depending on the answer:
+
+    ```javascript
+    const open = isWithinBusinessHours(new Date(), "America/New_York");
+
+    await fetch("https://api.bland.ai/v1/calls", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.BLAND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone_number: "+15551234567",
+        timezone: "America/New_York",
+        task: open
+          ? "Answer the caller's question. If they ask for a person, or you cannot resolve it, transfer the call."
+          : "Answer the caller's question. The office is closed, so do not offer to transfer. Take a message and confirm a callback tomorrow morning.",
+        ...(open && { transfer_phone_number: "+15559876543" }),
+      }),
+    });
+    ```
+
+    Omitting `transfer_phone_number` when you are closed is the important half. A prompt that says "do not transfer" is a request the agent can misread. A call with no transfer destination cannot transfer at all.
+  </Step>
+
+  <Step title="Or decide during the call">
+    Sometimes the boundary falls mid-call, or the answer depends on something the agent learns while talking (which department, whether the caller is an existing customer). Then the decision has to happen live.
+
+    Pass the facts in `request_data` and set `timezone` so the agent's sense of "now" matches yours:
+
+    ```json
+    {
+      "phone_number": "+15551234567",
+      "timezone": "America/New_York",
+      "transfer_phone_number": "+15559876543",
+      "request_data": {
+        "desk_staffed": true,
+        "desk_closes_at": "5:00 PM Eastern"
+      },
+      "task": "You are the front desk for Rossi Hardware. If the caller asks for a person and {{desk_staffed}} is true, transfer the call. Otherwise offer to take a message."
+    }
+    ```
+
+    Give the agent a decision it can read, not arithmetic it has to perform. `desk_staffed: true` is reliable. "Work out whether 4:55 PM Pacific is inside 9 to 5 Eastern" is not. In pathways, `{{now_utc}}` is available at every node, but the same advice holds: branch on a precomputed flag wherever you can.
+  </Step>
+</Steps>
+
+### Confirm it happened
+
+The transfer shows up in the post-call payload and in `GET /v1/calls/{call_id}`: `transferred_to` holds the number and `transferred_at` the timestamp. If both are null on a call where the caller clearly asked for a person, the prompt wording is the first thing to check.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent quickstart" icon="bolt" href="/platform/agent-quickstart">
+    Place a call, learn how it ended, read the transcript.
+  </Card>
+  <Card title="Send Call API reference" icon="code" href="/api-v1/post/calls">
+    Every parameter these recipes use, in full.
+  </Card>
+  <Card title="Conversational Pathways" icon="diagram-project" href="/tutorials/pathways">
+    Structured flows when a prompt stops being enough.
+  </Card>
+  <Card title="Post call webhooks" icon="webhook" href="/tutorials/post-call-webhooks">
+    The payload that tells you how each call went.
+  </Card>
+</CardGroup>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

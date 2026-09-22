@@ -1,0 +1,52 @@
+---
+title: "Migrate from Cartesia"
+description: "Map Cartesia WebSocket contexts and continuations to Bland turns and preemption."
+---
+
+Both APIs use a persistent WebSocket and a context ID per conversational turn. Bland makes barge-in the default: a new context replaces the active context instead of running concurrently.
+
+Start with the [Realtime TTS Quickstart](/tts/realtime-quickstart), then translate the protocol as follows.
+
+## Message mapping
+
+| Cartesia WebSocket | Bland `/v2/tts/ws` |
+| --- | --- |
+| Generation request with `context_id` and `transcript` | `speak` with `context_id` and `text` |
+| `continue: true` | Keep sending `speak` with the same `context_id` |
+| `continue: false` or final empty transcript | `end_of_turn` |
+| `{ context_id, cancel: true }` | `{ type: "cancel", context_id }` |
+| Base64 `chunk.data` in JSON | Raw binary audio frame |
+| `done: true` for a context | `utterance_end` |
+| Repeated model, voice, language, and output fields | One `init` message for the connection |
+
+```js
+ws.send(
+  JSON.stringify({
+    type: "speak",
+    context_id: "turn-9",
+    text: "Thanks for calling, ",
+  }),
+);
+ws.send(
+  JSON.stringify({
+    type: "speak",
+    context_id: "turn-9",
+    text: "how can I help today?",
+  }),
+);
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: "turn-9" }));
+```
+
+## Important differences
+
+- Cartesia can multiplex multiple contexts over one socket. Bland has exactly one active turn. Sending a different `context_id` preempts the old one.
+- Cartesia echoes the context ID on audio JSON. Bland brackets raw binary frames with `utterance_start` and `utterance_end`, so track the active context locally.
+- Bland handles token buffering. You do not need to port `max_buffer_delay_ms` or manual flush IDs.
+- Bland does not currently emit word or phoneme timestamps.
+- Bland cancellation stops forwarding the active turn. Clear locally queued audio as well because delivered frames cannot be recalled.
+
+See the [Cartesia WebSocket reference](https://docs.cartesia.ai/api-reference/tts/websocket), [Cartesia context guide](https://docs.cartesia.ai/use-the-api/tts-websocket/contexts), and [Bland turn concepts](/tts/realtime-concepts#the-connection-and-turn-model).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

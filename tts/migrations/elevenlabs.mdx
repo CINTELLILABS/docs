@@ -1,0 +1,55 @@
+---
+title: "Migrate from ElevenLabs"
+description: "Move an ElevenLabs streaming TTS client to Bland's realtime WebSocket."
+---
+
+ElevenLabs and Bland both support a long-lived WebSocket for partial LLM text. The main wire change is that Bland sends raw binary audio and uses explicit turns instead of JSON responses with base64 audio.
+
+Start with the working [Realtime TTS Quickstart](/tts/realtime-quickstart), then apply these mappings.
+
+## Message mapping
+
+| ElevenLabs stream-input | Bland `/v2/tts/ws` |
+| --- | --- |
+| Voice ID in the WebSocket URL | Bland voice UUID in the first `init` message |
+| `xi-api-key` header | `Authorization: Bearer <BLAND_API_KEY>` |
+| Initial `{ "text": " ", "voice_settings": ... }` | `{ "type": "init", "voice": ..., "audio": ..., "controls": ... }` |
+| `{ "text": token }` | `{ "type": "speak", "context_id": turnId, "text": token }` |
+| Final empty text or flush behavior | `{ "type": "end_of_turn", "context_id": turnId }` |
+| JSON `audio` field containing base64 | Binary WebSocket frame containing raw audio |
+| `is_final: true` | `utterance_end` with `reason: "complete"` |
+
+## Replace the send loop
+
+```js
+const turnId = crypto.randomUUID();
+
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: turnId,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: turnId }));
+```
+
+Do not port ElevenLabs chunk schedules, `try_trigger_generation`, or sentence timers. Bland buffers token input and chooses speech boundaries on the server.
+
+## Controls and output
+
+- Map ElevenLabs `stability` to Bland `controls.stability`, both from `0.0` to `1.0`.
+- Tune Bland `controls.expressiveness` independently. `similarity_boost`, `style`, speaker boost, speed, and seed do not have direct Bland equivalents.
+- Bland realtime output is `pcm_s16le` at 8, 16, 24, 44.1, or 48 kHz, or 8 kHz mu-law. It does not emit MP3 over this WebSocket.
+- Bland does not currently return alignment or timestamp events.
+
+On interruption, send the replacement response under a new `context_id`. Bland preempts the old turn automatically. Also discard any old audio that remains in your local playback queue.
+
+See the [ElevenLabs WebSocket reference](https://elevenlabs.io/docs/api-reference/text-to-speech/v-1-text-to-speech-voice-id-stream-input) and the [Bland WebSocket reference](/api-v2/post/tts-ws).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

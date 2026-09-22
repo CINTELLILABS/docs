@@ -1,0 +1,64 @@
+---
+title: "Migrate from Amazon Polly"
+description: "Move Amazon Polly synthesis to Bland HTTP or stream LLM tokens through Bland realtime TTS."
+---
+
+Choose the migration based on when your text becomes available.
+
+- For a complete string and a downloadable response, use [Synthesize Speech (HTTP)](/api-v2/post/tts).
+- For partial LLM text and conversational interruptions, use the [Realtime TTS Quickstart](/tts/realtime-quickstart).
+
+## Complete text
+
+Map a Polly `SynthesizeSpeech` request to Bland as follows:
+
+| Amazon Polly | Bland `POST /v2/tts` |
+| --- | --- |
+| AWS credentials and region | Bland API key |
+| `Text` | `text` |
+| `VoiceId` | Bland voice UUID in `voice` |
+| `OutputFormat: "pcm"` | `audio.encoding: "pcm_s16le"`, `audio.container: "raw"` |
+| `OutputFormat: "mp3"` | No native equivalent; request WAV or raw audio |
+| `SampleRate` string | `audio.sample_rate` number |
+
+```bash
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello from Bland.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": {
+      "encoding": "pcm_s16le",
+      "sample_rate": 24000,
+      "container": "wav"
+    }
+  }' \
+  --output speech.wav
+```
+
+Polly SSML, engine selection, lexicons, and speech marks do not map directly. Bland supports pause markers and normalized expressiveness and stability controls on its HTTP endpoint.
+
+## Realtime LLM input
+
+Polly's standard synthesis request takes one complete `Text` value. Bland's WebSocket can start speaking while the LLM is still producing tokens:
+
+```js
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: turnId,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: turnId }));
+```
+
+See the [Amazon Polly synthesis example](https://docs.aws.amazon.com/polly/latest/dg/synthesize-example.html), [Bland HTTP reference](/api-v2/post/tts), and [Bland WebSocket reference](/api-v2/post/tts-ws).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

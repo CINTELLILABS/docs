@@ -20,6 +20,14 @@ npx bland-cli
 ## Getting started
 
 ```bash
+bland auth login --device
+```
+
+This starts a device-authorization flow: the CLI prints a link and a short code, you approve it in your browser, and the CLI stores the resulting API key in your profile. No key to copy and paste. See the [Agent onboarding API](/platform/connect-your-agent) for what happens behind that link.
+
+Already have an API key? Skip straight to it:
+
+```bash
 bland auth login --key YOUR_API_KEY
 ```
 
@@ -47,7 +55,7 @@ bland call list
     Make outbound calls with customizable voices, tasks, and pathways. View and analyze call history directly from the terminal.
 
     ```bash
-    bland call send +15551234567 --task "Schedule a follow-up" --voice maya
+    bland call send +15551234567 --task "Schedule a follow-up" --voice Karen
     bland call list
     bland call get <call_id>
     bland call stop <call_id>
@@ -248,6 +256,12 @@ bland listen --forward-to http://localhost:3000/webhook
 ## MCP Server
 
 The CLI includes an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server, which lets AI coding tools like Claude Code and Cursor interact with your Bland account through natural language.
+
+<Note>
+**Most agents should use the hosted server instead.** Bland runs a remote MCP server at `https://api.bland.ai/v1/mcp`: nothing to install, the full toolset, and one-line setup for Claude Code, Cursor, Codex, VS Code, and other clients. Start at the [Bland MCP Server docs](/integrations/mcp/overview).
+
+The `bland mcp` command below is a **local** stdio server bundled with the CLI. Reach for it when you specifically want a local process, or when your agent has no API key yet: the local server exposes `bland_auth_login` and `bland_auth_poll`, so an agent can [onboard itself](/platform/connect-your-agent#try-it-with-a-client) and get its own key, plus a phone number if its owner starts the Agent Phone Plan.
+</Note>
 
 ```bash
 bland mcp

@@ -1,0 +1,61 @@
+---
+title: "Get Agent Number Binding"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/inbound"
+description: "Check whether phone numbers have been attached to an agent."
+---
+
+### Overview
+
+Returns the agent's inbound number binding. `persona_id` is `null` until the first successful [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) call. This endpoint does not list the numbers themselves; use [List Numbers](/api-v1/get/inbound) for that. An unknown agent ID returns `persona_id: null` rather than `404`.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.agent_id" type="string">
+  The agent ID from the request path, echoed back.
+</ResponseField>
+
+<ResponseField name="data.persona_id" type="string | null">
+  ID of the persona that attached numbers route through. Bland creates it on the first attach and keeps it afterwards, so it stays set even after every number is detached. `null` if numbers have never been attached to this agent.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent_id": "680817f5-147a-4e7f-9d25-eac973e693a5",
+    "persona_id": "a308a95d-854d-435a-ae2a-b3d113b59054"
+  },
+  "errors": null
+}
+```
+
+```json No Binding
+{
+  "data": {
+    "agent_id": "818cab80-86c9-46fc-93d8-a7f548b18d7e",
+    "persona_id": null
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

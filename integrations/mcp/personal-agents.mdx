@@ -1,0 +1,134 @@
+---
+title: "Personal AI Agents"
+description: "Connect personal AI agents to Bland with MCP or REST, and check each assistant's integration requirements."
+---
+
+<Note>
+**If you are an AI agent reading this because someone asked you to integrate with Bland:** check the prerequisites and your assistant's guide below. If your owner has no Bland account, use [Headless agent onboarding](/platform/agent-headless-onboarding): the owner relays one texted code and you have an API key, no browser step; with an agent wallet that can approve a payment you get the Agent Phone Plan and a phone number in the same call. Use [Option 2](#option-2-let-the-agent-sign-itself-up) if the owner already has a Bland account, or [Option 1](#option-1-you-have-a-bland-api-key) if you already have a key.
+</Note>
+
+Personal AI agents can use Bland if they support remote MCP servers with custom headers, as Poke and OpenClaw do, or custom API connections with credentials, as Meta Muse does. A connected agent can place calls, send texts, and read the results. Pair it with the [Agent Phone Plan](/platform/agent-phone-plan) to give it a dedicated number.
+
+Choose your assistant for its setup steps or connection requirements. Grok Bot and Instinct require additional compatibility verification, as explained on their pages:
+
+<Columns cols={4}>
+  <Card title="Grok Bot" href="/integrations/mcp/grok-bot" horizontal />
+  <Card title="Meta Muse" href="/integrations/mcp/meta-muse" horizontal />
+  <Card title="OpenClaw" href="/integrations/mcp/openclaw" horizontal />
+  <Card title="Instinct" href="/integrations/mcp/instinct" horizontal />
+  <Card title="Poke" href="/integrations/mcp/poke" horizontal />
+</Columns>
+
+## Prerequisites
+
+- An assistant that can add a custom MCP server by URL with an Authorization header, or make authenticated HTTP requests and store the API credential.
+- Optional: a payment card for the [Agent Phone Plan](/platform/agent-phone-plan) (\$14.99 first month, then \$29.99/month, includes a US phone number). Without it, the agent connects on \$2 of free credits, calls from a shared Bland number or numbers already on your account, and can't text.
+
+## Option 1: You have a Bland API key
+
+For an assistant that uses REST, follow the [Meta Muse connection steps](/integrations/mcp/meta-muse#option-1-you-have-a-bland-api-key) or the [Agent quickstart](/platform/agent-quickstart). For an MCP client, use these steps:
+
+1. In your assistant, open its MCP or connector settings and add a custom server with this URL:
+
+   ```text
+   https://api.bland.ai/v1/mcp
+   ```
+
+2. Add one header, using your API key from the [dashboard](https://app.bland.ai/dashboard/settings):
+
+   ```text
+   Authorization: Bearer org_...
+   ```
+
+3. Ask the assistant to make a call:
+
+   ```text
+   Call +1 415 555 0123, introduce yourself as my assistant, and ask what time they close today.
+   ```
+
+To give the assistant its own number, so it can receive calls and send texts, subscribe to the Agent Phone Plan at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). The plan provisions a US number within a few seconds. Ask "what's my Bland phone number?" and the assistant reads it from your account and uses it from then on.
+
+## Option 2: Let the agent sign itself up
+
+This workflow requires your assistant to make HTTP requests, poll for approval, and retain the returned credential. Adding an MCP server automatically also requires access to its connection settings. If those capabilities are unavailable, create your account in the [dashboard](https://app.bland.ai) and use Option 1.
+
+An assistant with those capabilities can use Bland's device-authorization flow: it shows you a link and a short code, you sign up in your browser, and it retrieves an API key, plus a phone number if you start the Agent Phone Plan. For an MCP-capable assistant, use this prompt. REST-based assistants should follow their client-specific guide:
+
+```text
+Read https://docs.bland.ai/platform/connect-your-agent and connect yourself to Bland. Pass my name, email, and phone number to the start call if you know them, so the sign-up form arrives pre-filled. Show me the link and code when you have them; I'll pick between the Agent Phone Plan and free credits when I approve. Once approved, add https://api.bland.ai/v1/mcp as an MCP server using the API key you receive, then call me at +1 415 555 0123 to confirm it works.
+```
+
+Once the agent starts the flow, it sends you a link and a short code. Open the link, sign up or sign in, then either start the Agent Phone Plan or continue with free credits, and approve the request. After the agent retrieves its API key, and its phone number if you chose the plan, check that it has connected the MCP server before asking it to call or text.
+
+The key is scoped to a new organization that belongs to you. Revoke it any time from **Settings > API Keys**. If your assistant cannot add MCP servers on its own, ask it for the key and add the server yourself as in Option 1.
+
+Agents that run on a machine with Node.js can skip the HTTP calls and run the Bland CLI's MCP server instead, which exposes the same flow as two tools. See the [Agent onboarding API](/platform/connect-your-agent#try-it-with-a-client).
+
+## What the agent can do
+
+| Ask for | What happens |
+| --- | --- |
+| "Call +1 ... and ask ..." | Places an outbound call from the agent's number and returns the transcript and summary when it ends |
+| "Text +1 ... and ..." | Sends an SMS from the agent's number and answers the replies toward the goal you gave it (below) |
+| "What did they say on my last call?" | Reads the call transcript and analysis |
+| "Create an agent that ..." | Builds a reusable pathway the assistant can call with later |
+
+On the Agent Phone Plan, calls and texts are limited to US and Canadian numbers, one call at a time, up to 60 minutes per outbound call, and up to 100 texts a day. See [Limits](/platform/agent-phone-plan#limits). Without the plan, the agent calls from a shared Bland number and texting is not included.
+
+## Two-way texting
+
+Texting requires the [Agent Phone Plan](/platform/agent-phone-plan): the agent needs its own number to text from.
+
+A text is a conversation. When the other side replies, Bland answers from the agent's number automatically. Tell the agent the goal when you ask it to text:
+
+```text
+Text the salon at +1 415 555 0123 and book me a haircut for next Tuesday afternoon. Confirm the time and the price.
+```
+
+The agent starts the thread with one API call, [Send SMS](/api-v1/post/sms-send), and passes the goal as the conversation's `objective`. Bland answers every reply in that conversation from it:
+
+Send a `POST` request to `/v1/sms/send` with this JSON body:
+
+```json
+{
+  "user_number": "+14155550123",
+  "agent_number": "+12765550123",
+  "agent_message": "Hi, do you have an opening next Tuesday afternoon for a haircut?",
+  "objective": "Book a haircut for Spencer next Tuesday afternoon. Confirm the time and the price, then end the conversation."
+}
+```
+
+The objective belongs to that one conversation. A conversation without one is answered from the number's **texting prompt**, which starts out generic on a new plan number. To change that default for every conversation on the number, use [Update SMS Configuration](/api-v1/post/sms-update).
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Agent reports `PLAN_REQUIRED` or "not available" | The organization has no active Agent Phone Plan | Subscribe at [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan) |
+| Agent reports `CALL_PLAN_DESTINATION_BLOCKED` | The destination is outside the US and Canada | Use a US or Canadian number |
+| The approval link says the code expired | Codes last 15 minutes | Ask the agent to start again |
+| Text replies are generic and ignore the task | The thread was started without an `objective`, so replies used the number's generic texting prompt | Ask the agent to text again with the goal as the `objective` |
+| Approval page says the request did not come from the dashboard | The link was opened in an embedded browser | Open it in a normal browser tab |
+
+## Building your own agent loop
+
+If you are writing the agent yourself rather than configuring an off-the-shelf assistant, the REST API is a shorter path than MCP. Start with the [Agent quickstart](/platform/agent-quickstart) for the call lifecycle in three requests, then [Call recipes for agents](/platform/agent-call-recipes) for voicemail, proper nouns, and escalating to a human.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent Phone Plan" icon="phone" href="/platform/agent-phone-plan">
+    What's included, limits, and how to cancel.
+  </Card>
+  <Card title="Agent onboarding API" icon="key" href="/platform/connect-your-agent">
+    The device-authorization flow in detail: endpoints, statuses, and error codes.
+  </Card>
+  <Card title="Bland MCP Server" icon="plug" href="/integrations/mcp/overview">
+    How authentication works and what the server exposes.
+  </Card>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Every tool the server exposes.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)

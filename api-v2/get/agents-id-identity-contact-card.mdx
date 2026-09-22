@@ -1,0 +1,68 @@
+---
+title: "Download Agent Contact Card"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/identity/contact-card.vcf"
+description: "Download the agent's contact card as a vCard file."
+---
+
+### Overview
+
+Returns the agent's contact card as a vCard file rather than JSON, built from the identity fields. Recipients can save it to their contacts so the agent's name and logo appear when it calls.
+
+The response is `text/vcard; charset=utf-8` with a `Content-Disposition` attachment header naming the file after the display name, for example `northwind-dental.vcf`. Because the body is not JSON, it does not use the `data` and `errors` envelope on success. Errors still do.
+
+The card is regenerated whenever an identity field changes, so this endpoint always reflects the current identity.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Response
+
+Returns `200` with the vCard as the raw body.
+
+<ResponseField name="Content-Type" type="string">
+  Always `text/vcard; charset=utf-8`.
+</ResponseField>
+
+<ResponseField name="Content-Disposition" type="string">
+  `attachment` with a filename derived from `display_name`, for example `attachment; filename="northwind-dental.vcf"`.
+</ResponseField>
+
+<ResponseExample>
+```text Response
+BEGIN:VCARD
+VERSION:3.0
+FN:Northwind Dental
+N:Northwind Dental;;;;
+ORG:Northwind Dental
+EMAIL;TYPE=WORK:help@northwind.example
+URL:https://northwind.example
+NOTE:Front desk
+REV:20260915T050844Z
+END:VCARD
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

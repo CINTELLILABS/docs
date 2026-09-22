@@ -1,0 +1,50 @@
+---
+title: "Connect Claude Desktop to the Bland MCP server"
+description: "Connect the Claude Desktop app to your Bland account with the Bland plugin, request-header authentication, or a stdio bridge."
+hidden: true
+---
+
+The Bland MCP server is a hosted, streamable-HTTP server. Every client needs the same two values:
+
+- **URL:** `https://api.bland.ai/v1/mcp`
+- **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
+
+Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Setting up a different tool? See all [MCP clients](/integrations/mcp/clients).
+
+## Setup
+
+Prefer the [Bland plugin](/integrations/mcp/norm), which installs into Claude Desktop and stores the key for you.
+
+If your organization has access to Claude's [request-header authentication beta](https://claude.com/docs/connectors/custom/remote-mcp#authenticating-with-request-headers), add a custom connector with the server URL above, choose **No sign-in**, and add an **Authorization** request header with the full value `Bearer YOUR_BLAND_API_KEY`.
+
+If **Request headers** is unavailable, use the stdio bridge below. Install Node.js 22+ with npm first, then add this entry to `claude_desktop_config.json` (**Settings → Developer → Edit Config**). Replace `org_your_key_here` with your API key:
+
+```json
+{
+  "mcpServers": {
+    "bland": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "https://api.bland.ai/v1/mcp",
+        "--header", "Authorization:${AUTH_HEADER}"
+      ],
+      "env": { "AUTH_HEADER": "Bearer org_your_key_here" }
+    }
+  }
+}
+```
+
+Keep the entire `Bearer ...` value in `AUTH_HEADER`. This avoids the [Windows argument-spacing issue](https://github.com/punkpeye/mcp-remote#custom-headers) documented by `mcp-remote`. Restart Claude Desktop after saving.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Everything the MCP server can do.
+  </Card>
+  <Card title="Bland MCP Server" icon="circle-info" href="/integrations/mcp/overview">
+    Auth, rate limits, and how the server works.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)

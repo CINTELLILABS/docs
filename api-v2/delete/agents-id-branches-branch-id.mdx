@@ -1,0 +1,76 @@
+---
+title: "Delete Agent Branch"
+api: "DELETE https://api.bland.ai/v2/agents/{agent_id}/branches/{branch_id}"
+description: "Abandon an open branch without merging it."
+---
+
+### Overview
+
+Closes an open branch without landing its changes on dev. The branch disappears from [List Agent Branches](/api-v2/get/agents-id-branches) and can no longer be rebased or merged; versions already saved to it are kept for the record. To land the changes instead, use [Merge Agent Branch](/api-v2/post/agents-id-branches-branch-id-merge).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="branch_id" type="string" required>
+  The branch's unique identifier. Returns `404 BRANCH_NOT_FOUND` if the branch does not belong to this agent or has already been merged or deleted.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.deleted" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "deleted": true
+  },
+  "errors": null
+}
+```
+
+```json Branch Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BRANCH_NOT_FOUND",
+      "message": "Branch not found"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

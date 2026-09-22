@@ -1,0 +1,111 @@
+---
+title: "Roll Back Agent"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/rollback"
+description: "Repoint production at a previously deployed version."
+---
+
+### Overview
+
+Moves the agent's `production` pointer back to a version that has been deployed to production before, recording a new deployment with that version's original semver. Phone numbers attached to the agent begin answering with the restored version. Find candidates with [List Agent Deployments](/api-v2/get/agents-id-deployments), where `is_rollback_eligible` is `true`. `staging` is not changed.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="version_id" type="string" required>
+  ID of the version to restore. It must belong to this agent, have at least one production deployment on record, and not be the current production pin. Missing or empty returns `400 BAD_REQUEST`. A version never deployed to production, or one that is already live, also returns `400 BAD_REQUEST` with a message explaining which. An ID that is not one of this agent's versions returns `404 NOT_FOUND`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.semver" type="string">
+  The restored version's number, for example `1.3.1`.
+</ResponseField>
+
+<ResponseField name="data.environments" type="array">
+  The agent's three environments after the rollback. Each has `id`, `env_type` (`dev`, `staging`, or `production`), and `current_version_id` (the pinned version, or `null` if unpinned).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "semver": "1.3.1",
+    "environments": [
+      {
+        "id": "3b4442ac-eaff-4a8d-bd9b-103affc43fc4",
+        "env_type": "dev",
+        "current_version_id": null
+      },
+      {
+        "id": "6e92b74f-071f-4a09-85a5-5a3e6625ddf5",
+        "env_type": "staging",
+        "current_version_id": "4671db05-2d34-4171-9626-79a468e73f61"
+      },
+      {
+        "id": "2c0ff980-fedf-4ebc-9117-dd21702d6e27",
+        "env_type": "production",
+        "current_version_id": "e6926b11-5513-4187-9dcf-5800b899f8da"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Never Deployed
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Cannot roll back to a version that was never deployed to production"
+    }
+  ]
+}
+```
+
+```json Already Current
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Production is already pinned to this version"
+    }
+  ]
+}
+```
+
+```json Version Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Version not found on this agent"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

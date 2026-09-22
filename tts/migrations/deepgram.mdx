@@ -1,0 +1,44 @@
+---
+title: "Migrate from Deepgram"
+description: "Move Deepgram's streaming Speak protocol to Bland realtime turns."
+---
+
+Deepgram and Bland both return raw binary audio over a persistent WebSocket. Most of the migration is a control-message rename plus one important change: Bland handles text buffering without requiring `Flush` after each useful fragment.
+
+Start with the [Realtime TTS Quickstart](/tts/realtime-quickstart).
+
+## Message mapping
+
+| Deepgram streaming TTS | Bland `/v2/tts/ws` |
+| --- | --- |
+| Voice model and audio settings in URL query parameters | Voice UUID and audio settings in `init` |
+| `{ "type": "Speak", "text": ... }` | `{ "type": "speak", "context_id": ..., "text": ... }` |
+| `{ "type": "Flush" }` | Usually unnecessary; use `end_of_turn` only when the LLM finishes |
+| `{ "type": "Clear" }` | `cancel`, or start a replacement context to preempt |
+| `{ "type": "Close" }` | `close` after the final `utterance_end` |
+| `Flushed` | No direct event; use `utterance_end` for the turn terminal |
+| Binary audio | Binary audio |
+
+```js
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: turnId,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: turnId }));
+```
+
+Do not translate every Deepgram `Flush` into a new Bland turn. Keep one Bland context for the entire LLM response. Bland begins synthesis at natural boundaries while more tokens continue to arrive.
+
+Deepgram's `Clear` acknowledges cleared server state. Bland reports `utterance_end` with reason `cancelled` or `preempted`. In both cases, clear any unplayed audio in your local playback queue.
+
+See the [Deepgram streaming TTS reference](https://developers.deepgram.com/reference/text-to-speech/speak-streaming) and [Bland realtime concepts](/tts/realtime-concepts).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

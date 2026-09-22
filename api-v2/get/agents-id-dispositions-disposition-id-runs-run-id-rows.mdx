@@ -1,0 +1,203 @@
+---
+title: "Get Test Run Rows"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/runs/{run_id}/rows"
+description: "Page through a test run's per-call results."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns one row per call in the test run, with each value's result, the transformed payload, and the latest correction saved for each value. Rows are paged with `limit` and `offset`. For a flat file of the same data use [Export Test Run CSV](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-export-csv); to record a correction use [Correct Test Run Value](/api-v2/put/agents-id-dispositions-disposition-id-runs-run-id-cases-call-id-annotations-value-id).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+<ParamField path="run_id" type="string" required>
+  The test run's unique identifier. Must be a UUID; otherwise returns `400` with the message `runId must be a valid UUID`. Returns `404 Test run not found` if it does not belong to this disposition.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="limit" type="integer" default="50">
+  Rows per page. Minimum `1`, maximum `250`. Values outside that range are clamped; a non-numeric value falls back to `50`.
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of rows to skip. Negative or non-numeric values are treated as `0`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.rows" type="array">
+  One row per call in this page, in the order the calls were admitted to the run.
+
+  <Expandable title="row object">
+    <ResponseField name="callId" type="string">
+      The call this row executed against.
+    </ResponseField>
+    <ResponseField name="durationSeconds" type="number | null">
+      The call's recorded length in seconds, or `null` if unknown.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `queued`, `running`, `complete`, or `failed`. A cancelled execution reports `failed`.
+    </ResponseField>
+    <ResponseField name="results" type="array">
+      One result per value the engine has produced for this call. Empty until the row runs.
+    </ResponseField>
+    <ResponseField name="results[].valueId" type="string">
+      The definition value this result belongs to.
+    </ResponseField>
+    <ResponseField name="results[].state" type="string">
+      `produced`, `no_value` (the value could not be determined from the call), or `error`.
+    </ResponseField>
+    <ResponseField name="results[].value" type="any">
+      Present when `state` is `produced`. Shaped by the value's `schema`.
+    </ResponseField>
+    <ResponseField name="results[].error" type="object">
+      Present when `state` is `error`: `{ "code", "message" }`. `message` is always `This value could not be produced.` and `code` is one of `billing_not_allowed`, `custom_code_execution_failed`, `custom_code_output_too_large`, `custom_code_pin_mismatch`, `custom_code_pin_unavailable`, `custom_code_result_missing`, `custom_code_run_snapshot_unavailable`, `custom_code_schema_mismatch`, `custom_code_timeout`, `extraction_result_missing`, `extraction_schema_mismatch`, `judge_failed`, `provider_failed`, `unsupported_schema`, `variable_extraction_result_missing`, `verdict_missing`, or `result_error` for anything else.
+    </ResponseField>
+    <ResponseField name="results[].rationale" type="string">
+      Explanation recorded for model-backed values, up to 2000 characters. Omitted when none was recorded.
+    </ResponseField>
+    <ResponseField name="results[].evidence" type="array">
+      Up to 8 quotes supporting the result, each `{ "source", "speaker", "start_ms", "end_ms", "text" }`. `source` is `transcript` or `audio`; `speaker` is `agent`, `representative`, `customer`, `unknown`, or `null`; `start_ms` and `end_ms` are non-negative integers or `null`; `text` is at most 1000 characters. Omitted when empty.
+    </ResponseField>
+    <ResponseField name="results[].executedVia" type="object">
+      How the value was executed: `{ "lane", "priceMultiplier", "durationMs" }`. `lane` is `sync`, `batch`, `deterministic`, or `custom_code`; the other two are optional numbers. Omitted when not recorded.
+    </ResponseField>
+    <ResponseField name="payload" type="any">
+      The transformed payload the disposition would deliver for this call. Omitted until the row completes.
+    </ResponseField>
+    <ResponseField name="annotations" type="array">
+      The latest correction for each value on this call. Same shape as the response of Correct Test Run Value: `id`, `testRunId`, `testRunCaseId`, `callId`, `valueId`, `revision`, `originalResult`, `correctedResult`, `explanation`, `createdBy`, `createdAt`. Empty when nothing has been corrected.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.total" type="number">
+  Total number of rows in the run, regardless of paging.
+</ResponseField>
+
+<ResponseField name="data.offset" type="number">
+  The offset applied.
+</ResponseField>
+
+<ResponseField name="data.limit" type="number">
+  The limit applied, after clamping.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "rows": [
+      {
+        "callId": "e1739a2c-9137-4e85-925d-1efbb6925bc4",
+        "durationSeconds": 254,
+        "results": [
+          {
+            "valueId": "594742b5-3aed-406c-8411-f243391eb225",
+            "state": "produced",
+            "value": true,
+            "rationale": "The caller confirmed a Tuesday 3 PM appointment and the agent read back the booking reference.",
+            "evidence": [
+              {
+                "source": "transcript",
+                "speaker": "customer",
+                "start_ms": 84200,
+                "end_ms": 88900,
+                "text": "Tuesday at three works for me."
+              }
+            ],
+            "executedVia": { "lane": "sync", "priceMultiplier": 1 }
+          }
+        ],
+        "payload": { "booked": true },
+        "status": "complete",
+        "annotations": []
+      },
+      {
+        "callId": "2f5e1dc9-f0ac-408a-b9b4-ba3adc971170",
+        "durationSeconds": 61,
+        "results": [
+          {
+            "valueId": "594742b5-3aed-406c-8411-f243391eb225",
+            "state": "produced",
+            "value": false,
+            "rationale": "No appointment time was agreed before the caller hung up.",
+            "executedVia": { "lane": "sync", "priceMultiplier": 1 }
+          }
+        ],
+        "payload": { "booked": false },
+        "status": "complete",
+        "annotations": [
+          {
+            "id": "6a1e95ab-9834-4140-918f-03fb63c3e7ce",
+            "testRunId": "e87abaf9-cea9-4706-8502-18b7b70f4db8",
+            "testRunCaseId": "9bce50fe-0ba4-48b7-836b-072f9fffb40e",
+            "callId": "2f5e1dc9-f0ac-408a-b9b4-ba3adc971170",
+            "valueId": "594742b5-3aed-406c-8411-f243391eb225",
+            "revision": 1,
+            "originalResult": {
+              "valueId": "594742b5-3aed-406c-8411-f243391eb225",
+              "state": "produced",
+              "value": false,
+              "rationale": "No appointment time was agreed before the caller hung up.",
+              "executedVia": { "lane": "sync", "priceMultiplier": 1 }
+            },
+            "correctedResult": {
+              "valueId": "594742b5-3aed-406c-8411-f243391eb225",
+              "state": "produced",
+              "value": true
+            },
+            "explanation": "The caller agreed to the slot at the very end of the call, after the agent's recap.",
+            "createdBy": "6d18dce5-f27d-45f2-8d24-09357aaa355c",
+            "createdAt": "2026-09-10T20:14:33.870Z"
+          }
+        ]
+      }
+    ],
+    "total": 2,
+    "offset": 0,
+    "limit": 50
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Test run not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

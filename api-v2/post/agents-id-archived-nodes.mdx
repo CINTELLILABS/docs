@@ -1,0 +1,144 @@
+---
+title: "Archive Agent Node"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/archived-nodes"
+description: "Copy a node from an agent into the organization archive."
+---
+
+### Overview
+
+Stores a self-contained copy of a node in the organization archive, attributed to this agent, so you can retire it from the canvas without losing it. Archiving never changes the agent's graph: remove the node yourself by saving a new version with [Create Agent Version](/api-v2/post/agents-id-versions). Browse the archive with [List Archived Nodes](/api-v2/get/agents-library-archived-nodes).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent the node is being archived from. Returns `404 NOT_FOUND` if the agent does not exist in your organization.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="node" type="object" required>
+  The node to archive, exactly as it appears in a version snapshot's `behavior.nodes`. Must have a non-empty string `id`, a non-empty string `type`, a `position` object with finite numeric `x` and `y`, and an object `data`. A container node's `data.flow` is validated too: every nested node needs `id`, `position`, and `data`, every nested edge needs string `id`, `source`, and `target` that reference nodes in the same flow, and flows may nest at most 10 levels deep. The serialized node may not exceed 1,048,576 bytes. Returns `400 INVALID_NODE` with one error entry per problem.
+</ParamField>
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data" type="object">
+  The new archive entry.
+
+  <Expandable title="archived node object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the archive entry. Use it with [Delete Archived Node](/api-v2/delete/agents-library-archived-nodes-archived-node-id).
+    </ResponseField>
+    <ResponseField name="agent_id" type="string | null">
+      The agent the node was archived from.
+    </ResponseField>
+    <ResponseField name="agent_name" type="string | null">
+      The agent's name at archive time.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Taken from `node.data.name`, or `Untitled node` when absent.
+    </ResponseField>
+    <ResponseField name="kind" type="string">
+      The value of `node.type`.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      The first 160 characters of `node.data.rule`, or of `node.data.prompt` when there is no rule. `null` when the node has neither.
+    </ResponseField>
+    <ResponseField name="node" type="object">
+      The node payload as submitted.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the node was archived.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "ae798cb1-375c-425e-978f-cb2c0ccd5e29",
+    "agent_id": "faa42069-ed8e-4c07-bdf3-3bee134aa033",
+    "agent_name": "Front desk",
+    "name": "Holiday hours",
+    "kind": "scenario",
+    "description": "Tell the caller the office is closed for the holiday and offer to take a message.",
+    "node": {
+      "id": "db7272f8-7c8e-43f5-a442-a30883026bab",
+      "type": "scenario",
+      "position": { "x": 380, "y": 260 },
+      "data": {
+        "name": "Holiday hours",
+        "rule": "Tell the caller the office is closed for the holiday and offer to take a message.",
+        "target": { "kind": "dialogue", "label": "Holiday hours" },
+        "loopWhile": "",
+        "variables": [
+          {
+            "id": "f0bf6e1f-cffa-41bc-a615-31d426c7eb89",
+            "key": "callback_number",
+            "value": "The phone number the caller wants to be reached at",
+            "type": "string",
+            "accurateSpelling": true
+          }
+        ],
+        "entry": {
+          "mode": "llm",
+          "label": "Asks about hours",
+          "description": "",
+          "alwaysPick": false,
+          "conditions": []
+        }
+      }
+    },
+    "created_at": "2026-09-10T18:21:07.442Z"
+  },
+  "errors": null
+}
+```
+
+```json Invalid Node
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_NODE",
+      "message": "node.type must be a non-empty string"
+    },
+    {
+      "error": "INVALID_NODE",
+      "message": "node.position must be { x: number, y: number }"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

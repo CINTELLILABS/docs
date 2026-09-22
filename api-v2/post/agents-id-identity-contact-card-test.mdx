@@ -1,0 +1,124 @@
+---
+title: "Send Test Contact Card"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/identity/contact-card/test"
+description: "Send the agent's contact card to one number to check how it arrives."
+---
+
+### Overview
+
+Sends the agent's contact card to a number you choose so you can see how it looks on a real device.
+
+<Warning>
+  Each request sends a real message and is billed to your organization like any other outbound message. It is not a preview.
+</Warning>
+
+Limited to 5 requests per minute per agent. The test is independent of the automatic delivery switch, so you can send one whether or not `vcf_delivery_enabled` is on, and you can repeat it.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="to" type="string" required>
+  Destination number in E.164, for example `+15550000000`. Anything that does not normalize to E.164 returns `400 BAD_REQUEST`.
+</ParamField>
+
+<ParamField body="channel" type="string" required>
+  One of `sms`, `imessage`, or `rcs`. Any other value returns `400 BAD_REQUEST` listing the accepted values.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.channel" type="string">
+  The channel you requested.
+</ResponseField>
+
+<ResponseField name="data.to" type="string">
+  The destination number, normalized to E.164.
+</ResponseField>
+
+<ResponseField name="data.from" type="string">
+  The agent number the card was sent from.
+</ResponseField>
+
+<ResponseField name="data.delivered_via" type="string">
+  How it was actually delivered: `mms`, `imessage`, or `rcs`. This can differ from `channel` when the requested channel falls back.
+</ResponseField>
+
+<ResponseField name="data.message_sid" type="string | null">
+  Provider identifier for the sent message, or `null` when the channel does not return one.
+</ResponseField>
+
+<ResponseField name="data.note" type="string">
+  Present only when there is something worth saying about how the send was handled.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `402 PAYMENT_REQUIRED` when the organization's balance will not cover a message. Returns `409` when the channel cannot carry the card, with `error` set to `NO_BOUND_NUMBER`, `NO_RCS_SENDER`, `RCS_SENDER_NOT_READY`, or `IMESSAGE_NOT_CONFIGURED`.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "channel": "sms",
+    "to": "+15550000000",
+    "from": "+18005551234",
+    "delivered_via": "mms",
+    "message_sid": "6f0d6b4d-6b0e-4a58-9a1b-6f2d7b6a2f10"
+  },
+  "errors": null
+}
+```
+
+```json No Bound Number
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NO_BOUND_NUMBER",
+      "message": "This agent has no phone number attached to send from"
+    }
+  ]
+}
+```
+
+```json Payment Required
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PAYMENT_REQUIRED",
+      "message": "Your balance does not cover sending this message"
+    }
+  ]
+}
+```
+
+```json Invalid Channel
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "`channel` must be one of: sms, imessage, rcs"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

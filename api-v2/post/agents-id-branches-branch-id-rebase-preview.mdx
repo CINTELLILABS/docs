@@ -1,0 +1,177 @@
+---
+title: "Preview Agent Branch Rebase"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/branches/{branch_id}/rebase-preview"
+description: "Preview a branch rebase onto the current dev head."
+---
+
+### Overview
+
+Dry-runs a three-way merge of the branch onto dev's current head and reports what a rebase would bring in from dev (`changes`) and where dev and the branch changed the same value differently (`conflicts`). This is a POST but it writes nothing and takes no body. Call it after [Merge Agent Branch](/api-v2/post/agents-id-branches-branch-id-merge) returns `409 BRANCH_BEHIND`, then pass the returned `dev_head_version_id` and a resolution for every conflict to [Rebase Agent Branch](/api-v2/post/agents-id-branches-branch-id-rebase).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="branch_id" type="string" required>
+  The branch's unique identifier. Must be an open branch on this agent.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.dev_head_version_id" type="string | null">
+  The dev version the preview ran against. Pass this unchanged to Rebase Agent Branch. `null` when the agent has no dev versions.
+</ResponseField>
+
+<ResponseField name="data.up_to_date" type="boolean">
+  `true` when the branch's base is already dev's head (or the agent has no dev versions), so there is nothing to rebase and a merge would fast-forward. `changes` and `conflicts` are empty in that case.
+</ResponseField>
+
+<ResponseField name="data.auto_merged" type="integer">
+  Number of entries in `changes`.
+</ResponseField>
+
+<ResponseField name="data.changes" type="array">
+  Dev-side edits the branch did not touch. They merge in automatically on rebase; nothing is required from you.
+
+  <Expandable title="change object">
+    <ResponseField name="id" type="string">
+      Stable identifier, `kind:key` or `kind:key#path`.
+    </ResponseField>
+    <ResponseField name="kind" type="string">
+      One of `node`, `edge`, `setting`, `contact`, `knowledge`.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      The node or edge ID, or the `settings`, `contact`, or `knowledge` field name.
+    </ResponseField>
+    <ResponseField name="path" type="string">
+      Dot path to the changed value inside that unit. Empty string when the whole unit changed, such as an added or deleted node.
+    </ResponseField>
+    <ResponseField name="path_labels" type="array">
+      Display labels aligned with `path`, with element IDs replaced by names where available.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable name of the unit, such as a node's name or a setting's field name.
+    </ResponseField>
+    <ResponseField name="base" type="any">
+      The value at `path` on the branch's base. Omitted when dev added the value.
+    </ResponseField>
+    <ResponseField name="theirs" type="any">
+      Dev's current value at `path`. Omitted when dev deleted the value.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.conflicts" type="array">
+  Values changed differently on both sides. Each needs a resolution before the rebase succeeds; key your `resolutions` map by the conflict's `id`.
+
+  <Expandable title="conflict object">
+    <ResponseField name="id" type="string">
+      Stable identifier, `kind:key` or `kind:key#path`. Use it as the key in the `resolutions` body of Rebase Agent Branch.
+    </ResponseField>
+    <ResponseField name="kind" type="string">
+      One of `node`, `edge`, `setting`, `contact`, `knowledge`.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      The node or edge ID, or the `settings`, `contact`, or `knowledge` field name.
+    </ResponseField>
+    <ResponseField name="path" type="string">
+      Dot path to the conflicting value inside that unit. Empty string when the whole unit conflicts, such as one side deleting a node the other edited.
+    </ResponseField>
+    <ResponseField name="path_labels" type="array">
+      Display labels aligned with `path`.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable name of the unit.
+    </ResponseField>
+    <ResponseField name="base" type="any">
+      The value on the branch's base. Omitted when both sides added the value.
+    </ResponseField>
+    <ResponseField name="theirs" type="any">
+      Dev's value. Omitted when dev deleted it.
+    </ResponseField>
+    <ResponseField name="ours" type="any">
+      The branch's value. Omitted when the branch deleted it.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "dev_head_version_id": "50dc2b1d-854f-4403-8c26-e845238cc03b",
+    "up_to_date": false,
+    "auto_merged": 1,
+    "changes": [
+      {
+        "id": "node:40f4b50d-46a3-4235-99b7-09a299ce628c#data.rule",
+        "kind": "node",
+        "key": "40f4b50d-46a3-4235-99b7-09a299ce628c",
+        "path": "data.rule",
+        "path_labels": ["data", "rule"],
+        "label": "Verify account",
+        "base": "Ask for the account number and confirm the last four digits.",
+        "theirs": "Ask for the account number, then confirm the last four digits and the billing zip code."
+      }
+    ],
+    "conflicts": [
+      {
+        "id": "setting:systemPrompt",
+        "kind": "setting",
+        "key": "systemPrompt",
+        "path": "",
+        "path_labels": [],
+        "label": "systemPrompt",
+        "base": "You are the front desk assistant for Northwind Dental.",
+        "theirs": "You are the front desk assistant for Northwind Dental. Keep answers under two sentences.",
+        "ours": "You are the scheduling assistant for Northwind Dental. Always offer the next two open slots."
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Up To Date
+{
+  "data": {
+    "dev_head_version_id": "50dc2b1d-854f-4403-8c26-e845238cc03b",
+    "up_to_date": true,
+    "auto_merged": 0,
+    "changes": [],
+    "conflicts": []
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent or branch not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

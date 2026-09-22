@@ -1,0 +1,118 @@
+---
+title: "Speech Quickstart"
+description: "Turn a string into an audio file with one request, then move to streaming."
+---
+
+The fastest way to hear Bland is one HTTP request. No SDK, no WebSocket, no audio plumbing.
+
+## Prerequisites
+
+- A Bland API key from [your dashboard](https://app.bland.ai/dashboard)
+- `curl`, or any HTTP client
+
+## 1. Generate a WAV file
+
+```bash
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hey, thanks for calling Maple Vet. How can I help?",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "container": "wav" }
+  }' \
+  --output hello.wav
+```
+
+Open `hello.wav`. That is the whole integration.
+
+<Note>
+  `container: "wav"` is what makes the result playable. The default, `raw`, returns bare
+  audio frames with no header. It is the right choice for streaming into a media transport,
+  and the wrong one for a file you want to double-click.
+</Note>
+
+## 2. Pick your own voice
+
+The UUID above is Karen, one of the built-in voices. List everything available to you:
+
+```bash
+curl "https://api.bland.ai/v1/voices" -H "Authorization: Bearer $BLAND_API_KEY"
+```
+
+Pass any `id` from that response as `voice`. See [Choosing a voice](/tts/voices) for what
+distinguishes them and how to clone your own.
+
+## 3. Direct the delivery
+
+Two controls shape the performance, both from `0.0` to `1.0`:
+
+```bash
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Great news. <|0.4|> Your results came back clear.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "controls": { "expressiveness": 0.8, "stability": 0.4 },
+    "audio": { "container": "wav" }
+  }' \
+  --output news.wav
+```
+
+`<|0.4|>` inserts a pause. [Writing for speech](/tts/writing-for-speech) covers pauses,
+numbers, punctuation, and the two controls in depth.
+
+## 4. Choose the right endpoint for your app
+
+You now have working audio. Which endpoint you ship depends on where the text comes from.
+
+| Your text is | Use | Why |
+| --- | --- | --- |
+| Complete before you ask for audio | [`POST /v2/tts`](/api-v2/post/tts) | One request, one file or one stream. |
+| Arriving from an LLM, token by token | [`WSS /v2/tts/ws`](/api-v2/post/tts-ws) | Audio starts before the sentence is finished, and interruption is part of the protocol. |
+| Already going through an OpenAI SDK | [`POST /v2/audio/speech`](/api-v2/post/audio-speech) | Change the base URL, key, and model; keep your code. |
+
+Anything conversational wants the WebSocket. A voice agent that waits for a complete LLM
+response before starting synthesis adds the model's entire generation time to every reply.
+
+<CardGroup cols={2}>
+  <Card title="Realtime quickstart" icon="bolt" href="/tts/realtime-quickstart">
+    Stream tokens into one session and get audio back as it renders.
+  </Card>
+  <Card title="Writing for speech" icon="pen-nib" href="/tts/writing-for-speech">
+    Pauses, numbers, punctuation, and the controls that shape delivery.
+  </Card>
+</CardGroup>
+
+## Streaming without the WebSocket
+
+`POST /v2/tts` streams too. Drop `container` and read the response body as it arrives. This is
+useful when the text is already complete but you want playback to start early:
+
+```bash
+curl -N -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Your appointment is confirmed for Tuesday at three.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "encoding": "pcm_s16le", "sample_rate": 48000 }
+  }' > out.pcm
+```
+
+That is 48 kHz signed 16-bit little-endian mono, the rate `BTTS_V3` renders natively.
+
+## Telephony
+
+Phone networks want 8 kHz mu-law. Ask for it directly rather than converting afterwards:
+
+```json
+{ "audio": { "encoding": "mulaw", "sample_rate": 8000 } }
+```
+
+Mu-law is fixed at 8 kHz; any other rate returns `unsupported_sample_rate`.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

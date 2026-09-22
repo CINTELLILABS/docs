@@ -1,0 +1,167 @@
+---
+title: "Merge Agent Branch"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/branches/{branch_id}/merge"
+description: "Fast-forward a branch into the agent's dev timeline."
+---
+
+### Overview
+
+Lands the branch on dev as a fast-forward: the branch's newest version becomes one new dev version, and the branch is closed. A fast-forward is only possible while the branch's base is still dev's newest version. If dev has moved, the request returns `409 BRANCH_BEHIND`; run [Preview Agent Branch Rebase](/api-v2/post/agents-id-branches-branch-id-rebase-preview) and [Rebase Agent Branch](/api-v2/post/agents-id-branches-branch-id-rebase), then merge again. Takes no body.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="branch_id" type="string" required>
+  The branch's unique identifier. Must be an open branch on this agent, and must have at least one version saved to it; a branch with no saves of its own returns `400 NO_CHANGES`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.version" type="object">
+  The new dev version. Its `snapshot` is the branch head's configuration. The branch no longer appears in [List Agent Branches](/api-v2/get/agents-id-branches).
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version. This is now dev's newest version.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The agent the version belongs to.
+    </ResponseField>
+    <ResponseField name="branch_id" type="null">
+      Always `null`; the merged version lives on dev, not on the branch.
+    </ResponseField>
+    <ResponseField name="snapshot" type="object">
+      The agent configuration: `behavior` (nodes and edges), `settings`, `contact`, and `knowledge` when present. Same shape as the `snapshot` on any saved version.
+    </ResponseField>
+    <ResponseField name="name" type="null">
+      Always `null`; merge versions are unnamed.
+    </ResponseField>
+    <ResponseField name="created_via" type="string">
+      Always `manual` for a merge version.
+    </ResponseField>
+    <ResponseField name="revision" type="integer">
+      Rewrite counter for the row. `0` on a newly written version.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who merged, or `null` when merged with an org-level key.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "version": {
+      "id": "06e7531f-d327-440f-b17c-cfef565935de",
+      "org_id": "eac199ff-428f-4c48-8835-b7831cadc2a2",
+      "agent_id": "a724172e-d676-42f3-8566-29f04e9c1a89",
+      "branch_id": null,
+      "snapshot": {
+        "behavior": {
+          "nodes": [
+            {
+              "id": "cf5b80db-9199-4cf8-af79-5f1e51adb6ef",
+              "position": { "x": 240, "y": 120 },
+              "data": {
+                "name": "Verify account",
+                "rule": "Confirm the caller's name, then ask for the account number."
+              }
+            }
+          ],
+          "edges": []
+        },
+        "settings": {
+          "displayName": "Front desk",
+          "systemPrompt": "You are the front desk assistant for Northwind Dental. Keep answers under two sentences.",
+          "voice": "maya",
+          "languages": ["en-US"]
+        },
+        "contact": {
+          "inboundNumbers": []
+        }
+      },
+      "name": null,
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "3c1c51e0-e993-4bb5-a471-fe67db6e7006",
+      "created_at": "2026-09-10T18:09:52.204Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Branch Behind
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BRANCH_BEHIND",
+      "message": "Development moved past this branch — rebase before merging"
+    }
+  ]
+}
+```
+
+```json No Changes
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NO_CHANGES",
+      "message": "The branch has no saved changes to merge"
+    }
+  ]
+}
+```
+
+```json Merge In Progress
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MERGE_IN_PROGRESS",
+      "message": "Another merge or rebase is in progress for this agent, please retry"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent or branch not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

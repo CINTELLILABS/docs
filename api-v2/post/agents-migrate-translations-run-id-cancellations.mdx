@@ -1,0 +1,91 @@
+---
+title: "Cancel Pathway Translation Run"
+api: "POST https://api.bland.ai/v2/agents/migrate/translations/{run_id}/cancellations"
+description: "Cancel a pending or running translation job."
+---
+
+### Overview
+
+Marks a job started with [Start Pathway Translation](/api-v2/post/agents-migrate-translations) as `CANCELLED` and stops its background work. Only runs in `PENDING` or `RUNNING` status can be cancelled; once a run is `FINALIZING` (creating the agent) or already terminal, the request returns `409`. No body is required. Check the outcome with [Get Pathway Translation Run](/api-v2/get/agents-migrate-translations-run-id).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="run_id" type="string" required>
+  The run's unique identifier. Returns `400 INVALID_RUN_ID` if it is not a UUID and `404 TRANSLATION_RUN_NOT_FOUND` if no run with that ID exists in your organization.
+</ParamField>
+
+### Response
+
+Returns `202` on success. The run's `error_code` becomes `TRANSLATION_CANCELLED` and no agent is created.
+
+<ResponseField name="data.id" type="string">
+  The cancelled run's ID.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Always `CANCELLED`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "7250267f-851e-4353-bf04-b9c8fa67be31",
+    "status": "CANCELLED"
+  },
+  "errors": null
+}
+```
+
+```json Finalizing
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TRANSLATION_RUN_FINALIZING",
+      "message": "the run is already finishing — it can no longer be cancelled"
+    }
+  ]
+}
+```
+
+```json Already Finished
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TRANSLATION_RUN_TERMINAL",
+      "message": "the run already finished (COMPLETE)"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "TRANSLATION_RUN_NOT_FOUND",
+      "message": "no translation run with that id"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

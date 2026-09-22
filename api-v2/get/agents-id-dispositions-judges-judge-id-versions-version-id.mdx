@@ -1,0 +1,127 @@
+---
+title: "Get Judge Version"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/judges/{judge_id}/versions/{version_id}"
+description: "Retrieve one version of a judge's rubric."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+A judge is an evaluation rubric applied to call evidence. Returns one version of a judge's rubric: its prompts and the levels it can select, with each level flagged as a target or not. Any version of the judge can be read, but a disposition can only pin the published `judgeVersionId` listed by [Get Judge Catalog](/api-v2/get/agents-id-dispositions-judge-catalog).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+<ParamField path="judge_id" type="string" required>
+  The judge's unique identifier. Must be organization-wide or scoped to this agent; otherwise returns `404` with the message `Judge not found`. A malformed id returns `400` with the message `judgeId must be a valid UUID`.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The version's unique identifier. Must belong to `judge_id`; otherwise returns `404` with the message `Judge version not found`. A malformed id returns `400` with the message `versionId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The judge version.
+
+  <Expandable title="judge version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="judgeId" type="string">
+      The judge this version belongs to.
+    </ResponseField>
+    <ResponseField name="versionNumber" type="integer">
+      Sequential version number within the judge.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name at this version.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Description at this version.
+    </ResponseField>
+    <ResponseField name="modality" type="string">
+      `text` when the judge reads the transcript, `audio` when it listens to the call recording.
+    </ResponseField>
+    <ResponseField name="systemPromptMd" type="string">
+      The rubric's system prompt in Markdown. May be empty.
+    </ResponseField>
+    <ResponseField name="promptMd" type="string">
+      The rubric's task prompt in Markdown. May be empty on an unpublished draft.
+    </ResponseField>
+    <ResponseField name="levels" type="array">
+      The outcome levels the judge chooses from, in rubric order. Each has `key` (the level's stable key), `label` (display name), `promptMd` (the criteria for selecting this level), and `target` (`true` when this level counts as a passing outcome).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "4420749d-ff1a-4edd-ad8a-4b61f2ae963a",
+    "judgeId": "cfd538c3-507f-4976-90f4-db92369ee48b",
+    "versionNumber": 2,
+    "name": "Caller sentiment",
+    "description": "How the caller felt by the end of the conversation.",
+    "modality": "text",
+    "systemPromptMd": "You review customer service transcripts and classify the caller's closing sentiment.",
+    "promptMd": "Read the full transcript. Pick the level that best describes how the caller felt in the final third of the call.",
+    "levels": [
+      {
+        "key": "positive",
+        "label": "Positive",
+        "promptMd": "The caller thanks the agent, confirms the issue is resolved, or sounds pleased.",
+        "target": true
+      },
+      {
+        "key": "neutral",
+        "label": "Neutral",
+        "promptMd": "The caller is matter-of-fact with no clear positive or negative signal.",
+        "target": true
+      },
+      {
+        "key": "negative",
+        "label": "Negative",
+        "promptMd": "The caller expresses frustration, threatens to cancel, or hangs up mid-sentence.",
+        "target": false
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Judge version not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

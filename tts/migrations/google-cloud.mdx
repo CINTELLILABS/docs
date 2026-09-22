@@ -1,0 +1,45 @@
+---
+title: "Migrate from Google Cloud TTS"
+description: "Replace Google Cloud bidirectional speech synthesis with Bland's realtime WebSocket."
+---
+
+Google Cloud bidirectional streaming sends one configuration request followed by text input requests over gRPC. Bland uses the same high-level flow over a standard WebSocket.
+
+Start with the [Realtime TTS Quickstart](/tts/realtime-quickstart).
+
+## Request mapping
+
+| Google Cloud streaming TTS | Bland `/v2/tts/ws` |
+| --- | --- |
+| Google Cloud credentials and project | Bland API key |
+| First `StreamingSynthesisConfig` request | First `init` message |
+| `VoiceSelectionParams.name` | Bland voice UUID |
+| `StreamingSynthesisInput.text` | `speak.text` with a turn `context_id` |
+| End the request iterator | Send `end_of_turn`, then keep the socket for later turns |
+| `StreamingSynthesizeResponse.audio_content` | Binary WebSocket audio frame |
+
+```js
+for await (const token of llmTextStream) {
+  ws.send(
+    JSON.stringify({
+      type: "speak",
+      context_id: turnId,
+      text: token,
+    }),
+  );
+}
+
+ws.send(JSON.stringify({ type: "end_of_turn", context_id: turnId }));
+```
+
+Google's stream ends with the RPC. Bland is designed to stay open across conversational turns. Wait for `utterance_end`, then reuse the same socket with a new `context_id`.
+
+The Google voice name and language code do not carry over. Select a Bland voice UUID that supports your target language. Configure raw PCM or 8 kHz mu-law during `init` and update your playback pipeline for raw binary WebSocket frames.
+
+If your application uses Google's synchronous `SynthesizeSpeech` with complete text, [Synthesize Speech (HTTP)](/api-v2/post/tts) is the closer migration target.
+
+See the [Google bidirectional streaming quickstart](https://docs.cloud.google.com/text-to-speech/docs/create-audio-text-streaming) and [Bland WebSocket reference](/api-v2/post/tts-ws).
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

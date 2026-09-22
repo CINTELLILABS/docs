@@ -1,0 +1,102 @@
+---
+title: "Get Model Profile Catalog"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/model-profile-catalog"
+description: "List the model profiles available to extractors."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns the model profiles an extractor's `inferenceConfig.modelProfileKey` may name. A profile is an opaque handle for a quality, latency, and cost trade-off; only profiles currently available for structured extraction are listed. Use a profile's `key` in [Create Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors) or [Update Disposition Extractor Draft](/api-v2/patch/agents-id-dispositions-extractors-extractor-id-draft).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.profiles" type="array">
+  Array of model profile entries.
+
+  <Expandable title="profile entry">
+    <ResponseField name="key" type="string">
+      The value to pass as `modelProfileKey`. `balanced` is the default when an extractor omits the key.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Human-readable name for the profile.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      One sentence on when to choose this profile.
+    </ResponseField>
+    <ResponseField name="supportsAudio" type="boolean">
+      `true` when an extractor using this profile may include `audio_recording` in `contextSources`. Profiles with `false` reject that source with a `400`.
+    </ResponseField>
+    <ResponseField name="supportsBatch" type="boolean">
+      Reserved. Currently always `false`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "profiles": [
+      {
+        "key": "balanced",
+        "label": "Balanced",
+        "description": "Recommended quality, latency, and cost for most calls.",
+        "supportsAudio": true,
+        "supportsBatch": false
+      },
+      {
+        "key": "fast",
+        "label": "Fast",
+        "description": "Lower latency for straightforward text extraction.",
+        "supportsAudio": false,
+        "supportsBatch": false
+      },
+      {
+        "key": "high_accuracy",
+        "label": "High accuracy",
+        "description": "More reasoning for complex text extraction.",
+        "supportsAudio": false,
+        "supportsBatch": false
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

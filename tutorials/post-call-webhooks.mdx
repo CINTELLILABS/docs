@@ -57,7 +57,7 @@ Navigate back to your Webhook.site page and check if the test webhook fired corr
 - Double-check that you provided the correct URL
 - Make sure there are no extra spaces or characters
 
-If issues persist, reach out in our [Discord community](https://discord.gg/QvxDz8zcKe) or ask for technical support from hello@bland.ai.
+If issues persist, reach out in our [Discord community](https://discord.gg/QvxDz8zcKe) or ask for technical support from support@bland.ai.
 
 ## Step 4: Test with a live phone call
 
@@ -83,7 +83,7 @@ When making API calls to create outbound calls, include the `webhook` parameter 
   "phone_number": "+1234567890",
   "task": "Your call task here",
   "webhook": "webhook.site/#!/your-unique-id",
-  "voice": "maya"
+  "voice": "Karen"
 }
 ```
 
@@ -499,10 +499,12 @@ For detailed configuration options and troubleshooting, see the complete [Citati
   The post-transfer transcript is in limited rollout. If it is not enabled for your organization, these properties are absent.
 </Note>
 
-Calls created with [`include_post_transfer_transcript: true`](/api-v1/post/calls#param-include-post-transfer-transcript) that were cold-transferred to a human carry two additional properties on the `citations` event (in both the standalone and delayed delivery modes):
+To receive the post-transfer transcript, subscribe by including `"post_transfer_transcript"` in the call's `webhook_events`. No citation schema is needed. Subscribing requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside the subscription returns a 400. Both cold and warm transfers are covered.
 
-- `transfer_offset_seconds` — seconds from the start of the call to the transfer.
-- `post_transfer_transcript` — the conversation after the transfer, as speaker-attributed segments. The transferred-to human is `speaker: 2` / `"representative"`; the caller is `speaker: 1` / `"user"`. Timestamps are seconds from the start of the transferred conversation. The `corrected_transcript` continues to contain only the pre-transfer portion of the call.
+Subscribed calls that were transferred to a human carry two additional properties on the post-processing webhook (in both the standalone and delayed delivery modes):
+
+- `transfer_offset_seconds`: seconds from the start of the call to the transfer.
+- `post_transfer_transcript`: the conversation after the transfer, as speaker-attributed segments. The transferred-to human is `speaker: 2` / `"representative"`; the caller is `speaker: 1` / `"user"`. Timestamps are seconds from the start of the transferred conversation. The `corrected_transcript` continues to contain only the pre-transfer portion of the call.
 
 ```json
 {
@@ -528,7 +530,18 @@ Calls created with [`include_post_transfer_transcript: true`](/api-v1/post/calls
 }
 ```
 
-The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket.
+For subscribed calls, the post-processing webhook also labels what it contains. When the payload carries exactly one enrichment, `event_type` names it (for example `"post_transfer_transcript"` or `"citations"`). When it carries more than one, `event_type` is `"multiple"` and a `contents` array lists what is present, in a fixed order:
+
+```json
+{
+  "event_type": "multiple",
+  "contents": ["citations", "post_transfer_transcript"]
+}
+```
+
+`contents` can list `citations`, `corrected_transcript`, `dispositions`, `post_transfer_transcript`, and `live_translation_transcript`. Calls without the `post_transfer_transcript` subscription are unaffected: their payloads are unchanged.
+
+The same segment format is available live during the transferred conversation via the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. The live stream is enabled separately with [`stream_post_transfer_transcript: true`](/api-v1/post/calls#param-stream-post-transfer-transcript); it does not require the webhook subscription, and the webhook subscription does not require the stream.
 
 ---
 
@@ -542,7 +555,7 @@ Every time a message is sent or received, a webhook fires with the message detai
 
 - `conversation_id`, `phone_number`, `agent_number`, `channel` (`"sms"`, `"rcs"`, or `"whatsapp"`)
 - `pathway_id`, `pathway_version`
-- `message`, `sender` (`"USER"` or `"AGENT"`)
+- `message`, `sender` (`"USER"`, `"AGENT"`, or `"HUMAN"` for a rep replying during a [human handoff](/api-v1/post/sms-conversations-handoff))
 - `chat_history` — the full conversation so far
 - `variables` — pathway variables collected during the conversation
 - `metadata` — custom metadata passed when the conversation was created
@@ -552,7 +565,7 @@ Every time a message is sent or received, a webhook fires with the message detai
 
 When a conversation ends (via timeout, end-call node, or opt-out), a status webhook fires with the complete conversation context. In addition to the fields above, the status payload includes:
 
-- `status` — `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"read"`, or `"link_clicked"`
+- `status` — `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"human_handoff"`, `"human_handoff_ended"`, `"read"`, or `"link_clicked"`
 - `message_count` — total messages in the conversation
 - `concatenated_transcript` — the full conversation as a single string
 - `summary` — AI-generated summary (when a summary prompt is configured)
@@ -560,6 +573,8 @@ When a conversation ends (via timeout, end-call node, or opt-out), a status webh
 - `dispositions` — outcome run results (when outcomes are configured)
 
 SMS also supports `read` and `link_clicked` status events for RCS and WhatsApp channels, which fire when a recipient reads a message or taps an action button link.
+
+`human_handoff` fires once when a human takes over a thread (via the API or the **Transfer to Human** pathway node) and `human_handoff_ended` when the agent gets it back. A thread [ended](/api-v1/post/sms-conversations-end) during a handoff fires `ended` instead, with `metadata.last_human_handoff` recording the takeover. While a handoff is active, message webhooks keep firing for every inbound message, `metadata.human_handoff` carries the reason, source, and any metadata passed at handoff, and no per-message status webhooks are sent.
 
 ### Configuring SMS Webhooks
 

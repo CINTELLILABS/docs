@@ -1,0 +1,230 @@
+---
+title: "Update Disposition Extractor Draft"
+api: "PATCH https://api.bland.ai/v2/agents/{agent_id}/dispositions/extractors/{extractor_id}/draft"
+description: "Edit an extractor's editable draft version."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Edits the extractor's `editable` version in place. Only the fields you send change; the merged draft is validated with the same rules as [Create Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors). Published versions are never modified; to make the edited draft pinnable, call [Publish Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors-extractor-id-publish).
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. A malformed id returns `400` with the message `agentId must be a valid UUID`.
+</ParamField>
+
+<ParamField path="extractor_id" type="string" required>
+  The extractor's unique identifier. Must be organization-wide or scoped to this agent; otherwise returns `404` with the message `Disposition extractor not found`. A malformed id returns `400` with the message `extractorId must be a valid UUID`.
+</ParamField>
+
+### Body Parameters
+
+Unknown fields are rejected. A body that fails shape validation returns `400` with the message `Invalid request body`; a merged draft that breaks a prompt, schema, or model-profile rule returns `400` with the message `Extractor definition failed validation`. In both cases the error's `ext` field is a JSON string listing each problem.
+
+<ParamField body="expectedVersionId" type="string" required>
+  The extractor's current `currentVersionId`. If another update or publish has moved it, the request returns `409 CONFLICT` with the message `Extractor draft changed; refresh and try again`.
+</ParamField>
+
+<ParamField body="expectedDraftRevision" type="integer" required>
+  The extractor's current `draftRevision`. Minimum `1`. A stale value returns the same `409 CONFLICT`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New display name, 1 to 120 characters. Updates both the extractor record and the draft version.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  New description, up to 2000 characters. Send `null` to clear it. Updates both the extractor record and the draft version.
+</ParamField>
+
+<ParamField body="systemPromptMd" type="string">
+  New system prompt in Markdown. Up to 8000 characters and 8000 UTF-8 bytes.
+</ParamField>
+
+<ParamField body="promptMd" type="string">
+  New extraction prompt in Markdown. 1 to 8000 characters, up to 8000 UTF-8 bytes, and must contain non-whitespace text. `systemPromptMd` and `promptMd` together may not exceed 16000 UTF-8 bytes.
+</ParamField>
+
+<ParamField body="outputSchema" type="object">
+  Replaces the whole output schema. Same shape and limits as on [Create Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors).
+</ParamField>
+
+<ParamField body="inferenceConfig" type="object">
+  Replaces the whole inference configuration, so `contextSources` is required inside it. Same fields and limits as on [Create Disposition Extractor](/api-v2/post/agents-id-dispositions-extractors). `modelProfileKey` defaults to `balanced` when omitted.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.extractor" type="object">
+  The extractor record after the update, with `draftRevision` incremented by `1`.
+
+  <Expandable title="extractor object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the extractor.
+    </ResponseField>
+    <ResponseField name="agentId" type="string | null">
+      `null` for an organization-wide extractor. Otherwise the id of the one agent it is scoped to.
+    </ResponseField>
+    <ResponseField name="key" type="string">
+      Stable machine key, unique within your organization.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The extractor's display name.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Optional description.
+    </ResponseField>
+    <ResponseField name="currentVersionId" type="string">
+      Unchanged by this call; the same id as `data.currentVersion.id`.
+    </ResponseField>
+    <ResponseField name="activeVersionId" type="string | null">
+      The most recently published version, or `null` if never published. Unchanged by this call.
+    </ResponseField>
+    <ResponseField name="draftRevision" type="integer">
+      The new revision. Pass it as `expectedDraftRevision` on your next update or publish.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of this update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.currentVersion" type="object">
+  The updated `editable` version.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="extractorId" type="string">
+      The extractor this version belongs to.
+    </ResponseField>
+    <ResponseField name="versionNumber" type="integer">
+      Unchanged by this call.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      Always `editable` here.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name after the update.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Description after the update.
+    </ResponseField>
+    <ResponseField name="systemPromptMd" type="string">
+      System prompt after the update. Empty string when none is set.
+    </ResponseField>
+    <ResponseField name="promptMd" type="string">
+      Extraction prompt after the update.
+    </ResponseField>
+    <ResponseField name="outputSchema" type="object">
+      Output schema after the update.
+    </ResponseField>
+    <ResponseField name="inferenceConfig" type="object">
+      Inference configuration after the update: `modelProfileKey`, `contextSources`, and, when set, `temperature`, `maxOutputTokens`, and `thinking`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of this update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "extractor": {
+      "id": "0f1f5c7b-3d6e-47b0-981b-d121f6853552",
+      "agentId": "a1250a05-0ae1-45ca-91e6-1ef7930f0093",
+      "key": "callback_window",
+      "name": "Callback window",
+      "description": "When the caller asked to be called back.",
+      "currentVersionId": "cc5a57dc-1f76-4007-a9ea-47378e50de0c",
+      "activeVersionId": null,
+      "draftRevision": 2,
+      "createdAt": "2026-09-08T10:21:37.902Z",
+      "updatedAt": "2026-09-10T17:05:12.446Z"
+    },
+    "currentVersion": {
+      "id": "cc5a57dc-1f76-4007-a9ea-47378e50de0c",
+      "extractorId": "0f1f5c7b-3d6e-47b0-981b-d121f6853552",
+      "versionNumber": 1,
+      "state": "editable",
+      "name": "Callback window",
+      "description": "When the caller asked to be called back.",
+      "systemPromptMd": "You extract scheduling details from customer service calls.",
+      "promptMd": "Find the day and time window the caller asked for a callback. Leave fields empty if the caller did not ask for one.",
+      "outputSchema": {
+        "kind": "object",
+        "properties": {
+          "requested": { "kind": "boolean", "description": "Whether the caller asked for a callback." },
+          "window_start": { "kind": "string", "format": "date-time" },
+          "window_end": { "kind": "string", "format": "date-time" }
+        },
+        "required": ["requested"]
+      },
+      "inferenceConfig": {
+        "modelProfileKey": "high_accuracy",
+        "temperature": 0,
+        "thinking": "medium",
+        "contextSources": ["transcript"]
+      },
+      "createdAt": "2026-09-08T10:21:37.902Z",
+      "updatedAt": "2026-09-10T17:05:12.446Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Conflict
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "Extractor draft changed; refresh and try again"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition extractor not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
