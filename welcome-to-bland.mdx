@@ -10,354 +10,194 @@ mode: "custom"
 
   THE COPY IS MEG'S AND IS FINAL. Eyebrow, headline, subhead, both CTA labels
   and all six card titles and bodies are hers, delivered verbatim. Do not
-  reword any of it. The one open question she left is whether "AI, MCP, & SDKs"
-  has a better name; that is hers to answer, not ours.
+  reword any of it.
 
   Everything visual is in style.css at the repo root, which Mintlify inlines
   into every page. A <style> block inside an .mdx is stripped without warning,
   which is why none of this is local to the file.
 
-  HOW THE FIELD WORKS
-  Positions are designed and fixed: the L, the band across the top, the way the
-  field thins as it travels right. Colour is systematic, so it is generated, and
-  the field is a different one on every load. Two rules stop that from looking
-  worse than a hand-built field, and both were measured off the 88 cells that
-  were hand-built before this:
+  WHY THIS FILE IS STATIC
 
-    1. WEIGHTED, not uniform. Orange and Yellow were 45% of the hand-built
-       field; the four darks together were 13%. Uniform picking across twelve
-       colours would push the darks to 33% and the page reads heavy and
-       muddled. The weights below ARE the hand-built mix, counted.
+  The field below was generated, not typed. It used to be generated AT RENDER,
+  from about twenty `export const` declarations that held the palette, a seeded
+  random generator, the placement rules and the components. `mint dev` and
+  `mint validate` both accept that. Mintlify's PRODUCTION build does not: it
+  served this page as "A parsing error occured" while every other page in the
+  repo built, and no other .mdx in this repo uses `export const` at all.
 
-    2. NO TOUCHING TWINS. A colour is rejected if the cell to its left or above
-       already carries it. Uniform picking averages 7 to 14 adjacent pairs per
-       load, and each one welds two 72px modules into a single 144px block,
-       which is the one thing that destroys the deck grid.
+  So the generator now runs at AUTHORING time and its output is pasted in. The
+  script is kept at _working/v2-tutorials/splash-generator/, and the rules it
+  encodes are unchanged:
 
-  SEED is null, so the field is new on every load. Set it to a number to freeze
-  one, which is what to do before taking a screenshot or comparing two builds.
+  1. WEIGHTED, not uniform. Orange and Yellow are 45% of the field between them
+     and the four darks together are 13%, which is the hand-built mix, counted.
+     Uniform picking across twelve colours pushed the darks to 33% and the page
+     read heavy and muddled.
+
+  2. NO TOUCHING TWINS. A colour is rejected if the cell to its left or above
+     already holds it. Uniform picking averages 7 to 14 adjacent pairs in 88
+     cells, and each one welds two modules into a single double-width block,
+     which is the one thing that destroys the deck grid.
+
+  3. Positions are designed and fixed: the L, the band across the top, and the
+     way the field thins as it travels. Only colour was ever generated.
+
+  The trade is that the field no longer changes per load. It is one good field
+  instead of a new one each time, which is also what makes a screenshot of this
+  page reproducible.
+
+  To reroll it: run the script with a different SEED and paste the output back
+  over the cells below. Nothing else needs to change.
+
+  SETTLE SWEEP
+
+  Each cell's animationDelay is its own diagonal (col + row) scaled so the last
+  diagonal in the field lands at 720ms, so the field assembles outward from the
+  anchor corner in one continuous pass and takes the same time to do it
+  whatever the field's width. The values are baked into the markup below.
 */}
-
-export const Node = ({ x, y, color }) => {
-  const nx = Number(x);
-  const ny = Number(y);
-  return (
-    <g>
-      <rect x={nx} y={ny} width="14" height="14" fill={color} />
-      <circle cx={nx + 7} cy={ny + 7} r="4" fill="#151515" />
-    </g>
-  );
-};
-
-{/*
-  The node-and-path marks from variant A, unchanged. These are the part of the
-  brand system that reads at small size, so they carry the colour here instead
-  of the page doing it.
-*/}
-export const Mark = ({ name, color }) => (
-  <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
-    {name === "speech" && (
-      <g>
-        <rect x="27" y="20" width="66" height="36" fill={color} />
-        <path d="M39 56 L39 69 L53 56 Z" fill={color} />
-        <circle cx="48" cy="38" r="4" fill="#151515" />
-        <circle cx="60" cy="38" r="4" fill="#151515" />
-        <circle cx="72" cy="38" r="4" fill="#151515" />
-      </g>
-    )}
-    {name === "branch" && (
-      <g>
-        <rect x="36" y="41" width="28" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="64" y="24" width="8" height="42" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="72" y="24" width="8" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="72" y="58" width="8" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <Node x={22} y={38} color={color} />
-        <Node x={80} y={21} color={color} />
-        <Node x={80} y={55} color={color} />
-      </g>
-    )}
-    {name === "wave" && (
-      <g>
-        <rect x="22" y="54" width="14" height="21" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="44" y="40" width="14" height="35" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="66" y="48" width="14" height="27" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="88" y="30" width="14" height="45" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <Node x={22} y={40} color={color} />
-        <Node x={44} y={26} color={color} />
-        <Node x={66} y={34} color={color} />
-        <Node x={88} y={16} color={color} />
-      </g>
-    )}
-    {name === "steps" && (
-      <g>
-        <rect x="26" y="62" width="24" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="50" y="46" width="8" height="24" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="58" y="46" width="18" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="76" y="28" width="8" height="26" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="84" y="28" width="8" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <Node x={12} y={59} color={color} />
-        <Node x={49} y={43} color={color} />
-        <Node x={86} y={25} color={color} />
-      </g>
-    )}
-    {name === "mesh" && (
-      <g>
-        <rect x="31" y="41" width="22" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="67" y="41" width="22" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="56" y="23" width="8" height="18" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="56" y="49" width="8" height="18" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <Node x={17} y={38} color={color} />
-        <Node x={89} y={38} color={color} />
-        <Node x={53} y={9} color={color} />
-        <Node x={53} y={67} color={color} />
-        <Node x={53} y={38} color={color} />
-      </g>
-    )}
-    {name === "layers" && (
-      <g>
-        <rect x="44" y="32" width="32" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="36" y="54" width="48" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
-        <rect x="40" y="18" width="40" height="14" fill={color} />
-        <circle cx="50" cy="25" r="3.5" fill="#151515" />
-        <circle cx="60" cy="25" r="3.5" fill="#151515" />
-        <circle cx="70" cy="25" r="3.5" fill="#151515" />
-        <rect x="32" y="40" width="56" height="14" fill={color} />
-        <circle cx="44" cy="47" r="3.5" fill="#151515" />
-        <circle cx="60" cy="47" r="3.5" fill="#151515" />
-        <circle cx="76" cy="47" r="3.5" fill="#151515" />
-        <rect x="24" y="62" width="72" height="14" fill={color} />
-        <circle cx="36" cy="69" r="3.5" fill="#151515" />
-        <circle cx="48" cy="69" r="3.5" fill="#151515" />
-        <circle cx="60" cy="69" r="3.5" fill="#151515" />
-        <circle cx="72" cy="69" r="3.5" fill="#151515" />
-        <circle cx="84" cy="69" r="3.5" fill="#151515" />
-      </g>
-    )}
-  </svg>
-);
-
-
-{/*
-  The colour engine.
-
-  Positions are designed and fixed: the L, the band across the top, the way the
-  field thins as it travels. Colour is systematic, so it is generated, and the
-  field is a different one on every load.
-
-  Two rules stop "random" from looking worse than a hand-built field, both of
-  them measured off the 88 cells that were hand-built before this:
-
-  1. WEIGHTED, not uniform. Orange and Yellow were 45% of the field between
-     them; the four darks together were 13%. Uniform picking across twelve
-     colours would have pushed the darks to 33% and the page would read heavy
-     and muddled. The weights below ARE the hand-built mix, counted.
-
-  2. NO TOUCHING TWINS. The hand-built field had 2 adjacent same-colour pairs in
-     88 cells. Uniform picking averages 7 to 14, and each one welds two 72px
-     modules into a single 144px block, which is the one thing that destroys the
-     deck grid. A colour is rejected if the cell to its left or above already
-     has it.
-
-  SEED is null, so the field is new on every load. Set it to a number to freeze
-  one, which is what to do before taking a screenshot or comparing two builds.
-*/}
-export const PALETTE = [
-  ['#FF5900', 20],  // Orange
-  ['#F9A900', 20],  // Yellow
-  ['#048244',  9],  // Jade
-  ['#C238DA',  8],  // Violet
-  ['#1C54A5',  8],  // Blue
-  ['#CA071A',  5],  // Rotary Red
-  ['#001847',  4],  // Indigo
-  ['#5E007E',  4],  // Purple
-  ['#DB005F',  3],  // Magenta
-  ['#151515',  3],  // Off-Black
-  ['#FF4294',  3],  // Rose
-  ['#004121',  1],  // Green
-];
-
-export const SEED = null;
-
-export const WEIGHT_TOTAL = PALETTE.reduce((n, p) => n + p[1], 0);
-
-{/* Small LCG so a seed reproduces a field exactly. Math.imul keeps it in 32 bits. */}
-export const makeRandom = (seed) => {
-  let x = (seed == null ? Math.floor(Math.random() * 4294967296) : seed) >>> 0;
-  return () => {
-    x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
-    return x / 4294967296;
-  };
-};
-
-export const pick = (rnd, banned) => {
-  for (let tries = 0; tries < 24; tries++) {
-    let t = rnd() * WEIGHT_TOTAL;
-    let chosen = PALETTE[PALETTE.length - 1][0];
-    for (const [hex, w] of PALETTE) {
-      t -= w;
-      if (t <= 0) { chosen = hex; break; }
-    }
-    if (!banned.includes(chosen)) return chosen;
-  }
-  return PALETTE.map(p => p[0]).find(h => !banned.includes(h));
-};
-
-{/* Paint a set of positions, refusing a colour its left or upper neighbour holds.
-
-    Sorted into reading order first, which is load-bearing rather than tidy: the
-    rejection can only see neighbours already placed, and the authored position
-    list runs columns 1 to 5 down the L before it runs the band across, so
-    painting in array order leaves some left neighbours unpainted and lets a
-    twin through. Measured: 1 adjacent pair slipped past on a sample load before
-    this sort, 0 after. */}
-export const paint = (positions, rnd) => {
-  const placed = new Map();
-  const ordered = [...positions].sort((a, b) => (a[1] - b[1]) || (a[0] - b[0]));
-  return ordered.map(([col, row]) => {
-    const banned = [placed.get((col - 1) + ':' + row), placed.get(col + ':' + (row - 1))].filter(Boolean);
-    const c = pick(rnd, banned);
-    placed.set(col + ':' + row, c);
-    return { c, col, row, alt: '', dur: 0, delay: 0 };
-  });
-};
-
-{/* A few cells carry a second colour underneath and change slowly. Which ones
-    is part of what varies, so the field is never quite the same twice. */}
-export const withBreath = (cells, rnd, count) => {
-  const chosen = new Set();
-  while (chosen.size < count && chosen.size < cells.length) chosen.add(Math.floor(rnd() * cells.length));
-  return cells.map((cell, i) => chosen.has(i)
-    ? { ...cell, alt: pick(rnd, [cell.c]), dur: 19 + Math.floor(rnd() * 10), delay: Math.floor(rnd() * 12) }
-    : cell);
-};
-
-{/* Positions only. Row 1 to 8 is the field, row 10 down is the scatter. */}
-export const FIELD_POS = [
-  [1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1],
-  [11,1],[12,1],[13,1],[15,1],[16,1],[18,1],[19,1],[21,1],[22,1],[24,1],
-  [26,1],[28,1],[30,1],[32,1],[34,1],[36,1],[38,1],[40,1],[1,2],[2,2],
-  [3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[9,2],[11,2],[12,2],[14,2],
-  [15,2],[17,2],[18,2],[20,2],[21,2],[23,2],[25,2],[27,2],[29,2],[31,2],
-  [33,2],[35,2],[37,2],[39,2],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
-  [7,3],[9,3],[10,3],[12,3],[14,3],[16,3],[19,3],[22,3],[24,3],[27,3],
-  [30,3],[32,3],[35,3],[38,3],[1,4],[2,4],[3,4],[4,4],[5,4],[1,5],
-  [2,5],[3,5],[1,6],[2,6],[3,6],[1,7],[2,7],[1,8],
-  [42,1],[44,1],[46,1],[48,1],[50,1],[52,1],[54,1],[56,1],[58,1],[60,1],
-  [62,1],[64,1],[66,1],[68,1],[70,1],[72,1],[41,2],[43,2],[45,2],[47,2],
-  [49,2],[51,2],[53,2],[55,2],[57,2],[59,2],[61,2],[63,2],[65,2],[67,2],
-  [69,2],[71,2],[41,3],[44,3],[47,3],[50,3],[53,3],[56,3],[59,3],[62,3],
-  [65,3],[68,3],[71,3],
-];
-
-export const SCATTER_POS = [
-  [1,10],[2,10],[4,10],[38,10],[40,10],
-  [1,11],[3,11],[37,11],
-  [2,12],[5,12],[39,12],[40,12],
-  [1,13],[38,13],
-  [3,14],[40,14],
-  [1,15],[37,15],
-  [2,16],[39,16],
-  [1,17],[40,17],
-];
-
-export const RND = makeRandom(SEED);
-export const CELLS = withBreath(paint(FIELD_POS, RND), RND, 3);
-export const DIFFUSE = paint(SCATTER_POS, RND);
-
-{/*
-  The settle sweep.
-
-  A cell's delay is its own diagonal (col + row), scaled so the last diagonal in
-  the field lands at SETTLE_WINDOW. The field therefore assembles outward from
-  the anchor corner in one continuous pass, and it takes the same time to do it
-  whatever the field's width.
-
-  Scaling rather than clamping is what makes it width-independent. A fixed step
-  with a ceiling works only while the field is narrow enough never to reach the
-  ceiling. Widen the grid and every cell past that point pins to the same delay
-  and arrives on one frame, so the left of the field sweeps in and the right
-  half appears in a block.
-
-  MAX_DIAGONAL is read off the data, not written down, so adding columns moves
-  the sweep with them instead of reintroducing this.
-*/}
-export const SETTLE_WINDOW = 720;
-export const MAX_DIAGONAL = Math.max(...CELLS.map(c => c.col + c.row));
-
-{/*
-  One module. Colour and grid line are inline style so none of it goes through
-  Tailwind. Scatter cells sit below the field's own diagonals, so they land
-  after it, which is the right order.
-*/}
-export const Block = ({ c, col, row, alt, dur, delay }) => (
-  <div
-    className="splash-cell splash-settle relative"
-    style={{
-      backgroundColor: alt ? alt : c,
-      gridColumn: String(col),
-      gridRow: String(row),
-      animationDelay: Math.round((col + row) / MAX_DIAGONAL * SETTLE_WINDOW) + 'ms'
-    }}
-  >
-    {alt ? (
-      <span
-        className="splash-breathe absolute inset-0 block"
-        style={{
-          backgroundColor: c,
-          '--splash-breathe-dur': dur + 's',
-          '--splash-breathe-delay': delay + 's'
-        }}
-      />
-    ) : null}
-  </div>
-);
-
-{/*
-  The card panel texture, lifted from /home unchanged: a 22px grid drawn as two
-  repeating gradients rather than an image, so it costs nothing and scales.
-*/}
-export const MODULE_GRID_LIGHT = "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)";
-export const MODULE_GRID_DARK = "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)";
-
-export const PigmentCard = ({ title, description, href, color, mark }) => (
-  <a
-    href={href}
-    className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
-  >
-    <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
-      <div className="absolute inset-0" style={{ backgroundColor: color + '1a' }} />
-      <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: MODULE_GRID_LIGHT }} />
-      <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: MODULE_GRID_DARK }} />
-      <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
-        <Mark name={mark} color={color} />
-      </div>
-    </div>
-
-    <div className="flex flex-1 flex-col p-5">
-      <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">
-        {title}
-      </h3>
-      {/* min-height holds three lines so every card bottom aligns */}
-      <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">
-        {description}
-      </div>
-    </div>
-  </a>
-);
 
 <div className="relative w-full overflow-hidden splash-display">
 
-  <div className="splash-diffuse pointer-events-none absolute left-0 top-0 z-0" aria-hidden="true">
-    {DIFFUSE.map((cell, i) => (
-      <Block key={i} c={cell.c} col={cell.col} row={cell.row} alt="" dur={0} delay={0} />
-    ))}
-  </div>
-
   <div className="splash-ballast-hero relative z-10 overflow-hidden">
     <div className="splash-frame-a pointer-events-none absolute left-0 top-0" aria-hidden="true">
-      {CELLS.map((cell, i) => (
-        <Block key={i} c={cell.c} col={cell.col} row={cell.row} alt={cell.alt} dur={cell.dur} delay={cell.delay} />
-      ))}
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "1", gridRow: "1", animationDelay: "19ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "2", gridRow: "1", animationDelay: "29ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "3", gridRow: "1", animationDelay: "39ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "4", gridRow: "1", animationDelay: "49ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "5", gridRow: "1", animationDelay: "58ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "6", gridRow: "1", animationDelay: "68ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "7", gridRow: "1", animationDelay: "78ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "8", gridRow: "1", animationDelay: "88ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "9", gridRow: "1", animationDelay: "97ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "10", gridRow: "1", animationDelay: "107ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "11", gridRow: "1", animationDelay: "117ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "12", gridRow: "1", animationDelay: "126ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "13", gridRow: "1", animationDelay: "136ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "15", gridRow: "1", animationDelay: "156ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "16", gridRow: "1", animationDelay: "165ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "18", gridRow: "1", animationDelay: "185ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "19", gridRow: "1", animationDelay: "195ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "21", gridRow: "1", animationDelay: "214ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#DB005F", gridColumn: "22", gridRow: "1", animationDelay: "224ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "24", gridRow: "1", animationDelay: "243ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "26", gridRow: "1", animationDelay: "263ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "28", gridRow: "1", animationDelay: "282ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "30", gridRow: "1", animationDelay: "302ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "32", gridRow: "1", animationDelay: "321ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#CA071A", gridColumn: "34", gridRow: "1", animationDelay: "341ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#DB005F", gridColumn: "36", gridRow: "1", animationDelay: "360ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "38", gridRow: "1", animationDelay: "379ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#CA071A", gridColumn: "40", gridRow: "1", animationDelay: "399ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "42", gridRow: "1", animationDelay: "418ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#CA071A", gridColumn: "44", gridRow: "1", animationDelay: "438ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#DB005F", gridColumn: "46", gridRow: "1", animationDelay: "457ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "48", gridRow: "1", animationDelay: "477ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "50", gridRow: "1", animationDelay: "496ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#CA071A", gridColumn: "52", gridRow: "1", animationDelay: "516ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "54", gridRow: "1", animationDelay: "535ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "56", gridRow: "1", animationDelay: "555ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "58", gridRow: "1", animationDelay: "574ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "60", gridRow: "1", animationDelay: "594ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "62", gridRow: "1", animationDelay: "613ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "64", gridRow: "1", animationDelay: "632ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "66", gridRow: "1", animationDelay: "652ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "68", gridRow: "1", animationDelay: "671ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "70", gridRow: "1", animationDelay: "691ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "72", gridRow: "1", animationDelay: "710ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "1", gridRow: "2", animationDelay: "29ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "2", gridRow: "2", animationDelay: "39ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "3", gridRow: "2", animationDelay: "49ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "4", gridRow: "2", animationDelay: "58ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "5", gridRow: "2", animationDelay: "68ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "6", gridRow: "2", animationDelay: "78ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "7", gridRow: "2", animationDelay: "88ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "8", gridRow: "2", animationDelay: "97ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "9", gridRow: "2", animationDelay: "107ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#5E007E", gridColumn: "11", gridRow: "2", animationDelay: "126ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "12", gridRow: "2", animationDelay: "136ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "14", gridRow: "2", animationDelay: "156ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "15", gridRow: "2", animationDelay: "165ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "17", gridRow: "2", animationDelay: "185ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "18", gridRow: "2", animationDelay: "195ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "20", gridRow: "2", animationDelay: "214ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "21", gridRow: "2", animationDelay: "224ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#CA071A", gridColumn: "23", gridRow: "2", animationDelay: "243ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "25", gridRow: "2", animationDelay: "263ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#5E007E", gridColumn: "27", gridRow: "2", animationDelay: "282ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "29", gridRow: "2", animationDelay: "302ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#004121", gridColumn: "31", gridRow: "2", animationDelay: "321ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "33", gridRow: "2", animationDelay: "341ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "35", gridRow: "2", animationDelay: "360ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "37", gridRow: "2", animationDelay: "379ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "39", gridRow: "2", animationDelay: "399ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "41", gridRow: "2", animationDelay: "418ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "43", gridRow: "2", animationDelay: "438ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "45", gridRow: "2", animationDelay: "457ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "47", gridRow: "2", animationDelay: "477ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "49", gridRow: "2", animationDelay: "496ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "51", gridRow: "2", animationDelay: "516ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "53", gridRow: "2", animationDelay: "535ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "55", gridRow: "2", animationDelay: "555ms" }}>
+        <span className="splash-breathe absolute inset-0 block" style={{ backgroundColor: "#C238DA", "--splash-breathe-dur": "24s", "--splash-breathe-delay": "10s" }} />
+      </div>
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "57", gridRow: "2", animationDelay: "574ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "59", gridRow: "2", animationDelay: "594ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "61", gridRow: "2", animationDelay: "613ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "63", gridRow: "2", animationDelay: "632ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "65", gridRow: "2", animationDelay: "652ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "67", gridRow: "2", animationDelay: "671ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#151515", gridColumn: "69", gridRow: "2", animationDelay: "691ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "71", gridRow: "2", animationDelay: "710ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "1", gridRow: "3", animationDelay: "39ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "2", gridRow: "3", animationDelay: "49ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "3", gridRow: "3", animationDelay: "58ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#DB005F", gridColumn: "4", gridRow: "3", animationDelay: "68ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "5", gridRow: "3", animationDelay: "78ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF4294", gridColumn: "6", gridRow: "3", animationDelay: "88ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "7", gridRow: "3", animationDelay: "97ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "9", gridRow: "3", animationDelay: "117ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "10", gridRow: "3", animationDelay: "126ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "12", gridRow: "3", animationDelay: "146ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#151515", gridColumn: "14", gridRow: "3", animationDelay: "165ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "16", gridRow: "3", animationDelay: "185ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "19", gridRow: "3", animationDelay: "214ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#001847", gridColumn: "22", gridRow: "3", animationDelay: "243ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "24", gridRow: "3", animationDelay: "263ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "27", gridRow: "3", animationDelay: "292ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "30", gridRow: "3", animationDelay: "321ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "32", gridRow: "3", animationDelay: "341ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#151515", gridColumn: "35", gridRow: "3", animationDelay: "370ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "38", gridRow: "3", animationDelay: "399ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "41", gridRow: "3", animationDelay: "428ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "44", gridRow: "3", animationDelay: "457ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "47", gridRow: "3", animationDelay: "486ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "50", gridRow: "3", animationDelay: "516ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "53", gridRow: "3", animationDelay: "545ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "56", gridRow: "3", animationDelay: "574ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "59", gridRow: "3", animationDelay: "603ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#5E007E", gridColumn: "62", gridRow: "3", animationDelay: "632ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "65", gridRow: "3", animationDelay: "662ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "68", gridRow: "3", animationDelay: "691ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#C238DA", gridColumn: "71", gridRow: "3", animationDelay: "720ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "1", gridRow: "4", animationDelay: "49ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "2", gridRow: "4", animationDelay: "58ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "3", gridRow: "4", animationDelay: "68ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#5E007E", gridColumn: "4", gridRow: "4", animationDelay: "78ms" }}>
+        <span className="splash-breathe absolute inset-0 block" style={{ backgroundColor: "#1C54A5", "--splash-breathe-dur": "22s", "--splash-breathe-delay": "5s" }} />
+      </div>
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "5", gridRow: "4", animationDelay: "88ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "1", gridRow: "5", animationDelay: "58ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#5E007E", gridColumn: "2", gridRow: "5", animationDelay: "68ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "3", gridRow: "5", animationDelay: "78ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#048244", gridColumn: "1", gridRow: "6", animationDelay: "68ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "2", gridRow: "6", animationDelay: "78ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "3", gridRow: "6", animationDelay: "88ms" }}>
+        <span className="splash-breathe absolute inset-0 block" style={{ backgroundColor: "#FF5900", "--splash-breathe-dur": "27s", "--splash-breathe-delay": "11s" }} />
+      </div>
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#F9A900", gridColumn: "1", gridRow: "7", animationDelay: "78ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#FF5900", gridColumn: "2", gridRow: "7", animationDelay: "88ms" }} />
+      <div className="splash-cell splash-settle relative" style={{ backgroundColor: "#1C54A5", gridColumn: "1", gridRow: "8", animationDelay: "88ms" }} />
     </div>
 
     <div className="splash-ballast-inset splash-ballast-herotext relative">
@@ -371,7 +211,7 @@ export const PigmentCard = ({ title, description, href, color, mark }) => (
         Everything you need to build, monitor, and improve voice AI agents in Bland.
       </div>
       <div className="mt-9 flex flex-wrap gap-2.5">
-        <a href="mailto:support@bland.ai" className="inline-flex h-[40px] items-center bg-[#CA071A] px-5 text-[14px] font-medium text-[#FFFDF5] no-underline transition-opacity hover:opacity-90">
+        <a href="https://app.bland.ai/dashboard/support" className="inline-flex h-[40px] items-center bg-[#CA071A] px-5 text-[14px] font-medium text-[#FFFDF5] no-underline transition-opacity hover:opacity-90">
           Contact Support
         </a>
         <a href="https://app.bland.ai" className="inline-flex h-[40px] items-center border border-[#15151533] bg-[#eeeee0] px-5 text-[14px] font-medium text-[#151515] no-underline transition-colors hover:border-[#15151566] dark:border-[#ffffff2b] dark:bg-[#222] dark:text-[#FFFDF5]">
@@ -387,12 +227,182 @@ export const PigmentCard = ({ title, description, href, color, mark }) => (
 
   <div className="splash-ballast-inset relative z-10 py-12">
     <div className="grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      <PigmentCard title="Get started" description="Set up an agent, give it a number, and make your first call." href="/build-your-first-agent" color="#CA071A" mark="speech" />
-      <PigmentCard title="Build" description="Give your agents the knowledge, tools, and instructions they need." href="/agents/agent-builder" color="#F9A900" mark="branch" />
-      <PigmentCard title="Monitor" description="See every conversation across phone, SMS, web, and email, plus analytics and alerts." href="/agents/conversations" color="#048244" mark="wave" />
-      <PigmentCard title="Improve" description="Test changes, roll them out with confidence, and make your agents better over time." href="/agents/evaluations" color="#1C54A5" mark="steps" />
-      <PigmentCard title="AI, MCP, & SDKs" description="Reach Bland from your own code or your coding agent with SDKs, MCP, and API references." href="/integrations/mcp/overview" color="#5E007E" mark="mesh" />
-      <PigmentCard title="For enterprises" description="Secure, deploy, and scale agents across your organization." href="/enterprise-features/infrastructure-and-releases" color="#FF5900" mark="layers" />
+      <a
+        href="/build-your-first-agent"
+        className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
+          <div className="absolute inset-0" style={{ backgroundColor: "#CA071A1a" }} />
+          <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
+        <rect x="27" y="20" width="66" height="36" fill="#CA071A" />
+        <path d="M39 56 L39 69 L53 56 Z" fill="#CA071A" />
+        <circle cx="48" cy="38" r="4" fill="#151515" />
+        <circle cx="60" cy="38" r="4" fill="#151515" />
+        <circle cx="72" cy="38" r="4" fill="#151515" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">Get started</h3>
+          <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">Set up an agent, give it a number, and make your first call.</div>
+        </div>
+      </a>
+      <a
+        href="/agents/agent-builder"
+        className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
+          <div className="absolute inset-0" style={{ backgroundColor: "#F9A9001a" }} />
+          <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
+        <rect x="36" y="41" width="28" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="64" y="24" width="8" height="42" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="72" y="24" width="8" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="72" y="58" width="8" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="22" y="38" width="14" height="14" fill="#F9A900" />
+        <circle cx="29" cy="45" r="4" fill="#151515" />
+        <rect x="80" y="21" width="14" height="14" fill="#F9A900" />
+        <circle cx="87" cy="28" r="4" fill="#151515" />
+        <rect x="80" y="55" width="14" height="14" fill="#F9A900" />
+        <circle cx="87" cy="62" r="4" fill="#151515" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">Build</h3>
+          <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">Give your agents the knowledge, tools, and instructions they need.</div>
+        </div>
+      </a>
+      <a
+        href="/agents/conversations"
+        className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
+          <div className="absolute inset-0" style={{ backgroundColor: "#0482441a" }} />
+          <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
+        <rect x="22" y="54" width="14" height="21" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="44" y="40" width="14" height="35" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="66" y="48" width="14" height="27" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="88" y="30" width="14" height="45" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="22" y="40" width="14" height="14" fill="#048244" />
+        <circle cx="29" cy="47" r="4" fill="#151515" />
+        <rect x="44" y="26" width="14" height="14" fill="#048244" />
+        <circle cx="51" cy="33" r="4" fill="#151515" />
+        <rect x="66" y="34" width="14" height="14" fill="#048244" />
+        <circle cx="73" cy="41" r="4" fill="#151515" />
+        <rect x="88" y="16" width="14" height="14" fill="#048244" />
+        <circle cx="95" cy="23" r="4" fill="#151515" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">Monitor</h3>
+          <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">See every conversation across phone, SMS, web, and email, plus analytics and alerts.</div>
+        </div>
+      </a>
+      <a
+        href="/agents/evaluations"
+        className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
+          <div className="absolute inset-0" style={{ backgroundColor: "#1C54A51a" }} />
+          <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
+        <rect x="26" y="62" width="24" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="50" y="46" width="8" height="24" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="58" y="46" width="18" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="76" y="28" width="8" height="26" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="84" y="28" width="8" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="12" y="59" width="14" height="14" fill="#1C54A5" />
+        <circle cx="19" cy="66" r="4" fill="#151515" />
+        <rect x="49" y="43" width="14" height="14" fill="#1C54A5" />
+        <circle cx="56" cy="50" r="4" fill="#151515" />
+        <rect x="86" y="25" width="14" height="14" fill="#1C54A5" />
+        <circle cx="93" cy="32" r="4" fill="#151515" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">Improve</h3>
+          <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">Test changes, roll them out with confidence, and make your agents better over time.</div>
+        </div>
+      </a>
+      <a
+        href="/integrations/mcp/overview"
+        className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
+          <div className="absolute inset-0" style={{ backgroundColor: "#5E007E1a" }} />
+          <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
+        <rect x="31" y="41" width="22" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="67" y="41" width="22" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="56" y="23" width="8" height="18" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="56" y="49" width="8" height="18" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="17" y="38" width="14" height="14" fill="#5E007E" />
+        <circle cx="24" cy="45" r="4" fill="#151515" />
+        <rect x="89" y="38" width="14" height="14" fill="#5E007E" />
+        <circle cx="96" cy="45" r="4" fill="#151515" />
+        <rect x="53" y="9" width="14" height="14" fill="#5E007E" />
+        <circle cx="60" cy="16" r="4" fill="#151515" />
+        <rect x="53" y="67" width="14" height="14" fill="#5E007E" />
+        <circle cx="60" cy="74" r="4" fill="#151515" />
+        <rect x="53" y="38" width="14" height="14" fill="#5E007E" />
+        <circle cx="60" cy="45" r="4" fill="#151515" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">AI, MCP, & SDKs</h3>
+          <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">Reach Bland from your own code or your coding agent with SDKs, MCP, and API references.</div>
+        </div>
+      </a>
+      <a
+        href="/enterprise-features/infrastructure-and-releases"
+        className="group flex h-full flex-col overflow-hidden border border-[#1515151a] bg-white no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#15151533] hover:shadow-[0_10px_28px_-14px_#0000001f] dark:border-[#ffffff1f] dark:bg-[#1a1a1a] dark:hover:border-[#ffffff33]"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#1515150f] dark:border-[#ffffff14]">
+          <div className="absolute inset-0" style={{ backgroundColor: "#FF59001a" }} />
+          <div className="absolute inset-0 dark:hidden" style={{ backgroundImage: "repeating-linear-gradient(90deg, #1515150f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #1515150f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 hidden dark:block" style={{ backgroundImage: "repeating-linear-gradient(90deg, #ffffff0f 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, #ffffff0f 0 1px, transparent 1px 22px)" }} />
+          <div className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 120 90" className="h-full w-full" aria-hidden="true">
+        <rect x="44" y="32" width="32" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="36" y="54" width="48" height="8" className="fill-[#151515] dark:fill-[#FFFDF5]" />
+        <rect x="40" y="18" width="40" height="14" fill="#FF5900" />
+        <circle cx="50" cy="25" r="3.5" fill="#151515" />
+        <circle cx="60" cy="25" r="3.5" fill="#151515" />
+        <circle cx="70" cy="25" r="3.5" fill="#151515" />
+        <rect x="32" y="40" width="56" height="14" fill="#FF5900" />
+        <circle cx="44" cy="47" r="3.5" fill="#151515" />
+        <circle cx="60" cy="47" r="3.5" fill="#151515" />
+        <circle cx="76" cy="47" r="3.5" fill="#151515" />
+        <rect x="24" y="62" width="72" height="14" fill="#FF5900" />
+        <circle cx="36" cy="69" r="3.5" fill="#151515" />
+        <circle cx="48" cy="69" r="3.5" fill="#151515" />
+        <circle cx="60" cy="69" r="3.5" fill="#151515" />
+        <circle cx="72" cy="69" r="3.5" fill="#151515" />
+        <circle cx="84" cy="69" r="3.5" fill="#151515" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="m-0 text-[15px] font-semibold text-[#151515] dark:text-[#FFFDF5]">For enterprises</h3>
+          <div className="mt-1.5 min-h-[66px] text-[13.5px] leading-relaxed text-[#15151599] dark:text-[#FFFDF599]">Secure, deploy, and scale agents across your organization.</div>
+        </div>
+      </a>
     </div>
   </div>
 
