@@ -114,11 +114,21 @@ The header shows the call's channel (Voice, Web, or SMS), pathway name (click to
 
 Below that: direction badge, status, duration, and cost. Action buttons let you copy the call ID, copy the full transcript, or toggle translation.
 
-### Transcript
+### Tabs
 
-The transcript shows the full conversation with speaker labels and timestamps. For pathway calls, a sticky header tracks which node you've scrolled past, so you always know where you are in the conversation flow.
+The detail view splits into three tabs:
 
-**Transcript search** — search for specific text within the transcript and step through matches.
+- **Conversation** — the transcript and inline per-turn decision data. This is the default and the primary debugging view.
+- **Variables** — a chronological log of every variable write during the call. See [Variables Tab](#variables-tab) below.
+- **Logs** — the raw structured log stream for the call.
+
+Your last-used tab is remembered across calls, so reopening any call in any organization returns to the same tab.
+
+### Conversation
+
+The Conversation tab shows the full conversation with speaker labels and timestamps. For pathway calls, a sticky header tracks which node you've scrolled past, so you always know where you are in the conversation flow.
+
+**Transcript search** — search for specific text within the conversation and step through matches.
 
 **Translation** — toggle the translate button in the header to translate the transcript.
 
@@ -128,11 +138,22 @@ The transcript shows the full conversation with speaker labels and timestamps. F
 - **Edit node** — open the pathway editor in a new tab, navigated directly to the node that generated this response.
 - **Testbed** — open the testbed with this call's context pre-loaded. See [Testbed](/tutorials/testbed) for the full workflow.
 
-### Expanded Logs
+#### Display picker
 
-Toggle **"Expand all logs"** in the transcript toolbar to see per-turn decision data inline between dialogue turns. This is the primary debugging view for pathway calls — it shows exactly what the agent decided at each step of the conversation.
+A display picker in the Conversation toolbar sets how much per-turn detail is shown alongside the dialogue. Pick the preset that matches what you're doing — reading the call, spot-checking the agent's decisions, or debugging a specific step.
 
-Each turn can include the following log types:
+| Preset | What it shows |
+|---|---|
+| Transcript | Dialogue bubbles only. Use this when you're reading the conversation, not debugging. |
+| Collapsed detail | Dialogue bubbles plus a one-line summary of each event (node chosen, routing, extraction, tool call). Use this to skim the agent's decisions without opening each one. |
+| Expanded detail | Dialogue bubbles with every event fully expanded, showing inputs, outputs, and context inline. Use this as the primary debugging view for pathway calls. |
+| JSON detail | Same expanded layout, but each event's Input, Output, and Context boxes render as formatted JSON. Use this when you need the exact payload shape. |
+
+Individual events stay togglable in every preset, so you can collapse or expand a specific row without switching presets. Changing the preset resets those per-row overrides. Your last-used preset is remembered across calls.
+
+#### Event detail
+
+In Collapsed, Expanded, and JSON presets, each turn can include the following event types:
 
 **Node chosen** — which pathway node the agent transitioned to at this point in the conversation.
 
@@ -155,6 +176,23 @@ Hover any event row to reveal a testbed button, so you can jump directly into te
 <Frame>
   <img src="/images/call-logs-testbed.png" alt="Testbed button on variable extraction and loop condition entries in expanded logs" />
 </Frame>
+
+### Variables Tab
+
+The Variables tab replays every variable write recorded during the call, in the order it happened. Use it when you need to see how a variable got its final value — which node or step wrote it, what it was before, and when in the call the write landed.
+
+Each row shows:
+
+- **Operation** — `Created`, `Set`, `Overridden`, or `Removed`.
+- **Name** — the variable name.
+- **Previous** and **New** value — the old value (if any) and the value after the write. Removals show `not defined`.
+- **Source** — where the write came from: `Conversation start`, `Node transition`, `Variable extraction`, `Custom code`, a named tool, or `Webhook`.
+- **Node** — the pathway node active when the write happened.
+- **Offset** — the timestamp into the recording, in `mm:ss`.
+
+Click any row to seek the audio player to that offset, so you can hear exactly what was said when the value changed.
+
+The console is replayed from pathway events, not the call record's final variable snapshot. That means variables that were set and later overwritten still appear, and the tab shows what happened during the call rather than only where the values ended up. Calls placed before the event feed shipped still populate the tab from synthesized pathway events.
 
 ### Audio Player
 
