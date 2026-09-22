@@ -293,7 +293,7 @@ body:has(.splash-display) header .backdrop-blur {
   One variable drives both so they cannot drift. 264px fits the longest labels
   ("Custom Twilio Integration", "Knowledge base editing") on one line.
 */
-:root { --sidebar-w: 264px; }
+:root { --sidebar-w: 284px; }
 
 @media (min-width: 1024px) {
   #body-content { padding-left: var(--sidebar-w); }
@@ -318,14 +318,23 @@ body:has(.splash-display) header .backdrop-blur {
   line-height: 1.35;
   padding-top: 5px;
   padding-bottom: 5px;
-  /*
-    Luma's production build gives each link its own 16px left padding; the dev
-    server does not. That indents every label past the group headers and takes
-    16px off the text width, which is enough to wrap "Conversational Pathways"
-    and "Custom Twilio Integration" again. The column already has its gutter on
-    #navigation-items, so the link does not need one.
-  */
-  padding-left: 0;
+}
+
+/*
+  Give the labels room, in production as well as in dev.
+
+  The production build stacks three left offsets the dev server does not: 20px
+  on the scroll container, 16px on the link, and the link's own right padding.
+  At a 264px column that left 159px for text, which wraps "Conversational
+  Pathways", "Custom Twilio Integration", "Infrastructure & Releases" and
+  "JWT Signature Configuration".
+
+  The link's 16px is worth keeping, since it is what sets a child item apart
+  from its parent. So the outer gutter comes down and the column goes up, which
+  also answers the complaint that the labels sat too far from the edge.
+*/
+#navigation-items {
+  padding-left: 0.75rem;
 }
 
 /* Group headers earn their weight by being smaller and quieter, not bigger. */
