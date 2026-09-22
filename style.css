@@ -157,10 +157,40 @@
 }
 
 @media (min-width: 1152px) {
+  /*
+    The module SHRINKS as the viewport narrows, instead of the hero sliding
+    right to clear a fixed-size field.
+
+    The hero has to clear the L's vertical arm, 5 columns plus one module of
+    gap, so the clearance it needs is `module * 6`. The logo sits at
+    `(width - 1472) / 2 + 48`. Holding the module at 72px meant those two
+    expressions only met at about 2240px wide; below that the 432px floor won
+    and the headline sat right of the logo, which reads as off-centre.
+
+    Scaling the module by width/12 makes clearance and logo offset the SAME
+    line, so they meet at every width from 1152px up rather than at one.
+    Worked: at 2240px the module is 72px and both are 432px; at 2000px it is
+    52px and both are 312px. Below about 1730px the 48px floor takes over,
+    where the logo is too close to the edge for any field to align with it.
+  */
+  .splash-display {
+    /*
+      100vw, not 100%: a percentage inside a custom property is substituted
+      unresolved, so it would size against the grid container rather than the
+      viewport and pin the module to the clamp floor at every width.
+
+      The constant is 6px rather than the 8px the algebra gives, because 100vw
+      counts the scrollbar and the logo's container does not. Two pixels of
+      module is twelve across the six that make the clearance, which keeps the
+      logo term winning the max() and the two edges flush.
+    */
+    --splash-module: clamp(48px, calc((100vw - 1472px) / 12 + 6px), 72px);
+  }
+
   .splash-frame-a {
     display: grid;
-    grid-template-columns: repeat(72, 72px);
-    grid-template-rows: repeat(8, 72px);
+    grid-template-columns: repeat(72, var(--splash-module));
+    grid-template-rows: repeat(8, var(--splash-module));
   }
 
   /* Rows are implicit here: the scatter starts at row 10, so the two fields
@@ -170,8 +200,8 @@
      the display line; the cells are in the page and the grid is defined. */
   .splash-diffuse {
     display: none;
-    grid-template-columns: repeat(72, 72px);
-    grid-auto-rows: 72px;
+    grid-template-columns: repeat(72, var(--splash-module));
+    grid-auto-rows: var(--splash-module);
   }
 
   /*
@@ -187,14 +217,26 @@
     falls inside the field, and there clearance wins over alignment.
   */
   .splash-ballast-inset {
-    padding-left: max(432px, calc((100% - 1472px) / 2 + 48px));
+    padding-left: max(calc(var(--splash-module) * 6), calc((100% - 1472px) / 2 + 48px));
     padding-right: max(1.5rem, calc((100% - 1472px) / 2 + 48px));
   }
 
-  .splash-ballast-hero { height: 606px; }
+  /*
+    The clearance scales, the text block does NOT.
+
+    padding-top clears the 3-row band plus a module of air, so it tracks the
+    module. The hero's height is that clearance plus the text block, which is a
+    fixed 250px of eyebrow, headline, subtitle and buttons no matter how big
+    the field is. 322px leaves 72px of air under the buttons.
+
+    Scaling the height by the module instead clipped the buttons off: the hero
+    has `overflow: hidden` to trim the field's overhang, and at a 50px module
+    the box came out 421px against 447px of content.
+  */
+  .splash-ballast-hero { height: calc(var(--splash-module) * 3.94 + 322px); }
 
   .splash-ballast-herotext {
-    padding-top: 284px;
+    padding-top: calc(var(--splash-module) * 3.94);
     padding-bottom: 0;
   }
 

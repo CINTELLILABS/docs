@@ -16,11 +16,11 @@ The examples here build tools for a front desk agent at Northwind Dental, a fict
 
 ## Where tools live
 
-**Tools** appears at two scopes, and they are not the same view.
+Tools appears at two scopes, and they are not the same view.
 
-The selector at the top of the sidebar decides which one you are on. It reads **All agents** for the whole organization, or the agent's name when you are inside one. Switching it leaves you on Tools.
+The selector at the top of the sidebar decides which one you are on. It reads All agents for the whole organization, or the agent's name when you are inside one. Switching it leaves you on Tools.
 
-**At All agents**, under **Resources**, you get four tabs:
+**At All agents**, under Resources, you get four tabs:
 
 | Tab | What it holds |
 |---|---|
@@ -29,7 +29,7 @@ The selector at the top of the sidebar decides which one you are on. It reads **
 | **Secrets** | Credentials your tools use, stored once and referenced by name. |
 | **Connections** | Accounts you have linked, like a CRM. |
 
-**Inside an agent**, under **Build**, you get only that agent's tools, and no tabs: the other three live at All agents.
+**Inside an agent**, under Build, you get only that agent's tools, and no tabs: the other three live at All agents.
 
 Which scope you create from decides which list the tool appears in. Create from inside an agent and the tool shows on that agent's Tools page. Create from All agents and it shows only there, on no agent's page, though any agent can still tag it in a prompt.
 
@@ -55,19 +55,19 @@ Searching for custom APIs? That is a webhook tool.
 
 Runs code you write, for the cases a single HTTP call cannot cover: reshaping a response, calling two services and combining them, or a calculation the agent should not be doing in its head.
 
-This is not the custom code node you place inside a complex scenario. Same name, different thing: a tool is called from a prompt, a node is a step in a flow.
+This is not the custom code node you place inside a complex scenario. Same name, different thing: a tool is called from a prompt, a node is a step inside a complex scenario.
 
 ### Integration
 
 Talks to a service you have connected, like a CRM. Pick the connection and the action, and the fields come from the service rather than from you.
 
-You connect an account once with **Add connection**, under **Connections**, and then build as many tools on it as you need. The integration builder also offers **New connection** at the top of its connection list, which opens the same flow without leaving the tool.
+You connect an account once with **Add connection**, under Connections, and then build as many tools on it as you need. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call. The integration builder also offers **New connection** at the top of its connection list, which opens the same flow without leaving the tool.
 
-Bland's own actions are the exception. They are integration tools too, which is why **End Call** sits in your tool list with a different icon, and they need no connection. One CRM connection can power a tool that creates a contact, another that looks one up, and a third that logs a call.
+Bland's own actions need no connection. Ending a call, transferring one, pressing a button and sending an SMS are integration tools like any other, but they act on the call the agent is already in, so there is no account to connect. That is why **End Call** sits in your tool list carrying an icon of its own.
 
 ## Build a webhook tool
 
-From inside your agent, open **Tools**, then **Create tool**, and choose **Webhook**.
+From inside your agent, open Tools, then **Create tool**, and choose **Webhook**.
 
 If you already have a working `curl`, choose **Import from cURL** instead, in the same list. Paste the command and it opens the builder with the request filled in.
 
@@ -89,7 +89,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
   </Step>
 
   <Step title="Point it at your endpoint">
-    URL, method, headers, body. Anywhere a value should change per call, write a token: `{{date}}`, `{{phone}}`.
+    URL, method, headers, body. Anywhere a value should change per call, write a variable: `{{date}}`, `{{phone}}`.
 
     The tabs under the URL are **Query**, **Authorization**, **Headers** and **Body**. Query mirrors whatever is already in the URL, and Body is not there at all until you pick a method that has one.
 
@@ -98,16 +98,14 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
     For an API key, do not type it here. Reference a [secret](#store-credentials-as-secrets), and create it before you reach the test step.
   </Step>
 
-  <Step title="Say which tokens the agent fills in">
-    Every token you write shows up under **Detected variables**. Each one needs a decision.
+  <Step title="Say which variables the agent fills in">
+    The variables you wrote into the request are collected under **Detected variables**, below the request tabs. Each one gets a row, and each row is a decision about where its value comes from.
 
-    **Add input variable** means the agent fills the token from the conversation. Set its instructions, its type, and whether it is required. The instruction is what the agent reads, so write it for a person: "The day to check, as YYYY-MM-DD."
+    **Add input variable** means the agent fills it from the conversation. It moves into the **Variables** table, where you give it instructions, a type, and whether it is required. The instructions are what the agent reads, so write them for a person: "The day to check, as YYYY-MM-DD."
 
-The last column, **Audio**, pulls the value from what the caller said rather than from the transcript. It costs latency and it is worth it for the things transcription gets wrong: spoken numbers, dates, spellings.
+    The **Audio** column on that table pulls the value from what the caller said rather than from the transcript. It costs latency and it is worth it for the things transcription gets wrong: spoken numbers, dates, spellings.
 
-    The **X** beside a token ignores it, leaving it to resolve from [variables already on the call](/agents/agent-builder#extract-variables).
-
-    A token you neither add nor ignore is treated as ignored. The agent never fills it, and nothing tells you.
+    Leave a variable alone, or dismiss it with the **X**, and it resolves from [variables already on the call](/agents/agent-builder#extract-variables) instead. The agent never fills it.
   </Step>
 
   <Step title="Declare what comes back">
@@ -131,7 +129,7 @@ The last column, **Audio**, pulls the value from what the caller said rather tha
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
 
-    Each row shows its name wrapped as `{{output.name}}`. That is the table's label, not the token. What you reference in a prompt is the bare name, `{{name}}`.
+    Each row shows its name wrapped as `{{output.name}}`. That is the table's label, not the reference. What you write in a prompt is the bare name, `{{name}}`.
 
     <Warning>
     Checking at least one output field is what makes the tool wait for a response.
@@ -151,25 +149,25 @@ Three settings sit below the output fields. **Timeout** is how long to wait befo
 
 ## Store credentials as secrets
 
-Do not paste an API key into a tool. Put it in **Secrets** and reference it.
+Do not paste an API key into a tool. Put it in Secrets and reference it.
 
-Secrets live at **All agents**, under **Tools**, on the **Secrets** tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one, **Add Secret** is visible but disabled. The same secrets under **Settings**, in **Developer**, sit behind a page only an owner or admin can open.
+Secrets live at All agents, under Tools, on the Secrets tab. **Add Secret** creates one, and the value is never shown again after you save it. Creating a secret needs the owner, admin or operator role. Without one, **Add Secret** is visible but disabled. The same secrets under Settings, in Developer, sit behind a page only an owner or admin can open.
 
 There are two kinds, and each row on the tab is labelled with which it is.
 
-**Static.** A value you paste in, like an API key. It changes only when you change it.
+Static is a value you paste in, like an API key. It changes only when you change it.
 
-**Refresh.** A value Bland fetches on a schedule, so the agent never holds an expired token mid-call. You give it a URL, a method, headers or body, how often to refresh, and the path to the value in the response. The interval runs from 10 minutes to 24 hours.
+Refresh is a value Bland fetches on a schedule, so the agent never holds an expired token mid-call. You give it a URL, a method, headers or body, how often to refresh, and the path to the value in the response. The interval runs from 10 minutes to 24 hours.
 
-Three ways to reference one:
+Three ways to reference one.
 
-**The Authorization tab** starts on **No Auth**, and the secret picker only appears once you choose **Bearer Token** or **API Key**. Choose a secret there and the builder stores a reference to it. **API Key** adds a **Header name** field, which falls back to `X-API-Key` if you leave it blank.
+The Authorization tab starts on No Auth, and the secret picker only appears once you choose **Bearer Token** or **API Key**. Choose a secret there and the builder stores a reference to it. **API Key** adds a **Header name** field, which falls back to `X-API-Key` if you leave it blank.
 
 The picker also has a **Create New Secret** link, which opens the same dialog without leaving the tool. It stays clickable without the role, and the server refuses the save.
 
-**In a header**, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it. Copy it rather than typing it: the copied reference points at the secret by id, so a rename leaves every header working.
+In a header, paste the reference. Every row on the Secrets tab shows its own reference beside the name, with a button that copies it. Copy it rather than typing it: the copied reference points at the secret by id, so a rename leaves every header working.
 
-**In a body field**, the copied reference does not work. Write `{{secret.NAME}}` instead, using the secret's name. Headers resolve both forms. Bodies resolve the name form only: an id reference reaches your endpoint as the literal text `{{secret.id.…}}`. Nothing flags it, and the builder's test passes, because the test takes a different path from a real call.
+In a body field, the copied reference does not work. Write `{{secret.NAME}}` instead, using the secret's name. Headers resolve both forms. Bodies resolve the name form only: an id reference reaches your endpoint as the literal text `{{secret.id.…}}`. Nothing flags it, and the builder's test passes, because the test takes a different path from a real call.
 
 The name form is the one a rename breaks, so a secret referenced from a body is worth renaming carefully.
 
@@ -179,27 +177,25 @@ Secrets are organization-wide. Store one and every agent can use it. Rotate the 
 
 Building a tool does not give it to an agent. Tag it.
 
-In the agent's **Prompt**, type `@` and pick the tool by name. The **Tool references** section below the prompt then lists it.
+In the agent's **Prompt**, type `@` and pick the tool by name. The Tool references section below the prompt then lists it.
 
-Tools attach per prompt, not per agent. A tool tagged in the agent's prompt is available while the conversation is on the agent, and it does not follow the agent into a [scenario](/agents/agent-builder#extend-the-agent-with-scenarios), a branch of the agent's behavior that has a prompt of its own. If booking lives in its own scenario, tag the calendar tool in that scenario's prompt too. Nothing warns you when this is wrong. The agent simply behaves as though the tool does not exist.
+Tools attach per prompt, not per agent. A tool tagged in the agent's prompt is available while the conversation is on the agent, and it does not follow the agent into a [scenario](/agents/agent-builder#extend-the-agent-with-scenarios), a branch of the agent's behavior that has a prompt of its own. If booking lives in its own scenario, tag the calendar tool in that scenario's prompt too.
 
 <Warning>
-Tagging attaches a copy, not a link. Where you edit decides what changes.
+Tagging gives the agent its own copy of the tool.
 
-Open the tool from its **Tool references** row and your edit is saved twice, to the agent's copy and to the tool in the library. That is the path to use once an agent has the tool tagged.
+To change a tool an agent already uses, open it from that agent's Tool references row. That saves both.
 
-Open the same tool from the **Tools** page instead and only the library changes. The agent keeps the copy it already had, with no way to pull the change in. A scenario node does have one: its **Tools** tab carries **Update from library** on each attached tool.
-
-Secrets work the other way. They resolve centrally, every time.
+Editing the same tool from the Tools page changes only the original. The agent keeps running its copy, and opening the tool from the agent afterwards shows you the original, so the change looks like it applied when it has not.
 </Warning>
 
-The check is **Tool references** itself. Only tagged tools appear there, so the list is the attachment. A tool you built that is missing from it is tagged in no prompt and will never be called.
+The check is Tool references itself. Only tagged tools appear there, so the list is the attachment. A tool you built that is missing from it is tagged in no prompt and will never be called.
 
-**Knowledge references**, directly below it, is not that kind of list. A source can be attached without being tagged, so what it shows is not the whole set. See [Knowledge](/agents/knowledge#attach-a-source-to-an-agent).
+Knowledge references, directly below it, is not that kind of list. A source can be attached without being tagged, so what it shows is not the whole set. See [Knowledge](/agents/knowledge#attach-a-source-to-an-agent).
 
 ## Watch how tools perform
 
-**Analytics** shows call volume and failure rate per tool.
+Analytics shows call volume and failure rate per tool.
 
 The number worth watching is the failure rate. A tool that fails quietly leaves the agent improvising in the middle of a call, and the caller hears an agent that has lost the thread rather than an error.
 
@@ -207,7 +203,7 @@ The number worth watching is the failure rate. A tool that fails quietly leaves 
 
 <AccordionGroup>
   <Accordion title="The agent never calls the tool">
-    Look at **Tool references** under the prompt. If the tool is not listed, it is not tagged, and it will never be called. Tag it in the prompt where it should run.
+    Look at Tool references under the prompt. If the tool is not listed, it is not tagged, and it will never be called. Tag it in the prompt where it should run.
   </Accordion>
 
   <Accordion title="It works on the agent but not inside a scenario">
@@ -215,7 +211,7 @@ The number worth watching is the failure rate. A tool that fails quietly leaves 
   </Accordion>
 
   <Accordion title="You edited a tool and the agent still uses the old version">
-    Tagging attached a copy. An edit made on the **Tools** page changes the library only, and nothing on the agent pulls it in. Open the tool from **Tool references** and make the same change there. That saves the agent's copy and the library together. Keep editing it there from then on: an edit made from the agent writes its copy over the library row.
+    Tagging attached a copy. An edit made on the Tools page changes the library only, and nothing on the agent pulls it in. Open the tool from Tool references and make the same change there. That saves the agent's copy and the library together. Keep editing it there from then on: an edit made from the agent writes its copy over the library row.
   </Accordion>
 
   <Accordion title="The tool fires at the wrong moment">

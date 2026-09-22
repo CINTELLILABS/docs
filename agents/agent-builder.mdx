@@ -21,13 +21,13 @@ Open an agent and everything you need is already on screen. The sidebar switches
 
 **Agent and Guardrails**, across the top. Agent is where you build. Guardrails is where you set rules that are checked on every call.
 
-**The agent itself**, filling the middle. Two tabs, **Prompt** and **Settings**, and almost everything in this guide happens on Prompt. It runs top to bottom as:
+**The agent itself**, filling the middle. Two tabs, **Prompt** and Settings, and almost everything in this guide happens on Prompt. It runs top to bottom as:
 
 1. **Prompt**, what the agent should accomplish
 2. **System prompt**, how it comes across
 3. **Variables to extract**
-4. **Scenarios**
-5. **Tool references** and **Knowledge references**
+4. Scenarios
+5. Tool references and Knowledge references
 
 **The graph**, on the right. A picture of how the agent fits together, and where you test it.
 
@@ -59,8 +59,8 @@ Type `@` in the prompt to reference a tool or a knowledge source by name. `@chec
 
 Two sections below list what the agent currently has:
 
-- **Tool references**, with the hint "Give your agent tools by tagging them with @tool-name in the prompt", plus **View all** and **Create tool**.
-- **Knowledge references**, with the hint "Give your agent knowledge by tagging sources with @source-name in the prompt", plus **View all** and **Upload source**.
+- Tool references, with the hint "Give your agent tools by tagging them with @tool-name in the prompt", plus **View all** and **Create tool**.
+- Knowledge references, with the hint "Give your agent knowledge by tagging sources with @source-name in the prompt", plus **View all** and **Upload source**.
 
 The Prompt hint reads "Tools and knowledge only reach the agent when you @mention them." That is exactly right for tools. For knowledge it is stricter than the product, as the next two paragraphs explain.
 
@@ -71,7 +71,7 @@ For tools, tagging is the only way, and it is per prompt. A tool that is not tag
 For knowledge, there is a second path. A source can also be attached to the agent from the [Knowledge](/agents/knowledge) page, and an attached source is available whether or not you tag it. Tagging still helps, because it tells the agent where in the conversation you expect the source to matter.
 
 <Warning>
-Building a tool without tagging it fails silently. The tool saves, **Tool references** stays empty, and the agent behaves as though it does not exist, with nothing on screen to say why.
+Building a tool without tagging it fails silently. The tool saves, Tool references stays empty, and the agent behaves as though it does not exist, with nothing on screen to say why.
 
 A knowledge source uploaded and never tagged is a different case. It is in your library and not yet on any agent, and the fix is to attach it on the [Knowledge](/agents/knowledge#attach-a-source-to-an-agent) page rather than to tag it.
 </Warning>
@@ -100,14 +100,6 @@ A single prompt for one job, like booking an appointment or handling a cancellat
 
 Simple scenarios are also how you manage context. Splitting scheduling out of the main prompt keeps the agent from carrying scheduling instructions through every unrelated conversation.
 
-<Warning>
-Tools do not follow the agent into a scenario. Each scenario tags its own, in its own prompt.
-
-If you tag `@check-calendar` on the agent and then move booking into a scenario, that scenario cannot reach the calendar until you tag it there too. Nothing warns you; the agent simply behaves as though the tool does not exist.
-
-Knowledge is the opposite. A source attached to the agent is available everywhere, including inside every scenario.
-</Warning>
-
 ### Complex scenario
 
 A flow you lay out yourself: steps you place, and the pathways you draw between them. Opening one turns the graph column into the canvas where you build it. Custom code and webhook steps are available here.
@@ -118,23 +110,17 @@ Choose this when the steps have to happen in a guaranteed order: a scripted disc
 
 A gate. It has the steps a complex scenario has, plus identity questions. On enterprise plans it also offers an SMS code step; on other plans that step is not in the menu.
 
-In the **Scenarios** list, drag other scenarios underneath an authentication scenario to protect them. A caller then has to get through authentication before the agent will move into anything beneath it. Use it for anything that exposes account details.
+In the Scenarios list, drag other scenarios underneath an authentication scenario to protect them. A caller then has to get through authentication before the agent will move into anything beneath it. Use it for anything that exposes account details.
 
 ### Set the routing condition
 
-Creating a scenario does not make it run. Click its row in the **Scenarios** section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the scenario never fires.
+Creating a scenario does not make it run. Click its row in the Scenarios section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the scenario never fires.
 
 A simple scenario opens as a panel over the Prompt tab. A complex or authentication scenario opens into its own flow, with the routing condition on a panel beside it.
 
-<Warning>
-Give every node in a complex scenario an explicit way out.
-
-A caller who reaches a node with no exit route has no way forward, and the agent has no instruction for what to do. This is the most common reason a complex scenario strands someone mid-call.
-</Warning>
-
 ## Configure settings
 
-The **Settings** tab holds the rest of what is true of the agent rather than of one conversation: display name, voice, language, memory, and metadata.
+The Settings tab holds the rest of what is true of the agent rather than of one conversation: display name, voice, language, memory, and metadata.
 
 The tab runs: name, voice and languages, channels, memory, metadata, and request data. Request data is the pair to Variables to extract: facts you hand the agent before the call rather than ones it works out during it.
 
@@ -152,7 +138,7 @@ Advanced settings also cover context management, excluding responses from logs, 
 
 ## Guardrails
 
-**Guardrails** is the second tab at the top of the builder, beside **Agent**. A guardrail is a rule checked live during the call. You can attach an action for when one is tripped: end the call, transfer it, or move to a specific step. An action is optional, and with none attached the violation is recorded and the call continues.
+**Guardrails** is the second tab at the top of the builder, beside Agent. A guardrail is a rule checked live during the call. You can attach an action for when one is tripped: end the call, transfer it, or move to a specific step. An action is optional, and with none attached the violation is recorded and the call continues.
 
 Four built-in guardrails cover the standard TCPA disclosures: AI disclosure, recording disclosure, self introduction, and opt out. Each is a switch, and a new agent starts with all four off. The first three also take a window, the number of seconds by which the agent must have said it, defaulting to 30.
 
@@ -166,16 +152,14 @@ Guardrails are monitoring. They do not guarantee regulatory compliance, and they
 
 ## Test as you build
 
-The right side of the builder toggles between **Graph** and **Testing**.
+The right side of the builder toggles between **Graph** and Testing.
 
 At the top level the graph is a fixed picture of how the agent is put together, not an editing surface, which is why testing can take its place. Open a complex scenario or an authentication scenario and that same column becomes the editable canvas where you build its nodes and edges.
 
-**Testing** has two tabs:
+Testing has two tabs:
 
 - **Manual** is the build loop. Talk to the agent yourself, watch the debug logs as it works, change something, try again.
 - **Simulation** runs saved test cases and scores them with judges. That is covered in [Evaluations](/agents/evaluations), where test cases and judges are built.
-
-Manual testing covers phone, web voice, and web chat. SMS, RCS, and iMessage are also available to test on enterprise plans.
 
 Test manually while you are shaping behavior. Move to simulation once the behavior is roughly right and you want to know whether a change broke something that used to work.
 
@@ -183,11 +167,11 @@ Test manually while you are shaping behavior. Move to simulation once the behavi
 
 Moving an agent into service takes two steps, and they are separate on purpose.
 
-The environment selector at the top right shows which environment you are looking at, starting at **Development**.
+The environment selector at the top right shows which environment you are looking at, starting at Development.
 
-**Publish** moves Development to **Staging**. It asks for a version number: patch, minor, or major. Bland keeps every version, so you can see what changed and go back.
+**Publish** moves Development to Staging. It asks for a version number: patch, minor, or major. Bland keeps every version, so you can see what changed and go back.
 
-**Promote** moves Staging to **Production**. Switch the environment selector to Staging and the Publish button becomes **Promote**. You can also promote from the [Environments](/agents/environments) page.
+**Promote** moves Staging to Production. Switch the environment selector to Staging and the Publish button becomes **Promote**. You can also promote from the [Environments](/agents/environments) page.
 
 <Warning>
 An agent that has not been promoted to Production will not answer calls.

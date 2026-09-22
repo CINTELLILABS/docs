@@ -3,9 +3,11 @@ title: 'Environments'
 description: 'Ship an agent safely: what development, staging and production hold, how to publish and promote, and why a call needs a production version'
 ---
 
-An agent exists in three places at once. You edit one of them. The other two hold whatever you last shipped there, which on a new agent is nothing.
+Every agent has three environments: development, staging and production.
 
-**Development** is the agent you are working on, saved work and unsaved alike. **Staging** and **Production** are snapshots: each one pins a single version and holds it until you move it. You cannot edit staging or production, only point them at something else.
+Development is the agent you are working on, saved work and unsaved alike. It is the only one you edit.
+
+Staging and production are snapshots. Each holds one version of the agent and keeps serving it until you point it at another. A new agent has nothing in either.
 
 ## Prerequisites
 
@@ -15,7 +17,7 @@ An agent exists in three places at once. You edit one of them. The other two hol
 
 ## Where environments live
 
-Inside an agent, **Environments** is under **Configure**. It has two tabs, **Environments** and **Variables**.
+Inside an agent, Environments is under Configure. It has two tabs, Environments and Variables.
 
 There is no organization-wide view. Environments belong to one agent, and you reach them from that agent.
 
@@ -29,27 +31,44 @@ A call runs the **production** version by default. An agent with nothing pinned 
 Building and saving is not shipping.
 </Warning>
 
-## Your first publish goes straight to production
+## Publish
 
-A new agent is usually in this state. It applies while production holds no version **and** no evaluation is marked required: configuring a required evaluation puts the agent back on the ordinary staging chain, deliberately, because a one-press release would have nothing to evaluate against.
+**Publish** sits in two places and does the same thing in both: the button at the top right of the builder, and the Development card on the Environments tab. It saves your current work as a new version, then ships that exact version somewhere.
 
-The Staging card and the **Evaluations** card that reports on it are both greyed out, and the staging card explains why: *"Not in use until Production has a version. Publish sends Development straight to Production."* The Development card carries a single **Publish** that releases development **directly to production**.
+Where it ships depends on one thing: whether this agent has ever been in production.
 
-Staging is still repointed to whatever you release, so it does not fall behind. What you skip is having to publish there first.
+### The first publish goes straight to production
 
-Once production is pinned, the Environments tab switches to the two-step flow and stays there.
+An agent that has never been live skips staging. There is no menu, just one button.
 
-## Publish to staging
+The confirmation asks for a phone number, and tells you that publishing changes what the agent answers but not which numbers or pathways reach it. You can publish without attaching one.
 
-Once production holds a version, **Publish** on the Development card takes your current work, saves it as a new version, and pins that version to staging. Publishing to staging does not move production, so callers keep getting the version production already holds.
+Staging gets the same version on the way through, so it does not start out behind.
+
+<Note>
+Configuring a required evaluation puts the agent back on the normal staging path, since a one-press release would have nothing to evaluate against.
+</Note>
+
+### After that, Publish offers a choice
+
+Once production holds a version, Publish opens a menu with two destinations:
+
+- **Publish to staging** saves a new version and pins it to staging. Production does not move, so callers keep the version it already holds.
+- **Force promote** sends development straight to production in one step, skipping staging. Staging is repointed to that version on the way, which the confirmation says outright.
+
+Picking from the menu is not agreeing to ship. Each destination opens its own confirmation.
+
+<Warning>
+What **Force promote** skips is the evaluation gate. That is its purpose, and the bypass is recorded in the audit log rather than on the deployment, so deployment history will not show you which releases were forced.
+
+It is the control that puts unevaluated work in front of live callers.
+</Warning>
 
 ## Promote to production
 
 **Promote** on the Staging card points production at the version staging is holding. Nothing is copied and nothing is rebuilt.
 
-Staging is the normal path but not the only one. **Force promote**, also on the Development card, releases a development version straight to production without publishing to staging first. Staging is repointed to that version on the way, which the confirmation says outright.
-
-What **Force promote** actually skips is the evaluation gate. That is its purpose, and the bypass is recorded in the audit log rather than on the deployment, so the deployment history will not show you which releases were forced. It is the control that puts unevaluated work in front of live callers.
+Its confirmation carries the same phone number section and the same reassurance as the first publish: promoting does not change which numbers or pathways reach the agent.
 
 ## Roll back
 
@@ -57,7 +76,7 @@ To go back, **Rollback** on the Production card lists the versions production he
 
 ## The evaluation gate
 
-Evaluations on staging can gate both moves, and the two directions fail differently.
+Evaluations on staging can gate both moves, and the two directions fail differently. You attach them from the Evaluations card between Development and Staging, covered in [Evaluations](/agents/evaluations#make-it-a-required-check).
 
 With no evaluations configured at all, neither move is gated and both happen immediately.
 
@@ -81,7 +100,7 @@ A judge scores a rate, not a verdict per conversation. It passes when half or mo
 
 ## Variables
 
-The **Variables** tab holds keys and values that belong to an environment rather than to the agent. Pick **Development**, **Staging** or **Production** to choose which set you are editing.
+The Variables tab holds keys and values that belong to an environment rather than to the agent. Pick Development, Staging or Production to choose which set you are editing.
 
 The same key can carry a different value in development, staging and production. Reference one anywhere in the agent's configuration as `{"{{env.KEY}}"}`, and it resolves to the running environment's value when a call starts, which is how an agent points at a test system while it is on staging and a real one once it is promoted. A variable nothing references does nothing.
 
