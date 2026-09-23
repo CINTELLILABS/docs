@@ -1,0 +1,487 @@
+/*
+  Bland docs custom styles.
+
+  Mintlify auto-loads and inlines this file into every page in the docs. It has
+  two parts, and the split matters:
+
+    SITE-WIDE      a handful of rules that correct Mintlify's own defaults, and
+                   apply to every page. Keep this section small and justify
+                   each rule, because everything in it is global.
+
+    WELCOME PAGE   everything prefixed `splash-`, which cannot reach anything
+                   outside the welcome page. It exists for the three things a
+                   Tailwind utility inside an .mdx cannot do: load a webfont,
+                   expose font-role variables, and declare keyframes. A <style>
+                   block inside an .mdx is stripped by Mintlify without saying
+                   so.
+
+  FONT SWAP SEAM
+  Change the two variables below and the page follows. When Soehne is cleared
+  for docs.bland.ai, self-host the woff2 files, add an @font-face here, and
+  point --splash-font-display at it. No .mdx changes.
+
+  MOTION POLICY
+  Every animation and transition sits inside
+  @media (prefers-reduced-motion: no-preference), so the still state is the
+  DEFAULT and motion is added only for readers who have not asked for less of
+  it. Nothing animates width, height, top or left, so no animation can shift
+  layout, and nothing here is required in order to read the page.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ==========================================================================
+   SITE-WIDE
+   ========================================================================== */
+
+/* Card layout: icon, title, and body should read as three distinct levels.
+   Mintlify's Card leaves only 4px between the title and the body, at the same
+   font size, so the body runs on from the title as if it were one block. */
+.card h2 + .prose {
+  margin-top: 0.75rem;
+}
+
+/* Page description: Mintlify renders the frontmatter description one step
+   larger (18px) than body copy. Match body type so the intro reads as one
+   block. Colour, weight, and line-height already match. */
+#content-area #header .mt-2 p {
+  font-size: 1rem;
+}
+
+/* ==========================================================================
+   WELCOME PAGE
+   ========================================================================== */
+
+:root {
+  --splash-font-display: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --splash-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.splash-display { font-family: var(--splash-font-display); }
+.splash-mono { font-family: var(--splash-font-mono); }
+
+/* Modules arriving. Opacity and transform only, so nothing can reflow. */
+@keyframes splash-settle {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+
+/*
+  Ambient life in the field. A second deck colour sits underneath a living cell
+  and this fades the cell's own colour away and back, so the module appears to
+  change colour without anything moving. Opacity only.
+
+  Long cycle, long per-cell offset, and only a few cells carry it, so at any
+  moment one or two modules are mid-change rather than the field pulsing.
+*/
+@keyframes splash-breathe {
+  0%, 38%   { opacity: 1; }
+  50%, 76%  { opacity: 0; }
+  88%, 100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .splash-settle {
+    animation: splash-settle 380ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    transform-origin: center;
+  }
+
+  .splash-breathe {
+    animation: splash-breathe var(--splash-breathe-dur, 19s) ease-in-out infinite;
+    animation-delay: var(--splash-breathe-delay, 0s);
+  }
+
+  /* Modules answer the cursor. Transform only, so nothing reflows. */
+  .splash-cell {
+    transition: transform 240ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .splash-cell:hover {
+    transform: scale(1.09);
+    z-index: 1;
+  }
+}
+
+/*
+  The field, at DECK MODULE SCALE.
+
+  The brand deck runs roughly 24 columns across a 1920px page, so its module is
+  about 4.17 percent of page width. Measured, not guessed. At a docs viewport
+  that is 60 to 67px, and 72px here so a single block is unmistakably a
+  deliberate shape rather than grain.
+
+  There is deliberately NO mask. Masking a hard-edged grid with a soft gradient
+  smears each module into a blur. The field dissolves by DROPPING CELLS instead:
+  coverage thins as it travels, while every cell that remains is full size and
+  full saturation. Cells sit on explicit grid lines so a dropped cell leaves a
+  real gap rather than letting the rest reflow.
+
+  72 columns is 5184px, which covers a 5K display. It was 26, then 40, and each
+  time the bare strip simply moved further right. The overhang is clipped by the
+  hero's overflow, so the only cost of the extra columns is the cells that carry
+  them, and rows 1 to 3 carry the band while the L stays in columns 1 to 5.
+*/
+.splash-frame-a,
+.splash-diffuse { display: none; }
+
+.splash-ballast-inset {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.splash-ballast-herotext {
+  padding-top: 4rem;
+  padding-bottom: 3.5rem;
+}
+
+/*
+  Below Mintlify's `lg`, the header is `position: fixed` and carries the mobile
+  nav row and the breadcrumb inside it. A `mode: "custom"` page is laid out from
+  the top of the viewport and gets none of the top clearance an ordinary page
+  has, so the first 96px of this one sat underneath that bar: measured at 390px,
+  header bottom 216, splash top 120, and the eyebrow and the breadcrumb
+  overlapping between y=184 and y=200.
+
+  96px is that gap exactly, not a guess. It is added only where the header is
+  fixed; from `lg` up the header is sticky, the page flows beneath it normally,
+  and the desktop padding below takes over.
+*/
+@media (max-width: 1023px) {
+  .splash-ballast-herotext {
+    padding-top: calc(4rem + 96px);
+  }
+}
+
+.splash-ballast-h1 {
+  font-size: 40px;
+  line-height: 1.06;
+}
+
+@media (min-width: 1152px) {
+  /*
+    The module SHRINKS as the viewport narrows, instead of the hero sliding
+    right to clear a fixed-size field.
+
+    The hero has to clear the L's vertical arm, 5 columns plus one module of
+    gap, so the clearance it needs is `module * 6`. The logo sits at
+    `(width - 1472) / 2 + 48`. Holding the module at 72px meant those two
+    expressions only met at about 2240px wide; below that the 432px floor won
+    and the headline sat right of the logo, which reads as off-centre.
+
+    Scaling the module by width/12 makes clearance and logo offset the SAME
+    line, so they meet at every width from 1152px up rather than at one.
+    Worked: at 2240px the module is 72px and both are 432px; at 2000px it is
+    52px and both are 312px. Below about 1730px the 48px floor takes over,
+    where the logo is too close to the edge for any field to align with it.
+  */
+  .splash-display {
+    /*
+      100vw, not 100%: a percentage inside a custom property is substituted
+      unresolved, so it would size against the grid container rather than the
+      viewport and pin the module to the clamp floor at every width.
+
+      The constant is 6px rather than the 8px the algebra gives, because 100vw
+      counts the scrollbar and the logo's container does not. Two pixels of
+      module is twelve across the six that make the clearance, which keeps the
+      logo term winning the max() and the two edges flush.
+    */
+    --splash-module: clamp(48px, calc((100vw - 1472px) / 12 + 6px), 72px);
+  }
+
+  .splash-frame-a {
+    display: grid;
+    grid-template-columns: repeat(72, var(--splash-module));
+    grid-template-rows: repeat(8, var(--splash-module));
+  }
+
+  /* Rows are implicit here: the scatter starts at row 10, so the two fields
+     never collide even though both are positioned from the same origin.
+
+     DISABLED to match the design as approved. To turn the scatter on, delete
+     the display line; the cells are in the page and the grid is defined. */
+  .splash-diffuse {
+    display: none;
+    grid-template-columns: repeat(72, var(--splash-module));
+    grid-auto-rows: var(--splash-module);
+  }
+
+  /*
+    Align the headline and the card grid to the Bland logo.
+
+    Measured, not guessed: Mintlify's navbar is `.max-w-8xl.mx-auto` (1472px)
+    wrapping a row with 48px of padding, so the logo's left edge sits at
+    (container width - 1472) / 2 + 48. Tracking that expression keeps the two
+    aligned at every width instead of matching at one.
+
+    The 432px floor is the pattern. The L's vertical arm is 5 columns, 360px,
+    and the hero has to clear it. Below roughly 2240px of viewport the logo
+    falls inside the field, and there clearance wins over alignment.
+  */
+  .splash-ballast-inset {
+    padding-left: max(calc(var(--splash-module) * 6), calc((100% - 1472px) / 2 + 48px));
+    padding-right: max(1.5rem, calc((100% - 1472px) / 2 + 48px));
+  }
+
+  /*
+    The clearance scales, the text block does NOT.
+
+    padding-top clears the 3-row band plus a module of air, so it tracks the
+    module. The hero's height is that clearance plus the text block, which is a
+    fixed 250px of eyebrow, headline, subtitle and buttons no matter how big
+    the field is. 322px leaves 72px of air under the buttons.
+
+    Scaling the height by the module instead clipped the buttons off: the hero
+    has `overflow: hidden` to trim the field's overhang, and at a 50px module
+    the box came out 421px against 447px of content.
+  */
+  .splash-ballast-hero { height: calc(var(--splash-module) * 3.94 + 322px); }
+
+  .splash-ballast-herotext {
+    padding-top: calc(var(--splash-module) * 3.94);
+    padding-bottom: 0;
+  }
+
+  .splash-ballast-h1 {
+    font-size: 58px;
+    line-height: 62px;
+  }
+}
+
+/*
+  Mintlify's sticky header carries its own backdrop layer:
+
+    header > div.backdrop-blur   ->   backdrop-filter: blur(8px)
+
+  On an ordinary docs page that blurs body text, which is what it is for. On
+  this one it blurs the colour field as it scrolls under, and hard-edged 72px
+  modules smearing into each other is the one effect this design refuses
+  everywhere else. The field dissolves by dropping cells, never by blurring.
+
+  Scoped with :has() to pages that actually carry a field, because this file is
+  inlined into every page in the docs and the blur is correct on all of them.
+  The header keeps its translucency and its border; only the blur goes.
+*/
+body:has(.splash-display) header .backdrop-blur {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ==========================================================================
+   Luma sidebar
+   The sidebar is transparent by default, so the splash's colour field runs
+   underneath it and the links sit on top of orange and magenta blocks. It is
+   also loose enough that half the labels wrap to two lines, which is what
+   makes it read as sprawling rather than as a column.
+   ========================================================================== */
+
+#sidebar-content {
+  /* Opaque, so nothing shows through, and a hairline to separate it from the
+     field rather than letting the two touch. */
+  background: #FFFDF5;
+  border-right: 1px solid #1515150f;
+  width: var(--sidebar-w);
+}
+
+/*
+  Widening the sidebar takes TWO changes, not one.
+
+  Luma sizes the nav with `w-56` and pads `#body-content` by the same `lg:pl-56`
+  (224px each). They are independent values that happen to match, so moving one
+  alone leaves the sidebar sitting on top of the content: the first attempt at
+  240px put the last 16px of the nav column, and its scrollbar, over the
+  splash's colour field.
+
+  One variable drives both so they cannot drift. 264px fits the longest labels
+  ("Custom Twilio Integration", "Knowledge base editing") on one line.
+*/
+:root { --sidebar-w: 284px; }
+
+@media (min-width: 1024px) {
+  #body-content { padding-left: var(--sidebar-w); }
+}
+
+:root[class~="dark"] #sidebar-content,
+.dark #sidebar-content {
+  background: #0f0f0f;
+  border-right-color: #ffffff12;
+}
+
+#navigation-items {
+  padding-left: 1.25rem;
+  padding-right: 1rem;
+  padding-top: 1.5rem;
+}
+
+/* Tighter rhythm: the default leaves enough air that a wrapped label looks
+   like two separate items. */
+#sidebar-content a {
+  font-size: 13.5px;
+  line-height: 1.35;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/*
+  Give the labels room, in production as well as in dev.
+
+  The production build stacks three left offsets the dev server does not: 20px
+  on the scroll container, 16px on the link, and the link's own right padding.
+  At a 264px column that left 159px for text, which wraps "Conversational
+  Pathways", "Custom Twilio Integration", "Infrastructure & Releases" and
+  "JWT Signature Configuration".
+
+  The link's 16px is worth keeping, since it is what sets a child item apart
+  from its parent. So the outer gutter comes down and the column goes up, which
+  also answers the complaint that the labels sat too far from the edge.
+*/
+#navigation-items {
+  padding-left: 0.75rem;
+}
+
+/* Group headers earn their weight by being smaller and quieter, not bigger. */
+#sidebar-content h5,
+#sidebar-content [class*="font-semibold"]:not(a) {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-top: 1.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* Scrollbar only while scrolling, so the column has one clean right edge. */
+#navigation-items { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+#navigation-items:hover { scrollbar-color: #15151526 transparent; }
+
+/* ==========================================================================
+   The splash in frame mode
+
+   The full-bleed splash measures everything from the VIEWPORT edge: the module
+   scales off 100vw, and one inset gives both the hero and the cards a
+   padding-left of `module * 6` so they clear the L.
+
+   In frame mode the content column starts after the sidebar and is far
+   narrower, and both of those assumptions break:
+
+   - The clearance is measured against the wrong origin, so at 1512px it was
+     288px of padding inside a 1233px column, a quarter of the width spent on
+     air before anything started.
+   - The cards never needed it in the first place. They sit BELOW the field,
+     not beside it, so the only thing that has to clear the L is the hero.
+
+   So: the module is sized off the column rather than the viewport, the cards
+   get an ordinary gutter, and the hero keeps a clearance derived from the L's
+   actual width (5 columns plus one of air).
+   ========================================================================== */
+
+@media (min-width: 1024px) {
+  .splash-display {
+    /*
+      All absolute units. NOT `100%`: a percentage inside a custom property is
+      substituted unresolved, so it sizes against whatever element eventually
+      uses it. That is how the field collapsed to zero width here and the hero
+      padding came out at 223.609px instead of a round multiple. Same mistake
+      as the full-bleed version's first draft.
+
+      The column is the viewport minus the sidebar, so that is what this
+      measures. Clamped so the L stays a deliberate shape in a narrow column
+      and never outgrows the 72px deck module in a wide one.
+    */
+    --splash-module: clamp(30px, calc((100vw - var(--sidebar-w) - 96px) / 26), 72px);
+  }
+
+  /* Cards, footer rule: an ordinary gutter. Nothing here clears the L. */
+  .splash-ballast-inset {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  /* The hero is the one block beside the L, so it alone carries the clearance. */
+  .splash-ballast-inset.splash-ballast-herotext {
+    padding-left: calc(var(--splash-module) * 6);
+  }
+}
+
+/*
+  Cap the card row.
+
+  The grid is three columns of whatever the container gives it, which on a
+  full-bleed page was fine and in a Luma column is not: at 2560px the three-up
+  came out at 715px per card with 536px of artwork each, so six tiles filled
+  two and a half screens.
+
+  1180px holds three ~360px cards, which is the size the artwork was drawn for.
+  Left-aligned rather than centred so the row still starts on the same line as
+  the hero above it.
+*/
+@media (min-width: 1024px) {
+  .splash-ballast-inset [class*="grid-cols"] {
+    max-width: 1180px;
+  }
+}
+
+/*
+  Centre the whole splash column on a wide screen.
+
+  Left-aligning everything is right while the column is narrow, because the
+  hero has to sit beside the L. Past about 1600px it stops being right: the
+  content ends up in the left third and the remaining screen is empty, which
+  reads as lopsided rather than airy.
+
+  So above that width the hero and the cards share ONE centred column, and the
+  L becomes decoration at the left edge rather than something to sit beside.
+  That only works if the L cannot reach the column, so the module carries a
+  second ceiling derived from the geometry:
+
+    column starts at  264 + (100vw - 264 - 1276) / 2
+    the L ends at     264 + module * 5
+
+  which needs module < (100vw - 1540) / 10. At 1900px that is 36px, at 2560px
+  it is over 72px and the deck module takes over again.
+*/
+@media (min-width: 1600px) {
+  .splash-display {
+    --splash-module: clamp(30px, min(
+      calc((100vw - var(--sidebar-w) - 96px) / 26),
+      calc((100vw - 1540px) / 10)
+    ), 72px);
+  }
+
+  .splash-ballast-inset {
+    max-width: 1276px;
+    margin-inline: auto;
+  }
+
+  /* Centred, so nothing is beside the L any more and the hero drops back to
+     the same gutter as everything else. */
+  .splash-ballast-inset.splash-ballast-herotext {
+    padding-left: 48px;
+  }
+}
+
+/*
+  Equal air either side of the divider.
+
+  Neither gap was being set. Above it was 72px, which was whatever was left
+  over once the hero's fixed height (module * 3.94 + 322px) had taken the
+  eyebrow, headline, subhead and buttons. Below it was 49px, from the card
+  block's `py-12` plus the rule itself. Both moved with the module, so they
+  could never match except by accident.
+
+  So the hero stops being a fixed box here and ends where its content ends,
+  and one token sets the space on both sides.
+*/
+@media (min-width: 1024px) {
+  .splash-display { --splash-rule-gap: 64px; }
+
+  .splash-ballast-hero { height: auto; }
+
+  .splash-ballast-inset.splash-ballast-herotext {
+    padding-bottom: var(--splash-rule-gap);
+  }
+
+  /* The card block's own py-12 is what set the lower gap; override both ends
+     so the rule sits centred in a known amount of air. */
+  .splash-ballast-inset[class*="py-12"] {
+    padding-top: var(--splash-rule-gap);
+  }
+}

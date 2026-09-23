@@ -1,0 +1,284 @@
+---
+title: 'Conversations'
+description: 'Find, read, and export every conversation your agents have had, across phone, messaging, and web chat'
+---
+
+Conversations is the record of everything your agents have done. Every call, every message thread, every web chat, in one list you can filter, read, and export.
+
+It is where you go when something went wrong and you need to know exactly what was said.
+
+<Note>
+Searching for call logs? This is it. A call is a conversation now, and the separate lists for calls, messages and web chat are one list.
+</Note>
+
+## Prerequisites
+
+- An agent that has taken at least one conversation, from [Dispatch](/agents/dispatch)
+
+## Where conversations live
+
+Conversations appears at two scopes, under Monitor in the sidebar.
+
+The selector at the top of the sidebar decides which one you are on. It reads All agents for the whole organization, or the agent's name when you are inside one.
+
+| Scope | Tabs |
+|---|---|
+| **All agents** | Conversations, Active, Contacts |
+| Inside an agent | Conversations, Contacts |
+
+Active is at All agents only: the stream behind it has no per-agent view.
+
+Web chat appears only on its agent's Conversations tab, not at All agents.
+
+{/* IMAGE: The Conversations list at All agents scope, with the toolbar and several rows. */}
+
+## What a row is
+
+One row is one conversation. A voice row is one call. A messaging or web chat row is one thread, which already covers every message in it.
+
+The Channel column tells you which kind you are looking at, and Length follows it: `4:12` for a call, `9 msgs` for a thread.
+
+### Chronological and Threaded
+
+The two tabs on the right of the toolbar change how the list is drawn, and it opens on **Chronological**: newest first, one flat row per conversation.
+
+Threaded groups conversations by the person on the other end, using the last ten digits of their number, so a call and an SMS to the same number sit together. Each group lands where its newest member would have been. Inside it, members run oldest to newest, joined by a connector line.
+
+Threaded ignores the Sort control: groups are always newest first. Changing the sort still changes which rows load, so the list can shift under you without reordering.
+
+It still draws one row per conversation. Threading changes the order, not the unit.
+
+<Note>
+Threading happens in your browser, over the rows already loaded. A conversation on a page you have not scrolled to yet is not in the group.
+
+Scroll further, or use **Load more**, before you conclude that someone only called once.
+</Note>
+
+## Find a conversation
+
+The list opens on the newest conversations and pages as you scroll, with a **Load more** button under the table. There is no date filter, so reaching something from last week means loading your way back to it.
+
+Five controls narrow the list, and a sixth changes how it is sorted and what it shows. Some search everything you have; others only look at the rows already on screen, which is called out below where it matters.
+
+### The search box
+
+Searches the rows already loaded, across the contact's number, the contact's name, the pathway name, and the conversation ID.
+
+An agent's name on a call is not in that list. Use the Agent filter for that.
+
+It does not search transcripts. For that, open a conversation and use the search field inside it.
+
+If you know the conversation exists and search finds nothing, it is almost always still unloaded. Press **Load more** and search again.
+
+### Agent
+
+Pick one agent or several, and the list narrows to their conversations.
+
+It only exists at All agents. Inside an agent you are already narrowed to one.
+
+### Call source
+
+The select beside the search box reads Live calls, and that is a filter.
+
+<Warning>
+Simulated calls are hidden by default.
+
+Change Call source to **Simulated calls** or **All calls** to see them. A simulated row carries a Simulated badge in the Contact column. That is the only place it is marked, so hiding the column hides the badge.
+
+Picking **Simulated calls** also empties the list of message threads and web chats, because simulations are voice only.
+</Warning>
+
+### Filter
+
+The **Filter** button opens a condition builder. The channel select inside it covers every conversation. The conditions under it only apply to the rows already loaded.
+
+Add conditions on Status, Direction, Escalation, QC tags, or Contact. With more than one you get an **All** and **Any** switch, and it starts on All.
+
+Direction and QC tags only carry data on calls, so a positive condition on either drops every message thread and web chat from the list.
+
+The status filter offers seven values and the list can show more than that. A status the chip does not recognize reads **No Answer**, so filter on Status to narrow, not to conclude.
+
+Name a set of conditions under **Saved filters** and it stays in this browser.
+
+### Saved views
+
+The chips above the toolbar are one-click filter presets. Two ship with the product: **Failed & No-Answer** and **Escalated**.
+
+A view you create lives for one page load. If you want to keep it, build it under **Filter** as a saved filter instead.
+
+### Sort and columns
+
+Sorting is behind the Sort button, not the column headers. Clicking a header does nothing. There are two fields to sort on, Started and Last activity, and a **Newest** and **Oldest** switch.
+
+The **Columns** button shows all twenty, eleven of them on to start with. Of the nine that are off:
+
+| Column | Why you would turn it on |
+|---|---|
+| **To** and **From** | The literal numbers on the record. **Contact** shows the other party, which is usually what you want, but not when you are chasing a specific line. |
+| **Dispositions** | How the call was tagged, when you are auditing a batch without opening each one. |
+| **QC tags** | Your own review tags, when you are working a review queue off the list. |
+| **Error** | Why a failed call failed, without opening it. |
+| **Batch ID** | Which batch a call came from, when one batch behaved differently from the rest. |
+
+Your choice is stored in this browser, not on your account.
+
+## Read a conversation
+
+Click a row and a panel opens on the right. The page behind it stays live, so you can keep working the list.
+
+Drag the left edge to make it wider, and use the chevrons at the top to step to the previous or next conversation in the list you filtered.
+
+The copy icon in the panel header offers **Copy Conversation ID**, and on a call **Copy all Logs**, which is a raw JSON dump rather than a readable transcript.
+
+**Copy transcript** beside it works on message threads and web chat. On a call it stays disabled: a call's words live in the timeline, which has a search of its own.
+
+On a call there is also a **Flag**, the same one as on the row.
+
+### A call
+
+The middle of the panel is the call itself: an event strip across the top, the timeline under it, and the recording pinned to the bottom if there is one. Click an event in the strip and both the timeline and the audio jump to it.
+
+The timeline has its own search, and on a call that ran a pathway it has three views: Transcript, Detail, and Logs. It opens on Transcript.
+
+Hover a turn and the actions it supports appear, up to four of them.
+
+| Action | What it does |
+|---|---|
+| Raw LLM context | Shows exactly what the agent was given to work from. |
+| Edit node | Takes you to the step in the [agent builder](/agents/agent-builder) that produced the turn. |
+| Open turn in Testbed | Opens [Testbed](/agents/testbed) pinned to that node, with that turn's input. |
+| Report transcription issue | For when the words on screen are not the words that were said. |
+
+### A message thread or web chat
+
+You get the transcript, with speakers labelled Agent, User, and Rep. A web chat thread loads newest first, with **Load earlier messages** above it.
+
+On a message thread you can also step in yourself, on an enterprise plan. **Take over** hands the conversation to you and pauses the agent. The agent stays paused until you press **Return to agent**. You can also send one message as a human and leave the agent running. **End** closes the thread.
+
+A message that failed to send can be retried from its own bubble.
+
+### The right-hand column
+
+Only Metadata starts open, and it is the one that answers how the conversation went. It holds the ID, the channel, the direction, the agent, when it started and ended, and a written summary at the end. Duration and cost are on calls; a message count is on threads.
+
+Notes, Memory, Pathway Tags and QC Tags follow it, closed, and carry what you and the agent put there.
+
+Four more sections are there and stay empty: Variables, Citations, Guardrails & Alerts and Metrics. Nothing writes to them.
+
+Three things here sound alike and are not. The Dispositions column on the list is the tag the call ended on. Status is whether it connected at all. The Disposition row inside Metadata is a messaging-thread field and is not on a call.
+
+Notes are voice only.
+
+Hide the whole column with the panel toggle at the top when you want the transcript full width.
+
+### Open in Testbed
+
+The test-tube icon in the panel's top bar opens the whole conversation in [Testbed](/agents/testbed). It is an icon rather than a labelled button, and it appears on calls only.
+
+There is also a **Testbed** button in the list toolbar, which opens it empty.
+
+## Flag what needs looking at
+
+Every voice row has a **Flag** button at the far right, and the same button is in the panel header.
+
+Flagging either opens a new issue, which takes a name, a severity, a description and a note, or adds the call to one that already exists, which still takes a note. The note is required on both, and the submit button just stays disabled until you write one.
+
+To do several at once, tick the rows and use **Add to Issue** in the bar that appears at the bottom. That is a different, shorter form: a new issue there takes only a title. Issues hold calls, so any message threads in your selection are counted and skipped.
+
+## Export conversations
+
+The download icon in the toolbar opens **Export conversations**.
+
+<Warning>
+The export is not what is on your screen.
+
+It runs on the server, over the date range you pick, and it keeps only the filters the server knows about: call source, agent, channel, and batch. Your search box, your conditions, and your saved view are applied in the browser, so none of them reach the export. The modal lists what it did inherit under **Filters applied to this export**, so read that before you press the button.
+
+Filter down to twelve failed calls, press Export, and you get every conversation in the window.
+</Warning>
+
+Calls and message threads export as separate files. Pick one under **Data to export**. There is no web chat export.
+
+The rest of the modal is the date range, the timezone it is read in, the email address the file goes to, and **Exclude columns** for trimming the file. The range defaults to the last 30 days and cannot exceed 180. Transcripts are excluded from a call export by default, because they are enormous.
+
+You do not get a download. The job runs in the background and emails you a link when it finishes.
+
+## Look up a contact
+
+**Contacts** is the people on the other end, built up as they interact with your agents. One row per person, with how many messages they have sent, how many of your agents they have met, and what the agent remembers about them.
+
+This tab is organization-wide even when you open it inside an agent.
+
+Click a row for the profile: their details in your organization's own schema, then Memory, Agents, Timeline, CRM, and Raw.
+
+**Profile** in the header edits the schema itself, the fields every contact record carries and the patterns they are validated against.
+
+**CRM sync** connects HubSpot or Salesforce over OAuth and keeps them fed: contact identity, summaries, memory entities, deals and opportunities, and interaction history, each switchable on its own.
+
+<Note>
+Memory belongs to the contact, not to any one conversation. A conversation's own Memory section shows only what that conversation contributed.
+</Note>
+
+## Watch calls in flight
+
+Active is the calls happening right now, at All agents only. ID, status, a duration that ticks, from, to, and the objective.
+
+Click a row for a live transcript as it happens. You can also listen in, which is an organization setting: if it is off you get a padlock and a link to turn it on.
+
+With nothing running, the empty state offers to call your own number, which is the fastest way to watch the tab work.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="A conversation you know happened is not in the list">
+    Three things hide conversations by default. Call source is on Live calls, so simulations are out. A web chat only appears inside its agent, not at All agents. And the list pages as you scroll, so something older may not be loaded yet. Change Call source, switch the selector to the agent, or press **Load more**.
+  </Accordion>
+
+  <Accordion title="Search does not find a phrase you remember">
+    The search box matches the contact and the conversation ID, on rows already loaded. It does not search transcripts. Open a conversation and use the timeline's search.
+  </Accordion>
+
+  <Accordion title="Clicking a column header does nothing">
+    Use the Sort button instead. It sorts on Started or Last activity.
+  </Accordion>
+
+  <Accordion title="A column is always blank">
+    Issues does not fill in yet, even on a call you have flagged. Turn it off under **Columns**. A flagged call is not marked on this list at all: to see what you have flagged, go to Issues in the sidebar.
+  </Accordion>
+
+  <Accordion title="A saved view you made is gone">
+    Saved views live for one page load. Rebuild it under **Filter**, as a saved filter, which persists in this browser.
+  </Accordion>
+
+  <Accordion title="The export has far more in it than the list showed">
+    Expected. The export keeps only call source, agent, channel and batch. Narrow the date range in the modal, and filter the file once it arrives.
+  </Accordion>
+
+  <Accordion title="A row reads No Answer and you know the call connected">
+    The status chip falls back to **No Answer** for any status it does not recognize. Open the conversation and read Metadata for what actually happened.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Testbed" icon="flask" href="/agents/testbed">
+    Take a conversation that went wrong and work on the step that caused it.
+  </Card>
+  <Card title="Evaluations" icon="clipboard-check" href="/agents/evaluations">
+    Turn a conversation into a test case that runs before you promote.
+  </Card>
+  <Card title="Knowledge" icon="book" href="/agents/knowledge">
+    Answer the questions these conversations show your agent could not.
+  </Card>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Phone numbers and channels, which decide what lands here.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Change the prompt, the variables, or the guardrails a conversation showed you.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

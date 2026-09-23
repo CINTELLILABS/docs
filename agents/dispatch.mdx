@@ -1,0 +1,235 @@
+---
+title: 'Dispatch'
+description: 'Put a published agent into service: attach a phone number, set how it behaves on each channel, and run batches'
+---
+
+Dispatch is how work reaches an agent. A caller dials your main line and the agent picks up, or you hand it a list of four hundred numbers and it starts dialing.
+
+You get a number, attach it to an agent, and publish.
+
+## Where Dispatch lives
+
+What Dispatch holds depends on the scope you are in. The selector at the top of the sidebar sets it: All agents for the whole organization, or the agent's name when you are inside one.
+
+| Scope | Dispatch holds |
+|---|---|
+| **All agents** | Phone numbers, Triggers, Batches |
+| Inside an agent | Channels, Triggers, Identity, Batches |
+
+Identity, and the Messages tab inside Channels, are enterprise only. On other plans they are hidden rather than locked.
+
+Phone numbers and Channels both deal with numbers, and you never see both at once:
+
+- Phone numbers, at All agents, is the inventory. Get a number, name it, and decide which agent it belongs to.
+- Channels, inside an agent, is the behavior. How that agent answers, what it does on messages, what its web chat looks like.
+
+Buying a number is an All agents job. From inside an agent you can only attach one that belongs to nobody.
+
+<Note>
+The sidebar remembers the scope you were last in. If you open Dispatch and find Channels instead of Phone numbers, you are inside an agent. Switch the selector to All agents.
+</Note>
+
+{/* IMAGE: The Dispatch section of the sidebar at All agents scope, and the same section inside an agent. */}
+
+## Prerequisites
+
+- An agent you have saved at least once in [Agent builder](/agents/agent-builder). A save made on a branch does not count
+- A payment method, if you are buying a number rather than claiming the free one
+
+## Put an agent on a phone number
+
+<Steps>
+  <Step title="Switch to All agents">
+    Use the selector at the top of the sidebar. Dispatch now lists Phone numbers.
+  </Step>
+
+  <Step title="Get a number">
+    Three ways in, cheapest first.
+
+    The free one. A new organization gets one. If the page carries a banner saying "You have a free phone number available", pick a country, optionally an area code, and press **Activate**. Its absence is not proof you used it, so check your list.
+
+    Buy one. The **Buy number** button opens a drawer. Pick a country and an area code, choose from the results, and press **Confirm purchase**. United States and Canada only, $15/month. You need a payment method on file: without one the drawer says so and the confirm button stays disabled. Anywhere else, bring your own.
+
+    Bring your own. **Connect Twilio** takes an Account SID and an Auth Token. Then press **Import numbers**.
+  </Step>
+
+  <Step title="Attach it to the agent">
+    Press Configure on the number's row. In the sheet, find the line that reads Not assigned to an agent and use the dropdown beside it. It has no label of its own.
+
+    Pick from the Agents section. If your organization still has personas from the prior dashboard there is a Classic agents section too, and picking from there routes the number to one of those instead.
+
+    You get a dialog headed Replace this number's current behavior? if the number is already attached somewhere, and also if it belongs to nobody but carries settings from the prior dashboard. **Replace and assign** is the one that goes through.
+  </Step>
+
+  <Step title="Publish the agent to production">
+    Attaching a number is not the same as putting the current agent into service. Publish and promote it, from [Agent builder](/agents/agent-builder#publish-and-promote) or [Environments](/agents/environments).
+
+    It is the most common reason a new number does not behave the way the builder does.
+  </Step>
+</Steps>
+
+You know it worked when the number's Assignment column shows the agent's name, and the agent's Channels page lists the number under Numbers.
+
+<Note>
+A number that belongs to nobody can also be attached from the agent's side. On Channels, **Add a number** lists the ones that belong to nobody, under Attach a number.
+
+It will not offer a number another agent has, and it cannot buy one. Both of those are jobs for All agents.
+</Note>
+
+## Set how the agent behaves
+
+Switch the sidebar selector back to the agent and open Channels, under Dispatch. It has three tabs, and Messages is enterprise only.
+
+| Tab | What it covers |
+|---|---|
+| **Calls** | How the agent answers the phone: maximum call length, recording, and what to do with voicemail. |
+| **Messages** | SMS, RCS and iMessage behavior, set per number. |
+| **Web chat** | The widget you embed on a site. |
+
+The Numbers list sits above the tabs on Calls and Messages, and holds the agent's fallback number.
+
+Calls and Messages have no Save of their own. What you set there is held with the rest of your unsaved work in the builder and written the next time it saves, so go back into the builder and save. Reloading the page loses it.
+
+Web chat is the exception: the widget editor has its own **Save**, and **Publish** beside it.
+
+<Warning>
+Voice settings apply to every number the agent has. Messaging settings are saved separately for each number.
+</Warning>
+
+Messaging and web chat each have a guide of their own: [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
+
+## Run a batch
+
+Batches dials or texts a list of people with one agent.
+
+It is in both sidebars and they are not the same. At All agents you choose the agent and can send calls or messages. Inside an agent, that agent is filled in and locked, and the list shows only its batches. Batches inside an agent are calls only: the SMS option is not there.
+
+The wizard runs in three steps, **Recipients**, **Script**, then **Review & send**.
+
+<Steps>
+  <Step title="Open Batches and press Create Batch">
+    In either sidebar. The button is in the top bar, and in the empty state if you have never run one.
+  </Step>
+
+  <Step title="Upload a CSV">
+    CSV only. One column has to be called `phone_number`, in exactly that spelling, with one number per row.
+
+    Numbers need a country code. `+14155550100` works, `4155550100` does not.
+
+    Every other column is yours. Under **How your columns are used** on the next step, each one gets a dropdown, and **Use as {{column}}** makes the value available in the prompt as `{{column_name}}`.
+
+Watch the defaults. A column named after a call setting, like `from` or `voice`, defaults to setting that field per call rather than becoming a variable, and it cannot be ignored. Rename the column if you meant it as a variable.
+  </Step>
+
+  <Step title="Write the script">
+    Pick the agent that staffs the batch and write the instructions for this run. Maximum call length is 1 to 120 minutes, and recording starts on.
+  </Step>
+
+  <Step title="Review and send">
+    You see the first recipient rendered as the agent will get them. Name the batch here if you want it findable later. Then **Start calling**.
+  </Step>
+</Steps>
+
+<Warning>
+A CSV with one bad row is rejected whole.
+
+The upload checks every number before the batch exists, names up to three of the bad rows, and counts the rest.
+
+Duplicates and numbers on your do-not-call list are different: those are dropped at dial time and the rest of the batch runs.
+</Warning>
+
+Files go up to 125 MB and there is no row limit. Anything over 1,000 calls runs in chunks.
+
+### Watch one run
+
+The list shows Status, **Name**, **Batch ID** and **Created**, newest first with the active ones on top. There is no search and no filter.
+
+A row carries two icon buttons with no labels. The first opens [Conversations](/agents/conversations) already filtered to that batch. The second stops the calls that have not been placed yet, and asks first.
+
+Select a row for the detail panel, which adds the event log. It carries its own **Stop Batch**, and that one fires straight away with no dialog.
+
+| Status | What it means |
+|---|---|
+| **Initializing** | The batch exists and has not started. |
+| **Validating** | Checking and de-duplicating your rows. |
+| **Dispatching** | Calls are going out. |
+| **In Progress** | Calls are placed and running. |
+| **Completed** | Finished. |
+| **Completed Partial** | Ended early, usually because you stopped it. |
+| **Failed** | Ended on an error. |
+| **Unknown** | A batch past its first thousand calls, still running. |
+
+## Triggers
+
+A trigger watches for an event in Bland or in a connected app, and runs an action when it happens. One of the actions is placing a call, which is how a trigger starts a conversation without you pressing anything. It is in both sidebars.
+
+See [Triggers](/agents/triggers).
+
+## SIP
+
+SIP is the second tab of Phone numbers, so it is at All agents only. It is not in an agent's sidebar at all.
+
+See [SIP](/agents/sip).
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Dispatch shows Channels, not Phone numbers">
+    You are inside an agent. The sidebar remembers your last scope. Switch the selector at the top to All agents.
+  </Accordion>
+
+  <Accordion title="Attaching a number says the agent has no saved versions">
+    Open the agent in the builder and save it. Attaching reads the agent's latest save on the main line, so a save made on a branch does not count.
+  </Accordion>
+
+  <Accordion title="The number is attached and the agent behaves like an old version">
+    Publish and promote the agent. Attaching a number does not do it for you.
+  </Accordion>
+
+  <Accordion title="The agent you want is not in the assignment dropdown">
+    Check which section you are looking at. **Agents** is the list you want. **Classic agents** is your personas from the prior dashboard, and picking from there routes the number to one of them instead.
+  </Accordion>
+
+  <Accordion title="Channels will not offer a number you own">
+    It only offers numbers that belong to nobody. Go to All agents, open the number, and attach it to this agent there.
+  </Accordion>
+
+  <Accordion title="The CSV will not upload">
+    The column has to be named `phone_number` exactly, and every number needs a country code. The error names up to three rows and counts the rest.
+  </Accordion>
+
+  <Accordion title="A large batch shows Unknown and its Stop button is gone">
+    A batch past its first thousand calls reports a state the list does not have a label for. It is still running. Select the row and use **Stop Batch** in the detail panel, which does not ask for confirmation.
+  </Accordion>
+
+  <Accordion title="The batch wizard will not let you continue">
+    You are over a call limit. An alert headed **Over your call limit** appears on the Recipients step and blocks **Next**. It names which limit you hit, hourly or daily. Remove recipients or come back later.
+
+    If the check itself cannot run you get **Rate-limit check unavailable. Sending is not blocked.** instead, and the wizard lets you through.
+  </Accordion>
+
+  <Accordion title="The SMS option is missing from a batch">
+    You are inside an agent, where batches are calls only. Go to All agents to send messages. Message batches also need a number set up for SMS, and an enterprise plan.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Triggers" icon="bolt" href="/agents/triggers">
+    Start conversations from a webhook or a schedule.
+  </Card>
+  <Card title="SIP" icon="server" href="/agents/sip">
+    Bring your own carrier.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Read what happened on the calls you just dispatched.
+  </Card>
+  <Card title="Environments" icon="rocket" href="/agents/environments">
+    Promote to production, which is what a live number answers with.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
