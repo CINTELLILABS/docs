@@ -1,6 +1,6 @@
 ---
 title: 'Agent builder'
-description: 'Build an agent end to end: prompts, variables, scenarios, tools, knowledge, settings, and publishing'
+description: 'Build an agent end to end: prompts, variables, pathways, tools, knowledge, settings, and publishing'
 ---
 
 The agent builder is where you describe what your agent does and how it behaves. An agent is a single thing to build, test, and publish: its instructions, the tools and knowledge it can reach, and the branches of behavior it needs.
@@ -26,7 +26,7 @@ Open an agent and everything you need is already on screen. The sidebar switches
 1. **Prompt**, what the agent should accomplish
 2. **System prompt**, how it comes across
 3. **Variables to extract**
-4. Scenarios
+4. Pathways
 5. Tool references and Knowledge references
 
 **The graph**, on the right. A picture of how the agent fits together, and where you test it.
@@ -41,7 +41,7 @@ An agent has two prompt fields, stacked one above the other on the Prompt tab. K
 
 **System prompt** is directly below it. Its hint reads "Sets the agent's personality and demeanor on every node." Tone, formality, how much it says at once.
 
-The distinction that matters is **on this node** against **on every node**. The first applies while the conversation is here. The second applies everywhere, including inside every scenario.
+The distinction that matters is **on this node** against **on every node**. The first applies while the conversation is here. The second applies everywhere, including inside every pathway.
 
 <Note>
 Only the first field supports `@` tagging. The system prompt is agent-wide configuration with no node to hang a tool on, so tools and knowledge are tagged in the **Prompt** field.
@@ -84,39 +84,39 @@ The section says so plainly: "Key:value pairs the agent extracts to reuse during
 
 Take that last part seriously. Every variable is work the agent does mid-conversation, and each one costs a little response time. Extract what you will use. Skip what you will not.
 
-## Extend the agent with scenarios
+## Extend the agent with pathways
 
-A single prompt handles a surprising amount. When it stops being enough, scenarios carry the parts that need their own handling. The section describes them as extending your core agent's skills.
+A single prompt handles a surprising amount. When it stops being enough, pathways carry the parts that need their own handling. The section describes them as extending your core agent's skills.
 
 <Note>
-Searching for scenarios and expecting simulated testing? That is [simulations and test cases](/agents/evaluations). A scenario here is a branch of your agent's behavior.
+Searching for scenarios? They are called pathways now. If you were looking for simulated testing, that is [simulations and test cases](/agents/evaluations).
 </Note>
 
-Add one with **Add scenario**. The menu offers three kinds to create, plus **Add existing** to reuse a scenario from this agent or another one.
+Add one with **New pathway**. The menu offers three kinds to create, plus **Add existing** to reuse a pathway from this agent or another one.
 
-### Simple scenario
+### Prompt
 
 A single prompt for one job, like booking an appointment or handling a cancellation. Think of it as one focused instruction the agent moves into and back out of.
 
-Simple scenarios are also how you manage context. Splitting scheduling out of the main prompt keeps the agent from carrying scheduling instructions through every unrelated conversation.
+Prompts are also how you manage context. Splitting scheduling out of the main prompt keeps the agent from carrying scheduling instructions through every unrelated conversation.
 
-### Complex scenario
+### Pathway
 
 A flow you lay out yourself: steps you place, and the pathways you draw between them. Opening one turns the graph column into the canvas where you build it. Custom code and webhook steps are available here.
 
 Choose this when the steps have to happen in a guaranteed order: a scripted disclosure, a verification sequence, anything you need to be able to point at and prove ran the same way every time.
 
-### Authentication scenario
+### Authentication zone
 
-A gate. It has the steps a complex scenario has, plus identity questions. On enterprise plans it also offers an SMS code step; on other plans that step is not in the menu.
+A gate. It has the steps a pathway has, plus identity questions. On enterprise plans it also offers an SMS code step; on other plans that step is not in the menu.
 
-In the Scenarios list, drag other scenarios underneath an authentication scenario to protect them. A caller then has to get through authentication before the agent will move into anything beneath it. Use it for anything that exposes account details.
+In the Pathways list, drag other pathways underneath an authentication zone to protect them. A caller then has to get through authentication before the agent will move into anything beneath it. Use it for anything that exposes account details.
 
 ### Set the routing condition
 
-Creating a scenario does not make it run. Click its row in the Scenarios section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the scenario never fires.
+Creating a pathway does not make it run. Click its row in the Pathways section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the pathway never fires.
 
-A simple scenario opens as a panel over the Prompt tab. A complex or authentication scenario opens into its own flow, with the routing condition on a panel beside it.
+A Prompt opens in a panel, so you stay where you are. A Pathway or an Authentication zone opens into its own canvas, with the routing condition on a panel beside it.
 
 ## Configure settings
 
@@ -154,7 +154,7 @@ Guardrails are monitoring. They do not guarantee regulatory compliance, and they
 
 The right side of the builder toggles between **Graph** and Testing.
 
-At the top level the graph is a fixed picture of how the agent is put together, not an editing surface, which is why testing can take its place. Open a complex scenario or an authentication scenario and that same column becomes the editable canvas where you build its nodes and edges.
+At the top level the graph is a fixed picture of how the agent is put together, not an editing surface, which is why testing can take its place. Open a Pathway or an Authentication zone and that same column becomes the editable canvas where you build its nodes and edges.
 
 Testing has two tabs:
 
@@ -196,12 +196,12 @@ A promoted agent still needs somewhere to receive conversations. See [Dispatch](
     Almost always an agent that was published but never promoted. Promote it to Production from [Environments](/agents/environments), then redial.
   </Accordion>
 
-  <Accordion title="A scenario never runs">
-    Check its routing condition. A scenario with no condition has nothing telling the agent to enter it.
+  <Accordion title="A pathway never runs">
+    Check its routing condition. A pathway with no condition has nothing telling the agent to enter it.
   </Accordion>
 
   <Accordion title="The caller gets stuck partway through">
-    Usually a node in a complex scenario with no exit route. Open the scenario and check that every node has somewhere to go.
+    Usually a node in a pathway with no exit route. Open the pathway and check that every node has somewhere to go.
   </Accordion>
 
   <Accordion title="The agent never uses a tool you built">
