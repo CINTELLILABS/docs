@@ -6,6 +6,10 @@ description: "Start an A/B experiment on a variant version."
 
 ### Overview
 
+<Note>
+Experiments are available only to Enterprise organizations. Other organizations get `403` with the error `ENTERPRISE_REQUIRED`.
+</Note>
+
 Starts an A/B experiment that sends `traffic_percentage` percent of the agent's eligible calls to `variant_version_id`, with the rest running the version pinned to `baseline_env`. Only calls that do not explicitly select a version or environment are eligible. An agent has at most one active experiment: stop it with [Stop Experiment](/api-v2/post/agents-id-experiments-experiment-id-stop) before creating another, or adjust it in place with [Update Experiment](/api-v2/patch/agents-id-experiments-experiment-id). Returns `409 CONFLICT` while one is active.
 
 An experiment completes on its own when `ends_at` passes, when `variant_call_quota` connected variant calls have been routed, or when the baseline environment is repointed to another version (for example by a publish or promote). Completion is permanent, and all eligible traffic returns to the baseline pin.
