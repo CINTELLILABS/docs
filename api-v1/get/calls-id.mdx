@@ -22,6 +22,14 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   The unique identifier of the call for which you want to retrieve detailed information.
 </ParamField>
 
+### Query Parameters
+
+<ParamField query="v" type="string">
+  Set to `2` to receive the newer pathway events format in the `pathway_logs` field. Omit the parameter to keep the legacy format.
+
+  The legacy format is being deprecated. When deprecation is active for your account, calling this endpoint without `?v=2` returns an empty `pathway_logs` array along with a `pathway_logs_message` field explaining that you should switch to `?v=2`.
+</ParamField>
+
 ### Response
 
 <ResponseField name="transcripts" type="array of objects">
@@ -187,7 +195,13 @@ description: "Retrieve detailed information, metadata and transcripts for a call
 </ResponseField>
 
 <ResponseField name="pathway_logs" type="string">
-  Pathways calls will have extra logs here that have much more detailed information about the chosen nodes and internal reasoning throughout the flow.
+  Pathway calls include extra logs here with more detailed information about the chosen nodes and internal reasoning throughout the flow.
+
+  Pass `?v=2` on the request to receive this field in the newer pathway events format. The legacy format is being deprecated; once deprecation is active for your account, the field is returned empty unless you pass `?v=2`, and a `pathway_logs_message` field will explain the switch.
+</ResponseField>
+
+<ResponseField name="pathway_logs_message" type="string">
+  Present only when the legacy `pathway_logs` format has been deprecated for your account and the request did not include `?v=2`. Contains guidance to re-issue the request with `?v=2` to receive pathway logs in the newer format.
 </ResponseField>
 
 <ResponseField name="pathway_version" type="number">
