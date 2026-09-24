@@ -1,0 +1,75 @@
+---
+title: "Restore Knowledge Base Version"
+api: "POST https://api.bland.ai/v1/knowledge/{knowledge_base_id}/versions/{version_id}/restore"
+description: "Repoint the current version of a knowledge base at a prior version."
+---
+
+## Overview
+
+Sets the knowledge base's current version to `version_id`. The KB flips to `PROCESSING` while Bland re-embeds against the restored version. The `knowledge_base_id` does not change, so agents and pathways that reference it start reading the restored content as soon as re-embedding completes.
+
+The prior current version stays in the version list and can be restored again. Use [List Versions](/api-v1/get/knowledge-id-versions) to pick a target.
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="knowledge_base_id" type="string" required>
+  The unique identifier of the knowledge base.
+</ParamField>
+
+<ParamField path="version_id" type="string" required>
+  The version to restore. Must be a version of this knowledge base.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Fields">
+    <ResponseField name="success" type="boolean">
+      `true` on success.
+    </ResponseField>
+    <ResponseField name="restored_version_id" type="string">
+      The version now marked current, matches the `version_id` path parameter.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Human-readable confirmation, for example `"Version restored successfully. Re-embedding in progress."`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "success": true,
+    "restored_version_id": "dbddbf35-ab12-448a-b936-61048caa51f6",
+    "message": "Version restored successfully. Re-embedding in progress."
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    { "error": "KB_ERROR", "message": "Version not found" }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
