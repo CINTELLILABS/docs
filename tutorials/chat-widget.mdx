@@ -126,6 +126,28 @@ The chat widget can be customized using the following configuration options:
 
 ---
 
+## Rate limits
+
+Chat and web widget WebSocket sessions enforce per-client message rate limits to protect your agents from floods and runaway costs. Normal, human-paced conversations are unaffected.
+
+When a client sends messages faster than the allowed rate, Bland sends an error frame asking the client to slow down. If the client keeps flooding, Bland disconnects the WebSocket with close code `4290` so your integration can tell rate limiting apart from other WebSocket errors.
+
+If you build a custom integration on top of the widget WebSocket, handle close code `4290` explicitly:
+
+```javascript
+socket.addEventListener("close", (event) => {
+  if (event.code === 4290) {
+    // Rate limited by Bland — back off before reconnecting
+    return;
+  }
+  // Handle other close codes
+});
+```
+
+The bundled widget loader handles this for you, so no changes are required if you embed the widget with `widget.bland.ai/loader.js`.
+
+---
+
 ## Escalate to Live Agents
 
 <Note>This feature only works on [pathways](/tutorials/pathways).</Note>
