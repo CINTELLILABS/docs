@@ -1,0 +1,75 @@
+---
+title: "Get Traffic Split from v1"
+api: "GET https://api.bland.ai/v1/convo_pathway/{pathway_id}/migration_split"
+description: "Retrieve the traffic split configured on a v1 pathway that gradually ramps calls to a rebuilt v2 agent."
+---
+
+### Overview
+
+Traffic split from v1 sends a chosen percentage of a pathway's calls (inbound and outbound) to a v2 agent, with the rest running on the v1 pathway exactly as before. Phone numbers, API requests, request data, and webhooks stay the same. Calls handled by the v2 agent are tagged in call history so you can compare them side by side.
+
+This endpoint returns the split currently attached to a pathway, or `null` if no split is configured.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The ID of the v1 pathway.
+</ParamField>
+
+### Response
+
+<ResponseField name="migration_split" type="object | null">
+  The split configuration, or `null` when no split is set on this pathway.
+
+  <Expandable title="fields">
+    <ResponseField name="agent_id" type="string">
+      The v2 agent that receives the split percentage of this pathway's calls.
+    </ResponseField>
+    <ResponseField name="v2_percentage" type="integer">
+      Percentage of the pathway's calls routed to the v2 agent, from `0` to `100`. The remainder runs on the v1 pathway.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request GET \
+  --url 'https://api.bland.ai/v1/convo_pathway/PATHWAY_ID/migration_split' \
+  --header 'authorization: Bearer YOUR_API_KEY'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "migration_split": {
+    "agent_id": "b41e4d78-2f5a-4d4e-9d43-3d7e2f2c9a10",
+    "v2_percentage": 25,
+    "updated_at": "2026-09-16T18:22:04.512Z"
+  }
+}
+```
+
+```json No split configured
+{
+  "migration_split": null
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
