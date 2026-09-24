@@ -24,7 +24,12 @@ description: "Modify specific properties of an organization."
   - `"org_display_name"` (string) - The display name of the organization. Must be between **1 and 30 characters**.  
   - `"preferences"` (object) - Preference settings for the organization:  
     - `"use_bland_url"` (boolean) - Whether the organization prefers to use the Bland URL.  
-    - `"recording_lifespan_days"` (integer) - The lifespan of recordings in days. Must be between **1 and 1825** (inclusive) or `-1` to disable retention.  
+    - `"recording_lifespan_days"` (integer) - Controls whether call recording links play without authentication. The same three modes appear under **Settings → General → Recording preferences** in the dashboard.
+      - `0` — **Private — authentication required.** Every request to `GET /v1/recordings/{call_id}` must present an API key or a signed-in dashboard session.
+      - `1` to `1825` — **Open for a set window, then private.** Anyone with the link can play the recording for that many days after the call; after that, authentication is required.
+      - `-1` — **Open — never expires.** Anyone with the link can play the recording indefinitely.
+
+      New organizations are created with `recording_lifespan_days` set to `0`. Existing organizations keep their prior behavior until you set this value.  
 </ParamField>  
 
 ### Response
