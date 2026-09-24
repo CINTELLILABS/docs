@@ -1,0 +1,74 @@
+---
+title: "Replace Scenario Eval Agents"
+api: "PUT https://api.bland.ai/v1/agent-testing/scenarios/{id}/eval-agents"
+description: "Replace the full list of eval agents attached to a test scenario. Pass the complete desired roster — any existing attachment not included is removed."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The scenario ID.
+</ParamField>
+
+### Body Parameters
+
+Send either an `eval_agents` array on the body, or the array directly.
+
+<ParamField body="eval_agents" type="array of objects" required>
+  The complete desired roster of eval agents for this scenario. Any existing attachment whose `eval_agent_id` is not included will be removed.
+
+  <Expandable title="eval agent attachment">
+    <ParamField body="eval_agent_id" type="string" required>
+      The eval agent to attach. Must belong to your organization.
+    </ParamField>
+    <ParamField body="eval_agent_version_id" type="string">
+      Pin a specific eval agent version. When omitted, the eval agent's current published version is used.
+    </ParamField>
+    <ParamField body="weight" type="number">
+      Per-experiment weight (0 or greater). Defaults to the version's configured weight.
+    </ParamField>
+    <ParamField body="target_level_keys" type="array of strings">
+      Level keys that count as a pass for `levels`-mode eval agents. Defaults to the version's configured target levels.
+    </ParamField>
+    <ParamField body="order" type="integer">
+      Display order. Defaults to the position in the request array.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+Returns the updated array of attachments ordered by `order` then attachment time. See [List Scenario Eval Agents](/api-v1/get/agent-testing-scenarios-id-eval-agents) for the full schema.
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://api.bland.ai/v1/agent-testing/scenarios/a1b2c3d4-5678-9abc-def0-1234567890ab/eval-agents \
+  -H "authorization: $BLAND_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "eval_agents": [
+      {
+        "eval_agent_id": "22222222-2222-2222-2222-222222222222",
+        "weight": 1.0,
+        "target_level_keys": ["excellent", "good"],
+        "order": 0
+      },
+      {
+        "eval_agent_id": "44444444-4444-4444-4444-444444444444",
+        "weight": 0.5,
+        "order": 1
+      }
+    ]
+  }'
+```
+</RequestExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
