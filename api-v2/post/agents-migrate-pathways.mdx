@@ -6,7 +6,7 @@ description: "Convert stored or inline pathways into agent scenarios."
 
 ### Overview
 
-Deterministically converts up to 20 pathways into complex scenarios, one per pathway, with no AI planning involved. Each pathway is either referenced by ID or supplied inline as an exported graph (the JSON-file import). By default the scenarios are wrapped in a new agent whose system prompt is built from the pathways' global prompts, and the agent plus its first version are created (`201`). Set `create` to `false` to receive just the scenario nodes for insertion into an existing agent (`200`). For planner-driven translation, use [Start Pathway Translation](/api-v2/post/agents-migrate-translations).
+Deterministically converts up to 20 pathways into complex scenarios, one per pathway, with no AI planning involved. Each pathway is either referenced by ID or supplied inline as an exported graph (the JSON-file import). By default the scenarios are wrapped in a new agent whose system prompt is built from the pathways' global prompts, and the agent plus its first version are created (`201`). Set `create` to `false` to receive just the scenario nodes for insertion into an existing agent (`200`). Set `parity` to `true` for a single pathway to produce an agent that runs the call exactly like the original pathway. For planner-driven translation, use [Start Pathway Translation](/api-v2/post/agents-migrate-translations).
 
 Limited to 60 imports per hour per organization. Requires an admin, owner, operator, or prompter role.
 
@@ -43,6 +43,12 @@ Limited to 60 imports per hour per organization. Requires an admin, owner, opera
 
 <ParamField body="create" type="boolean" default="true">
   When `false`, no agent is created; the response carries the converted scenario nodes instead, ready to add to an existing agent's `behavior.nodes` with [Create Agent Version](/api-v2/post/agents-id-versions).
+</ParamField>
+
+<ParamField body="parity" type="boolean" default="false">
+  When `true`, produces an agent that handles calls exactly like the original pathway: the call opens on the pathway's own first step (no extra greeting or re-routing), End Call steps still hang up in the same place, and the phone number's call settings (voice, language, interruption sensitivity, recording, max duration) carry over from the pathway's bound inbound number. Use this for a guaranteed 1:1 behavioral match; the default import optimizes the resulting agent for the v2 builder instead.
+
+  Valid only when `pathways` has exactly one entry and `create` is `true` (or omitted). Any other combination returns `400 INVALID_PATHWAYS`. Anything that can't carry over exactly is added to `data.warnings` for review in the builder.
 </ParamField>
 
 ### Response
