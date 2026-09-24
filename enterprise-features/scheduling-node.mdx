@@ -76,6 +76,35 @@ Below the body of the request, you can test your API request to ensure it is cap
 
 After testing your webhook, the API response field will become populated. You will need to set the JSON path of the flat array underneath the required `available_slots` field. In the above example, the JSON path would be `$.available_slots`. Feel free to press the "+" button to the left of the field to automatically add the JSON path to the list of response variables. Additionally, any other variables you want to extract from the webhook response can be added to the list of response variables in the same way.
 
+### Pathway After API Request Response
+
+Configure this section — located between **Get Available Slots** and **Loop Condition** in the Scheduling Node drawer — to route the caller based on your Available Slots API response. It uses the same deterministic response-based routing as the [Webhook Node](/tutorials/webhooks). After every request to your Available Slots API, Bland can send the caller to a different pathway node based on the HTTP status code or a value extracted from the response body — before any booking conversation begins.
+
+Use this when you want a predictable exit for known outcomes from your scheduling system, such as:
+
+- Routing to a transfer node when the slots API returns a `5xx` error
+- Routing to a fallback node when the request fails or times out (status code `0`)
+- Routing to a different pathway branch when the response indicates the caller is ineligible for booking (for example, an `account_status` field set to `inactive`)
+
+Each rule targets a destination node and matches on either:
+
+- A specific HTTP status code returned by your Available Slots API (including `0` for network failures or timeouts), or
+- A value extracted from the response body via a response-data field.
+
+Rules are evaluated in order from top to bottom, and the last matching rule wins — the same behavior as Webhook Node routing. Unlike Webhook Nodes, there is no default catch-all rule: if no rule matches, the Scheduling Node continues exactly as before — the agent offers the returned slots and confirms the appointment with the caller.
+
+Routing is evaluated on both the initial slot fetch when the caller first enters the node and on any mid-conversation re-fetches, so a matching rule can exit scheduling at any point.
+
+Example rules for a Scheduling Node:
+
+| Condition | Route to |
+| --- | --- |
+| Status code `>= 500` | Transfer node |
+| Status code `== 0` (network failure or timeout) | Transfer node |
+| Response field `account_status == "inactive"` | Ineligible caller node |
+
+If none of these match, the agent proceeds with the returned available slots as usual. Existing behavior for repeated failures — including the built-in error fallback after two consecutive failed fetches — is unchanged when no rule matches.
+
 ### Loop Condition
 
 The loop condition, similar to other nodes, controls when the agent should move forward in the pathway. By default, the loop condition on scheduling nodes is always enabled with the following built in prompting: 
