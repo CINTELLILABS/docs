@@ -1,0 +1,63 @@
+---
+title: "Remove Org DNC Entry"
+api: "DELETE https://api.bland.ai/v1/org_dnc/{entry_id}"
+description: "Remove a single entry from your organization's outbound do-not-call list by its entry ID."
+---
+
+<Info>
+  **Idempotent delete** – Returns 200 even if the entry no longer exists. `deleted_count` reflects whether a row was actually removed.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="entry_id" type="string" required>
+  UUID of the entry to remove. Obtain this from [List Org DNC Numbers](/api-v1/get/org-dnc) or [Search Org DNC Number](/api-v1/post/org-dnc-search).
+</ParamField>
+
+### Response
+
+<ResponseField name="data.deleted_entry_id" type="string">
+  The `entry_id` from the request path.
+</ResponseField>
+
+<ResponseField name="data.deleted_count" type="number">
+  `1` if the entry existed and was removed, `0` if no matching entry was found.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if the `entry_id` is not a valid UUID.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --request DELETE \
+  --url https://api.bland.ai/v1/org_dnc/b7d3e9fc-5c4a-4c2a-9b8f-d1e1d1a2e333 \
+  --header 'authorization: <your_api_key>'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "deleted_entry_id": "b7d3e9fc-5c4a-4c2a-9b8f-d1e1d1a2e333",
+    "deleted_count": 1
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+### Access
+
+Requires an owner or admin dashboard session.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
