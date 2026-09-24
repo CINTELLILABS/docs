@@ -75,6 +75,32 @@ The message to send to the pathway (optional)
   Will be `null` on success. Contains error details if the request failed.
 </ResponseField>
 
+### Error responses
+
+#### `422 ROUTE_NO_MATCH_NO_FALLBACK`
+
+Returned when the pathway reaches a Route node, none of the route conditions match, and the node has no fallback route defined. Add a fallback route to the node — either an edge labeled `Fallback Route` or an edge configured to always be picked — so the pathway has a defined path forward when no condition matches.
+
+The `ext` object identifies the unroutable node and the variables whose values failed to match any condition, so you can fix the misconfigured node directly.
+
+```json 422 Response
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "No matching route and no fallback route was found.",
+      "code": "ROUTE_NO_MATCH_NO_FALLBACK",
+      "ext": {
+        "chat_id": "12345678-1234-1234-1234-123456789012",
+        "pathway_id": "87654321-4321-4321-4321-210987654321",
+        "node_id": "5",
+        "evaluated_fields": ["wave"]
+      }
+    }
+  ]
+}
+```
+
 
 <ResponseExample>
 
