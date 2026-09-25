@@ -88,13 +88,43 @@ Switch the sidebar selector back to the agent and open Channels, under Dispatch.
 
 The Numbers list sits above the tabs on Calls and Messages, and holds the agent's fallback number.
 
-Calls and Messages have no Save of their own. What you set there is held with the rest of your unsaved work in the builder and written the next time it saves, so go back into the builder and save. Reloading the page loses it.
+Calls and Messages have no Save of their own. Most of what you set there is held with the rest of your unsaved work in the builder and written the next time it saves, so go back into the builder and save. Reloading the page loses it.
 
-Web chat is the exception: the widget editor has its own **Save**, and **Publish** beside it.
+There are two exceptions. The widget editor on Web chat has its own **Save**, and **Publish** beside it. The per-number messaging settings below save straight to the number.
 
 <Warning>
 Voice settings apply to every number the agent has. Messaging settings are saved separately for each number.
 </Warning>
+
+### Per-number messaging settings
+
+Select a number in the Numbers list, then open Messages. These rows apply only to the number you selected:
+
+| Setting | What it does |
+|---|---|
+| **Webhook** | Receives message and status events for SMS conversations on this number. A conversation that sets its own webhook overrides it. |
+| **Messaging service SID** | Shown only on bring-your-own Twilio (BYOT) numbers, and required for them. Enter the Twilio Messaging Service SID the number sends through. It starts with `MG` and is followed by 32 hexadecimal characters. |
+| **Reply timeout** | Ends the conversation when the customer does not reply within a set window. See [Reply timeout](#reply-timeout). |
+
+Webhook and Messaging service SID save when you press Enter or leave the field. They do not save while you type. iMessage numbers do not show Messaging service SID.
+
+#### Reply timeout
+
+Turn on **Reply timeout** to end a conversation that goes quiet. Then set:
+
+- **Time out (minutes)**: how long the agent waits for a reply, from 1 to 60 minutes.
+- **Closing message**: sent when the window ends. Leave it blank to end the conversation without a message.
+- **Send a reminder first**: sends one reminder partway through the window. Set **Remind after (minutes)** to a value shorter than the time out. Then set **Reminder message**. If you leave the reminder message blank, the customer gets nothing, but your webhook still receives a `timeout_warning` event.
+
+Sliders save when you release them. Messages save when you leave the field.
+
+<Note>
+Earlier versions of this tab saved reply timeouts that never took effect, and those values were not carried over. If you set one earlier, Reply timeout now shows as off. Turn it on again to use it.
+</Note>
+
+#### WhatsApp
+
+The WhatsApp drawer sets the number's webhook URL, a reply timeout in seconds, and **Request data**. Request data is a set of key-value facts the agent knows during WhatsApp conversations on that number, like a facility ID or its opening hours. The agent sees both the keys and their values. Select **Save** in the drawer to apply your changes.
 
 Messaging and web chat each have a guide of their own: [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
 
