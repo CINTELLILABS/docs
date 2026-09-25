@@ -20,6 +20,10 @@ description: "List all contacts for your organization. Each contact includes ide
   Number of contacts to skip (for pagination). Default 0.
 </ParamField>
 
+<ParamField query="agent_id" type="string">
+  Only return contacts who have talked to this agent. Must be a valid agent UUID, otherwise the request returns `400`. Each returned contact still includes all of its memories, not only the memory for this agent. Omit to list every contact in your organization.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="array">
@@ -31,7 +35,7 @@ description: "List all contacts for your organization. Each contact includes ide
 </ResponseField>
 
 <ResponseField name="pagination.total" type="integer">
-  Total number of contacts in the org.
+  Total number of contacts that match the request. Without `agent_id`, this is every contact in your organization.
 </ResponseField>
 
 <ResponseField name="pagination.limit" type="integer">
@@ -49,6 +53,15 @@ description: "List all contacts for your organization. Each contact includes ide
 <ResponseField name="errors" type="null">
   Error array (null on success).
 </ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.bland.ai/v1/contacts?agent_id=12345678-90ab-cdef-1234-567890abcdef&limit=50" \
+  -H "authorization: YOUR_API_KEY"
+```
+
+</RequestExample>
 
 <ResponseExample>
 ```json Response
