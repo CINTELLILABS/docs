@@ -293,7 +293,18 @@ body:has(.splash-display) header .backdrop-blur {
   One variable drives both so they cannot drift. 264px fits the longest labels
   ("Custom Twilio Integration", "Knowledge base editing") on one line.
 */
-:root { --sidebar-w: 284px; }
+/*
+  Measured, not guessed. A label needs 12px of wrapper, 16px of link padding,
+  its text, 12px of right padding and room for the scrollbar. The widest label
+  in the Documentation tab is "JWT Signature Configuration" at 186px, which
+  needs 234px. The widest anywhere is "Migrate your pathways or personas" at
+  227px, and holding a column wide enough for that one title left every other
+  row with a large empty right side.
+
+  248px fits every label in the Documentation tab on one line and lets that
+  single long title wrap, which is the better trade.
+*/
+:root { --sidebar-w: 248px; }
 
 @media (min-width: 1024px) {
   #body-content { padding-left: var(--sidebar-w); }
@@ -335,6 +346,18 @@ body:has(.splash-display) header .backdrop-blur {
 */
 #navigation-items {
   padding-left: 0.75rem;
+}
+
+/*
+  The scroll container inside the nav carries its own `pl-5`. With the wrapper
+  above and the link's own 16px, production stacked three offsets and text
+  began 48px in, which is what made the column look padded compared to dev.
+  Zeroing this one leaves 12px of gutter plus the link's 16px, so a label
+  starts at 28px and a child item is still visibly indented from its parent.
+*/
+#navigation-items [class*="scroll-area-fade-size"] {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* Group headers earn their weight by being smaller and quieter, not bigger. */
