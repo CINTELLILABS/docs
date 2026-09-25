@@ -56,9 +56,9 @@ Scroll further, or use **Load more**, before you conclude that someone only call
 
 ## Find a conversation
 
-The list opens on the newest conversations and pages as you scroll, with a **Load more** button under the table. There is no date filter, so reaching something from last week means loading your way back to it.
+The list opens on the newest conversations and pages as you scroll, with a **Load more** button under the table. To jump to a date range without loading your way back, use a **Created at** or **Dialed at** condition under [Call filters](#call-filters).
 
-Five controls narrow the list, and a sixth changes how it is sorted and what it shows. Some search everything you have; others only look at the rows already on screen, which is called out below where it matters.
+Seven controls narrow the list, and an eighth changes how it is sorted and what it shows. Some search everything you have; others only look at the rows already on screen, which is called out below where it matters.
 
 ### The search box
 
@@ -99,6 +99,40 @@ Direction and QC tags only carry data on calls, so a positive condition on eithe
 The status filter offers seven values and the list can show more than that. A status the chip does not recognize reads **No Answer**, so filter on Status to narrow, not to conclude.
 
 Name a set of conditions under **Saved filters** and it stays in this browser.
+
+### Call filters
+
+**Call filters** searches your full call history on the server, not just the rows already loaded. It uses the same fields and operators as call log filters in the previous dashboard, so a filter you built there works here.
+
+Use it when you are hunting for calls by something the list does not show, or when the calls you want are too far back to load.
+
+1. Press **Call filters** in the toolbar.
+2. Set **Match** to **All conditions** or **Any condition**.
+3. Press **Add call filter**, then pick a field, an operator, and a value. Repeat for each condition.
+4. Press **Apply filters**.
+
+Fields include status, direction, duration, price, dates, pathway, batch, answered by, variables, analysis, metadata, outcomes, QC status, and QC tags. Fields like **Variables** and **Metadata** take a key and a value.
+
+A date takes `2026-09-25`, or a date and time with its timezone offset, such as `2026-09-25T09:00:00-07:00`.
+
+A few things change while call filters are applied:
+
+- Only calls are listed. Message threads and web chats drop out, and switching the channel to a messaging channel clears the call filters.
+- In-progress calls are not added to the top of the list.
+- The filters stay in the page URL, so a reload or a shared link keeps them.
+- Agent, call source, and batch still narrow the results. An **Any condition** filter never widens past them.
+
+Press **Clear call filters** to go back to the unfiltered list.
+
+### Shared call views
+
+The **Shared call views** select beside **Call filters** lists the call filters your organization saved in the previous dashboard. They are shared with everyone in your organization. Pick one to apply it, on the All agents page or inside an agent.
+
+A view that uses a field or value this page cannot apply is listed as unavailable, with the reason, and cannot be picked. It is never applied in part.
+
+Shared call views are read-only here. Create, rename, or delete them in the previous dashboard's call logs. See [Call logs](/tutorials/call-logs).
+
+Applying a shared call view replaces any saved view you have applied, and the reverse is true too. If the shared views fail to load, press **Retry shared views**. You can still build call filters by hand.
 
 ### Saved views
 
@@ -192,10 +226,12 @@ The download icon in the toolbar opens **Export conversations**.
 <Warning>
 The export is not what is on your screen.
 
-It runs on the server, over the date range you pick, and it keeps only the filters the server knows about: call source, agent, channel, and batch. Your search box, your conditions, and your saved view are applied in the browser, so none of them reach the export. The modal lists what it did inherit under **Filters applied to this export**, so read that before you press the button.
+It runs on the server, over the date range you pick, and it keeps only the filters the server knows about: call source, agent, channel, batch, and your [call filters](#call-filters). Your search box, your **Filter** conditions, and your saved view are applied in the browser, so none of them reach the export. The modal lists what it did inherit under **Filters applied to this export**, so read that before you press the button.
 
-Filter down to twelve failed calls, press Export, and you get every conversation in the window.
+Filter down to twelve failed calls with **Filter**, press Export, and you get every conversation in the window. Use **Call filters** instead and the export keeps them.
 </Warning>
+
+A call export cannot use call filters set to **Any condition**. The modal says so and blocks the export. Switch **Match** to **All conditions** before you export.
 
 Calls and message threads export as separate files. Pick one under **Data to export**. There is no web chat export.
 
@@ -231,7 +267,7 @@ With nothing running, the empty state offers to call your own number, which is t
 
 <AccordionGroup>
   <Accordion title="A conversation you know happened is not in the list">
-    Three things hide conversations by default. Call source is on Live calls, so simulations are out. A web chat only appears inside its agent, not at All agents. And the list pages as you scroll, so something older may not be loaded yet. Change Call source, switch the selector to the agent, or press **Load more**.
+    Applied call filters list calls only, so clear them first if you are looking for a message thread. Three things hide conversations by default. Call source is on Live calls, so simulations are out. A web chat only appears inside its agent, not at All agents. And the list pages as you scroll, so something older may not be loaded yet. Change Call source, switch the selector to the agent, or press **Load more**.
   </Accordion>
 
   <Accordion title="Search does not find a phrase you remember">
@@ -251,7 +287,7 @@ With nothing running, the empty state offers to call your own number, which is t
   </Accordion>
 
   <Accordion title="The export has far more in it than the list showed">
-    Expected. The export keeps only call source, agent, channel and batch. Narrow the date range in the modal, and filter the file once it arrives.
+    Expected. The export keeps only call source, agent, channel, batch, and call filters set to **All conditions**. Rebuild your conditions under **Call filters**, or narrow the date range in the modal and filter the file once it arrives.
   </Accordion>
 
   <Accordion title="A row reads No Answer and you know the call connected">
