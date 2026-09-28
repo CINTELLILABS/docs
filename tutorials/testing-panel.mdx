@@ -1,0 +1,56 @@
+---
+title: "Testing Agents in the Builder"
+description: "Test your agent by phone, web voice, or web chat from the builder's Testing panel, with version selection and saved configurations."
+---
+
+## Introduction
+
+The agent builder's Testing panel is the single place to test an agent across every channel. Open it with the floating **Testing** toggle at the top right of the canvas. Phone call setup lives in the same panel as web chat and web voice, so a phone test and a chat test of the same agent share one configuration. There is no separate "Send call" modal.
+
+## Choosing a Channel
+
+The **Channel** picker leads the panel and decides which fields appear below it:
+
+- **Phone call** — Sends a real phone call to a number you specify. The call behaves like a production call.
+- **Web voice** — A voice conversation in your browser. Web voice runs the agent's live runtime, so the version picker and the settings below it don't apply. It's tagged **Unavailable** when the agent has no phone number attached.
+- **Web chat** — A text conversation directly in the panel.
+- **SMS**, **RCS**, and **iMessage** — Listed as **Coming soon**.
+
+## Selecting an Agent Version
+
+The **Agent version** picker shows exactly which version a test runs. Each version is tagged with the environment it's deployed to: **Development**, **Staging**, or **Production**. Until you pick a version, the test follows the environment selected in the editor.
+
+The version is never stored in a saved configuration. A configuration is a set of call inputs, and the version it was saved against will have moved on.
+
+## Starting Scenario
+
+**Starting scenario** chooses where the conversation begins. **Default** starts the conversation where it normally begins. Selecting one of your scenarios begins the test there instead, so you can test deeper parts of the agent without replaying the full conversation.
+
+## Call Inputs
+
+- **To number** and **From number** — Phone call only. The From number is optional and overrides the caller ID.
+- **Request data** — Variables the agent has access to. Reference them in your prompts with `{{variable_name}}` syntax. The rows arrive pre-filled with the agent's saved request data and are sent exactly as shown. Clearing a row means it isn't sent at all.
+- **Metadata** — Passthrough values returned in webhooks and call details. Also pre-filled with the agent's saved metadata.
+- **Webhook** — Optional. Overrides where the call's payload is sent when it ends.
+
+For example, if your agent's prompt references `{{customer_name}}`, add a request data row with the key `customer_name` and a test value:
+
+```text
+Variable: customer_name
+Value: Alex
+```
+
+The agent sees both the key and the value during the test.
+
+## Saved Configurations
+
+Save a test setup to reuse it later:
+
+1. Select the **New configuration** button next to the **Saved configurations** dropdown.
+2. Enter a name. The configuration is saved when you start the test.
+
+To reuse a setup, select it from the **Saved configurations** dropdown. If you edit a loaded configuration, an **Unsaved changes** row appears with **Revert** and **Save** actions. Select the trash icon to delete the loaded configuration.
+
+## Starting a Test
+
+The panel's primary action matches the channel: **Send call** for phone, **Start voice call** for web voice, and **Start chat** for web chat. Chat and call activity stream into the panel in real time, and you can reopen the setup form at any point with the settings button.
