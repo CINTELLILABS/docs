@@ -53,7 +53,7 @@ Every event in a call's log has the same outer shape:
 |---|---|
 | `conversation.init` | Once at call start. Records which pathway/version ran and the starting variables. |
 | `node.transition` | Every routing decision: which node was chosen, from where, which routes were available, and what variables changed crossing the edge. |
-| `node.tag` | A tag attached to a node the call passed through. These aggregate into the call's pathway tags. |
+| `node.tag` | A tag attached to a node the call passed through. These aggregate into the call's pathway tags. If the start node is tagged, its `node.tag` is the first tag event of the call, immediately after `conversation.init`. |
 | `transcript.user` | Something the caller said. |
 | `transcript.assistant` | Something the assistant said. |
 | `interrupt.early` / `interrupt.late` | The caller talked over the assistant (early = right as it started speaking, late = mid-utterance). |
@@ -131,6 +131,8 @@ Each entry in `available_routes`:
 ### `node.tag`
 
 The payload is the tag itself: `{ "name": "...", "color": "#...", ... }`. `name` is always present; `color` and editor metadata may accompany it.
+
+A tagged start node emits its `node.tag` directly after `conversation.init`, before any transcript or transition. Untagged start nodes emit nothing. Calls recorded before this behavior shipped do not include a start-node `node.tag`.
 
 ### `transcript.user`
 
