@@ -1,0 +1,72 @@
+---
+title: "Get Clone Audio"
+api: "GET https://api.bland.ai/v1/voices/{id}/clone/audio"
+description: "Download the source WAV an instant clone was built from."
+---
+
+## Overview
+
+Streams the raw source audio for a `BTTS_V3` instant clone you own. The response is a WAV binary — the same file uploaded when the clone was created. Use this when you need to replay or re-download the source, for example in a "review clone" UI.
+
+Only voices owned by your org and using the `BTTS_V3` or `BTTS_V3_LORA` service are supported. Other voices return `400 VOICE_CLONE_AUDIO_ERROR`.
+
+When a clone has multiple source-audio files, the endpoint returns the first one by default. Pass `audio_id` to select a specific file. The list of available `audio_id` values is on [Get Clone Info](/api-v1/get/voices-id-clone).
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the instant clone.
+</ParamField>
+
+---
+
+## Query Parameters
+
+<ParamField query="audio_id" type="string">
+  UUID of a specific source-audio record. Defaults to the first (typically only) file on the clone.
+</ParamField>
+
+---
+
+## Response
+
+Returns the source WAV binary with:
+
+- `Content-Type: audio/wav` (or the stored content type if different)
+- `Content-Disposition: attachment; filename="clone-source-<voice_id>.wav"`
+
+`400 VOICE_CLONE_AUDIO_ERROR` is returned when the voice is not an instant clone, has no source audio, or the given `audio_id` does not match a file on this voice.
+
+<ResponseExample>
+```http Audio Response
+HTTP/1.1 200 OK
+Content-Type: audio/wav
+Content-Length: 245318
+Content-Disposition: attachment; filename="clone-source-73d4c04b.wav"
+
+<WAV binary>
+```
+
+```json No Source Audio
+{
+  "data": null,
+  "errors": [
+    { "error": "VOICE_CLONE_AUDIO_ERROR", "message": "No source audio found for this voice." }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

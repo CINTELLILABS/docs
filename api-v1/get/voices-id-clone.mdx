@@ -1,0 +1,109 @@
+---
+title: "Get Clone Info"
+api: "GET https://api.bland.ai/v1/voices/{id}/clone"
+description: "Fetch the transcript and source-audio metadata for an instant clone you own."
+---
+
+## Overview
+
+Returns the clone-time transcript for a `BTTS_V3` instant clone, whether that transcript is editable, and metadata for the source audio the clone was built from. Use it to power a "review and edit" view for a clone your organization owns.
+
+Only voices owned by your org and using the `BTTS_V3` or `BTTS_V3_LORA` service are supported. Other voices return `400 VOICE_CLONE_INFO_ERROR`.
+
+The `transcript` field is the text that conditions synthesis when the clone runs in prompt-continuation mode. `transcript_editable` is `true` only when synthesis will actually read that text — otherwise the transcript is read-only and editing it would be a silent no-op.
+
+Legacy `BTTS` and `BTTS_V2` clones keep transcripts on their training samples. Use [Get Voice Samples](/api-v1/get/voices-id-samples) for those.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the instant clone.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="clone" type="object">
+  <Expandable title="Clone fields">
+    <ResponseField name="id" type="string">
+      UUID of the voice.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the voice.
+    </ResponseField>
+    <ResponseField name="service" type="string">
+      The voice engine, for example `BTTS_V3`.
+    </ResponseField>
+    <ResponseField name="transcript" type="string">
+      The clone's current transcript. Empty string if none is stored.
+    </ResponseField>
+    <ResponseField name="transcript_editable" type="boolean">
+      `true` when the clone is in a mode that reads the transcript at synthesis time. Attempting to update the transcript on a clone where this is `false` returns `400`.
+    </ResponseField>
+    <ResponseField name="audio" type="array">
+      Metadata for each source-audio file the clone was built from. Fetch the bytes with [Get Clone Audio](/api-v1/get/voices-id-clone-audio).
+
+      <Expandable title="Audio fields">
+        <ResponseField name="id" type="string">
+          UUID of the source-audio record. Pass to `Get Clone Audio` as `audio_id` when multiple files exist.
+        </ResponseField>
+        <ResponseField name="filename" type="string" />
+        <ResponseField name="content_type" type="string" />
+        <ResponseField name="file_size" type="integer">
+          Size in bytes.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "clone": {
+    "id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+    "name": "DocTestClone",
+    "service": "BTTS_V3",
+    "transcript": "Hello and welcome to Bland. This is a short clip used to condition synthesis.",
+    "transcript_editable": true,
+    "audio": [
+      {
+        "id": "a2c9b0ea-0e7d-4d69-8c19-6a1bfb6a4a11",
+        "filename": "source.wav",
+        "content_type": "audio/wav",
+        "file_size": 245318
+      }
+    ]
+  }
+}
+```
+
+```json Not an Instant Clone
+{
+  "data": null,
+  "errors": [
+    { "error": "VOICE_CLONE_INFO_ERROR", "message": "This operation is only available for V3 instant clones." }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
