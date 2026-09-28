@@ -1,0 +1,85 @@
+---
+title: "Update Custom Tool owner"
+api: "PATCH https://api.bland.ai/v1/tools/{tool_id}/owner"
+description: "Reassign a Custom Tool to a different agent in your organization, or return it to the organization so it's no longer owned by any agent."
+---
+
+A tool's owner decides which agent it's listed under. Use this endpoint to move a tool to the agent that actually uses it. You can also set `agent_id` to `null` so the tool belongs to your organization instead of a single agent.
+
+Changing the owner doesn't change which agents can call the tool.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path parameters
+
+<ParamField path="tool_id" type="string" required>
+  The ID of the Custom Tool to reassign. The `TL-` prefix is optional.
+</ParamField>
+
+### Body
+
+<ParamField body="agent_id" type="string | null" required>
+  The UUID of an agent in your organization that should own the tool. Pass `null` to return the tool to your organization.
+
+  The body must contain only `agent_id`. Any other field returns `400`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.tool_id" type="string">
+  The ID of the updated tool, prefixed with `TL-`.
+</ResponseField>
+
+<ResponseField name="data.agent_id" type="string | null">
+  The agent that now owns the tool, or `null` if the tool belongs to your organization.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+### Errors
+
+| Status | Error | When |
+| --- | --- | --- |
+| `400` | `INVALID_TOOL_ID` | `tool_id` isn't a valid tool ID. |
+| `400` | `INVALID_BODY` | `agent_id` is missing, isn't a string or `null`, or the body has extra fields. |
+| `400` | `INVALID_AGENT_ID` | `agent_id` isn't a valid UUID. |
+| `404` | `TOOL_NOT_FOUND` | The tool doesn't exist or doesn't belong to your organization. |
+| `404` | `AGENT_NOT_FOUND` | The agent doesn't exist, was deleted, or doesn't belong to your organization. |
+
+<RequestExample>
+```bash Assign to an agent
+curl -X PATCH https://api.bland.ai/v1/tools/TL-5da8347d-0ab7-415d-b156-a7fc5c6074dc/owner \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"agent_id": "3f1c9a52-8d4e-4b7a-9c61-2e0f5d8a7b13"}'
+```
+
+```bash Return to organization
+curl -X PATCH https://api.bland.ai/v1/tools/TL-5da8347d-0ab7-415d-b156-a7fc5c6074dc/owner \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"agent_id": null}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "tool_id": "TL-5da8347d-0ab7-415d-b156-a7fc5c6074dc",
+    "agent_id": "3f1c9a52-8d4e-4b7a-9c61-2e0f5d8a7b13"
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
