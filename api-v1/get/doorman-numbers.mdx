@@ -1,0 +1,73 @@
+---
+title: "List Number Overrides"
+api: "GET https://api.bland.ai/v1/doorman/numbers"
+description: "List every inbound number in the org that has a Doorman per-number override."
+---
+
+<Info>
+  **Per-number overrides** – Any field set on a number override replaces the org policy for that number. Fields left unset inherit from the org. Use this endpoint to see which numbers deviate from the default org-wide behavior.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.numbers" type="array">
+  One entry per inbound number that has an override stored.
+</ResponseField>
+
+<ResponseField name="data.numbers[].phone_number" type="string">
+  The E.164 inbound number.
+</ResponseField>
+
+<ResponseField name="data.numbers[].override" type="object">
+  The stored override. Only fields that override the org policy are present. Possible fields are `masked_callers` and `prefixes`.
+</ResponseField>
+
+<ResponseField name="data.numbers[].inherits" type="object">
+  Which fields inherit from the org policy. Each key (`masked_callers`, `prefixes`) is `true` when the number inherits and `false` when it overrides.
+</ResponseField>
+
+<ResponseField name="data.numbers[].effective" type="object">
+  The effective policy for this number: the org policy with the override applied field-by-field.
+</ResponseField>
+
+<ResponseField name="data.numbers[].available_masked_callers" type="array">
+  The full catalog of masked caller variants (`key`, `label`, `number`).
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "numbers": [
+      {
+        "phone_number": "+14155551234",
+        "override": { "masked_callers": [] },
+        "inherits": { "masked_callers": false, "prefixes": true },
+        "effective": {
+          "masked_callers": [],
+          "prefixes": ["+1"]
+        },
+        "available_masked_callers": [
+          { "key": "anonymous", "label": "Anonymous", "number": "+266696687" }
+        ]
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

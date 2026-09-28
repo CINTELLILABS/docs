@@ -1,0 +1,43 @@
+---
+title: "Delete Number Override"
+api: "DELETE https://api.bland.ai/v1/doorman/numbers/{number}"
+description: "Remove the Doorman per-number override so the number fully inherits the org policy."
+---
+
+<Info>
+  Requires an org owner or admin. After this call, the number inherits every field from the org's Doorman policy.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="number" type="string" required>
+  The E.164 inbound number, URL-encoded (for example, `%2B14155551234` for `+14155551234`). Must belong to your organization.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl --request DELETE \
+  --url https://api.bland.ai/v1/doorman/numbers/%2B14155551234 \
+  --header 'authorization: YOUR_BLAND_API_KEY'
+```
+</RequestExample>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The number's `phone_number`, an empty `override`, `inherits` (all `true`), the resulting `effective` policy (the org policy), and `available_masked_callers`.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects. Returns `NUMBER_NOT_FOUND` (404) when the number does not belong to your organization.
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

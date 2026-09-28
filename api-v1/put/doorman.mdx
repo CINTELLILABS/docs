@@ -1,0 +1,52 @@
+---
+title: "Update Doorman Policy"
+api: "PUT https://api.bland.ai/v1/doorman"
+description: "Replace the org's inbound caller allowlist with a new set of masked callers and prefixes."
+---
+
+<Info>
+  Requires an org owner or admin. This endpoint replaces the entire policy. To toggle a single variant or prefix, use the granular endpoints instead.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="masked_callers" type="string[]" required>
+  The masked caller variants to allow. Any variant not listed is rejected. Valid keys: `anonymous`, `restricted`, `blocked`, `unknown`, `unavailable`, `private`, `no_caller_id`.
+</ParamField>
+
+<ParamField body="prefixes" type="string[]" required>
+  E.164 prefixes to allow past country-based restrictions. Each prefix must start with `+` followed by 1–15 digits with no leading zero (for example, `+1`, `+1619`). Maximum of 100.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl --request PUT \
+  --url https://api.bland.ai/v1/doorman \
+  --header 'authorization: YOUR_BLAND_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "masked_callers": ["anonymous", "no_caller_id"],
+    "prefixes": ["+1", "+44"]
+  }'
+```
+</RequestExample>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated effective policy, including `masked_callers`, `prefixes`, and `available_masked_callers`.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if validation fails or the caller is not an owner or admin.
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
