@@ -371,6 +371,8 @@ description: "Update your inbound agent's settings, prompt and other details."
   - `tool`
   - `dynamic_data`
   - `citations` (Sent separately, Enterprise only)
+  - `evals` (Eval scores from an attached evals workbench, sent as a separate webhook when the run completes)
+  - `post_transfer_transcript` (Adds the post-transfer conversation to the post-call webhook when a call to this number is transferred to a human; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). Requires `webhook` and `record: true` on the number; recording is not enabled automatically for inbound calls. In limited rollout: if not enabled for your organization, the subscription has no effect.)
 
 Example payloads:
   <CodeGroup>
@@ -571,6 +573,16 @@ Example payloads:
 
 <ParamField body="record" type="boolean" default="false">
   To record your phone call, set `record` to true. When your call completes, you can access through the `recording_url` field in the call details or your webhook.  
+</ParamField>
+
+<ParamField body="stream_post_transfer_transcript" type="boolean" default="false">
+  When `true` and a call to this number is transferred to a human, Bland transcribes the conversation after the transfer live and streams it over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. Works for both cold and warm transfers.
+
+  This option controls the live stream only. To receive the post-transfer transcript in the post-call webhook, include `"post_transfer_transcript"` in `webhook_events` (with `webhook` and `record: true` set on the number). The two are independent: you can use either one or both.
+
+  <Note>
+    This feature is in limited rollout. If it is not enabled for your organization, the option has no effect.
+  </Note>
 </ParamField>
 
 <ParamField body="citation_schema_ids" type="string[]">
