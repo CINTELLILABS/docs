@@ -6,6 +6,8 @@ description: "Initiate a live listen session for an active call"
 
 Starts a live listen session for an active call, returning a WebSocket URL for real-time audio streaming.
 
+Each request mints a fresh WebSocket URL, so you can start listening at any point during a call. Connect before the URL expires (see `expires_in_seconds`); request a new URL if it lapses.
+
 ## Authentication
 
 <ParamField header="authorization" type="string" required>
@@ -34,6 +36,9 @@ Starts a live listen session for an active call, returning a WebSocket URL for r
   <Expandable title="data properties">
     <ResponseField name="url" type="string">
       WebSocket URL for connecting to the live audio stream
+    </ResponseField>
+    <ResponseField name="expires_in_seconds" type="number">
+      Number of seconds the returned URL remains valid for opening a connection. Request a new URL if it expires before you connect.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -80,7 +85,8 @@ print(data["data"]["url"])  # WebSocket URL
 {
   "status": "success",
   "data": {
-    "url": "wss://api.bland.ai/ws/listen/call_123456"
+    "url": "wss://api.bland.ai/ws/listen/call_123456",
+    "expires_in_seconds": 300
   },
   "errors": null
 }
@@ -133,6 +139,19 @@ print(data["data"]["url"])  # WebSocket URL
     {
       "error": "CALL_NOT_FOUND", 
       "message": "Call was either not found or not started"
+    }
+  ]
+}
+```
+
+```json Not Supported in Environment
+{
+  "status": "error",
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_SUPPORTED_IN_ENVIRONMENT",
+      "message": "Live listen is not available in this environment"
     }
   ]
 }
@@ -199,10 +218,13 @@ socket.onclose = () => {
 | `INVALID_ORG_PREFERENCES` | Live listen is not enabled for organization |
 | `CALL_NOT_FOUND` | Call does not exist or does not belong to organization |
 | `INVALID_CALL_STATUS` | Call is not currently active |
+| `NOT_SUPPORTED_IN_ENVIRONMENT` | Live listen is not available in this deployment environment |
 | `INTERNAL_SERVER_ERROR` | Server error occurred |
 
 ## Notes
 
+- You can start a live listen session at any point while the call is active
+- The returned URL is valid for a limited time (`expires_in_seconds`); request a new one if it expires before you connect
 - WebSocket connection automatically closes when the call ends
 - Multiple concurrent listeners can subscribe to the same call
 - Audio stream includes all participants in the call (combined)
