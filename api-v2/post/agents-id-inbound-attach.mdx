@@ -28,6 +28,10 @@ Requires an admin, owner, operator, or prompter role.
   Phone numbers to attach, each exactly as it appears on your account (for example `+18005551234`). Must be a non-empty array of non-empty strings; surrounding whitespace is trimmed. Returns `400 INVALID_BODY` if the array is missing, empty, or contains a non-string. Returns `400 INVALID_INBOUND_NUMBERS` if any number is not on your account, in which case nothing is attached.
 </ParamField>
 
+<ParamField body="only_if_unassigned" type="boolean" default="false">
+  When `true`, the attach only succeeds if every requested number is currently unassigned. If any number is already bound to another agent, pathway, or persona, the request fails with `409 NUMBER_ALREADY_ASSIGNED` and nothing is attached. Use this when you want to reserve a newly picked number without silently reassigning one another session may have just claimed. Leave unset (or `false`) to keep the default behavior of replacing any existing assignment.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data.agent_id" type="string">
@@ -51,7 +55,7 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, and `422 COMPILE_FAILED` when the newest version cannot be compiled.
+  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, `422 COMPILE_FAILED` when the newest version cannot be compiled, and `409 NUMBER_ALREADY_ASSIGNED` when `only_if_unassigned` is `true` and any requested number is already bound to another agent, pathway, or persona.
 </ResponseField>
 
 <ResponseExample>
@@ -114,6 +118,18 @@ Requires an admin, owner, operator, or prompter role.
     {
       "error": "NOT_FOUND",
       "message": "Agent not found"
+    }
+  ]
+}
+```
+
+```json Number Already Assigned
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NUMBER_ALREADY_ASSIGNED",
+      "message": "One or more numbers are already assigned to another agent"
     }
   ]
 }
