@@ -8,14 +8,16 @@ A disposition is a standing question you ask of every call an agent takes.
 Did the caller book? Which plan did they ask about? Was the agent rude? You write the question once, publish it, and from then on every call the agent handles produces an answer, delivered to the same webhook the call already reports to.
 
 <Note>
-Dispositions are an enterprise feature, and they are rolled out to enterprise organizations one at a time. If the sidebar item is missing or the page tells you Dispositions isn't available here, your organization is not switched on yet. Talk to your Bland partner.
+Dispositions are an enterprise feature, and they are switched on for enterprise organizations one at a time. The sidebar item is always there, so what you see when you click it tells you which of the two you are:
+
+A greyed row leading to a sales page means the organization is not on an enterprise plan. "Dispositions isn't available here" means you are on enterprise but not switched on yet, and your Bland partner can ask for it.
 </Note>
 
 ## Prerequisites
 
 - An agent that has taken real calls, from [Agent builder](/agents/agent-builder)
 - A post-call webhook already configured, since that is where results arrive
-- An owner, admin, operator or prompter role to pause or delete one. Everyone else can still author and publish
+- An owner, admin, operator or prompter role. Anyone else can read dispositions and nothing more
 
 ## Where dispositions live
 
@@ -54,11 +56,17 @@ A **pathway variable** is re-extracted, not read back. Dispositions reruns the v
   </Step>
 
   <Step title="Add your first value">
-    **Add value** opens a chooser with five cards across three groups: Judges, Variables and Custom code.
+    Click **Add value** at the bottom of the Values table. A drawer opens with five cards:
 
-    Two of them take you somewhere else. **Create a new judge** leaves for Evaluations and does not bring you back. **Create a new variable extraction** opens the Extractors manager, which is the only way to reach extractors at all.
+    | Group | Card | What it does |
+    | --- | --- | --- |
+    | Judges | **Bring in an existing judge** | Picks a published judge. Stays in the drawer |
+    | Judges | **Create a new judge** | Leaves for Evaluations, and does not bring you back |
+    | Variables | **Rerun a pathway variable** | Picks extractions this agent already runs. Stays in the drawer |
+    | Variables | **Create a new variable extraction** | Opens the Extractors manager |
+    | Custom code | **Run custom code** | Writes JavaScript. Stays in the drawer |
 
-    The other three configure the value without leaving the drawer.
+    The two that leave are worth knowing about before you click. Creating a judge takes you to Evaluations with no route back, so finish the judge and navigate here again. Creating a variable extraction is the only door to extractors anywhere in the product.
   </Step>
 
   <Step title="Set its logic">
@@ -67,8 +75,8 @@ A **pathway variable** is re-extracted, not read back. Dispositions reruns the v
     High is for ambiguous or high-stakes questions. Most values do not need it.
   </Step>
 
-  <Step title="Describe the output">
-    Each value declares the shape of its answer, so the thing reading your webhook knows what to expect.
+  <Step title="Say what the answer looks like">
+    The **Output** section of the value drawer is where you declare the answer's type, so whatever reads your webhook knows what it is getting. A yes or no question wants a boolean, not a sentence saying yes.
   </Step>
 </Steps>
 
@@ -82,21 +90,23 @@ Three settings on the disposition, not on individual values.
 
 **Immediately on conversation end** delivers within 30 minutes. Use it when something acts on the answer: a webhook, a CRM update, transfer logic.
 
-**Queued** delivers within 24 hours and costs less. Use it for reporting, QA and analytics.
+**Queued** delivers within 24 hours. Use it for reporting, QA and analytics, where nothing is waiting on the result.
 
 <Note>
-Queued is a deadline, not a cheaper queue you wait in. Both run the same way; the difference is how long Bland has to finish and what it charges.
+The screen describes Queued as lower cost. Both settings run the same way on the same models, so what you actually change is the deadline, not the price.
 </Note>
 
 ### Webhook behavior
 
 **Follow-up event** is the reliable default. Your call webhook fires as usual, and a second event carrying the disposition result follows once it finishes.
 
-**Hold original webhook** waits for the disposition, then sends one combined webhook. It adds up to 30 minutes of latency and it needs Immediately on conversation end, so the two settings constrain each other.
+**Hold original webhook** waits for the disposition, then sends one combined webhook. It adds up to 30 minutes of latency, and it needs Immediately on conversation end, so choosing it rules Queued out.
 
 ### Shape
 
-By default you get every value. The Shape section lets you write a transformation so the payload matches what your destination already expects, rather than making that system adapt.
+By default the payload carries every value. Shape is a JSON editor where you write a transformation tree, so the payload matches what your destination already expects rather than making that system adapt. **See example** shows a worked one, and **Save transformation** stays disabled until the JSON parses.
+
+If your destination is happy reading the default, skip this.
 
 ## Test it before you publish
 
@@ -124,11 +134,16 @@ You cannot publish a disposition with no values.
 
 Results arrive on your post-call webhook under `agent_dispositions`.
 
+With Follow-up event, the recommended default, they arrive as their own event a little after the call's own webhook:
+
 ```json
 {
+  "event_type": "dispositions",
+  "call_id": "c1a9f3d2-64be-4f07-9c5a-2b81e6d0a7f4",
   "agent_dispositions": [
     {
       "disposition_id": "3f2b9c14-8d7e-4a51-b0c6-9e2a7d4f1b83",
+      "disposition_version_id": "8c5e1a76-2f40-4db9-a318-6d9b0c4e5721",
       "disposition_key": "booking_outcome",
       "name": "Booking outcome",
       "status": "complete",
@@ -143,7 +158,9 @@ Results arrive on your post-call webhook under `agent_dispositions`.
 }
 ```
 
-`payload` is your transformation's output, the shape you designed. `values` is the raw list alongside it, and it carries a `state` per value so you can tell a real `null` from a value that produced nothing.
+`payload` is your transformation's output, the shape you asked for in Shape. `values` is the raw list alongside it, and every value carries its own `state`: `produced`, `no_value`, or `error`. That is how you tell a real `null` from a question that could not be answered.
+
+With Hold original webhook, there is no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field.
 
 Results also appear on the conversation itself, in [Conversations](/agents/conversations).
 
@@ -153,7 +170,7 @@ Dispositions replace three V1 surfaces: citations, outcomes and reports.
 
 The mapping most people find useful: an outcome was deterministic code, and that is now a custom code value. A citation was an LLM answering a question, and that is now a judge value. Both live in one place instead of two.
 
-A migration tool moves citations and outcomes across.
+Migrating an agent is how you bring the rest across. You start it from **New agent**, then **Migrate**, and [Migrate to agents](/platform/migrate-to-agents) walks through it.
 
 <Warning>
 Dispositioning built on node tags does not migrate. If you tagged nodes and read those tags to classify calls, there is no equivalent to move.
@@ -169,17 +186,17 @@ The route forward is a custom code value that reads tool names out of the call's
   </Accordion>
 
   <Accordion title="Some calls produce no disposition at all">
-    Three kinds of call are skipped, and none of them leaves an error: calls where redaction applied, organizations inside a government boundary, and calls that have aged past your retention window.
+    Four things skip a call, and none of them leaves you an error.
+
+    Three are about the call: redaction applied to it, your organization sits inside a government boundary, or the call has aged past your retention window.
+
+    The fourth is timing. Dispositions get two seconds to start as the call completes, and a call that misses that window finishes without them. It is rare and it is not tied to anything you configured, so if a handful of calls are missing results with no pattern, this is usually why.
   </Accordion>
 
   <Accordion title="I published, but nothing arrives on my webhook">
     Check which webhook behavior you chose. Follow-up event sends a second, separate event after the call's own webhook, so a listener that only reads the first one never sees it.
 
     Also check the field name. Results arrive under `agent_dispositions`, not `dispositions`.
-  </Accordion>
-
-  <Accordion title="I ran a test and nothing reached my systems">
-    Test runs never deliver. They bill like a real run and produce real results on the run page, but no webhook is sent.
   </Accordion>
 
   <Accordion title="Queued is greyed out">
@@ -192,6 +209,8 @@ The route forward is a custom code value that reads tool names out of the call's
 
   <Accordion title="My value returned nothing and I don't know why">
     Open the run and read the evidence for that value. A judge with no inputs enabled cannot answer, and the drawer warns about it at the time.
+
+    Check the value's own `state` rather than the disposition's `status`. A disposition reports `complete` when it finished, which it can do with a value that errored inside it.
   </Accordion>
 </AccordionGroup>
 
