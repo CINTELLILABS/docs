@@ -1,6 +1,6 @@
 ---
 title: 'Environments'
-description: 'Ship an agent safely: what development, staging and production hold, how to publish and promote, and why a call needs a production version'
+description: 'Ship an agent safely: what development, staging and production hold, how to publish, promote or roll out in stages, and why a call needs a production version'
 ---
 
 Every agent has three environments: development, staging and production.
@@ -73,6 +73,84 @@ Its confirmation carries the same phone number section and the same reassurance 
 ## Roll back
 
 To go back, **Rollback** on the Production card lists the versions production held before and repins to one you choose. It is a repoint, not a rebuild.
+
+## Staged rollout
+
+**Promote** moves every production call to the staging version at once. A staged rollout, sometimes called a canary rollout, moves production calls onto the staging version in steps instead. At each step it compares the two versions on live calls. Guardrails pause or roll back the rollout when a metric crosses a threshold you set.
+
+Use a staged rollout when a bad release would be costly and you want to find problems on a small share of callers first.
+
+<Note>
+Staged rollouts are available on Enterprise plans. They need a version on production and a different version on staging, so the button does not appear before the first publish.
+</Note>
+
+### Start a staged rollout
+
+1. Publish the new version to staging.
+2. On the Environments tab, select **Staged rollout**. The experiment settings page opens with a draft plan. Nothing moves until you start it.
+3. Choose a plan and adjust the steps, rules, metrics and guardrails, described below.
+4. Select **Start experiment**. If you set a start time in the future, the button reads **Schedule experiment**.
+
+The running rollout lives on the agent's **Experiments** page, which has **Overview**, **Activity** and **History** tabs. Only one experiment runs on an agent at a time, and publishing to production ends it. While one is running, **Staged rollout** is hidden on the Environments tab.
+
+<Note>
+Staged rollouts split phone calls only. SMS and chat conversations stay on the current production version.
+</Note>
+
+### Plan
+
+Each step sets the share of calls sent to the new version (**Traffic**), how long to stay there (**Hold for**), and whether a person must approve before the rollout moves past it (**Approval**). A step that needs approval waits at the end of its hold until someone approves. Pick a preset, or select **Add step** to build your own.
+
+| Preset | Steps (traffic, hold) | Steps that need approval |
+| --- | --- | --- |
+| **Standard** | 5% for 6h, 25% for 12h, 50% for 24h, 100% for 24h | 25% |
+| **Cautious** | 1% for 12h, 5% for 24h, 25% for 24h, 50% for 24h, 100% for 24h | 5%, 25%, 50% |
+| **Fast** | 25% for 2h, 100% for 2h | none |
+
+**Compare** keeps a fixed share of calls on the new version instead of ramping. Nothing moves on or finishes by itself, so you finish or roll back once you have your answer.
+
+### Rules
+
+- **Traffic split**: **Per call** assigns each call independently. **Per caller** keeps a repeat caller on the version they started on.
+- **Minimum calls per step**: how many calls a step needs on the new version before it counts.
+- **Failed checks before acting**: how many failed guardrail checks it takes before a guardrail acts, so one noisy window does not end the rollout.
+- **Roll back under-sampled steps**: whether a step that ends short of the minimum rolls back.
+- **Watch after full traffic**: how long guardrails stay armed after the last step.
+- **Finish automatically**: when off, the rollout holds at the last step until you finish or roll back.
+
+**Limits** are optional. You can stop after a number of calls on the new version, set a start and end time, or run only during certain hours. Outside those hours, every call runs the current production version.
+
+### Metrics and guardrails
+
+**Metrics** lists what the Experiments page compares between the two versions. Choose from Bland metrics or from yes/no and list outcomes you publish in Dispositions.
+
+A guardrail watches one metric and acts when it crosses a threshold. To add one, select **Add guardrail** and set:
+
+- **Metric**: what to watch.
+- **Compared against**: a fixed number, or the production version on the same traffic.
+- **Fires when**: above or below the threshold.
+- **Measured over**: the time window the metric is measured over.
+- **Starting at step**: the first step where the guardrail applies.
+- **Then**: pause the experiment or roll back.
+
+### Control a running rollout
+
+The Experiments page shows only the controls the current state allows:
+
+- **Pause** and **Resume** stop and restart the plan.
+- **Set traffic** jumps to one of the plan's steps. The plan continues from wherever you land.
+- **Approve and continue** moves past a step that requires approval.
+- **Send all calls** moves every call to the new version now. Guardrails stay armed, and the rollout is not finished.
+- **Finish experiment** sends every call to the new version, which becomes the production version. Guardrails stop watching.
+- **Roll back** returns 100% of production traffic to the current production version.
+
+When a guardrail trips, you can roll back, or select **Dismiss and continue** and choose one of three options:
+
+- **Raise the threshold**
+- **Mute it for the rest of this experiment**
+- **Leave it as it is**
+
+If you leave it as it is, the guardrail stays armed and can stop the rollout again.
 
 ## The evaluation gate
 
