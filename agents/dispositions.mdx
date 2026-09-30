@@ -23,7 +23,7 @@ A greyed row you cannot click means the organization is not on an enterprise pla
 
 Inside an agent, under Configure. There is no organization-wide view: a disposition belongs to one agent, and you reach it from that agent.
 
-There is also no environment selector on this page. A published disposition runs on every call the agent handles, in every environment.
+There is also no environment selector on this page. A published disposition runs on every call the agent handles, in every environment. A small number of calls are skipped, and Common failures says which.
 
 {/* IMAGE: the Dispositions page inside an agent, showing the list and the New disposition action. */}
 
@@ -70,13 +70,15 @@ Custom code always runs last, after every judge and extractor has finished, and 
   </Step>
 
   <Step title="Set how much reasoning it gets">
-    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. The drawer shows an estimated cost per call as you change it.
+    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call. You get the actual figure when you publish, not while you are picking.
 
     High is for ambiguous or high-stakes questions. Most values do not need it.
   </Step>
 
-  <Step title="Say what the answer looks like">
-    The **Output** section of the value drawer is where you declare the answer's type, so your destination knows what it is getting. A yes or no question wants a boolean, not a sentence saying yes.
+  <Step title="Check what the answer will look like">
+    The **Output** section of the value drawer shows the value's type and how its result lands in the payload. It is a readout, not a control. The type comes from the source.
+
+    A judge brings the verdict type you gave it in Evaluations. A pathway variable brings its configured schema. For an extractor you set the type in the Extractors manager, under Structured output schema. Custom code declares its own schema in the drawer.
   </Step>
 </Steps>
 
@@ -88,11 +90,7 @@ Three settings on the disposition, not on individual values.
 
 **Immediately on conversation end** delivers within 30 minutes. Use it when something downstream acts on the answer while the call is still fresh: a CRM update, a transfer decision, an alert to someone.
 
-**Queued** delivers within 24 hours. Use it for reporting, QA and analytics, where nothing is waiting on the result.
-
-<Note>
-Queued is a deadline, not a cheaper queue you wait in. The screen describes it as lower cost, but both settings run the same way on the same models, so what you change is the deadline, not the price.
-</Note>
+**Queued** delivers within 24 hours. Use it for reporting, QA and analytics, where nothing is waiting on the result. It can also cost less: a queued judge is allowed to take a batch lane the model provider bills at a discount.
 
 ### Webhook behavior
 
@@ -124,11 +122,13 @@ The run page shows each call, what each value produced, and the evidence behind 
 
 ## Publish it
 
-Publishing is what turns a disposition on. There is no separate enable step.
+Publishing is what turns a disposition on. There is no separate enable step, and the publish drawer shows the estimated cost per call before you commit.
 
 It freezes the current draft as an immutable version, and that version is what runs. Later edits become a new draft, and the header shows Unpublished changes until you publish again. Finished runs keep the exact definition they ran under, so editing a disposition can never rewrite history.
 
 You cannot publish a disposition with no values.
+
+To stop one, open **Advanced** and use **Pause runs**. It stops running on new calls, calls in progress finish as they are, and the draft, values and history stay. Publishing turns it back on.
 
 ## Read the results
 
@@ -139,6 +139,7 @@ With Follow-up event, the results arrive as their own event once the disposition
 ```json
 {
   "event_type": "dispositions",
+  "timestamp": "2026-09-30T14:22:14.000Z",
   "call_id": "c1a9f3d2-64be-4f07-9c5a-2b81e6d0a7f4",
   "agent_dispositions": [
     {
@@ -174,7 +175,7 @@ The mapping: an outcome was deterministic code, so it is now a custom code value
 
 Reports have no single successor. Disposition results show up as columns in [Conversations](/agents/conversations), one per value and hidden until you turn them on, and anything past that you build from the webhook feed.
 
-Migrating an agent is how you bring your citations and outcomes across. Start it from **New agent**, then **Migrate**, and [Migrate to agents](/platform/migrate-to-agents) walks through it.
+If you are moving an agent over, start from **New agent**, then **Migrate**. [Migrate to agents](/platform/migrate-to-agents) walks through it.
 
 <Warning>
 Dispositioning built on node tags does not migrate. If you tagged nodes and read those tags to classify calls, there is no equivalent to move.
@@ -192,7 +193,7 @@ The route forward is a custom code value that reads tool names out of the call's
   <Accordion title="Some calls produce no disposition at all">
     Four things skip a call, and none of them leaves you an error.
 
-    Three of them are compliance and retention. Redaction applied to the call, your organization sits inside a government boundary, or the call aged past your retention window.
+    Three of them are compliance and retention. The call is marked for redaction, your organization sits inside a government boundary, or the call aged past your retention window.
 
     The fourth is timing. Dispositions get two seconds to start as the call completes, and a call that misses that window finishes without them. It is rare and it is not tied to anything you configured, so if a handful of calls are missing results with no pattern, this is usually why.
   </Accordion>
@@ -201,6 +202,8 @@ The route forward is a custom code value that reads tool names out of the call's
     Check which webhook behavior you chose. Follow-up event sends a second, separate event after the call's own webhook, so a listener that only reads the first one never sees it.
 
     Also check the field name. Results arrive under `agent_dispositions`, not `dispositions`.
+
+    If the call itself reported to no webhook, there is nowhere to deliver and nothing is sent. No error is raised.
   </Accordion>
 
   <Accordion title="Queued is greyed out">
