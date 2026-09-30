@@ -157,7 +157,7 @@ Before configuring SSO, ensure you have:
     **General:**
     - **Single sign-on URL**: 
       ```
-      https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]
+      https://api.bland.ai/authorization/sso/saml2/sp/acs/[provider-id]
       ```
     - ✅ **Use this for Recipient URL and Destination URL**
     - **Audience URI (SP Entity ID)**:
@@ -296,7 +296,7 @@ Before configuring SSO, ensure you have:
     2. Edit **Basic SAML Configuration**:
        - **Identifier (Entity ID)**: `https://api.bland.ai/sp/[provider-id]`
          (Replace `[provider-id]` with your chosen ID, e.g., `company-azure-saml`)
-       - **Reply URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
+       - **Reply URL**: `https://api.bland.ai/authorization/sso/saml2/sp/acs/[provider-id]`
        - **Sign on URL**: `https://app.bland.ai/login`
   </Accordion>
   
@@ -441,7 +441,7 @@ Google Workspace also supports SAML 2.0 via the Admin Console. Use this if your 
 
   <Step title="Configure Service Provider">
     Enter:
-    - **ACS URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
+    - **ACS URL**: `https://api.bland.ai/authorization/sso/saml2/sp/acs/[provider-id]`
       (Replace `[provider-id]` with your chosen ID, e.g., `company-google`)
     - **Entity ID**: `https://api.bland.ai/sp/[provider-id]`
     - **Start URL**: `https://app.bland.ai/login` (optional)
@@ -520,7 +520,7 @@ Google Workspace SAML changes can take up to 24 hours to propagate, though typic
     1. Create new Application → Regular Web Application
     2. Enable SAML2 Web App addon
     3. Configure:
-       - **Application Callback URL**: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
+       - **Application Callback URL**: `https://api.bland.ai/authorization/sso/saml2/sp/acs/[provider-id]`
          (Replace `[provider-id]` with your chosen ID)
        - **Settings**: Configure attribute mappings for email, firstName, lastName
     4. In Bland, add SAML provider with:
@@ -558,9 +558,13 @@ Supports both protocols:
 
 | Endpoint | URL Format | Notes |
 |----------|------------|--------|
-| ACS URL | `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]` | Assertion Consumer Service URL |
+| ACS URL | `https://api.bland.ai/authorization/sso/saml2/sp/acs/[provider-id]` | Assertion Consumer Service URL |
 | SP Entity ID | `https://api.bland.ai/sp/[provider-id]` | Service Provider identifier |
 | SP Metadata | Generated after provider creation | Download from SSO settings |
+
+<Note>
+**Existing connections**: SAML connections you set up earlier use the `/sso/saml2/callback/` ACS URL and keep working. The SSO settings in the Bland dashboard show the exact ACS URL for each connection. If you add the new `/sso/saml2/sp/acs/` URL to your identity provider, keep the old URL too.
+</Note>
 
 <Note>
 **Provider ID**: You can specify your own provider ID (e.g., `company-okta`, `acme-azure`) or leave it blank to auto-generate. Once created, the provider ID cannot be changed.
@@ -578,7 +582,7 @@ Supports both protocols:
 
     **Solution**:
     - **OIDC**: Verify redirect URI matches exactly: `https://api.bland.ai/authorization/sso/callback/[provider-id]`
-    - **SAML**: Verify ACS URL matches: `https://api.bland.ai/authorization/sso/saml2/callback/[provider-id]`
+    - **SAML**: Verify that the ACS URL in your IdP matches the ACS URL shown for your connection in the SSO settings in the Bland dashboard. New connections use `https://api.bland.ai/authorization/sso/saml2/sp/acs/[provider-id]`. Connections you set up earlier keep the ACS URL they already use.
     - Check for trailing slashes, extra spaces, or HTTP vs HTTPS
     - Ensure the provider ID is identical in both Bland and your IdP
   </Accordion>
