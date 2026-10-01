@@ -23,7 +23,7 @@ A greyed row you cannot click means the organization is not on an enterprise pla
 
 Inside an agent, under Configure. There is no organization-wide view: a disposition belongs to one agent, and you reach it from that agent.
 
-There is also no environment selector on this page. A published disposition runs on every call the agent handles, in every environment. A small number of calls are skipped, and [Common failures](#common-failures) says which.
+There is also no environment selector on this page. A published disposition runs on every call the agent handles, in every environment. Some calls are skipped, and [Common failures](#common-failures) says which.
 
 {/* IMAGE: the Dispositions page inside an agent, showing the list and the New disposition action. */}
 
@@ -63,16 +63,16 @@ Custom code always runs last, after every other value has finished, and it can t
     | Judges | **Bring in an existing judge** | Picks a published judge. Stays in the drawer |
     | Judges | **Create a new judge** | Leaves for Evaluations, and does not bring you back |
     | Variables | **Rerun a pathway variable** | Picks extractions this agent already runs. Stays in the drawer |
-    | Variables | **Create a new variable extraction** | Authors an extractor. Opens the Extractors manager and leaves the drawer |
+    | Variables | **Create a new variable extraction** | Authors an extractor. Opens the Extractors drawer and leaves this one |
     | Custom code | **Run custom code** | Pins JavaScript that runs last. Stays in the drawer |
 
-    Two of these cards take you out of the drawer. Creating a judge lands you in Evaluations with no route back, so finish the judge there and open your agent again to pick it up. Creating a variable extraction opens the Extractors manager, which is the only door to extractors anywhere in the product, and the extractor has to be published before a value can use it.
+    Two of these cards take you out of the drawer. Creating a judge lands you in Evaluations with no route back, so finish the judge there and open your agent again to pick it up. Creating a variable extraction opens the Extractors drawer, which is the only door to extractors anywhere in the product, and the extractor has to be published before a value can use it.
 
     When you are picking pathway variables you can add several in one pass, and the button counts them.
   </Step>
 
   <Step title="Set how much reasoning it gets">
-    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call. You get the estimate when you publish, not while you are picking.
+    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call.
 
     High is for ambiguous or high-stakes questions. Most values do not need it.
   </Step>
@@ -80,7 +80,7 @@ Custom code always runs last, after every other value has finished, and it can t
   <Step title="Check what the answer will look like">
     The Output section of the value drawer shows the value's type and how its result lands in the payload. It is a readout, not a control. The type comes from the source.
 
-    A judge brings the verdict type you gave it in Evaluations, and a pathway variable brings its configured schema. Neither can be changed from here. You set an extractor's type in the Extractors manager, under Structured output schema, and custom code declares its own schema further down the same drawer.
+    A judge's type comes from its scoring levels: two levels is a boolean, more than two is an enum. A pathway variable brings its configured schema. Neither can be changed from here. You set an extractor's type in the Extractors drawer, under Structured output schema, and custom code declares its own schema further down the same drawer.
   </Step>
 </Steps>
 
@@ -104,7 +104,7 @@ Three settings on the disposition, not on individual values.
 
 By default the payload carries every value, one field per value, keyed by that value's key. Shape is a JSON editor where you write a transformation tree instead, so the payload matches what your destination already expects. **See example** shows a worked one.
 
-Shape is also the one section that does not save as you go. Everything else on the page saves per control, and the transformation waits for **Save transformation**, which stays disabled until the JSON parses.
+Shape does not save as you go. The editor waits for **Save transformation**, which stays disabled until the JSON parses and you have changed something.
 
 If your destination is happy reading the default, skip this.
 
@@ -126,13 +126,13 @@ The run page shows each call, what each value produced, and the evidence behind 
 
 Publishing is what turns a disposition on. There is no separate enable step.
 
-The publish drawer shows the estimated cost per call before you commit.
+The publish drawer estimates the cost per call before you commit. It is a band built on assumed call length and token counts, and it does not account for the Queued discount.
 
 It freezes the current draft as an immutable version, and that version is what runs. Later edits become a new draft, and the header shows Unpublished changes until you publish again. Finished runs keep the exact definition they ran under, so editing a disposition can never rewrite history.
 
 You cannot publish a disposition with no values.
 
-To stop one, open **Advanced** and use **Pause runs**. It stops running on new calls, and calls in progress finish as they are. Your draft, values and history all stay. Publishing turns it back on.
+To stop one, open **Advanced** and, under Pause runs, press **Disable disposition**. It stops running on new calls, and calls in progress finish as they are. Your draft, values and history all stay. Publishing turns it back on.
 
 ## Read the results
 
@@ -157,7 +157,16 @@ With Follow-up event, the results arrive as their own event once the disposition
         { "key": "booked", "state": "produced", "value": true },
         { "key": "plan", "state": "produced", "value": "annual" }
       ],
-      "executed_at": "2026-09-30T14:22:10.000Z"
+      "executed_at": "2026-09-30T14:22:10.000Z",
+      "evidence": [
+        {
+          "source": "transcript",
+          "speaker": "user",
+          "start_ms": 44120,
+          "end_ms": 47890,
+          "text": "Yeah, let's go with the annual plan."
+        }
+      ]
     }
   ]
 }
@@ -166,6 +175,8 @@ With Follow-up event, the results arrive as their own event once the disposition
 `payload` is what your destination reads. Skip Shape and it carries every value, keyed by that value's key. Write a transformation and it is that transformation's output.
 
 `values` is the raw list alongside it, and every value carries its own `state`: `produced`, `no_value`, or `error`. That is how you tell a real `null` from a question that could not be answered.
+
+`evidence` is the quotes behind the answers, and it carries transcript text verbatim. It appears whenever a value produced any, so a destination that validates a strict schema needs to expect it.
 
 With Hold original webhook, there is no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field.
 
@@ -195,11 +206,13 @@ The route forward is a custom code value that reads tool names out of the call's
   </Accordion>
 
   <Accordion title="Some calls produce no disposition at all">
-    Four things skip a call, and none of them leaves you an error.
+    Five things skip a call, and none of them leaves you an error.
 
-    Three of them are compliance and retention. The call is marked for redaction, your organization sits inside a government boundary, or the call aged past your retention window.
+    Three are compliance and retention. The call is marked for redaction, your organization sits inside a government boundary, or the call aged past your retention window.
 
-    The fourth is timing. Dispositions get two seconds to start as the call completes, and a call that misses that window finishes without them. It is rare and it is not tied to anything you configured, so if a handful of calls are missing results with no pattern, this is usually why.
+    The fourth is billing. If your organization's billing is blocked or its balance has run out, nothing runs and nothing is recorded. That check fails closed, so a transient error on it skips the call too.
+
+    The fifth is timing. Dispositions get two seconds to start as the call completes, and a call that misses that window finishes without them. It is rare and it is not tied to anything you configured, so if a handful of calls are missing results with no pattern, this is usually why.
   </Accordion>
 
   <Accordion title="I published, but nothing arrives on my webhook">
