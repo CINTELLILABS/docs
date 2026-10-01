@@ -1,0 +1,100 @@
+---
+title: 'Testbed'
+description: 'Take one turn from a real conversation, change what the agent was told, and run it again to see whether the answer changes'
+---
+
+Testbed takes a single moment from a real conversation and runs it again.
+
+When your agent said something wrong, that answer came from one request: a set of messages, sent to a model, which produced a reply. Testbed pulls that exact request back up, lets you edit it, and re-runs it as many times as you like.
+
+<Warning>
+Testbed does not replay the call.
+
+It re-runs **one turn**. The conversation after that point is not re-derived, so you are not seeing how the call would have gone. You are seeing what that one answer becomes when you change what led to it.
+</Warning>
+
+## Prerequisites
+
+- A real conversation to work from, in [Conversations](/agents/conversations)
+
+## Open it
+
+Four ways in, and the labelled one is not the one you will use most.
+
+| From | What to press |
+| --- | --- |
+| A conversation | The test-tube icon in the toolbar |
+| A turn in the transcript | Hover the turn, then the icon that appears, then pick what to test |
+| An event row | Hover the row, then the chip that appears. This pins the exact request |
+| The Conversations list | The test-tube icon in the toolbar, which opens Testbed empty |
+
+<Note>
+Most of these are icons with no words next to them. Hovering names them, and the transcript one opens a short menu: **Dialogue**, **Route**, **Loop condition**, **Variable extraction**, which is choosing which decision from that turn you want to re-run.
+
+Opening Testbed from the list rather than from a conversation gives you an empty **Open Testbed** picker instead.
+</Note>
+
+## What you can change
+
+The middle pane holds the messages exactly as they were sent. Edit any of them: the instructions, the context, what the caller supposedly said.
+
+You also set how many times to run it. Running once tells you what happens; running several times tells you whether it happens reliably, which is usually the more useful answer.
+
+## Read the result
+
+Identical answers are grouped together, and each group is badged with how many of your runs produced it, as **`count` / `total`**.
+
+Each group is also marked **Matches original** or **Different from original**, against the answer the real call produced.
+
+So the result is a stability reading rather than a pass or a fail. Five identical answers mean the agent is behaving consistently, whether or not it is behaving correctly. Five different answers mean the turn is a coin flip, which is worth knowing before you change anything.
+
+## Push a change back
+
+**Push change** writes your edited version back to the agent.
+
+<Warning>
+**Push change** is disabled whenever the agent has changed since the conversation you are looking at.
+
+That is often exactly your situation: something went wrong, you edited the agent, and now you are investigating the old call. In that case copy your change and make it in [Agent builder](/agents/agent-builder) instead.
+</Warning>
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="I cannot find a button that says Open in Testbed">
+    On a conversation it is a test-tube icon with no label. That wording appears on other surfaces, not on the conversation itself.
+  </Accordion>
+
+  <Accordion title="The re-run answer is different and I changed nothing">
+    That is a real result. The same request can produce different answers, which is why the run count exists. Run it several times to see how wide the spread is before you treat one answer as the agent's behavior.
+  </Accordion>
+
+  <Accordion title="Push change is greyed out">
+    The agent has changed since that conversation. Testbed will not write an old turn over a newer agent. Make the change in the builder.
+  </Accordion>
+
+  <Accordion title="I fixed the turn but the call still goes wrong later">
+    Testbed re-runs one turn and stops. Everything after it is unchanged, so a fix that works here still has to be tried against a whole conversation, in [Evaluations](/agents/evaluations).
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Find the call that went wrong.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Make the change for real.
+  </Card>
+  <Card title="Evaluations" icon="clipboard-check" href="/agents/evaluations">
+    Check the fix across whole conversations, not one turn.
+  </Card>
+  <Card title="Environments" icon="layer-group" href="/agents/environments">
+    Ship it once you believe it.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

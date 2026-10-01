@@ -1,0 +1,162 @@
+---
+title: 'Environments'
+description: 'Ship an agent safely: what development, staging and production hold, how to publish and promote, and why a call needs a production version'
+---
+
+Every agent has three environments: development, staging and production.
+
+Development is the agent you are working on, saved work and unsaved alike. It is the only one you edit.
+
+Staging and production are snapshots. Each holds one version of the agent and keeps serving it until you point it at another. A new agent has nothing in either.
+
+## Prerequisites
+
+- An agent you have built, from [Agent builder](/agents/agent-builder)
+- An owner, admin, operator or prompter role. A viewer can see the Environments tab but cannot publish, promote, roll back or save a variable
+- Optional: evaluations configured on staging, if you want them to gate the publish into staging and the promotion out of it. See [Evaluations](/agents/evaluations)
+
+## Where environments live
+
+Inside an agent, Environments is under Configure. It has two tabs, Environments and Variables.
+
+There is no organization-wide view. Environments belong to one agent, and you reach them from that agent.
+
+{/* IMAGE: the Environments tab inside an agent, showing the Production, Staging and Development cards. */}
+
+Staging and production each show the **Version** they are pinned to, and usually when it arrived, **Deployed** on production and **Created** on staging. Development shows neither, because it is the live head rather than a pin. Production holding nothing shows no version and no buttons. An empty staging card still offers **Promote**, greyed out.
+
+<Warning>
+A call runs the **production** version by default. An agent with nothing pinned to production has nothing to serve, and an API call is refused with a 400 and the code `AGENT_ENV_UNPINNED`.
+
+Building and saving is not shipping.
+</Warning>
+
+## Publish
+
+**Publish** sits in two places and does the same thing in both: the button at the top right of the builder, and the Development card on the Environments tab. It saves your current work as a new version, then ships that exact version somewhere.
+
+Where it ships depends on one thing: whether this agent has ever been in production.
+
+### The first publish goes straight to production
+
+An agent that has never been live skips staging. There is no menu, just one button.
+
+The confirmation asks for a phone number, and tells you that publishing changes what the agent answers but not which numbers or pathways reach it. You can publish without attaching one.
+
+Staging gets the same version on the way through, so it does not start out behind.
+
+<Note>
+Configuring a required evaluation puts the agent back on the normal staging path, since a one-press release would have nothing to evaluate against.
+</Note>
+
+### After that, Publish offers a choice
+
+Once production holds a version, Publish opens a menu with two destinations:
+
+- **Publish to staging** saves a new version and pins it to staging. Production does not move, so callers keep the version it already holds.
+- **Force promote** sends development straight to production in one step, skipping staging. Staging is repointed to that version on the way, which the confirmation says outright.
+
+Picking from the menu is not agreeing to ship. Each destination opens its own confirmation.
+
+<Warning>
+What **Force promote** skips is the evaluation gate. That is its purpose, and the bypass is recorded in the audit log rather than on the deployment, so deployment history will not show you which releases were forced.
+
+It is the control that puts unevaluated work in front of live callers.
+</Warning>
+
+## Promote to production
+
+**Promote** on the Staging card points production at the version staging is holding. Nothing is copied and nothing is rebuilt.
+
+Its confirmation carries the same phone number section and the same reassurance as the first publish: promoting does not change which numbers or pathways reach the agent.
+
+## Roll back
+
+To go back, **Rollback** on the Production card lists the versions production held before and repins to one you choose. It is a repoint, not a rebuild.
+
+## The evaluation gate
+
+Evaluations on staging can gate both moves, and the two directions fail differently. You attach them from the Evaluations card between Development and Staging, covered in [Evaluations](/agents/evaluations#make-it-a-required-check).
+
+With no evaluations configured at all, neither move is gated and both happen immediately.
+
+Configuring any evaluation changes that, even one you have not marked **Req'd**. The run still executes and the publish waits for it, which takes as long as the conversations take. What the required flag decides is whether a verdict can stop you: a judge, the evaluation that scores a run, reports its result and blocks nothing when it is not required.
+
+<Note>
+One evaluation configuration does both jobs. The one saved on **staging** gates the publish into staging and the promotion out of it. There is no separate production gate to configure.
+</Note>
+
+Publishing to staging saves your changes as a new version, runs the evaluations against that exact version, and only assigns it a version number and pins it to staging once every required evaluation passes. When a required evaluation fails, a toast reads **Publish blocked** with the number that failed. A run that times out or errors stops the publish too, with its own message.
+
+<Warning>
+A blocked publish is not a rollback. The version is already saved on development, without a number and without a pin, and it stays there.
+
+Nothing is undone and nothing is lost. Fix what failed and publish again.
+</Warning>
+
+A blocked promotion is stopped twice. The dashboard dims **Promote**, explains why on hover, and does nothing if you press it. The server enforces the same rule again on the wire, which is what catches an API caller. Either way production keeps serving the version it already had.
+
+A judge scores a rate, not a verdict per conversation. It passes when half or more of the scored conversations match the target, so a single bad conversation does not necessarily fail the run. Test cases default to an odd number of conversations, which keeps ties rare.
+
+## Variables
+
+The Variables tab holds keys and values that belong to an environment rather than to the agent. Pick Development, Staging or Production to choose which set you are editing.
+
+The same key can carry a different value in development, staging and production. Reference one anywhere in the agent's configuration as `{"{{env.KEY}}"}`, and it resolves to the running environment's value when a call starts, which is how an agent points at a test system while it is on staging and a real one once it is promoted. A variable nothing references does nothing.
+
+Marking a value **Secret** stores it in your secret vault and keeps only a reference here. It cannot be read back afterwards.
+
+<Warning>
+A key with no value in the environment the call is running in does not fall back to another environment. It fails the call before it starts, with `AGENT_VARIABLE_UNRESOLVED`.
+
+So a variable added on development and never set on production breaks production the moment something references it.
+</Warning>
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="The agent answers with old behavior">
+    Production is pinned to an older version. Publishing to staging does not move production; check what production says it is pinned to, then **Promote**.
+  </Accordion>
+
+  <Accordion title="Calls fail and the agent looks fine in the builder">
+    The agent has never reached production. The builder shows development, which is not what a call runs by default. On an API call the error is a 400 with `AGENT_ENV_UNPINNED`, which also names the alternative: pass `agent_version` to run a specific version deliberately.
+  </Accordion>
+
+  <Accordion title="Publish finished but staging did not move">
+    A required evaluation failed, and the toast said so. The version is saved on development with no number and no pin, which is why nothing appears to have happened on staging.
+  </Accordion>
+
+  <Accordion title="Promotion is blocked although the evaluations passed">
+    The configuration changed after that run. Promotion compares the run against the whole configuration saved now, which covers the required evaluations and the shared test inputs, so changing the test cases or the conversation count invalidates a pass just as editing an evaluation does. Publish to staging again to run them against the current configuration.
+  </Accordion>
+
+  <Accordion title="A button does nothing and the error says nothing">
+    Publishing, promoting, rolling back and saving a variable all need an owner, admin, operator or prompter role. The buttons are not disabled for a viewer, so the press fails with a generic message rather than telling you the cause.
+  </Accordion>
+
+  <Accordion title="A variable is right in one place and wrong in another">
+    Variables are per environment. Setting one on development leaves staging and production untouched, and promoting an agent does not carry values across.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Build the version you are going to publish.
+  </Card>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Give the promoted agent a number to answer on.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Read what the production version actually did.
+  </Card>
+  <Card title="Tools" icon="wrench" href="/agents/tools">
+    The tools a version carries with it.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

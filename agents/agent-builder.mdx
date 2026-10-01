@@ -1,0 +1,241 @@
+---
+title: 'Agent builder'
+description: 'Build an agent end to end: prompts, variables, pathways, tools, knowledge, settings, and publishing'
+---
+
+The agent builder is where you describe what your agent does and how it behaves. An agent is a single thing to build, test, and publish: its instructions, the tools and knowledge it can reach, and the branches of behavior it needs.
+
+Most agents start as a single prompt. You add structure only where the conversation needs it, rather than starting from a graph and filling it in.
+
+The examples here build a front desk agent for Northwind Dental, a fictional practice.
+
+## Prerequisites
+
+- A [Bland account](https://v2.app.bland.ai/signup)
+- An agent to work in, from **Overview** or from [Build your first agent](/build-your-first-agent)
+- For an existing pathway or persona, [Migrate to agents](/platform/migrate-to-agents) first
+
+## Find your way around
+
+Open an agent and everything you need is already on screen. The sidebar switches to that agent's own sections, and to its right there are three regions.
+
+**Agent and Guardrails**, across the top. Agent is where you build. Guardrails is where you set rules that are checked on every call.
+
+**The agent itself**, filling the middle. Two tabs, **Prompt** and Settings, and almost everything in this guide happens on Prompt. It runs top to bottom as:
+
+1. **Prompt**, what the agent should accomplish
+2. **System prompt**, how it comes across
+3. **Variables to extract**
+4. Pathways
+5. Tool references and Knowledge references
+
+**The graph**, on the right. A picture of how the agent fits together, and where you test it.
+
+{/* IMAGE: The agent builder as it opens. Agent and Guardrails across the top, the agent's Prompt tab filling the middle, the graph on the right. */}
+
+## The two prompts
+
+An agent has two prompt fields, stacked one above the other on the Prompt tab. Knowing which is which saves the most time later, and the product states the difference in one word: scope.
+
+**Prompt** is the first field. Its hint reads "Defines the agent's goal and how it should achieve it while on this node." This is what the agent is trying to do and how it should get there: how it opens, what it asks, where it routes.
+
+**System prompt** is directly below it. Its hint reads "Sets the agent's personality and demeanor on every node." Tone, formality, how much it says at once.
+
+The distinction that matters is **on this node** against **on every node**. The first applies while the conversation is here. The second applies everywhere, including inside every pathway.
+
+<Note>
+Only the first field supports `@` tagging. The system prompt is agent-wide configuration with no node to hang a tool on, so tools and knowledge are tagged in the **Prompt** field.
+</Note>
+
+## Write the prompt
+
+Both prompt fields are rich text editors. The empty **Prompt** field opens with "Your goal is to help the caller accomplish...", which is a sentence to finish rather than an instruction to start one.
+
+Write in plain language. Describe the job, the order things should happen in, and what the agent should do when the caller goes sideways. You do not need to script exact wording, and agents generally sound better when you do not.
+
+### Tag tools and knowledge with @
+
+Type `@` in the prompt to reference a tool or a knowledge source by name. `@check-calendar` tells the agent this is the moment to check the calendar. The same works for knowledge: `@service-menu` points it at that source.
+
+Two sections below list what the agent currently has:
+
+- Tool references, with the hint "Give your agent tools by tagging them with @tool-name in the prompt", plus **View all** and **Create tool**.
+- Knowledge references, with the hint "Give your agent knowledge by tagging sources with @source-name in the prompt", plus **View all** and **Upload source**.
+
+The Prompt hint reads "Tools and knowledge only reach the agent when you @mention them." That is exactly right for tools. For knowledge it is stricter than the product, as the next two paragraphs explain.
+
+Creating is not attaching. Building a tool with **Create tool**, or uploading a file with **Upload source**, adds it to your library and nothing more. The agent cannot see it yet.
+
+For tools, tagging is the only way, and it is per prompt. A tool that is not tagged in the Prompt field is not available during the call. Tagging also attaches a copy rather than a link, which matters every time you edit a tool after tagging it. See [Tag a tool into a prompt](/agents/tools#tag-a-tool-into-a-prompt).
+
+For knowledge, there is a second path. A source can also be attached to the agent from the [Knowledge](/agents/knowledge) page, and an attached source is available whether or not you tag it. Tagging still helps, because it tells the agent where in the conversation you expect the source to matter.
+
+<Warning>
+Building a tool without tagging it fails silently. The tool saves, Tool references stays empty, and the agent behaves as though it does not exist, with nothing on screen to say why.
+
+A knowledge source uploaded and never tagged is a different case. It is in your library and not yet on any agent, and the fix is to attach it on the [Knowledge](/agents/knowledge#attach-a-source-to-an-agent) page rather than to tag it.
+</Warning>
+
+## Extract variables
+
+**Variables to extract** holds key and value pairs the agent pulls out of the conversation and reuses later in the same call. A caller's name, a date they asked for, a member number.
+
+The section says so plainly: "Key:value pairs the agent extracts to reuse during the conversation. Adds turn latency."
+
+Take that last part seriously. Every variable is work the agent does mid-conversation, and each one costs a little response time. Extract what you will use. Skip what you will not.
+
+## Extend the agent with pathways
+
+A single prompt handles a surprising amount. When it stops being enough, pathways carry the parts that need their own handling. The section describes them as extending your core agent's skills.
+
+<Note>
+Searching for scenarios? They are called pathways now. If you were looking for simulated testing, that is [simulations and test cases](/agents/evaluations).
+</Note>
+
+Add one with **New pathway**. The menu offers three kinds to create, plus **Add existing** to reuse a pathway from this agent or another one.
+
+### Prompt
+
+A single prompt for one job, like booking an appointment or handling a cancellation. Think of it as one focused instruction the agent moves into and back out of.
+
+Prompts are also how you manage context. Splitting scheduling out of the main prompt keeps the agent from carrying scheduling instructions through every unrelated conversation.
+
+### Pathway
+
+A flow you lay out yourself: steps you place, and the pathways you draw between them. Opening one turns the graph column into the canvas where you build it. Custom code and webhook steps are available here.
+
+Choose this when the steps have to happen in a guaranteed order: a scripted disclosure, a verification sequence, anything you need to be able to point at and prove ran the same way every time.
+
+### Authentication zone
+
+A gate. It has the steps a pathway has, plus identity questions. On enterprise plans it also offers an SMS code step; on other plans that step is not in the menu.
+
+In the Pathways list, drag other pathways underneath an authentication zone to protect them. A caller then has to get through authentication before the agent will move into anything beneath it. Use it for anything that exposes account details.
+
+### Set the routing condition
+
+Creating a pathway does not make it run. Click its row in the Pathways section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the pathway never fires.
+
+A Prompt opens in a panel, so you stay where you are. A Pathway or an Authentication zone opens into its own canvas, with the routing condition on a panel beside it.
+
+## Configure settings
+
+The Settings tab holds the rest of what is true of the agent rather than of one conversation: display name, voice, language, memory, and metadata.
+
+The tab runs: name, voice and languages, channels, memory, metadata, and request data. Request data is the pair to Variables to extract: facts you hand the agent before the call rather than ones it works out during it.
+
+<Warning>
+A new agent opens with **memory on** and **call recording on**.
+
+Memory writes facts about the person into their contact record. Turning it off later stops further extraction but does not delete what was already written. Recording is under **Advanced settings**, as **Disable recording (PCI compliance)**.
+
+Both are worth a deliberate decision before the agent takes a real call.
+</Warning>
+
+With memory on, a memory schema section appears below the toggle, where you define what the agent should remember about a person. The contact records themselves live under **Contacts**, a tab on [Conversations](/agents/conversations).
+
+Advanced settings also cover context management, excluding responses from logs, and image sending.
+
+## Guardrails
+
+**Guardrails** is the second tab at the top of the builder, beside Agent. A guardrail is a rule checked live during the call. You can attach an action for when one is tripped: end the call, transfer it, or move to a specific step. An action is optional, and with none attached the violation is recorded and the call continues.
+
+Four built-in guardrails cover the standard TCPA disclosures: AI disclosure, recording disclosure, self introduction, and opt out. Each is a switch, and a new agent starts with all four off. The first three also take a window, the number of seconds by which the agent must have said it, defaulting to 30.
+
+Built-in guardrails are available on every plan.
+
+You can also write custom guardrails, which require an enterprise plan.
+
+<Note>
+Guardrails are monitoring. They do not guarantee regulatory compliance, and they are not a substitute for your own legal review of how you use the product.
+</Note>
+
+## Test as you build
+
+The right side of the builder toggles between **Graph** and Testing.
+
+At the top level the graph is a fixed picture of how the agent is put together, not an editing surface, which is why testing can take its place. Open a Pathway or an Authentication zone and that same column becomes the editable canvas where you build its nodes and edges.
+
+Testing has two tabs:
+
+- **Manual** is the build loop. Talk to the agent yourself, watch the debug logs as it works, change something, try again.
+- **Simulation** runs saved test cases and scores them with judges. That is covered in [Evaluations](/agents/evaluations), where test cases and judges are built.
+
+Test manually while you are shaping behavior. Move to simulation once the behavior is roughly right and you want to know whether a change broke something that used to work.
+
+## Publish and promote
+
+Moving an agent into service takes two steps, and they are separate on purpose.
+
+The environment selector at the top right shows which environment you are looking at, starting at Development.
+
+**Publish** moves Development to Staging. It asks for a version number: patch, minor, or major. Bland keeps every version, so you can see what changed and go back.
+
+**Promote** moves Staging to Production. Switch the environment selector to Staging and the Publish button becomes **Promote**. You can also promote from the [Environments](/agents/environments) page.
+
+<Warning>
+An agent that has not been promoted to Production will not answer calls.
+
+This is the single most common reason a new agent does not pick up. The configuration is saved, the number is attached, and the call still fails, because Production has nothing pinned to it. Publishing alone is not enough.
+</Warning>
+
+If evaluations are configured on Staging, publishing runs them first. Your changes are saved as a version either way, but the version is only numbered and pinned to Staging once every required evaluation passes. A blocked publish leaves the version on Development, where you can fix it and try again.
+
+Checks take minutes, so the publish dialog closes rather than waiting. The result appears on the Checks card on the [Environments](/agents/environments) page.
+
+<Note>
+Publishing moves you to Staging, which is read-only. A banner offers **Switch to Development**, and that is where you go to keep editing.
+</Note>
+
+A promoted agent still needs somewhere to receive conversations. See [Dispatch](/agents/dispatch) for attaching a phone number and choosing channels.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="The agent does not answer the phone">
+    Almost always an agent that was published but never promoted. Promote it to Production from [Environments](/agents/environments), then redial.
+  </Accordion>
+
+  <Accordion title="A pathway never runs">
+    Check its routing condition. A pathway with no condition has nothing telling the agent to enter it.
+  </Accordion>
+
+  <Accordion title="The caller gets stuck partway through">
+    Usually a node in a pathway with no exit route. Open the pathway and check that every node has somewhere to go.
+  </Accordion>
+
+  <Accordion title="The agent never uses a tool you built">
+    Tag it in the prompt. Building a tool does not give it to the agent, and a tool that is not tagged is not available during the call.
+  </Accordion>
+
+  <Accordion title="The agent answers slowly">
+    Check how many variables you are extracting. Each one adds latency to the turn it runs on.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tools" icon="wrench" href="/agents/tools">
+    Build the tools your agent calls, and store the secrets they need.
+  </Card>
+  <Card title="Knowledge" icon="book" href="/agents/knowledge">
+    Add sources your agent answers from, and test what it retrieves.
+  </Card>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Attach a phone number, pick channels, and put the agent into service.
+  </Card>
+  <Card title="Environments" icon="rocket" href="/agents/environments">
+    Promote to production, and see how environments relate to agent versions.
+  </Card>
+  <Card title="Evaluations" icon="clipboard-check" href="/agents/evaluations">
+    Run judges and test cases as a check before you promote.
+  </Card>
+  <Card title="Migrate to agents" icon="arrow-right-arrow-left" href="/platform/migrate-to-agents">
+    Move an existing pathway or persona onto an agent.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
