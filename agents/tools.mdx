@@ -105,7 +105,7 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
 
     The **Audio** column on that table pulls the value from what the caller said rather than from the transcript. It costs latency and it is worth it for the things transcription gets wrong: spoken numbers, dates, spellings.
 
-    The **Sensitive** column keeps a value out of the record. The tool still receives it during the call, but logs, call details and the post-call webhook show `[REDACTED]` instead. Variables with names like `card_number`, `cvv` or `password` are sensitive by default. See [Mark a variable as sensitive](/agents/agent-builder#mark-a-variable-as-sensitive).
+    The **Sensitive** column keeps a value out of the record. The tool still receives it during the call, but everywhere else the variable reads `[REDACTED]`, including call details and the post-call webhook. Variables with names like `card_number`, `cvv` or `password` are sensitive by default. See [Mark a variable as sensitive](/agents/agent-builder#mark-a-variable-as-sensitive).
 
     Leave a variable alone, or dismiss it with the **X**, and it resolves from [variables already on the call](/agents/agent-builder#extract-variables) instead. The agent never fills it.
   </Step>
@@ -130,6 +130,8 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
     The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now. Save it, reopen, and check the `rest_api_post_*` rows then.
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
+
+    Output fields have a **Sensitive** column too. Turn it on for a field such as a verification code or account number. The agent can use the value during the call, but the stored response shows `[REDACTED]` at that path. The rest of the response stays readable. If the path finds nothing, the response is kept as it came, and any field with that name is still redacted.
 
     Each row shows its name wrapped as `{{output.name}}`. That is the table's label, not the reference. What you write in a prompt is the bare name, `{{name}}`.
 
