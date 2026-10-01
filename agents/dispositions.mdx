@@ -8,7 +8,7 @@ A disposition is a standing question you ask of every call an agent takes.
 Did the caller book? Which plan did they ask about? Was the agent rude? You write the question once, publish it, and from then on every call the agent handles produces an answer, delivered to the same webhook the call already reports to.
 
 <Note>
-Dispositions are an enterprise feature, and enterprise organizations are switched on for it one at a time. The sidebar item is there either way, so the item itself tells you where you stand.
+Dispositions are an enterprise feature, and enterprise organizations are switched on for it one at a time. The sidebar item is there either way.
 
 A greyed row you cannot click means the organization is not on an enterprise plan. A row that opens and then says "Dispositions isn't available here" means you are on enterprise but not switched on yet, and your Bland partner can ask for it.
 </Note>
@@ -23,7 +23,7 @@ A greyed row you cannot click means the organization is not on an enterprise pla
 
 Inside an agent, under Configure. There is no organization-wide view: a disposition belongs to one agent, and you reach it from that agent.
 
-There is also no environment selector on this page. A published disposition runs on every call the agent handles, in every environment. A small number of calls are skipped, and Common failures says which.
+There is also no environment selector on this page. A published disposition runs on every call the agent handles, in every environment. A small number of calls are skipped, and [Common failures](#common-failures) says which.
 
 {/* IMAGE: the Dispositions page inside an agent, showing the list and the New disposition action. */}
 
@@ -40,9 +40,11 @@ There are four sources, and picking the right one is most of the work:
 | Extractor | You want structured data the agent wasn't already collecting | An extractor you create from Add value, under Variables |
 | Custom code | The answer is a calculation, or it has to reach your systems | JavaScript you write |
 
-A pathway variable is re-extracted, not read back. The variable's own frozen prompt runs again, this time against the corrected post-call transcript instead of what the agent captured live. The answer can differ from what you saw during the call, and usually it is better.
+A pathway variable is re-extracted, not read back. Dispositions runs its own extraction against the corrected post-call transcript, built from the variable's name, its configured prompt and its output schema. The answer can differ from what you saw during the call, and usually it is better.
 
-Custom code always runs last, after every judge and extractor has finished, and it can take their results as inputs. It cannot take another custom code value as an input.
+Those three are copied onto the value when you add it. Editing the variable in [Agent builder](/agents/agent-builder) does not change what the disposition reruns.
+
+Custom code always runs last, after every other value has finished, and it can take their results as inputs. It cannot take another custom code value as an input.
 
 ## Build one
 
@@ -70,15 +72,15 @@ Custom code always runs last, after every judge and extractor has finished, and 
   </Step>
 
   <Step title="Set how much reasoning it gets">
-    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call. You get the actual figure when you publish, not while you are picking.
+    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call. You get the estimate when you publish, not while you are picking.
 
     High is for ambiguous or high-stakes questions. Most values do not need it.
   </Step>
 
   <Step title="Check what the answer will look like">
-    The **Output** section of the value drawer shows the value's type and how its result lands in the payload. It is a readout, not a control. The type comes from the source.
+    The Output section of the value drawer shows the value's type and how its result lands in the payload. It is a readout, not a control. The type comes from the source.
 
-    A judge brings the verdict type you gave it in Evaluations. A pathway variable brings its configured schema. For an extractor you set the type in the Extractors manager, under Structured output schema. Custom code declares its own schema in the drawer.
+    A judge brings the verdict type you gave it in Evaluations, and a pathway variable brings its configured schema. Neither can be changed from here. You set an extractor's type in the Extractors manager, under Structured output schema, and custom code declares its own schema further down the same drawer.
   </Step>
 </Steps>
 
@@ -90,7 +92,7 @@ Three settings on the disposition, not on individual values.
 
 **Immediately on conversation end** delivers within 30 minutes. Use it when something downstream acts on the answer while the call is still fresh: a CRM update, a transfer decision, an alert to someone.
 
-**Queued** delivers within 24 hours. Use it for reporting, QA and analytics, where nothing is waiting on the result. It can also cost less: a queued judge is allowed to take a batch lane the model provider bills at a discount.
+**Queued** delivers within 24 hours. Use it for reporting, QA and analytics, where nothing is waiting on the result. Judge values can also cost less on Queued, where they become eligible for a batch lane the model provider bills at a discount. Nothing else changes price with timing.
 
 ### Webhook behavior
 
@@ -122,13 +124,15 @@ The run page shows each call, what each value produced, and the evidence behind 
 
 ## Publish it
 
-Publishing is what turns a disposition on. There is no separate enable step, and the publish drawer shows the estimated cost per call before you commit.
+Publishing is what turns a disposition on. There is no separate enable step.
+
+The publish drawer shows the estimated cost per call before you commit.
 
 It freezes the current draft as an immutable version, and that version is what runs. Later edits become a new draft, and the header shows Unpublished changes until you publish again. Finished runs keep the exact definition they ran under, so editing a disposition can never rewrite history.
 
 You cannot publish a disposition with no values.
 
-To stop one, open **Advanced** and use **Pause runs**. It stops running on new calls, calls in progress finish as they are, and the draft, values and history stay. Publishing turns it back on.
+To stop one, open **Advanced** and use **Pause runs**. It stops running on new calls, and calls in progress finish as they are. Your draft, values and history all stay. Publishing turns it back on.
 
 ## Read the results
 
@@ -173,7 +177,7 @@ Dispositions replace three V1 surfaces: citations, outcomes and reports.
 
 The mapping: an outcome was deterministic code, so it is now a custom code value. A citation was an LLM answering a question, so it is now a judge value. Both now live in one place.
 
-Reports have no single successor. Disposition results show up as columns in [Conversations](/agents/conversations), one per value and hidden until you turn them on, and anything past that you build from the webhook feed.
+Reports have no single successor. Disposition results show up as columns in [Conversations](/agents/conversations), one per value, hidden until you turn them on. Anything past that you build from the webhook feed.
 
 If you are moving an agent over, start from **New agent**, then **Migrate**. [Migrate to agents](/platform/migrate-to-agents) walks through it.
 
