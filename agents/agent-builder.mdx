@@ -84,6 +84,24 @@ The section says so plainly: "Key:value pairs the agent extracts to reuse during
 
 Take that last part seriously. Every variable is work the agent does mid-conversation, and each one costs a little response time. Extract what you will use. Skip what you will not.
 
+### Mark a variable as sensitive
+
+Some values should reach your tools but never land in a record: a card number, a CVV, a PIN, a password. Mark those variables **Sensitive**.
+
+Open the **⋯** menu on the variable's row and turn on **Sensitive**. The same menu holds **Spelling precision** and **Delete**.
+
+A sensitive variable behaves like this:
+
+- Tools and webhooks can use its value during the live call.
+- Bland never stores the value. Logs, call details and the post-call webhook show `[REDACTED]` in its place.
+- The value does not carry over. A reconnect, a transfer or a new message starts without it, so the agent has to collect it again.
+
+Some variables are sensitive by default because of their name. Names built from words like `password`, `token`, `api_key`, `cvv`, `security_code`, `card_number`, `exp_date`, `ssn`, `account_number`, `routing_number` or `pin` match. Bland checks the words whatever the case or separator, so `cardNumber`, `card_number` and `CARD-NUMBER` all match. `pinned` does not. To keep one of these values in the record, turn **Sensitive** off on that row.
+
+<Tip>
+For a credential your tools always send, such as an API key, use a [secret](/agents/tools#store-credentials-as-secrets) instead. A sensitive variable is for a value the caller gives the agent during the call.
+</Tip>
+
 ## Extend the agent with pathways
 
 A single prompt handles a surprising amount. When it stops being enough, pathways carry the parts that need their own handling. The section describes them as extending your core agent's skills.
