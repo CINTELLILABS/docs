@@ -35,7 +35,7 @@ There are four sources, and picking the right one is most of the work:
 
 | Source | Use it when | Where it comes from |
 | --- | --- | --- |
-| Org judge | The answer needs judgement. Was this call handled well? | A published judge from [Evaluations](/agents/evaluations) |
+| Judge | The answer needs judgement. Was this call handled well? | A published judge from [Evaluations](/agents/evaluations) |
 | Pathway variable | Your agent already extracts this during the call | An extraction configured on this agent, rerun after the call |
 | Extractor | You want structured data the agent wasn't already collecting | An extractor you create from Add value, under Variables |
 | Custom code | The answer is a calculation, or it has to reach your systems | JavaScript you write |
@@ -72,7 +72,7 @@ Custom code always runs last, after every other value has finished, and it can t
   </Step>
 
   <Step title="Set how much reasoning it gets">
-    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call.
+    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. Higher costs more per call, and Low is unavailable on an extractor that reads call audio.
 
     High is for ambiguous or high-stakes questions. Most values do not need it.
   </Step>
@@ -80,7 +80,7 @@ Custom code always runs last, after every other value has finished, and it can t
   <Step title="Check what the answer will look like">
     The Output section of the value drawer shows the value's type and how its result lands in the payload. It is a readout, not a control. The type comes from the source.
 
-    A judge's type comes from its scoring levels: two levels is a boolean, more than two is an enum. A pathway variable brings its configured schema. Neither the levels nor the schema can be changed from here. You set an extractor's type in the Extractors drawer, under Structured output schema, and custom code declares its own schema further down the value drawer.
+    A judge's type comes from its scoring levels: two levels, or none at all, is a boolean, and anything else is an enum. A pathway variable brings its configured schema. Neither the levels nor the schema can be changed from here. You set an extractor's type in the Extractors drawer, under Structured output schema, and custom code declares its own schema further down the value drawer.
   </Step>
 </Steps>
 
@@ -100,11 +100,13 @@ Three settings on the disposition, not on individual values.
 
 **Hold original webhook** waits for the disposition, then sends one combined webhook. It adds up to 30 minutes of latency, and it needs Immediately on conversation end, so choosing it rules Queued out.
 
+If the agent still runs V1 citations, those calls already hold their own webhook for citations, and the disposition falls back to Follow-up event on them. Nothing on screen tells you.
+
 ### Shape
 
 By default the payload carries every value, keyed by that value's key. Shape is a JSON editor where you write a transformation tree instead, so the payload matches what your destination already expects. **See example** shows a worked one.
 
-Shape does not save as you go. The editor waits for **Save transformation**, which stays disabled until the JSON parses and you have changed something.
+Shape does not save as you go. The editor waits for **Save transformation**, which stays disabled until you have changed something and the tree both parses and points only at values this disposition has.
 
 If your destination is happy reading the default, skip this.
 
@@ -120,7 +122,7 @@ What it does not do is deliver. No webhook is sent for a test run, so nothing do
 
 The run page shows each call, what each value produced, and the evidence behind it. When an answer is wrong you can correct it, and corrections are kept with the run.
 
-**Align with AI** reads your corrections and proposes changes to the disposition that would have produced them. Applying a proposal to an org judge forks it into an agent-scoped copy, leaving the original judge alone.
+**Align with AI** reads your corrections and proposes changes to the disposition that would have produced them. Applying a proposal to a judge edits that judge and publishes a new version of it. The judges you can pin belong to this agent, so no other agent is affected, but the edit is not scoped to this one disposition.
 
 ## Publish it
 
@@ -161,7 +163,7 @@ With Follow-up event, the results arrive as their own event once the disposition
       "evidence": [
         {
           "source": "transcript",
-          "speaker": "user",
+          "speaker": "customer",
           "start_ms": 44120,
           "end_ms": 47890,
           "text": "Yeah, let's go with the annual plan."
@@ -176,9 +178,9 @@ With Follow-up event, the results arrive as their own event once the disposition
 
 `values` is the raw list alongside it, and every value carries its own `state`: `produced`, `no_value`, or `error`. That is how you tell a real `null` from a question that could not be answered.
 
-`evidence` is the quotes the values cited, carried word for word from the transcript. It appears only when a value cited something, so a strict schema on your side has to allow for it. The quotes arrive as one flat list, with nothing tying a quote back to the value that cited it.
+`evidence` is the quotes the values cited, taken from the transcript. It appears only when a value cited something, so a strict schema on your side has to allow for it. The quotes arrive as one flat list, with nothing tying a quote back to the value that cited it.
 
-With Hold original webhook, there is no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field.
+With Hold original webhook, there is no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field. If the disposition misses the hold deadline, its entry arrives with `status` set to `failed` and an `error`, carrying no `payload` and no `values`.
 
 Results also appear on the conversation itself, in [Conversations](/agents/conversations).
 
@@ -232,13 +234,13 @@ The route forward is a custom code value that reads tool names out of the call's
   </Accordion>
 
   <Accordion title="I can't find extractors">
-    They have one door: **Add value**, then Variables, then **Create a new variable extraction**. There is no sidebar item and no direct link. An extractor also has to be published before a value can use it.
+    They have one door: **Add value**, then Variables, then **Create a new variable extraction**. There is no sidebar item and no direct link. Inside that drawer each extractor has an **Add to disposition** button, and an unpublished one reads Publish first instead.
   </Accordion>
 
   <Accordion title="My value returned nothing and I don't know why">
     Open the run and read the evidence for that value. A judge with no inputs enabled cannot answer, and the drawer warns about it at the time.
 
-    Check the value's own `state` rather than the disposition's `status`. A disposition reports `complete` when it finished, which it can do with a value that errored inside it.
+    Check the value's own `state` rather than the disposition's `status`. A disposition reports `complete` when it finished, which it can do with a value that errored inside it. The exception is an entry that failed outright, where the `error` is the whole answer.
   </Accordion>
 </AccordionGroup>
 
