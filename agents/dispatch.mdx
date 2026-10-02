@@ -1,6 +1,6 @@
 ---
 title: 'Dispatch'
-description: 'Put a published agent into service: attach a phone number, set how it behaves on each channel, and run batches'
+description: 'Put a published agent into service: attach a phone number, set how it behaves on each channel, send a single test call, and run batches'
 ---
 
 Dispatch is how work reaches an agent. A caller dials your main line and the agent picks up, or you hand it a list of four hundred numbers and it starts dialing.
@@ -13,7 +13,7 @@ What Dispatch holds depends on the scope you are in. The selector at the top of 
 
 | Scope | Dispatch holds |
 |---|---|
-| **All agents** | Phone numbers, Triggers, Batches |
+| **All agents** | Send call, Phone numbers, Triggers, Batches |
 | Inside an agent | Channels, Triggers, Identity, Batches |
 
 Identity, and the Messages tab inside Channels, are enterprise only. On other plans they are hidden rather than locked.
@@ -97,6 +97,67 @@ Voice settings apply to every number the agent has. Messaging settings are saved
 </Warning>
 
 Messaging and web chat each have a guide of their own: [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
+
+## Send one call
+
+Send call places a single outbound call from the dashboard. Use it to test a prompt or an agent on a real phone before you put it on a number or run a batch.
+
+It is at All agents only, first in the Dispatch section.
+
+<Steps>
+  <Step title="Enter the destination">
+    Type the number to call in **Destination**.
+  </Step>
+
+  <Step title="Choose Prompt or Agent">
+    Pick a tab.
+
+    **Prompt** runs a one-off call from instructions you write. Write them in **Prompt**, or start from one of the examples above the field. **Saved prompts**, beside the field, saves the text under a name and loads it back later. Add a **First sentence** if you want the call to open with a fixed line, and pick a **Voice**. You can search the voice list and preview a voice before you use it.
+
+    **Agent** calls with one of your agents. Pick it under **Agent**, then a **Version**:
+
+    | Version | What the call uses |
+    |---|---|
+    | **Production** or **Staging** | That environment's current deployment and variables. |
+    | **Latest saved draft** | The latest save on the main line, with development variables. |
+    | **Version** and a number | That published version, with development variables. |
+
+    Voice, behavior and call defaults come from the agent. To change them, press **Agent settings**.
+  </Step>
+
+  <Step title="Pick the number to call from">
+    Leave **Caller ID** on Automatic, or choose one of your purchased or bring-your-own numbers.
+
+    **Dialer pool** lets a bring-your-own connection pick an available number for you. It is locked while a caller ID is set.
+  </Step>
+
+  <Step title="Add optional settings">
+    In Prompt mode, collapsible sections hold the rest of the call settings: Model settings, Dispatch settings, Knowledge & tools, Audio, Voicemail, Analysis & post-call and Advanced events.
+
+    In both modes:
+
+    - **Call data** holds **Request data**, facts the agent can use in this call, and **Metadata**, labels returned with call details and webhooks.
+    - **Scheduling & webhook** holds **Scheduled time**, in your browser's time zone, and **Webhook URL**. Leave the time blank to call now.
+  </Step>
+
+  <Step title="Send it">
+    Press **Send call**, or **Schedule call** if you set a time. Either one places a real call to a real number.
+  </Step>
+</Steps>
+
+Once the call is accepted, the live transcript opens beside the form. From there you can transfer the call or press **End call**. **View full call details** opens the call in [Conversations](/agents/conversations). A scheduled call shows its transcript once it starts.
+
+### Reuse a setup
+
+The buttons at the top of the page save you from refilling the form.
+
+| Button | What it does |
+|---|---|
+| **Configurations** | Save the whole form under a name, and load or delete saved ones. Deleting one does not change the agent or any calls. |
+| **Edit JSON** | Edit the call as a request body, then **Apply to form**. |
+| **Show code** | Preview the request the form sends, to reuse with the [Send call API](/api-v1/post/calls). |
+
+The preview and the JSON editor never include your bring-your-own connection credentials. Add them yourself if you copy the request into your own code.
 
 ## Run a batch
 
