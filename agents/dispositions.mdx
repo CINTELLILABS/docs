@@ -8,15 +8,15 @@ If you've ever wanted to know how every call went without listening to a single 
 A disposition is a standing question you ask of every call an agent takes. Did the caller book? Which plan did they ask about? Was the agent rude? You write the question once, publish it, and from then on every call the agent handles produces an answer, delivered to the same webhook the call already reports to.
 
 <Note>
-Dispositions are an enterprise feature, and enterprise organizations are switched on for it one at a time. The sidebar item is there either way.
+Dispositions are an enterprise feature, and we switch it on for enterprise organizations one at a time. The sidebar item is there either way, so the row tells you where you stand.
 
-A greyed row you can't click means the organization isn't on an enterprise plan. A row that opens and then says "Dispositions isn't available here" means you are on enterprise but not switched on yet, and your Bland partner can ask for it.
+A greyed row you can't click means the organization isn't on an enterprise plan. A row that works, on a page that then says "Dispositions isn't available here", means you're on enterprise but not switched on yet. Your Bland partner can ask for it.
 </Note>
 
 ## Prerequisites
 
 - An agent that has taken real calls, from [Agent builder](/agents/agent-builder)
-- A [post-call webhook](/tutorials/post-call-webhooks) already configured, since that is where results arrive
+- A [post-call webhook](/tutorials/post-call-webhooks) already configured, since that's where results arrive
 - An owner, admin, operator or prompter role. Anyone else can read dispositions and nothing more
 
 ## Where dispositions live
@@ -68,7 +68,7 @@ Custom code always runs last, after every other value has finished, and it can t
 
     Two of these cards take you out of the drawer. Creating a judge lands you in Evaluations with no route back, so finish the judge there and open your agent again to pick it up. Creating a variable extraction opens the Extractors drawer. That drawer is the only door to extractors anywhere in the product, and an extractor has to be published before a value can use it.
 
-    When you are picking pathway variables you can add several in one pass, and the button counts them.
+    When you're picking pathway variables you can add several in one pass, and the button counts them.
   </Step>
 
   <Step title="Set how much reasoning it gets">
@@ -100,13 +100,13 @@ Three settings on the disposition, not on individual values.
 
 **Hold original webhook** waits for the disposition, then sends one combined webhook. It adds up to 30 minutes of latency, and it needs Immediately on conversation end, so choosing it rules Queued out.
 
-If the agent still runs V1 citations, those calls already hold their own webhook for citations, and the disposition falls back to Follow-up event on them. Nothing on screen tells you.
+Hold only works when nothing else is already holding that webhook. On an agent still running V1 citations, the call's webhook is waiting for those, so the disposition quietly falls back to Follow-up event. Nothing on screen tells you.
 
 ### Shape
 
 By default the payload carries every value, keyed by that value's key. Shape is a JSON editor where you write a transformation tree instead, so the payload matches what your destination already expects. **See example** shows a worked one.
 
-Shape does not save as you go. The editor waits for **Save transformation**, which stays disabled until you have changed something and the tree both parses and points only at values this disposition has.
+Shape does not save as you go. The editor waits for **Save transformation**. That button stays greyed out until you've changed something, and until the tree is valid JSON pointing only at values this disposition has.
 
 If your destination is happy reading the default, skip this. No action is required of you.
 
@@ -130,9 +130,7 @@ Publishing is what turns a disposition on. There's no separate enable step.
 
 Publishing freezes the current draft as an immutable version, and that version is what runs. Later edits become a new draft, and the header shows Unpublished changes until you publish again. Finished runs keep the exact definition they ran under, so editing a disposition can never rewrite history.
 
-The publish drawer estimates the cost per call before you commit.
-
-You can't publish a disposition with no values.
+The publish drawer estimates the cost per call before you commit, and you can't publish a disposition with no values.
 
 To stop one, open **Advanced**, find Pause runs and press **Disable disposition**. The disposition stops running on new calls, and calls in progress finish as they are. Your draft, values and history all stay. Publishing turns it back on.
 
@@ -174,7 +172,7 @@ With Follow-up event, the results arrive as their own event once the disposition
 }
 ```
 
-`payload` is what your destination reads. Skip Shape and it carries every value, keyed by that value's key. Write a transformation and it is that transformation's output.
+`payload` is what your destination reads. Skip Shape and it carries every value, keyed by that value's key. Write a transformation and it's that transformation's output.
 
 `values` is the raw list alongside it, and every value carries its own `state`: `produced`, `no_value`, or `error`. That's how you tell a real `null` from a question that could not be answered.
 
@@ -188,11 +186,11 @@ Results also appear on the conversation itself, in [Conversations](/agents/conve
 
 Dispositions replace three V1 surfaces: citations, outcomes and reports.
 
-The mapping: an outcome was deterministic code, so it is now a custom code value. A citation was an LLM answering a question, so it is now a judge value. Both now live in one place.
+The mapping: an outcome was deterministic code, so it's now a custom code value. A citation was an LLM answering a question, so it's now a judge value. Both now live in one place.
 
 Reports have no single successor. Disposition results show up as columns in [Conversations](/agents/conversations), one per value, hidden until you turn them on. Anything past that you build from the webhook feed.
 
-If you are moving an agent over, start from **New agent**, then **Migrate**. [Migrate to agents](/platform/migrate-to-agents) walks through it.
+If you're moving an agent over, start from **New agent**, then **Migrate**. [Migrate to agents](/platform/migrate-to-agents) walks through it.
 
 <Warning>
 Dispositioning built on node tags does not migrate. If you tagged nodes and read those tags to classify calls, there's no equivalent to move.
@@ -204,7 +202,7 @@ The route forward is a custom code value that reads tool names out of the call's
 
 <AccordionGroup>
   <Accordion title="The sidebar item works but the page says it isn't available">
-    Two separate things gate this feature. An enterprise plan decides whether the sidebar row is usable at all. A separate per-organization rollout decides whether the page loads. You are past the first and not yet through the second, and there's nothing to retry. Your Bland partner can ask for the organization to be switched on.
+    Two separate things gate this feature. An enterprise plan decides whether the sidebar row is usable at all. A separate per-organization rollout decides whether the page loads. You're past the plan gate and not yet through the rollout, and there's nothing to retry. Your Bland partner can ask for the organization to be switched on.
   </Accordion>
 
   <Accordion title="Some calls produce no disposition at all">
@@ -222,7 +220,7 @@ The route forward is a custom code value that reads tool names out of the call's
 
     Also check the field name. Results arrive under `agent_dispositions`, not `dispositions`.
 
-    If the call itself reported to no webhook, there is nowhere to deliver and nothing is sent. No error is raised.
+    If the call itself reported to no webhook, there's nowhere to deliver and nothing is sent. No error is raised.
   </Accordion>
 
   <Accordion title="Queued is greyed out">
@@ -230,7 +228,7 @@ The route forward is a custom code value that reads tool names out of the call's
   </Accordion>
 
   <Accordion title="The published estimate doesn't match my bill">
-    The estimate assumes an average call, and it does not account for the Queued discount. Judge values on Queued can bill lower than the figure you were shown.
+    The estimate assumes an average call, and it doesn't account for the Queued discount. Judge values on Queued can bill lower than the figure you were shown.
   </Accordion>
 
   <Accordion title="I can't find extractors">
