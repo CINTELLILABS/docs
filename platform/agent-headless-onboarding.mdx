@@ -61,6 +61,8 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
     `payment_intent` is optional: `"shared_payment_token"` if you will pay with an agent wallet, `"none"` if you won't. With `"none"`, and only when free signup is off, `/start` answers `402 PLAN_REQUIRED` with the browser `fallback` before any text is sent, so the owner isn't asked for a code the flow can't use. Today free signup is on, so `"none"` proceeds like any other start. `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
 
+    `promo_code` is optional: a promo code the owner was given for signup credit. It's redeemed only when the account starts without the plan. See [Promo codes at signup](#promo-codes-at-signup).
+
     This call sends a 6-digit verification code to `owner_phone` by text and creates nothing else: no account, no organization, no charge. `headless_session` is valid for `expires_in` seconds (600, or 10 minutes) and is single-use.
   </Step>
 
@@ -109,6 +111,8 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     The session lasts 10 minutes from `/start`. The first successful code check, whether from a `request_challenge` call or a paying call, restarts that window once. A re-issued challenge doesn't restart it again, so the wallet approval has to complete inside it. If the session expires, start over with a new `/start` call and a new code.
 
     `next_steps` is a short list of things your agent should know before its first call. It's optional on the wire: treat a missing field the same as an empty list.
+
+    `promo` reports what happened to the `promo_code` sent to `/start`, or `null` if none was sent. See [Promo codes at signup](#promo-codes-at-signup).
   </Step>
 
   <Step title="Store the key">
@@ -189,6 +193,27 @@ Headless onboarding creates new accounts only. If the phone or the email already
 If your agent omits `payment`, `/complete` still verifies the code and answers `200` with `phone_number: null`, `plan.status: "none"`, and `provisioning: "ready"`. The account starts with free credits, calls from a shared Bland number, can't text, and can't call internationally until the owner completes a purchase. `next_steps` says how to change each of those.
 
 If free signup is ever switched off, the same request answers `402 PLAN_REQUIRED` with the browser `fallback` bundled and a payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). The session stays verified, so a follow-up `/complete` with a payment finishes without a second code.
+
+## Promo codes at signup
+
+If the owner was given a promo code, pass it as `promo_code` on `/start`. Bland redeems it after the account is created on a signup without the plan, and adds the credit to the new account. Codes are case-insensitive and 3 to 32 letters, numbers, and hyphens.
+
+```bash
+curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/start \
+  -H "Content-Type: application/json" \
+  -d '{"client_name": "Underdog", "owner_phone": "+14155550123", "owner_email": "owner@example.com", "promo_code": "WELCOME8"}'
+```
+
+A code that isn't accepted never fails the signup. `/complete` still answers `200` with the API key, and its `promo` field says what happened:
+
+| `promo.status` | Meaning |
+| --- | --- |
+| `applied` | The credit was added. `promo.credit_usd` is the amount in US dollars. |
+| `invalid` | The code wasn't accepted: unknown, expired, used up, already redeemed, or not valid for this account. Tell the owner. Don't retry it. |
+| `unavailable` | The code couldn't be redeemed right now. It's still unused. Don't resend it through signup. The owner can enter it on the [billing page](https://app.bland.ai/dashboard/pay) once signed in. |
+| `ignored` | The signup bought the Agent Phone Plan, so no code was redeemed. |
+
+Some codes are limited to accounts created through a specific agent. For example, codes handed out by Underdog only work for accounts that Underdog created. Any other account gets `invalid`.
 
 ## Adding the plan later
 
