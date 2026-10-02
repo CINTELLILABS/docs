@@ -94,6 +94,8 @@ A sensitive variable behaves like this:
 
 - Tools and webhooks can use its value during the live call.
 - Everywhere else, the variable reads `[REDACTED]`. That includes call details and the post-call webhook.
+- Custom code reads `[REDACTED]` if it takes the value from the call's variables. Pass the variable to the tool as a declared input instead.
+- Redaction follows the variable, not the value. If a variable that is not sensitive ends up holding the same value, that value is no longer redacted anywhere for the rest of the call. The sensitive variable itself still reads `[REDACTED]`. To keep a value hidden, mark every variable that holds it **Sensitive**, including tool inputs and output fields.
 - Sensitive variables do not redact the transcript. If the caller says the value aloud, the transcript can still contain it.
 - The value does not carry over. A reconnect, a transfer or a new message starts without it, so the agent has to collect it again.
 
