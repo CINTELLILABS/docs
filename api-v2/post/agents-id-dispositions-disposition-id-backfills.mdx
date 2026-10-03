@@ -1,0 +1,167 @@
+---
+title: "Create Disposition Backfill"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/backfills"
+description: "Score an agent's past calls with a published disposition version, so analytics cover calls made before you published or changed it."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`. Backfills are enabled separately. Without them, this endpoint returns `403 FORBIDDEN` with the message `Backfills are not enabled for this organization`.
+</Note>
+
+A published disposition only runs on new calls. A backfill runs a published or archived version over the agent's completed calls in a past time window. Use it after you publish a new disposition or version and want results for calls that already happened.
+
+Before you start a backfill, price it by sending the same request to [Estimate Disposition Cost](/api-v2/post/agents-id-dispositions-disposition-id-estimates) inside a `backfill` object. The estimate returns the number of eligible calls and the total expected cost.
+
+Returns `201` with the backfill in `queued` status. Follow its progress with [Get Disposition Backfill](/api-v2/get/agents-id-dispositions-disposition-id-backfills-job-id) and stop it with [Cancel Disposition Backfill](/api-v2/post/agents-id-dispositions-disposition-id-backfills-job-id-cancel).
+
+Limits:
+
+- Only one backfill per disposition version can be `queued` or `running` at a time. A second request returns `409 CONFLICT`.
+- A backfill covers at most 500,000 calls. Narrow the window or lower `sampling` if the window holds more.
+- Your organization can start at most 10 backfills per hour. Further requests return `429 TOO_MANY_REQUESTS`.
+- If your organization pays with credits, the expected cost must fit in your balance minus the cost still owed by your other running backfills. Otherwise the request returns `402 PAYMENT_REQUIRED`.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Body Parameters
+
+Unknown fields are rejected.
+
+<ParamField body="window" type="object" required>
+  The time range of calls to score.
+
+  <Expandable title="window object">
+    <ParamField body="start" type="string" required>
+      ISO 8601 timestamp with a time zone offset. Must be no more than 400 days ago.
+    </ParamField>
+    <ParamField body="end" type="string" required>
+      ISO 8601 timestamp with a time zone offset. Must be after `start`, and the window can span at most 92 days.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="versionId" type="string">
+  The disposition version to run. Defaults to the published version. Must be a published or archived version; the draft is rejected with `400`. Returns `409 CONFLICT` if the disposition has never been published.
+</ParamField>
+
+<ParamField body="sampling" type="number" default="1">
+  Fraction of eligible calls to score, from `0.0001` to `1` with at most five decimal places. Sampling is deterministic, so the same window and fraction select the same calls.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The new backfill in `queued` status. See [Get Disposition Backfill](/api-v2/get/agents-id-dispositions-disposition-id-backfills-job-id) for every field.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/backfills \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "window": {
+      "start": "2026-08-01T00:00:00Z",
+      "end": "2026-09-01T00:00:00Z"
+    },
+    "sampling": 0.25
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "4f0f3c1e-8a52-4d7e-9a3b-2b1d6c0e9f11",
+    "dispositionId": "1b179d4d-8830-43bd-b095-632f23bc4c57",
+    "versionId": "6168a24b-1863-422b-bbec-ed6d38395c41",
+    "cohortId": "b7e2a9d0-3c41-4f8e-8d2a-5e6f7a8b9c01",
+    "status": "queued",
+    "window": {
+      "start": "2026-08-01T00:00:00.000Z",
+      "end": "2026-09-01T00:00:00.000Z"
+    },
+    "sampling": 0.25,
+    "requestedSize": 1840,
+    "resolvedSize": 0,
+    "completedSize": 0,
+    "failedSize": 0,
+    "excluded": {},
+    "progress": {},
+    "estimatedCostUsd": "42.1360",
+    "actualCostUsd": null,
+    "rollupDays": null,
+    "deadlineAt": null,
+    "errorCode": null,
+    "errorMessage": null,
+    "createdAt": "2026-09-10T18:40:03.512Z",
+    "startedAt": null,
+    "completedAt": null
+  },
+  "errors": null
+}
+```
+
+```json Already Running
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "A backfill of this version is already queued or running — cancel it or wait for it to finish"
+    }
+  ]
+}
+```
+
+```json No Calls
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "No completed calls of this agent fall in the window"
+    }
+  ]
+}
+```
+
+```json Insufficient Balance
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "PAYMENT_REQUIRED",
+      "message": "This backfill is estimated at $42.1360, which exceeds the organization's available balance: $30.0000 balance − $0.0000 committed to other running backfills = $30.0000 available. Add credits, wait for a running backfill to finish, or try again."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

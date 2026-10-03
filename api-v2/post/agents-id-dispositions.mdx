@@ -156,7 +156,7 @@ Unknown fields anywhere in the body are rejected.
       `{ "version": 1, "root": node }`. A node is one of `{ "kind": "value", "valueId" }`, `{ "kind": "literal", "value" }`, `{ "kind": "object", "fields": { name: node } }` with names up to 64 characters, or `{ "kind": "array", "items": [node] }` with up to 50 items. Every referenced `valueId` must exist in `values`. At most 2000 nodes.
     </ParamField>
     <ParamField body="postCallWebhook" type="object" required>
-      `{ "mode": "hold" }` or `{ "mode": "emit_followup" }`. `hold` delays the call's post-call webhook until this disposition's results are ready and is only valid with `timing: "immediate"`. `emit_followup` sends results in a separate follow-up webhook.
+      `{ "mode": "hold" }` or `{ "mode": "emit_followup" }`. `hold` delays the call's post-call webhook until this disposition's results are ready and is only valid with `timing: "immediate"`. `emit_followup` sends results in a separate follow-up webhook. Add `maxHoldSeconds` to `hold` to set how long, in seconds, the webhook waits for results. It defaults to and can't exceed `1800` (30 minutes); a higher value fails publish with `maxHoldSeconds is <value>; the limit is 1800`. If results aren't ready when the hold ends, the webhook is sent anyway and the unfinished disposition is reported as not completed.
     </ParamField>
   </Expandable>
 </ParamField>
