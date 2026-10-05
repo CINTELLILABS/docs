@@ -178,9 +178,36 @@ With Follow-up event, the results arrive as their own event once the disposition
 
 `values` is the raw list alongside it, and every value carries its own `state`: `produced`, `no_value`, or `error`. That's how you tell a real `null` from a question that could not be answered.
 
+A value in the `error` state also carries an `error` object with a public `code` and a one-line `message`, such as `provider_failed` with `The model provider returned an error.` The message never includes raw provider text.
+
+```json
+{
+  "key": "booked",
+  "state": "error",
+  "error": {
+    "code": "disposition_extraction_failed",
+    "message": "The value could not be extracted from this call."
+  }
+}
+```
+
 `evidence` is the quotes the values cited, taken from the transcript. It appears only when a value cited something, so a strict schema on your side has to allow for it. The quotes arrive as one flat list, with nothing tying a quote back to the value that cited it.
 
 With Hold original webhook, there's no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field. If the disposition misses the hold deadline, its entry arrives with `status` set to `failed` and an `error`, carrying no `payload` and no `values`.
+
+A failed entry's `error` is a `{ "code", "message" }` object that names the cause:
+
+| Code | Meaning |
+| --- | --- |
+| `deadline_exceeded` | The disposition did not finish before its deadline. |
+| `evidence_unavailable` | The call recording or corrected transcript this disposition needs was not available. |
+| `disposition_values_failed` | No value in this disposition could be produced. |
+| `disposition_start_failed` | Dispositions could not be started for this call. |
+| `disposition_failed` | Any other failure. Disposition execution could not be completed. |
+
+The same code and message appear in both webhook behaviors, on the API, in CSV exports, and on the conversation in [Conversations](/agents/conversations).
+
+When the model provider is briefly unavailable or rate limited, Bland retries the value within the disposition's deadline. Under sustained provider overload, a held webhook can wait up to about 20 minutes before it's sent.
 
 Results also appear on the conversation itself, in [Conversations](/agents/conversations).
 
