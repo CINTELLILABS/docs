@@ -1,0 +1,146 @@
+---
+title: "Sign in with Bland (OAuth)"
+description: "Connect an MCP client to your Bland account by signing in instead of pasting an API key: the flow you see, what the client can do, and what client developers need."
+---
+
+The Bland MCP server accepts two credentials: your organization's API key, or an OAuth 2.1 access token the client gets when you sign in with Bland. With sign-in there's no key to create or paste. The client opens Bland in your browser, you sign in and approve what the client can do, and the client acts as you in the organization you chose.
+
+```text
+https://api.bland.ai/v1/mcp
+```
+
+Clients that already send an API key keep working as before. Nothing on this page changes them.
+
+## Who it's for
+
+- **ChatGPT users.** ChatGPT (apps and connectors, in developer mode) connects to Bland by signing in today.
+- **Client developers** whose client identifies itself with a client ID metadata document. See [For client developers](#for-client-developers).
+
+Clients that only register dynamically (RFC 7591), including Claude, Claude Code, Cursor, and MCP Inspector, can't sign in yet, because dynamic client registration isn't available on Bland's authorization server. Keep using an [API key](/integrations/mcp/clients) with them. Sign-in will apply to them once dynamic client registration is available.
+
+## What you see when you connect
+
+<Steps>
+  <Step title="Add the Bland server in your client">
+    Give the client the server URL, `https://api.bland.ai/v1/mcp`. The client discovers Bland's authorization server on its own and opens Bland in your browser.
+  </Step>
+  <Step title="Sign in">
+    Sign in at `v2.app.bland.ai` with your phone number, Google, or SSO.
+  </Step>
+  <Step title="Choose an organization">
+    If you belong to more than one eligible organization, pick the one the client acts in. The connection is scoped to that organization only. Organizations where your role is viewer, or where your account is banned, aren't offered.
+  </Step>
+  <Step title="Review what the client gets">
+    The consent screen lists the permissions the client asked for. To make a read-only connection, uncheck **Create and change your agents**. The full list is in [Scopes and consent](#scopes-and-consent).
+  </Step>
+  <Step title="Use the tools">
+    The client is connected. Every tool runs as you, in the organization you chose, with the permissions of your role there.
+  </Step>
+</Steps>
+
+## Scopes and consent
+
+| Consent screen | Scope | What it grants |
+| --- | --- | --- |
+| Read your Bland workspace: agents, pathways, calls, and settings | `mcp:read` | Every Read tool. |
+| Create and change your agents: versions, branches, variables, and deployments | `mcp:write` | Write and Destructive tools. Optional: uncheck it for a read-only connection. |
+| Your name and email | `openid`, `email` | Your identity, so the client can show who's signed in. |
+| Stay connected without signing in again | `offline_access` | A refresh token. The client renews its access token without sending you back to the browser. |
+
+Tools declare what they need: Read tools need `mcp:read`, Write and Destructive tools need `mcp:write`. The [tool reference](/integrations/mcp/tools) shows each tool's access level.
+
+### Step-up consent
+
+If a tool needs a scope the connection wasn't granted, for example a write tool on a read-only connection, the server answers `403` with a `WWW-Authenticate` challenge that lists the required scopes. Your client then asks you to grant them. The consent screen pre-checks what you already granted, so you approve only the addition.
+
+## Tokens and disconnecting
+
+- Access tokens are JWTs. Each one lasts 1 hour and is scoped to one organization.
+- If you granted **Stay connected without signing in again**, the client holds a refresh token and renews its access on its own.
+- To disconnect, remove or disconnect the Bland app in your client. The client revokes its tokens at `https://api.bland.ai/authorization/oauth2/revoke`.
+- A connected-apps page in the dashboard, for reviewing and revoking connections, is planned.
+
+Over a sign-in connection, the purchase tools (`buy_credits`, `buy_phone_plan`) aren't offered. Buy credits and phone plans in the dashboard, or over an API key connection. Every other tool behaves as it does with an API key, scoped to the organization you chose and the permissions of your role in it.
+
+## Client support
+
+| Client | Sign in with Bland | What to do |
+| --- | --- | --- |
+| ChatGPT (apps and connectors, developer mode) | Supported | Add a connector with the URL `https://api.bland.ai/v1/mcp` and sign in when ChatGPT opens Bland. |
+| Clients that use client ID metadata documents | Supported | See [For client developers](#for-client-developers). |
+| Claude, Claude Code, Cursor, MCP Inspector, and other clients that only register dynamically | Not yet available | Use an [API key](/integrations/mcp/clients). Sign-in will apply once dynamic client registration is available. |
+
+## For client developers
+
+Bland's authorization server implements OAuth 2.1 authorization code with PKCE, and the MCP server publishes the discovery documents an MCP client expects.
+
+| Document | URL |
+| --- | --- |
+| Protected resource metadata (RFC 9728) | `https://api.bland.ai/.well-known/oauth-protected-resource/v1/mcp` |
+| Authorization server metadata (RFC 8414) | `https://api.bland.ai/.well-known/oauth-authorization-server/authorization` |
+| OpenID Connect discovery | `https://api.bland.ai/authorization/.well-known/openid-configuration` |
+
+The protected resource document names `https://api.bland.ai/authorization` as the authorization server and `mcp:read` and `mcp:write` as the supported scopes. Bearer tokens are accepted in the `Authorization` header only.
+
+| Endpoint | URL |
+| --- | --- |
+| Issuer | `https://api.bland.ai/authorization` |
+| Authorization | `https://api.bland.ai/authorization/oauth2/authorize` |
+| Token | `https://api.bland.ai/authorization/oauth2/token` |
+| Revocation | `https://api.bland.ai/authorization/oauth2/revoke` |
+
+What your client must do:
+
+- **Use PKCE with `S256`.** It's required on every authorization request.
+- **Identify itself with a client ID metadata document.** Your `client_id` is an HTTPS URL that serves your client's metadata JSON. The server metadata advertises this with `client_id_metadata_document_supported: true`. Dynamic client registration (RFC 7591) isn't available yet.
+- **Send `resource=https://api.bland.ai/v1/mcp`** (RFC 8707) in authorization and token requests. The token is only valid on `/v1/mcp`, not on the REST API.
+- **Request the scopes it needs.** `mcp:read` for read tools, `mcp:write` for write tools, plus `openid`, `email`, and `offline_access` as needed.
+
+How the server responds:
+
+- **No credential:** `401` with `WWW-Authenticate: Bearer realm="bland", resource_metadata="https://api.bland.ai/.well-known/oauth-protected-resource/v1/mcp", scope="mcp:read mcp:write"`. Follow `resource_metadata` to start discovery.
+- **Missing scope:** `403` with a `WWW-Authenticate` challenge that lists the required scopes. Re-run authorization requesting them; the consent screen pre-checks what the user already granted.
+- **Scopes per tool:** `tools/list` returns each tool's required scopes in `securitySchemes`, with `readOnlyHint`, `destructiveHint`, `idempotentHint`, and `openWorldHint` annotations, so you can request the right scopes up front.
+
+The token endpoint and the UserInfo endpoint are rate limited to 60 requests a minute per IP.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Can I give a client read-only access?">
+    Yes. Uncheck **Create and change your agents** on the consent screen. The client gets `mcp:read` only. If it later calls a write tool, it asks you to grant `mcp:write`.
+  </Accordion>
+
+  <Accordion title="Can I buy credits or a phone plan over a sign-in connection?">
+    No. `buy_credits` and `buy_phone_plan` aren't offered over OAuth. Buy in the dashboard, or over an API key connection.
+  </Accordion>
+
+  <Accordion title="Does the token work on the REST API?">
+    No. OAuth tokens are only valid on `/v1/mcp`. Use an API key for the REST API.
+  </Accordion>
+
+  <Accordion title="Which organization does the client act in?">
+    The one you chose at sign-in. Each access token is scoped to that organization. To work in a different organization, make a new connection and choose it.
+  </Accordion>
+
+  <Accordion title="My client already uses an API key. Do I need to change anything?">
+    No. A client that sends `Authorization: Bearer org_...` never sees the sign-in flow.
+  </Accordion>
+
+  <Accordion title="Can I review which apps are connected?">
+    A connected-apps page in the dashboard is planned. Until then, disconnect from the client itself, which revokes its tokens.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="MCP clients" icon="plug" href="/integrations/mcp/clients">
+    API key setup for Claude Code, Cursor, Codex, VS Code, and other clients.
+  </Card>
+  <Card title="Tool reference" icon="wrench" href="/integrations/mcp/tools">
+    Every tool the server exposes, with its access level.
+  </Card>
+</CardGroup>
+
+Docs for agents: [llms.txt](/llms.txt)
