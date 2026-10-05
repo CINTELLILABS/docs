@@ -1,0 +1,136 @@
+---
+title: "Set Voice Pool"
+api: "POST https://api.bland.ai/v1/inbound/{phone_number}/voice-pool"
+description: "Replace the voice pool on an inbound number."
+---
+
+## Overview
+
+Sets the voices an inbound number rotates through. Each inbound call picks one voice from the pool at random, so the same number can answer in a different voice each time.
+
+This replaces the whole pool rather than adding to it. Send the full set of voices you want every time, and send an empty array to clear the pool. Read the current pool with [Get Voice Pool](/api-v1/get/inbound-number-voice-pool).
+
+A rejected request leaves the current pool untouched, so a validation error cannot cost you the voices already set.
+
+<Note>
+Two things override the pool: an agent attached to the number, and a `voice` passed to [Create Inbound Session](/api-v1/post/inbound-session) when the call starts from a session. In either case the pool is ignored.
+
+The number's own voice setting does not override it. Where a pool is set, it takes the place of that voice on every call.
+</Note>
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="phone_number" type="string" required>
+  The inbound number to configure, in E.164 format (for example `+15551234567`). SIP DIDs are matched in the form they are stored, so a numeric DID such as `9994221001` also resolves.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="voice_ids" type="array" required>
+  The voices to put in the pool. At most 20, or the request is rejected with a 400. Each must be a voice `id` from [List Voices](/api-v1/get/voices), which is a UUID, not the provider-facing `voice_id` string on the same object.
+
+  You can use any public voice, plus the cloned voices your organization owns.
+
+  ```json
+  {
+    "voice_ids": [
+      "bad67584-9418-4c30-acf2-eb07d4f4fac7",
+      "89bf6194-d860-4126-be95-190d5bf2d0f9",
+      "76c0d2ee-8e9d-40a1-83f7-aa39244a004c"
+    ]
+  }
+  ```
+
+  An ID that is a well-formed UUID but does not match a voice you can use is dropped without an error. Compare `count` in the response against the number you sent to catch this.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="count" type="integer">
+      How many voices are now in the pool. Lower than the number of IDs you sent if any were dropped or duplicated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "count": 3
+  },
+  "errors": null
+}
+```
+
+```json Too Many Voices
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "Maximum number of voices is 20"
+    }
+  ]
+}
+```
+
+```json Invalid Request
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_REQUEST",
+      "message": "invalid voice_ids"
+    }
+  ]
+}
+```
+
+```json Unauthorized Voices
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "UNAUTHORIZED",
+      "message": "Unauthorized voices"
+    }
+  ]
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Inbound number not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
