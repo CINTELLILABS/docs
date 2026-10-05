@@ -97,6 +97,16 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
   </Expandable>
 </ParamField>
 
+<ParamField body="auto_formatting" type="boolean" default="false">
+  Rewrites phone numbers and Social Security numbers into dashed digits before synthesis, so the voice reads them digit by digit. Use it when your text comes from an LLM, which often spells numbers out or writes them as one long run of digits.
+
+  - Spelled-out 10-digit phone numbers, or 11 digits starting with "one": `"seven three two seven four one two zero six five"` becomes `732-741-2065`.
+  - Spelled-out 9-digit SSNs: `"one two three four five six seven eight nine"` becomes `123-45-6789`. A leading "oh" counts as zero.
+  - Bare 10-, 11-, and 9-digit runs get the same dashes: `7327412065` becomes `732-741-2065`. Other 9-digit numbers, such as order IDs, are also grouped like an SSN.
+
+  Shorter numbers, such as 7-digit runs, and decimals are left unchanged.
+</ParamField>
+
 ---
 
 ## Response
@@ -184,6 +194,21 @@ curl -X POST "https://api.bland.ai/v2/tts" \
     "voice": "29158307-9893-4149-8a75-bc9ce313d64e"
   }' \
   --output out.pcm
+```
+
+### Phone numbers with auto formatting
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "You can reach us at seven three two seven four one two zero six five.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "container": "wav" },
+    "auto_formatting": true
+  }' \
+  --output phone.wav
 ```
 
 ### Telephony (μ-law, 8 kHz)
