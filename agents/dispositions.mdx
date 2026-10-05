@@ -1,0 +1,268 @@
+---
+title: "Dispositions"
+description: "Decide what you want to know about every conversation, and have the answers delivered to your webhook after each call."
+---
+
+If you've ever wanted to know how every call went without listening to a single one, that's what dispositions are for.
+
+A disposition is a standing question you ask of every call an agent takes. Did the caller book? Which plan did they ask about? Was the agent rude? You write the question once, publish it, and from then on every call the agent handles produces an answer, delivered to the same webhook the call already reports to.
+
+<Note>
+Dispositions are an enterprise feature, and we switch it on for enterprise organizations one at a time. The sidebar item is there either way, so the row tells you where you stand.
+
+A greyed row you can't click means the organization isn't on an enterprise plan. A row that works, on a page that then says "Dispositions isn't available here", means you're on enterprise but not switched on yet. Your Bland partner can ask for it.
+</Note>
+
+## Prerequisites
+
+- An agent that has taken real calls, from [Agent builder](/agents/agent-builder)
+- A [post-call webhook](/tutorials/post-call-webhooks) already configured, since that's where results arrive
+- An owner, admin, operator or prompter role. Anyone else can read dispositions and nothing more
+
+## Where dispositions live
+
+Inside an agent, under Configure. There's no organization-wide view: a disposition belongs to one agent, and you reach it from that agent.
+
+There's also no environment selector on this page. A published disposition runs in every environment, on every call the agent handles except the ones the platform skips. [Common failures](#common-failures) says which.
+
+{/* IMAGE: the Dispositions page inside an agent, showing the list and the New disposition action. */}
+
+## What a disposition is made of
+
+A disposition is a set of values. Each value is one thing you want to know, and each one names where its answer comes from.
+
+There are four sources, and picking the right one is most of the work:
+
+| Source | Use it when | Where it comes from |
+| --- | --- | --- |
+| Judge | The answer needs judgement. Was this call handled well? | A published judge from [Evaluations](/agents/evaluations) |
+| Pathway variable | Your agent already extracts this during the call | An extraction configured on this agent, rerun after the call |
+| Extractor | You want structured data the agent wasn't already collecting | An extractor you create from Add value, under Variables |
+| Custom code | The answer is a calculation, or it has to reach your systems | JavaScript you write |
+
+A pathway variable is re-extracted, not read back. Dispositions run their own extraction against the corrected post-call transcript, built from the variable's name, its configured prompt and its output schema. The answer can differ from what you saw during the call, and usually it's better.
+
+The screen calls that a frozen prompt, because the name, the prompt and the schema are copied onto the value when you add it. Editing the variable in [Agent builder](/agents/agent-builder) doesn't change what the disposition reruns, so to pick up a change, remove the value and add it again.
+
+Custom code always runs last, after every other value has finished, and it can take their results as inputs. It can't take another custom code value as an input.
+
+## Build one
+
+<Steps>
+  <Step title="Create the disposition">
+    Open Dispositions inside your agent. With none there yet, you land straight in an editor over a draft named Untitled disposition. Nothing is saved until your first real edit: renaming it, writing a description, changing a setting, or pressing **Add value**.
+
+    Rename it by clicking the title. The description field asks "What is this disposition for? Who consumes it?" Whoever inherits this needs to know which downstream system reads the result.
+  </Step>
+
+  <Step title="Add your first value">
+    Click **Add value** at the bottom of the Values table. A drawer opens with five cards:
+
+    | Group | Card | What it does |
+    | --- | --- | --- |
+    | Judges | **Bring in an existing judge** | Picks a published judge. Stays in the drawer |
+    | Judges | **Create a new judge** | Leaves for Evaluations, and doesn't bring you back |
+    | Variables | **Rerun a pathway variable** | Picks extractions this agent already runs. Stays in the drawer |
+    | Variables | **Create a new variable extraction** | Authors an extractor. Opens the Extractors drawer and leaves this one |
+    | Custom code | **Run custom code** | Pins JavaScript that runs last. Stays in the drawer |
+
+    Two of these cards take you out of the drawer. Creating a judge lands you in Evaluations with no route back, so finish the judge there and open your agent again to pick it up. Creating a variable extraction opens the Extractors drawer. That drawer is the only door to extractors anywhere in the product, and an extractor has to be published before a value can use it.
+
+    When you're picking pathway variables you can add several in one pass, and the button counts them.
+  </Step>
+
+  <Step title="Set how much reasoning it gets">
+    Every value except custom code gets an **Intelligence** setting in the drawer's Logic section: Automatic, Low, Medium or High. It decides how much reasoning the model does before it answers. Low is unavailable on an extractor that reads call audio.
+
+    We recommend High only for ambiguous or high-stakes questions. On a simple one, more reasoning is not a better answer.
+  </Step>
+
+  <Step title="Check what the answer will look like">
+    The Output section of the value drawer shows the value's type and how its result lands in the payload. It's a readout, not a control. The type comes from the source.
+
+    A judge's type comes from its scoring levels: two levels, or none at all, is a boolean, and anything else is an enum. A pathway variable brings its configured schema. Neither the levels nor the schema can be changed from here. You set an extractor's type in the Extractors drawer, under Structured output schema, and custom code declares its own schema further down the value drawer.
+  </Step>
+</Steps>
+
+## Decide when and how the answer arrives
+
+Three settings on the disposition, not on individual values.
+
+### Delivery Timing
+
+**Immediately on conversation end** delivers within 30 minutes. Use it when something downstream acts on the answer while the call is still fresh: a CRM update, a transfer decision, an alert to someone.
+
+**Queued** delivers within 24 hours. Use it for reporting, QA and analytics, where nothing is waiting on the result.
+
+### Webhook behavior
+
+The choice is whether your destination would rather have the call and the disposition in one delivery, or each as soon as it is ready.
+
+**Follow-up event** leaves the call webhook alone. It fires as usual, and a second event carrying the disposition result follows once the disposition finishes.
+
+**Hold original webhook** waits for the disposition, then sends one combined webhook. It adds up to 30 minutes of latency, and it needs Immediately on conversation end, so choosing it rules Queued out.
+
+Hold only works when nothing else is already holding that webhook. On an agent still running V1 citations, the call's webhook is waiting for those, so the disposition quietly falls back to Follow-up event. Nothing on screen tells you.
+
+### Shape
+
+By default the payload carries every value, keyed by that value's key. Shape is a JSON editor where you write a transformation tree instead, so the payload matches what your destination already expects. **See example** shows a worked one.
+
+Shape does not save as you go. The editor waits for **Save transformation**. That button stays greyed out until you've changed something, and until the tree is valid JSON pointing only at values this disposition has.
+
+If your destination is happy reading the default, skip this. No action is required of you.
+
+## Test it before you publish
+
+**Test** runs the disposition against real calls the agent has already taken, so you can see the answers before anything ships.
+
+<Warning>
+A test run bills exactly like a production run. It uses the same models on the same calls and it is metered the same way.
+
+What it doesn't do is deliver. No webhook is sent for a test run, so nothing downstream sees the results.
+</Warning>
+
+The run page shows each call, what each value produced, and the evidence behind it. When an answer is wrong you can correct it, and corrections are kept with the run.
+
+**Align with AI** reads your corrections and proposes changes to the disposition that would have produced them. Applying a proposal to a judge edits that judge and publishes a new version of it. The judges you can pin belong to this agent, so no other agent is affected, but the edit is not scoped to this one disposition.
+
+## Publish it
+
+Publishing is what turns a disposition on. There's no separate enable step.
+
+Publishing freezes the current draft as an immutable version, and that version is what runs. Later edits become a new draft, and the header shows Unpublished changes until you publish again. Finished runs keep the exact definition they ran under, so editing a disposition can never rewrite history.
+
+The publish drawer estimates the cost per call before you commit, and you can't publish a disposition with no values.
+
+To stop one, open **Advanced**, find Pause runs and press **Disable disposition**. The disposition stops running on new calls, and calls in progress finish as they are. Your draft, values and history all stay. Publishing turns it back on.
+
+## Read the results
+
+Results arrive on your post-call webhook under `agent_dispositions`.
+
+With Follow-up event, the results arrive as their own event once the disposition finishes, on the deadline you set under Delivery Timing:
+
+```json
+{
+  "event_type": "dispositions",
+  "timestamp": "2026-09-30T14:22:14.000Z",
+  "call_id": "c1a9f3d2-64be-4f07-9c5a-2b81e6d0a7f4",
+  "agent_dispositions": [
+    {
+      "disposition_id": "3f2b9c14-8d7e-4a51-b0c6-9e2a7d4f1b83",
+      "disposition_version_id": "8c5e1a76-2f40-4db9-a318-6d9b0c4e5721",
+      "disposition_key": "booking_outcome",
+      "name": "Booking outcome",
+      "status": "complete",
+      "payload": { "booked": true, "plan": "annual" },
+      "values": [
+        { "key": "booked", "state": "produced", "value": true },
+        { "key": "plan", "state": "produced", "value": "annual" }
+      ],
+      "executed_at": "2026-09-30T14:22:10.000Z",
+      "evidence": [
+        {
+          "source": "transcript",
+          "speaker": "customer",
+          "start_ms": 44120,
+          "end_ms": 47890,
+          "text": "Yeah, let's go with the annual plan."
+        }
+      ]
+    }
+  ]
+}
+```
+
+`payload` is what your destination reads. Skip Shape and it carries every value, keyed by that value's key. Write a transformation and it's that transformation's output.
+
+`values` is the raw list alongside it, and every value carries its own `state`: `produced`, `no_value`, or `error`. That's how you tell a real `null` from a question that could not be answered.
+
+`evidence` is the quotes the values cited, taken from the transcript. It appears only when a value cited something, so a strict schema on your side has to allow for it. The quotes arrive as one flat list, with nothing tying a quote back to the value that cited it.
+
+With Hold original webhook, there's no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field. If the disposition misses the hold deadline, its entry arrives with `status` set to `failed` and an `error`, carrying no `payload` and no `values`.
+
+Results also appear on the conversation itself, in [Conversations](/agents/conversations).
+
+## Coming from citations and outcomes
+
+Dispositions replace three V1 surfaces: citations, outcomes and reports.
+
+The mapping: an outcome was deterministic code, so it's now a custom code value. A citation was an LLM answering a question, so it's now a judge value. Both now live in one place.
+
+Reports have no single successor. Disposition results show up as columns in [Conversations](/agents/conversations), one per value, hidden until you turn them on. Anything past that you build from the webhook feed.
+
+### Bring your citations across
+
+On an agent that already exists, open the caret beside New disposition and choose **Migrate from citations**. Pick the citation schemas and outcomes you want, then choose how to move them.
+
+**Migrate as is** copies them into dispositions exactly as they work today. Nothing is tested or changed.
+
+**Migrate and upgrade** starts from that copy, then reruns your real calls through the new dispositions and compares every value against what V1 produced, fixing mismatches until the two agree. You choose how many recent calls to check against. It needs an agent with a recorded source pathway, and each pass runs inference on those calls and is metered like a test run.
+
+If the whole agent still has to move, that is a different job. Start from New agent, then Migrate, and [Migrate to agents](/platform/migrate-to-agents) walks through it.
+
+<Warning>
+Dispositioning built on node tags does not migrate. If you tagged nodes and read those tags to classify calls, there's no equivalent to move.
+
+The route forward is a custom code value that reads tool names out of the call's execution trace. It's more work than a migration, and it's worth scoping before you commit to a date.
+</Warning>
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="The sidebar item works but the page says it isn't available">
+    Two separate things gate this feature. An enterprise plan decides whether the sidebar row is usable at all. A separate per-organization rollout decides whether the page loads. You're past the plan gate and not yet through the rollout, and there's nothing to retry. Your Bland partner can ask for the organization to be switched on.
+  </Accordion>
+
+  <Accordion title="Some calls produce no disposition at all">
+    Three things skip a call, and none of them leaves you an error.
+
+    The first is billing. If your organization's billing is blocked or its balance has run out, nothing runs and nothing is recorded. If that check itself errors, the call is skipped as well.
+
+    The other two are compliance and retention. The call is marked for redaction, or it aged past your retention window.
+  </Accordion>
+
+  <Accordion title="I published, but nothing arrives on my webhook">
+    Check which webhook behavior you chose. Follow-up event sends a second, separate event after the call's own webhook, so a listener that only reads the first one never sees it.
+
+    Also check the field name. Results arrive under `agent_dispositions`, not `dispositions`.
+
+    If the call itself reported to no webhook, there's nowhere to deliver and nothing is sent. No error is raised.
+  </Accordion>
+
+  <Accordion title="Queued is greyed out">
+    You have Hold original webhook selected, which requires immediate timing. Switch the webhook behavior to Follow-up event first.
+  </Accordion>
+
+  <Accordion title="I can't find extractors">
+    They have one door: Add value, then Variables, then **Create a new variable extraction**. There's no sidebar item and no direct link. Inside that drawer each extractor has an Add to disposition button, and an unpublished one reads Publish first instead.
+  </Accordion>
+
+  <Accordion title="My value returned nothing and I don't know why">
+    Open the run and read the evidence for that value. A judge with no inputs enabled can't answer, and the drawer warns about it at the time.
+
+    Check the value's own `state` rather than the disposition's `status`. A disposition reports `complete` when it finished, which it can do with a value that errored inside it. The exception is an entry that failed outright, where the `error` is the whole answer.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Evaluations" icon="clipboard-check" href="/agents/evaluations">
+    Write the judges a disposition reads.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    See disposition results against the calls that produced them.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    The variables a disposition can rerun.
+  </Card>
+  <Card title="Migrate to agents" icon="arrow-right-arrow-left" href="/platform/migrate-to-agents">
+    Where the rest of your V1 setup went.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
