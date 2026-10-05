@@ -84,6 +84,24 @@ The section says so plainly: "Key:value pairs the agent extracts to reuse during
 
 Take that last part seriously. Every variable is work the agent does mid-conversation, and each one costs a little response time. Extract what you will use. Skip what you will not.
 
+### Variables already on the call
+
+Some values are there from the start, and the agent never has to extract them. Variable pickers in the builder list them in two groups:
+
+- **System** holds `call_id`, `now` and `now_utc`, next to the channel values.
+- **Request data** holds the keys you set under request data in [Settings](#configure-settings).
+
+Reference them like any other variable. A transfer tool that needs the call ID takes `{{call_id}}` directly, with no extraction step:
+
+```json
+{
+  "call_id": "{{call_id}}",
+  "requested_at": "{{now_utc}}"
+}
+```
+
+These values resolve in the Manual test chat and through the pathway chat API, as well as on real calls. A tool that works in testing works the same way live.
+
 ## Extend the agent with pathways
 
 A single prompt handles a surprising amount. When it stops being enough, pathways carry the parts that need their own handling. The section describes them as extending your core agent's skills.
