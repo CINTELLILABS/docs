@@ -120,16 +120,21 @@ description: "Update your web agent's settings, prompt and other details."
 </ParamField>
 
 <ParamField body="interruption_threshold" type="number" default={500}>
-  Adjusts how patient the AI is when waiting for the user to finish speaking.
+  Legacy. Sets a fixed wait, in milliseconds, after the caller stops speaking before the AI responds. We recommend leaving this unset: response timing adapts to each caller automatically (see [Agent Speech](/tutorials/agent-speech)).
 
-  Lower values mean the AI will respond more quickly, while higher values mean the AI will wait longer before responding.
+  To control how readily the AI stops when the caller talks over it, use `interruptibility`.
+</ParamField>
 
-  Recommended range: 50-200
-  - 50: Extremely quick, back and forth conversation
-  - 100: Balanced to respond at a natural pace
-  - 200: Very patient, allows for long pauses and interruptions. Ideal for collecting detailed information.
+<ParamField body="interruptibility" type="integer" default={2}>
+  Controls how readily the AI stops speaking when the caller talks over it. A higher value yields more easily; a lower value holds the turn through more of the caller's speech.
 
-  Try to start with 100 and make small adjustments in increments of ~10 as needed for your use case.
+  - `0`: Block. The AI ignores interruptions and finishes speaking (same as `block_interruptions: true`).
+  - `1`: Difficult. Harder to interrupt.
+  - `2`: Balanced (default).
+  - `3`: Easy. The AI stops quickly when the caller begins speaking.
+  - `4`: Always interrupt. Any caller speech stops the AI, including brief acknowledgments like "uh-huh".
+
+  See [Agent Speech](/tutorials/agent-speech) for how each level behaves.
 </ParamField>
 
 <ParamField body="max_duration" type="integer (minutes)" default={30}>
