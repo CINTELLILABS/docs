@@ -29,6 +29,8 @@ For LLM tokens, multiple conversational turns, and interruption support, use [Re
 
 Text-to-speech is currently billed at **\$0.015 per 1,000 characters**, the same rate on every plan. This is a limited-time launch offer, discounted from the standard \$0.04 per 1,000 characters. Each request carries a minimum charge of \$0.001, so very short generations bill at the minimum rather than the per-character rate.
 
+Pause markers (`<|N|>`) render silence and are not counted as billable characters.
+
 Some public-library voices carry an additional per-character creator fee. For a completed response, the charge comes back in the `x-cost` header. An interrupted raw stream can bill less because delivery accounting happens after that header is sent.
 
 Billing follows delivery. A synthesis that fails before any bytes are written is not charged, and a fully delivered request is charged for the whole `text`. If a raw response is interrupted mid-stream, billing estimates the delivered characters at synthesized-chunk granularity. Individual audio bytes cannot be mapped to exact source characters.
@@ -48,7 +50,7 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 <ParamField body="text" type="string" required>
   The text to speak. Maximum 5,000 characters.
 
-  Insert a pause with `<|N|>`, where N is a positive number of seconds: `"Welcome to Bland. <|0.8|> How can I help?"`
+  Insert a pause with `<|N|>`, where N is a positive number of seconds: `"Welcome to Bland. <|0.8|> How can I help?"`. Pause markers aren't billed.
 </ParamField>
 
 <ParamField body="voice" type="string" required>
@@ -95,6 +97,19 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
       Higher is more consistent between renders; lower is more creative and varied.
     </ParamField>
   </Expandable>
+</ParamField>
+
+<ParamField body="auto_formatting" type="boolean" default="false">
+  Reads phone numbers and Social Security numbers digit by digit, with a short beat between each group. Use it when your text comes from an LLM, which often spells numbers out or writes them as one long run of digits.
+
+  - Phone numbers: spelled-out 10-digit numbers, or 11 digits starting with "one", are read in groups like `732`, `741`, `2065`. For example, `"seven three two seven four one two zero six five"`.
+  - SSNs: spelled-out 9-digit numbers are read in groups like `123`, `45`, `6789`. A leading "oh" counts as zero.
+  - Bare 10-, 11-, and 9-digit runs, such as `7327412065`, are grouped the same way. Other 9-digit numbers, such as order IDs, are also grouped like an SSN.
+  - Dashed phone numbers and SSNs, such as `732-741-2065`, `1-800-555-2112`, and `123-45-6789`, are grouped the same way.
+
+  You're charged only for the digits of a formatted number. The spacing between groups isn't billed.
+
+  Shorter numbers, such as 7-digit runs, and decimals are left unchanged. Other dashed numbers, such as dates (`2026-10-05`), `555-1234`, and ZIP+4 codes, are also left unchanged.
 </ParamField>
 
 ---
@@ -184,6 +199,21 @@ curl -X POST "https://api.bland.ai/v2/tts" \
     "voice": "29158307-9893-4149-8a75-bc9ce313d64e"
   }' \
   --output out.pcm
+```
+
+### Phone numbers with auto formatting
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "You can reach us at seven three two seven four one two zero six five.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "container": "wav" },
+    "auto_formatting": true
+  }' \
+  --output phone.wav
 ```
 
 ### Telephony (μ-law, 8 kHz)
