@@ -121,17 +121,30 @@ Every migration starts the same way: in the dashboard, open the agent dropdown i
 
 Copies your conversational pathway into a new agent as a pathway, one agent per conversational pathway. No rewriting, no simulation. It is the fastest route and the most predictable.
 
-<Warning>
-**Migrate as is** keeps your End Call nodes hanging up, but only when every exit from the pathway is an End Call. If some exits end the call and others fall out of a component, the two cannot be told apart at the exit, so the whole flow returns to the agent instead of hanging up.
+It keeps the behavior your pathway has today:
 
-The import says so when it happens. Add an End call node at the agent level if the call should end there.
-</Warning>
+- End Call nodes still hang up where they did in the pathway, including End Call nodes inside a sub-flow. Callers cannot talk over the goodbye.
+- Each node keeps its own interruption settings.
+- Node tools keep their call limits and overrides. Library tools attached to a node run the actual library tool.
+- Pathway guardrails move onto the agent.
 
-It also carries a few call-level settings from the number bound to your pathway, such as voice, language and max duration. Anything with no home in agent settings is reported rather than dropped silently, and the number itself is not attached to the agent.
+It also carries call-level settings from the numbers bound to your pathway, such as voice, voice pool, language, recording and max duration. A setting is copied only when every bound number that sets it agrees. If your numbers disagree, the agent leaves that setting unset and a warning lists the values it found. Anything with no home in agent settings is reported rather than dropped silently, and the numbers themselves are not attached to the agent.
+
+A pathway that uses flex analysis cannot be migrated this way. Switch it to rigid analysis first.
+
+### Set up capture-as
+
+If your organization has capture-as, **Migrate as is** shows an **Also set up capture-as** checkbox. It is unchecked by default. With capture-as, your agent reads back names, phone numbers, emails, addresses and IDs to confirm them.
+
+Checking the box means the migration is no longer as is. After the copy, Bland picks the values to capture and rewrites any question that asks for a captured value together with an uncaptured one. It saves the result as a new unpublished version and runs capture checks on it. This adds a few minutes to the migration.
+
+Each agent's setup appears as a migration card on the **Agents** page. The agent is editable right away. If you save an edit before setup finishes, Bland stops the setup for that agent and keeps your edit. The card then says capture-as was not set up.
+
+Your organization can start 20 capture-as setups per hour. Past that limit, the pathway is still imported without capture-as, and a warning tells you so.
 
 This migration path cannot be cancelled once it starts, though it is quick. Running it twice gives you two agents, since nothing is deduplicated: the migration has no memory of having run, so a hesitant second attempt leaves you tidying up. That is safe, because nothing is overwritten.
 
-Warnings do not appear in the modal. You get a toast saying how many items are flagged, then a banner over the builder canvas naming the pathway and the count, which you can dismiss.
+Warnings do not appear in the modal. You get a toast saying how many items are flagged, then a banner over the builder canvas naming the pathway and the count, which you can dismiss. Review the flagged items before you move traffic to the agent.
 
 Three smaller things are dropped, each reported as a warning: a pathway's own global prompt when you migrate a persona, exit pointers on fanned-out components, and tool overrides on a persona's skills.
 
