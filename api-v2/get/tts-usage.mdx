@@ -1,0 +1,244 @@
+---
+title: "Get TTS Generation Timings"
+api: "GET https://api.bland.ai/v2/tts/usage"
+description: "Read time to first audio, time to first token, and total generation time for your text-to-speech requests, with period averages and charts."
+---
+
+## Overview
+
+Returns latency measurements for the speech your organization generates. Use it to monitor how fast audio starts playing, spot slow requests, or build your own latency dashboard.
+
+Each response includes:
+
+- A **summary** of average timings over the whole period.
+- A **series** of daily or monthly averages for charting.
+- A paginated list of **events**, one per generation.
+
+The same data appears under **Usage** in the TTS sidebar of the [dashboard](https://app.bland.ai/dashboard/tts/usage).
+
+Timings cover HTTP synthesis requests, realtime WebSocket turns, and stream flushes. Bland records them whether or not the audio was saved or charged. Generations from before timing capture launched are not backfilled.
+
+The response never includes the text you synthesized or the audio.
+
+### Metrics
+
+| Metric | Meaning |
+|---|---|
+| TTFA (time to first audio) | Time from the start of the request, turn, or flush until Bland sends the first audio. Buffered formats such as WAV wait for rendering. |
+| TTFT (time to first token) | First-token time the model reports for the first chunk of speech. `null` when the model does not report it. |
+| Total generation time | Time from the start until synthesis finishes or is interrupted. Excludes billing, encoding, and playback. |
+
+WebSocket turns start timing when the turn is admitted, so TTFA can include time spent waiting for your text.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key.
+</ParamField>
+
+---
+
+## Query parameters
+
+<ParamField query="period" type="string" default="30d">
+  Rolling time window. One of `7d`, `30d`, `90d`, or `all`.
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Number of events to return. Maximum `100`.
+</ParamField>
+
+<ParamField query="offset" type="number" default="0">
+  Number of events to skip for pagination.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data fields">
+    <ResponseField name="summary" type="object">
+      Averages over the full period, independent of pagination. Averages include only completed generations that have a value for that metric.
+
+      <Expandable title="Summary fields">
+        <ResponseField name="generations" type="number">
+          Total generations recorded in the period.
+        </ResponseField>
+        <ResponseField name="completed" type="number">
+          Generations that finished successfully.
+        </ResponseField>
+        <ResponseField name="ttft_ms" type="number | null">
+          Mean time to first token in milliseconds.
+        </ResponseField>
+        <ResponseField name="ttfa_ms" type="number | null">
+          Mean time to first audio in milliseconds.
+        </ResponseField>
+        <ResponseField name="total_generation_ms" type="number | null">
+          Mean total generation time in milliseconds.
+        </ResponseField>
+        <ResponseField name="ttft_samples" type="number">
+          Number of generations included in the TTFT average.
+        </ResponseField>
+        <ResponseField name="ttfa_samples" type="number">
+          Number of generations included in the TTFA average.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="events" type="array">
+      One entry per generation, newest first.
+
+      <Expandable title="Event fields">
+        <ResponseField name="id" type="string">
+          Timing record ID.
+        </ResponseField>
+        <ResponseField name="request_id" type="string">
+          Request ID of the generation. Include it when you contact support.
+        </ResponseField>
+        <ResponseField name="endpoint" type="string">
+          Endpoint that produced the audio, for example `v2_tts`, `v2_tts_ws`, or `v2_audio_speech`.
+        </ResponseField>
+        <ResponseField name="voice_id" type="string">
+          Voice used for the generation.
+        </ResponseField>
+        <ResponseField name="char_count" type="number">
+          Number of characters synthesized.
+        </ResponseField>
+        <ResponseField name="started_at" type="string">
+          ISO 8601 start time.
+        </ResponseField>
+        <ResponseField name="status" type="string">
+          One of `completed`, `failed`, `cancelled`, or `preempted`.
+        </ResponseField>
+        <ResponseField name="ttft_ms" type="number | null">
+          Time to first token in milliseconds.
+        </ResponseField>
+        <ResponseField name="ttfa_ms" type="number | null">
+          Time to first audio in milliseconds. `null` if no audio was sent.
+        </ResponseField>
+        <ResponseField name="total_generation_ms" type="number">
+          Total generation time in milliseconds.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="series" type="object">
+      Chart data for the full period, independent of pagination.
+
+      <Expandable title="Series fields">
+        <ResponseField name="bucket" type="string">
+          `day` for `7d`, `30d`, and `90d`. `month` for `all`, capped to the latest 120 months.
+        </ResponseField>
+        <ResponseField name="points" type="array">
+          One point per bucket. Each point has a `started_at` UTC timestamp plus the same fields as `summary`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="has_more" type="boolean">
+      `true` when another page of events exists. Use this, not `summary.generations`, to decide whether to fetch the next page.
+    </ResponseField>
+
+    <ResponseField name="limit" type="number">
+      Page size used for this response.
+    </ResponseField>
+
+    <ResponseField name="offset" type="number">
+      Offset used for this response.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  `null` on success.
+</ResponseField>
+
+<Note>
+  `summary` and `series` can be cached for up to one minute. `events` and `has_more` are always fresh.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.bland.ai/v2/tts/usage?period=7d&limit=20" \
+  -H "authorization: $BLAND_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "summary": {
+      "generations": 412,
+      "completed": 405,
+      "ttft_ms": 88,
+      "ttfa_ms": 214,
+      "total_generation_ms": 1630,
+      "ttft_samples": 380,
+      "ttfa_samples": 405
+    },
+    "events": [
+      {
+        "id": "8f0c2a4e-1b7d-4c55-9a3e-2d6f1e9b7c10",
+        "request_id": "req_5b1e9c7a",
+        "endpoint": "v2_tts",
+        "voice_id": "june",
+        "char_count": 142,
+        "started_at": "2026-10-06T15:42:08.123Z",
+        "status": "completed",
+        "ttft_ms": 91,
+        "ttfa_ms": 207,
+        "total_generation_ms": 1488
+      }
+    ],
+    "series": {
+      "bucket": "day",
+      "points": [
+        {
+          "started_at": "2026-10-06T00:00:00.000Z",
+          "generations": 63,
+          "completed": 62,
+          "ttft_ms": 86,
+          "ttfa_ms": 210,
+          "total_generation_ms": 1594,
+          "ttft_samples": 58,
+          "ttfa_samples": 62
+        }
+      ]
+    },
+    "has_more": true,
+    "limit": 20,
+    "offset": 0
+  },
+  "errors": null
+}
+```
+
+```json Invalid period
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_PERIOD",
+      "message": "period must be 7d, 30d, 90d or all"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Error codes
+
+| Code | HTTP | Meaning |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Missing or invalid API key. |
+| `INVALID_PERIOD` | 400 | `period` is not `7d`, `30d`, `90d`, or `all`. |
+| `RATE_LIMITED` | 429 | More than 30 requests per minute for your organization. Retry shortly. |
+| `ANALYTICS_UNAVAILABLE` | 503 | Timings are temporarily unavailable. Retry later. |
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
