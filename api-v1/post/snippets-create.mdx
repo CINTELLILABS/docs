@@ -1,0 +1,110 @@
+---
+title: "Create Snippet"
+api: "POST https://api.bland.ai/v1/snippets/create"
+description: "Upload a JavaScript snippet that can be executed by Custom Code Nodes or run directly."
+---
+
+Snippets are the JavaScript functions behind the [Custom Code Node](/enterprise-features/custom-code-node). They run securely on Bland's infrastructure.
+
+<Note>
+  Snippets require Custom Code access on your account. Reach out to Bland support to enable it.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Set to `text/plain`. The request body is the raw script, not JSON.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="language" type="string" required>
+  Language of the snippet. Currently only `js` is supported.
+</ParamField>
+
+<ParamField query="name" type="string" required>
+  Name of the snippet. Maximum 100 characters. Only latin alphabet characters and underscores are allowed (no digits or spaces).
+</ParamField>
+
+### Body
+
+Send the snippet's source code as the raw request body, exactly as you would write it in an editor. Do not wrap it in JSON or minify it. Maximum length is 100,000 characters.
+
+Your snippet must export a default `fetch` handler and return JSON using `Response.json()`:
+
+```javascript
+export default {
+  async fetch(request, env, ctx) {
+    const input = await request.json();
+
+    return Response.json({
+      message: `Hello, ${input.name}`
+    });
+  }
+}
+```
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created snippet.
+</ResponseField>
+
+<ResponseField name="data.snippet_id" type="string">
+  Unique identifier for the new snippet. Use this ID to update, run, or delete it.
+</ResponseField>
+
+<ResponseField name="data.submission" type="string">
+  The script exactly as it was received.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<RequestExample>
+```bash Request
+curl --request POST \
+  --url 'https://api.bland.ai/v1/snippets/create?language=js&name=order_lookup' \
+  --header 'authorization: YOUR_API_KEY' \
+  --header 'content-type: text/plain' \
+  --data 'export default {
+  async fetch(request, env, ctx) {
+    const input = await request.json();
+    return Response.json({ message: `Hello, ${input.name}` });
+  }
+}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "snippet_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "submission": "export default {\n  async fetch(request, env, ctx) {\n    const input = await request.json();\n    return Response.json({ message: `Hello, ${input.name}` });\n  }\n}"
+  },
+  "errors": null
+}
+```
+
+```json Validation Error
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SCRIPT_CREATE_VALIDATION_ERROR",
+      "message": "Script language must be provided as a query string. Add ?language=js to the URL."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
