@@ -45,6 +45,12 @@ Limited to 60 imports per hour per organization. Requires an admin, owner, opera
   When `false`, no agent is created; the response carries the converted scenario nodes instead, ready to add to an existing agent's `behavior.nodes` with [Create Agent Version](/api-v2/post/agents-id-versions).
 </ParamField>
 
+<ParamField body="capture" type="boolean" default="false">
+  When `true`, Bland sets up capture-as on the new agent after the import. A background job picks the values to capture, rewrites questions that ask for a captured value together with an uncaptured one, saves the result as a new unpublished version, and runs capture checks on it. The response carries `capture_run_id`. Ignored if capture-as is not enabled for your organization. Returns `400 INVALID_PATHWAYS` when combined with `create: false`.
+
+  Your organization can start 20 capture-as setups per hour. Over that limit, the pathway is still imported without capture-as and `data.warnings` says so. Saving an edit to the agent before setup finishes stops the setup and keeps your edit.
+</ParamField>
+
 ### Response
 
 Returns `201` when an agent was created and `200` in convert-only mode. Returns `422` with `INVALID_MIGRATED_SNAPSHOT` or `MIGRATION_LINT_FAILED` when the converted result does not validate.
@@ -67,6 +73,10 @@ Returns `201` when an agent was created and `200` in convert-only mode. Returns 
 
 <ResponseField name="data.warnings" type="array">
   Human-readable notes about constructs the conversion could not carry faithfully. In convert-only mode this also notes each pathway whose global prompt or memory setting was not carried, since those belong to the agent rather than a scenario. When several pathways have global prompts in create mode, a warning notes they were merged into the system prompt.
+</ResponseField>
+
+<ResponseField name="data.capture_run_id" type="string">
+  Present when `capture` was `true` and capture-as setup started. ID of the background setup run.
 </ResponseField>
 
 <ResponseField name="data.lint" type="object">
