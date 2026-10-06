@@ -21,9 +21,13 @@ Inside an agent, Environments is under Configure. It has two tabs, Environments 
 
 There is no organization-wide view. Environments belong to one agent, and you reach them from that agent.
 
-{/* IMAGE: the Environments tab inside an agent, showing the Production, Staging and Development cards. */}
+{/* IMAGE: the Environments tab inside an agent, showing the release rows from Production down to Development, with the Activity log below. */}
 
-Staging and production each show the **Version** they are pinned to, and usually when it arrived, **Deployed** on production and **Created** on staging. Development shows neither, because it is the live head rather than a pin. Production holding nothing shows no version and no buttons. An empty staging card still offers **Promote**, greyed out.
+The Environments tab lists the release as rows that read from the bottom up: Development, Staging, Evaluations, Experiment and Production. Production sits at the top because it is where the other rows lead. Expand a row to see its details.
+
+Staging and production each show the **Version** they are pinned to, and usually when it arrived, **Deployed** on production and **Created** on staging. Development shows neither, because it is the live head rather than a pin. Production holding nothing shows no version.
+
+The controls that act on what is live, **Rollback**, **Staged rollout** and **Promote**, sit in the page header above the rows.
 
 <Warning>
 A call runs the **production** version by default. An agent with nothing pinned to production has nothing to serve, and an API call is refused with a 400 and the code `AGENT_ENV_UNPINNED`.
@@ -33,7 +37,7 @@ Building and saving is not shipping.
 
 ## Publish
 
-**Publish** sits in two places and does the same thing in both: the button at the top right of the builder, and the Development card on the Environments tab. It saves your current work as a new version, then ships that exact version somewhere.
+**Publish** sits in two places and does the same thing in both: the button at the top right of the builder, and the Development row on the Environments tab. It saves your current work as a new version, then ships that exact version somewhere.
 
 Where it ships depends on one thing: whether this agent has ever been in production.
 
@@ -66,17 +70,39 @@ It is the control that puts unevaluated work in front of live callers.
 
 ## Promote to production
 
-**Promote** on the Staging card points production at the version staging is holding. Nothing is copied and nothing is rebuilt.
+**Promote** in the Environments page header points production at the version staging is holding. Nothing is copied and nothing is rebuilt.
 
 Its confirmation carries the same phone number section and the same reassurance as the first publish: promoting does not change which numbers or pathways reach the agent.
 
 ## Roll back
 
-To go back, **Rollback** on the Production card lists the versions production held before and repins to one you choose. It is a repoint, not a rebuild.
+To go back, **Rollback** in the Environments page header lists the versions production held before and repins to one you choose. It is a repoint, not a rebuild.
+
+## Activity and version compare
+
+The **Activity** section below the rows is a change log for the agent. Each row records one event, such as **Version saved**, **Published to staging**, **Promoted to production** or **Rolled back production**.
+
+Each row shows:
+
+- **Prior version**: what that environment was pinned to before the event. For **Version saved**, it is the previous save. A first publish shows a dash.
+- **New version**: the version the event put in place.
+- **By** and **When**: who made the change and when it happened.
+- **Compare**: opens the two versions side by side.
+
+To see what changed between two versions, select **Compare** or either version on a row. The compare window opens on that row's pair. Use the **Before** and **After** pickers to compare any two published versions instead.
+
+Switch between two views:
+
+- **Simple** steps through each field that changed.
+- **JSON** shows the whole configuration of both versions side by side, with changed words highlighted. Unchanged lines fold away behind **Show N unchanged lines**.
+
+When two versions differ too much to line up in the JSON view, the window points you to **Simple** instead.
+
+Rows have no **Compare** when both sides are the same version, or when either side has no published version number.
 
 ## The evaluation gate
 
-Evaluations on staging can gate both moves, and the two directions fail differently. You attach them from the Evaluations card between Development and Staging, covered in [Evaluations](/agents/evaluations#make-it-a-required-check).
+Evaluations on staging can gate both moves, and the two directions fail differently. You attach them from the Evaluations row above Staging, covered in [Evaluations](/agents/evaluations#make-it-a-required-check).
 
 With no evaluations configured at all, neither move is gated and both happen immediately.
 
