@@ -112,7 +112,12 @@ Click any call in the table to open its detail view. The detail view shows the t
 
 The header shows the call's channel (Voice, Web, or SMS), pathway name (click to open the editor), and the contact number. Clicking the contact number filters call logs to show all calls with that number — useful for viewing a contact's history.
 
-Below that: direction badge, status, duration, and cost. Action buttons let you copy the call ID, copy the full transcript, or toggle translation.
+Below that: direction badge, status, duration, and cost. Action buttons let you copy the full transcript or toggle translation.
+
+The copy conversation menu offers two options:
+
+- **Copy Conversation ID** — copies the call's ID to your clipboard.
+- **Copy all Logs** — fetches the full log payload on demand and copies it. Includes capture metadata regardless of the current view or any active search filter. If the capture is incomplete, the export includes a warning so you know it's partial.
 
 ### Transcript
 
@@ -128,17 +133,23 @@ The transcript shows the full conversation with speaker labels and timestamps. F
 - **Edit node** — open the pathway editor in a new tab, navigated directly to the node that generated this response.
 - **Testbed** — open the testbed with this call's context pre-loaded. See [Testbed](/tutorials/testbed) for the full workflow.
 
-### Expanded Logs
+### Conversation views
 
-Toggle **"Expand all logs"** in the transcript toolbar to see per-turn decision data inline between dialogue turns. This is the primary debugging view for pathway calls — it shows exactly what the agent decided at each step of the conversation.
+The transcript toolbar has a segmented control with three views:
 
-Each turn can include the following log types:
+- **Transcript** — the plain conversation between the agent and the caller, with hover actions on each bubble.
+- **Detail** — the transcript with per-turn decision data inline between dialogue turns. This is the primary debugging view for pathway calls: it shows exactly what the agent decided at each step of the conversation.
+- **Logs** — a compact, alternating-row list of all recorded events for the call. Click any row to inspect its full payload, or hover a row to copy it. Long lists are virtualized so they stay responsive. Search runs across the full payload, and any incomplete captures surface a retry.
+
+Your last-used view persists across calls.
+
+Each turn or log entry can include the following types:
 
 **Node chosen** — which pathway node the agent transitioned to at this point in the conversation.
 
 **Prompt** — the agent's prompt text for this turn.
 
-**Loop condition** — whether the node's loop condition was evaluated and its result. Shows the full condition prompt and a likelihood score (e.g., "Likely 7/10"). When the condition is not yet met, the agent stays on the current node. This is the only prompt shown directly in expanded logs — node prompts and the global prompt are accessible from the node editor.
+**Loop condition** — whether the node's loop condition was evaluated and its result. Shows the full condition prompt and a likelihood score (e.g., "Likely 7/10"). When the condition is not yet met, the agent stays on the current node. This is the only prompt shown directly in the Detail view. Node prompts and the global prompt are accessible from the node editor.
 
 **Routing** — which outgoing route the agent chose, plus the other options it could have taken. The option set is recorded at decision time during the call, so it stays accurate even if you edit the pathway later. The chosen route is check-marked and the alternatives are listed alongside it, letting you tell "the agent chose badly among good options" apart from "the right route was never on the table." The decision detail reads from → to → via: the node the agent left, the node it landed on, and the edge label it routed through (shown when the label differs from the destination node's name). When the agent declines every route to keep listening, the entry reads **Waited** — a deliberate choice, not a routing failure. Tool decisions likewise list the tools the agent could have called. Calls placed before decision recording shipped show the chosen route only.
 
@@ -148,7 +159,7 @@ Each turn can include the following log types:
 
 **Custom code** — for [Custom Code](/enterprise-features/custom-code-node) node runs, expand the entry to see the execution details. The **Output** row shows the variables the snippet returned. If the run failed, the failure details appear directly under the Failed badge, above the Output row: a failure code (`SNIPPET_TIMEOUT` for a run that hit its time limit, `SNIPPET_ERROR` for an error thrown by your code), the error message from your code, and how long the code ran. Timeouts also show the time limit that applied. On redaction-protected calls, the error message is withheld and marked as such, while the failure code and timings remain. Structured failure details appear on newer calls only.
 
-**Other events** — button presses, knowledge base tool calls, SMS events, scheduling, and transfer call events also appear in the expanded logs when relevant.
+**Other events** — button presses, knowledge base tool calls, SMS events, scheduling, and transfer call events also appear in the Detail and Logs views when relevant.
 
 Hover any event row to reveal a testbed button, so you can jump directly into testing from any moment in the call — including operations that succeeded. See [Testbed](/tutorials/testbed).
 
