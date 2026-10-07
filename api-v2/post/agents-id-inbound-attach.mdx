@@ -6,7 +6,7 @@ description: "Route inbound calls on your phone numbers to an agent."
 
 ### Overview
 
-Points one or more of your phone numbers at the agent so inbound calls run it. Any existing pathway or persona assignment on those numbers is replaced. Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach after saving to refresh it. The agent must have at least one saved version. Use [Detach Numbers from Agent](/api-v2/post/agents-id-inbound-detach) to undo.
+Points one or more of your phone numbers at the agent so inbound calls run it. Any existing pathway or persona assignment on those numbers is replaced. Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach after saving to refresh it. Enterprise plans can pass `environment: "staging"` so calls run the version pinned to staging instead. The agent must have at least one saved version. Use [Detach Numbers from Agent](/api-v2/post/agents-id-inbound-detach) to undo.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -26,6 +26,17 @@ Requires an admin, owner, operator, or prompter role.
 
 <ParamField body="inbound_numbers" type="string[]" required>
   Phone numbers to attach, each exactly as it appears on your account (for example `+18005551234`). Must be a non-empty array of non-empty strings; surrounding whitespace is trimmed. Returns `400 INVALID_BODY` if the array is missing, empty, or contains a non-string. Returns `400 INVALID_INBOUND_NUMBERS` if any number is not on your account, in which case nothing is attached.
+</ParamField>
+
+<ParamField body="environment" type="string">
+  Which environment calls to these numbers run: `production` or `staging`. When you omit it, a number already attached to this agent on staging stays on staging, and every other number answers on production. Pass `production` to move a staging number back. Any other value returns `400 INVALID_BODY`.
+
+  `staging` is enterprise only and applies to calls. Texts to a staging number still run the production version. Every check below runs before anything is written:
+
+  - `403 ENTERPRISE_REQUIRED` if your organization is not on an enterprise plan.
+  - `409 STAGING_NUMBER_UNSUPPORTED` if your account or any of the numbers runs on dedicated infrastructure.
+  - `409 AGENT_ENV_UNPINNED` if nothing is published to staging.
+  - `409 AGENT_VARIABLE_UNRESOLVED` if a variable the staging version references has no staging value, or `409 AGENT_SNAPSHOT_INVALID` if the staging version can't run.
 </ParamField>
 
 ### Response
@@ -68,6 +79,18 @@ Requires an admin, owner, operator, or prompter role.
     ]
   },
   "errors": null
+}
+```
+
+```json Staging Not Published
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_ENV_UNPINNED",
+      "message": "Staging has no published version. Publish to staging first."
+    }
+  ]
 }
 ```
 
