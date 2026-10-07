@@ -371,7 +371,7 @@ description: "Update your inbound agent's settings, prompt and other details."
   - `tool`
   - `dynamic_data`
   - `citations` (Sent separately, Enterprise only)
-  - `post_transfer_transcript` (Adds the conversation after a transfer to a human to the post-call webhook; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). In limited rollout: if not enabled for your organization, the subscription has no effect.)
+  - `post_transfer_transcript` (Adds the conversation after a transfer to a human to the post-call webhook; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). The transcript is built from the call recording, so keep recording on. In limited rollout: if not enabled for your organization, the subscription has no effect.)
 
 Example payloads:
   <CodeGroup>
@@ -578,6 +578,10 @@ Example payloads:
   When `true` and a call to this number is transferred to a human, Bland transcribes the conversation after the transfer live and streams it over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket. Works for both cold and warm transfers.
 
   This option controls the live stream only. To receive the post-transfer transcript in the post-call webhook, add `"post_transfer_transcript"` to `webhook_events`. The two are independent, so you can use either one or both.
+
+  The live stream does not require call recording. Calls with redaction enabled do not stream. Their post-call webhook still carries the post-transfer transcript, redacted like the rest of the call.
+
+  You can also turn this on in the dashboard with the **Live transfer transcript** switch, in the **Transfers** group of the phone number's settings.
 
   ```json
   {
