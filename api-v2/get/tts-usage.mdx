@@ -1,20 +1,23 @@
 ---
-title: "Get TTS Generation Timings"
+title: "Get TTS Usage and Generation Timings"
 api: "GET https://api.bland.ai/v2/tts/usage"
-description: "Read time to first audio, time to first token, and total generation time for your text-to-speech requests, with period averages and charts."
+description: "Read billed text-to-speech usage totals and per-generation latency, including time to first audio, with daily breakdowns and top voices."
 ---
 
 ## Overview
 
-Returns latency measurements for the speech your organization generates. Use it to monitor how fast audio starts playing, spot slow requests, or build your own latency dashboard.
+Returns billed usage and latency measurements for the speech your organization generates. Use it to track generations, characters, and cost, monitor how fast audio starts playing, spot slow requests, or build your own usage dashboard.
 
 Each response includes:
 
+- **Billed usage**: total generations, characters, and cost across every TTS endpoint, including streaming, plus a daily breakdown and your most used voices.
 - A **summary** of average timings over the whole period.
 - A **series** of daily or monthly averages for charting.
 - A paginated list of **events**, one per generation.
 
 The same data appears under **Usage** in the TTS sidebar of the [dashboard](https://app.bland.ai/dashboard/tts/usage).
+
+Billed usage includes all charged generations in the period, even ones whose audio was not saved.
 
 Timings cover HTTP synthesis requests, realtime WebSocket turns, and stream flushes. Bland records them whether or not the audio was saved or charged. Generations from before timing capture launched are not backfilled.
 
@@ -138,6 +141,22 @@ WebSocket turns start timing when the turn is admitted, so TTFA can include time
       </Expandable>
     </ResponseField>
 
+    <ResponseField name="billed" type="object">
+      Billed usage for the full period, independent of pagination. Covers every charged TTS endpoint, including streaming.
+
+      <Expandable title="Billed fields">
+        <ResponseField name="totals" type="object">
+          Period totals with `generations`, `characters`, and `priced_cost_dollars`.
+        </ResponseField>
+        <ResponseField name="daily" type="array">
+          One entry per UTC day with usage, oldest first. Each entry has `day` (`YYYY-MM-DD`) plus the same fields as `totals`. Days without usage are omitted.
+        </ResponseField>
+        <ResponseField name="top_voices" type="array">
+          Up to five most used voices, most generations first. Each entry has `voice_id`, `name`, and `generations`. `voice_id` and `name` are `null` when the voice could not be resolved.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
     <ResponseField name="has_more" type="boolean">
       `true` when another page of events exists. Use this, not `summary.generations`, to decide whether to fetch the next page.
     </ResponseField>
@@ -157,7 +176,11 @@ WebSocket turns start timing when the turn is admitted, so TTFA can include time
 </ResponseField>
 
 <Note>
-  `summary` and `series` can be cached for up to one minute. `events` and `has_more` are always fresh.
+  `priced_cost_dollars` is the listed price of each billed generation. It can differ from the amount deducted from your balance.
+</Note>
+
+<Note>
+  `summary`, `series`, and `billed` can be cached for up to one minute. `events` and `has_more` are always fresh.
 </Note>
 
 <RequestExample>
@@ -206,6 +229,28 @@ curl "https://api.bland.ai/v2/tts/usage?period=7d&limit=20" \
           "total_generation_ms": 1594,
           "ttft_samples": 58,
           "ttfa_samples": 62
+        }
+      ]
+    },
+    "billed": {
+      "totals": {
+        "generations": 2418,
+        "characters": 736920,
+        "priced_cost_dollars": 36.85
+      },
+      "daily": [
+        {
+          "day": "2026-10-06",
+          "generations": 89,
+          "characters": 27140,
+          "priced_cost_dollars": 1.34
+        }
+      ],
+      "top_voices": [
+        {
+          "voice_id": "7f3a9c2e-4b1d-4e8a-9c6f-2d5e8b1a0f47",
+          "name": "June",
+          "generations": 964
         }
       ]
     },
