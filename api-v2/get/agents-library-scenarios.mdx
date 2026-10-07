@@ -6,7 +6,9 @@ description: "List reusable scenarios from your other agents."
 
 ### Overview
 
-Returns the top-level scenario and auth nodes from the newest saved version of each agent in your organization, grouped per agent, with the full node payload inline so you can insert one into another agent's graph and save it with [Create Agent Version](/api-v2/post/agents-id-versions). Only the 50 most recently updated agents are scanned, and agents with no saved version or no scenarios are omitted. For nodes you have retired from a canvas, see [List Archived Nodes](/api-v2/get/agents-library-archived-nodes).
+Returns the top-level scenario and auth nodes from the newest saved version of each agent in your organization, grouped per agent, with the full node payload inline so you can insert one into another agent's graph and save it with [Create Agent Version](/api-v2/post/agents-id-versions). Agents with no saved version or no scenarios are omitted from the results. For nodes you have retired from a canvas, see [List Archived Nodes](/api-v2/get/agents-library-archived-nodes).
+
+By default the response is a single bounded page of up to 50 agents. To walk every agent in the organization, opt in to the paginated envelope with `paginate=true` and follow the returned `next_cursor` until it is `null`.
 
 ### Headers
 
@@ -20,10 +22,18 @@ Returns the top-level scenario and auth nodes from the newest saved version of e
   Skip this agent's scenarios, typically the agent you are currently editing. An empty value is ignored.
 </ParamField>
 
+<ParamField query="paginate" type="boolean" default="false">
+  Set to `true` to receive `{ groups, next_cursor }` instead of the bounded legacy array. Each page returns up to 50 agents.
+</ParamField>
+
+<ParamField query="after" type="string">
+  Agent UUID cursor for the next page. Pass the `next_cursor` from the previous paginated response. Only used when `paginate=true`. Invalid UUIDs return `400 INVALID_CURSOR`.
+</ParamField>
+
 ### Response
 
-<ResponseField name="data" type="array">
-  One group per agent that has at least one library scenario, in order of most recently updated agent first.
+<ResponseField name="data" type="array | object">
+  Without `paginate=true`, an array of groups (one per agent that has at least one library scenario), ordered by agent ID. With `paginate=true`, an object with `groups` (same shape) and `next_cursor` (the agent ID to pass as `after` for the next page, or `null` when there are no more pages).
 
   <Expandable title="group object">
     <ResponseField name="agent_id" type="string">
@@ -172,6 +182,22 @@ Returns the top-level scenario and auth nodes from the newest saved version of e
       ]
     }
   ],
+  "errors": null
+}
+```
+
+```json Paginated response
+{
+  "data": {
+    "groups": [
+      {
+        "agent_id": "b5154820-6f11-4886-8523-d896934528ae",
+        "agent_name": "Appointment reminders",
+        "scenarios": [ /* ... */ ]
+      }
+    ],
+    "next_cursor": "b5154820-6f11-4886-8523-d896934528ae"
+  },
   "errors": null
 }
 ```

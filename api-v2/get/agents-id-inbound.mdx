@@ -1,12 +1,12 @@
 ---
 title: "Get Agent Number Binding"
 api: "GET https://api.bland.ai/v2/agents/{agent_id}/inbound"
-description: "Check whether phone numbers have been attached to an agent."
+description: "Check which phone numbers are attached to an agent and whether each one answers on the production or staging environment."
 ---
 
 ### Overview
 
-Returns the agent's inbound number binding. `persona_id` is `null` until the first successful [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) call. This endpoint does not list the numbers themselves; use [List Numbers](/api-v1/get/inbound) for that. An unknown agent ID returns `persona_id: null` rather than `404`.
+Returns the agent's inbound number binding. `persona_id` is `null` until the first successful [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) call. `numbers` lists the numbers attached to the agent and the environment each one answers on. An unknown agent ID returns `persona_id: null` rather than `404`.
 
 ### Headers
 
@@ -30,6 +30,23 @@ Returns the agent's inbound number binding. `persona_id` is `null` until the fir
   ID of the persona that attached numbers route through. Bland creates it on the first attach and keeps it afterwards, so it stays set even after every number is detached. `null` if numbers have never been attached to this agent.
 </ResponseField>
 
+<ResponseField name="data.numbers" type="array">
+  The numbers attached to the agent, newest first. Empty when no number is attached.
+
+  <Expandable title="properties">
+    <ResponseField name="phone_number" type="string">
+      The attached phone number.
+    </ResponseField>
+    <ResponseField name="agent_env_type" type="string | null">
+      `staging` when calls to the number run the staging version. `null` when they run production.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.staging_attach_supported" type="boolean">
+  `false` when your account runs on dedicated infrastructure, where numbers can't be attached to staging. Attaching to staging also requires an enterprise plan, which this field does not check.
+</ResponseField>
+
 <ResponseField name="errors" type="null | array">
   `null` on success, or a list of error objects if the request failed.
 </ResponseField>
@@ -39,7 +56,18 @@ Returns the agent's inbound number binding. `persona_id` is `null` until the fir
 {
   "data": {
     "agent_id": "680817f5-147a-4e7f-9d25-eac973e693a5",
-    "persona_id": "a308a95d-854d-435a-ae2a-b3d113b59054"
+    "persona_id": "a308a95d-854d-435a-ae2a-b3d113b59054",
+    "numbers": [
+      {
+        "phone_number": "+18005551234",
+        "agent_env_type": "staging"
+      },
+      {
+        "phone_number": "+18005556789",
+        "agent_env_type": null
+      }
+    ],
+    "staging_attach_supported": true
   },
   "errors": null
 }
@@ -49,7 +77,9 @@ Returns the agent's inbound number binding. `persona_id` is `null` until the fir
 {
   "data": {
     "agent_id": "818cab80-86c9-46fc-93d8-a7f548b18d7e",
-    "persona_id": null
+    "persona_id": null,
+    "numbers": [],
+    "staging_attach_supported": true
   },
   "errors": null
 }

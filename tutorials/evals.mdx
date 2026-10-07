@@ -167,6 +167,47 @@ If some calls fail to generate, Bland keeps the test cases that succeeded and li
 
 ---
 
+## Test and align a judge
+
+Testing a judge is a closed loop: pick calls, run the judge, refute any verdict it got wrong, and turn those corrections into the next version of the judge. Open it with the **Test** button beside **Save** in the judge editor. Use `← Back to setup` to return.
+
+### Create a test
+
+Select **Create new test** to open the population picker. Every test runs on the calls you pick.
+
+- **Production — Recent** grades the N most recent production calls for the agent.
+- **Production — Specific** lets you filter the call log in a side panel or paste a list of conversation IDs, then runs the judge on exactly those calls.
+- **Simulated** takes a caller description (40 character minimum) and a count. Bland creates a scenario, attaches the judge at its current draft, and simulates that many conversations against it.
+
+The results table starts drawing rows as soon as the test starts. Calls the judge is still grading appear as spinner rows and fill in one by one.
+
+### Refute a verdict
+
+For every graded call, the results table shows the judge's verdict beside the call. Select a verdict to open the correction popover, pick the level you believe is correct, and add a short rationale. Corrections are stored per call and travel with the test run, so opening the same run on another browser or device shows the same corrections.
+
+Corrections are append-only: each edit writes a new revision and the earlier revisions stay in the run's history. You can keep correcting the same verdict as your rubric sharpens.
+
+### Align with AI
+
+Once you have refuted the verdicts you disagree with, select **Align with AI** at the top of the results. Bland opens a drawer with:
+
+- A table of your corrections: call, the judge's verdict versus your verdict, and your rationale.
+- The proposed judge changes as a red/green diff per field (instruction prompt, levels, level descriptions).
+- An **Advanced** box for optional reviewer instructions to steer the proposal.
+
+Bland reads the corrections and the transcripts of the same calls, then proposes changes constrained to the judge's own set of levels — it will not invent a level that does not exist.
+
+### Apply or apply and retest
+
+From the alignment drawer:
+
+- **Apply** writes the proposal into the judge's editable draft and returns you to setup, so you can review the diff in the editor before publishing.
+- **Apply and retest** writes the proposal into the draft and immediately re-runs the same calls against the new draft, so you can see whether your corrections changed the verdicts you cared about.
+
+Published versions do not change silently. Alignment always lands in the draft. Publish it with [`POST /v1/evals/agents/{id}/publications`](/api-v1/post/evals-agents-id-publish) or the **Publish** button when you are satisfied.
+
+---
+
 ## Using the API
 
 The Evals API is rooted at `/v1/evals`. A typical end-to-end flow:
