@@ -267,6 +267,39 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
   Note: Scheduled calls can be cancelled with the POST /v1/calls/:call_id/stop endpoint.
 </ParamField>
 
+<ParamField body="transfer_phone_number" type="string">
+  A phone number that the agent can transfer to under specific conditions - such as being asked to speak to a human or supervisor.
+
+  <Accordion title="Prompting Notes">
+    For best results:
+
+    - Specify conditions that the agent should transfer to a human under (examples are great!)
+    - In the agent's prompt, refer to the action solely as "transfer" or "transferring".
+    - Alternate phrasing such as "swap" or "switch" can mislead the agent, causing the action to be ignored.
+  </Accordion>
+</ParamField>
+
+<ParamField body="transfer_list" type="object">
+  Give your agent the ability to transfer calls to a set of phone numbers.
+
+  Overrides transfer_phone_number if a transfer_list.default is specified.
+
+  Will default to transfer_list.default, or the chosen phone number.
+
+  Example usage to route calls to different departments:
+
+  ```json
+  {
+    "transfer_list": {
+        "default": "+12223334444",
+        "sales": "+12223334444",
+        "support": "+12223334444",
+        "billing": "+12223334444"
+    }
+  }
+  ```
+</ParamField>
+
 <ParamField body="max_duration" default="30" type="integer">
   When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
 
@@ -1846,6 +1879,16 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
     {
       "status": "error",
       "message": "Retry attempt not provided for retry call: {call_id}"
+    }
+    ```
+  </ResponseField>
+  <ResponseField name="400 - Invalid Transfer Number" type="object">
+    Transfer phone number is invalid.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Invalid transfer_phone_number."
     }
     ```
   </ResponseField>
