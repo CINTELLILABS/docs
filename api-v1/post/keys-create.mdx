@@ -27,7 +27,7 @@ description: "Create a full-access or restricted API key for your organization."
 <ParamField body="scopes" type="string[]">
   The permissions for a restricted key. Omit it to create a full-access key.
 
-  When present, it must be a non-empty list of `pathways:read`, `pathways:write`, `calls:read`, `calls:create`, and `calls:stop`. See [Restricted keys](#restricted-keys) for what each one allows.
+  When present, it must be a non-empty list of the permissions in [Restricted keys](#restricted-keys), which also says what each one allows.
 
   Restricted key creation is rolling out by organization. When it is not enabled for yours, the request returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`.
 </ParamField>
@@ -58,17 +58,38 @@ description: "Create a full-access or restricted API key for your organization."
 
 A restricted key can only call the endpoints its permissions cover. Use one when you hand a key to a contractor, a CI job, or an integration that needs part of your account and not all of it.
 
-You can grant these three permissions:
+Permissions are named by resource and action. Every resource has a read permission. Most also have a write permission, or an action permission for work that spends credits or sends messages. The table lists what each permission opens for a restricted key, and what stays closed to every restricted key no matter which permissions it holds.
 
-| Permission | Allows |
-| --- | --- |
-| `pathways:write` | Create, edit, publish, and roll back pathways and agents. Includes `pathways:read`, which reads definitions, versions, folders, and branches. |
-| `calls:read` | Read call logs: details, transcripts, recordings, analysis, and batches. |
-| `calls:create` | Place phone calls, billed to your organization. Includes `calls:stop`, which ends calls in progress. |
+| Resource | Scopes | What they open | What stays denied |
+| --- | --- | --- | --- |
+| Pathways | `pathways:read`, `pathways:write` | `pathways:read` reads pathways and agents, their versions, folders, branches, and the node library, and a call's node snapshot. `pathways:write` adds creating, editing, deleting, publishing, promoting, and rolling back pathways and agents, plus folders, library blocks, and branch rebase and merge. | Sharing and access changes, collaboration sessions, migrations, copilot and prompt generation, prompt improvement, test agents, pathway SMS, node flagging, simulations, experiments, and rollouts. |
+| Calls | `calls:read`, `calls:create`, `calls:stop` | `calls:read` reads call details, transcripts, recordings, pathway events, prompts, model contexts, analysis, the event stream, batches and their logs, and call exports. `calls:create` places calls and batches, billed to your organization. `calls:stop` stops one call or one batch. | Live call lists, metrics and settings, listening in, transcript streams and tokens, transcript correction, bulk stop and transfer, simulated calls, call voice reads, and call deletion. |
+| Knowledge | `knowledge:read`, `knowledge:write` | `knowledge:read` reads sources, the map, gaps, the query log, versions, suggestions, and content metadata. The content read leaves out the storage URLs, so a restricted key sees a document's metadata but not its body. `knowledge:write` adds sources (file, text, web, or integration), crawls, edits, replaces, reindexes, syncs, restores, deletes, and answers or triages gaps. | Model answers (chat and answer), anchor suggestions, improve, feedback, the legacy vector migration, per-version storage URLs, analytics, download, and the org file store. |
+| Dispositions | `dispositions:read`, `dispositions:write` | `dispositions:read` reads an agent's dispositions, extractors, versions, and test-run results and annotations, and the legacy dispositions list. `dispositions:write` adds authoring, publishing, rolling back, disabling, and deleting them. A published disposition runs on every call, billed to your organization. | Test runs, backfills, align, legacy script runs, script generation, and dispositions migrations. |
+| Evals | `evals:read`, `evals:run` | `evals:read` reads judges, templates, call sets, setups, runs, and results with the call evidence they cite. `evals:run` starts, estimates, cancels, and corrects runs, applies run labels as call tags, and creates, edits, and deletes judges, templates, call sets, and setups. Runs use your organization's credits. | Post-run AI analysis, judge alignment, AI judge drafts from triage, and voicemail evaluation. |
+| Personas | `personas:read`, `personas:write` | `personas:read` reads personas, their versions, drafts, and production. Stored headers and the attached numbers' own configuration are removed from the response. `personas:write` adds creating, editing, and deleting personas, resetting drafts, and attaching, detaching, and pinning inbound numbers. | Promoting to production, memory enable and refresh (model inference), and knowledge gaps. |
+| Numbers | `numbers:read`, `numbers:write` | `numbers:read` reads inbound numbers and their settings, block rules, the list of imported (BYOT) numbers without their credential ids, the available-number search, and the imported-number validity check. `numbers:write` changes settings and labels on your own numbers, creates, edits, and deletes block rules, and removes an imported number from Bland. | Buying and claiming numbers, importing and releasing numbers, imported-number credential reads, BYOT subscriptions, dialer, S3 and caller allowlist settings, voice pools, and webhook tests. |
+| SMS | `sms:read`, `sms:send` | `sms:read` reads SMS conversations, messages, delivered webhook logs, SMS and messaging number settings, and iMessage app capabilities. `sms:send` sends messages, triggers and batches conversations, and hands conversations to or back from a human, all billed to your organization. | Sending as a persona, unless the key also holds `personas:write`, because the send rebinds the number to that persona. Webhook resend, number updates, A2P and RCS registration, SMS configuration writes, and pathway SMS. |
+| Analytics | `analytics:read` | Organization and agent summaries, caller geography, pathway flow and loops, call citations, conversation selections, saved boards, and structured analytics queries. | Natural-language analytics queries, which run a Norm session. A restricted key gets `403` and must send a structured query instead. Board, panel, and conversation-selection writes, and shared reports. |
+| Automations | `automations:read`, `automations:write` | `automations:read` reads event types, triggers, pipelines, and executions. Stored webhook headers are removed from the response. `automations:write` creates, edits, toggles, and deletes triggers and pipelines. An active trigger runs its pipeline on every matching event, billed to your organization. | Trigger test runs, which run the pipeline for real on supplied data. |
+| Voices | `voices:read`, `voices:write`, `voices:generate` | `voices:read` reads cost quotes, name checks, instant-clone transcripts and source audio, migration info, generation history and usage, and languages. `voices:write` deletes, renames, and configures voices, edits clone and sample transcripts, and saves a catalogue voice to your library. `voices:generate` generates speech from text, billed to your organization. | Voice training and datasets, draft-voice samples, migration between services, publishing and duplicating, legacy clone sample audio, the Creator Program, and Speech limit-raise requests. |
+| Tools | `tools:read`, `tools:write` | `tools:read` reads custom and integration tools, code snippets, and tool run logs. Stored headers and query parameters are hidden from the response (a key typed into a URL is not). `tools:write` creates, edits, deletes, and reassigns tools, creates and updates snippets, and adds or rotates static secrets. A save keeps the hidden headers and query values only when the tool's URL and resource id are unchanged. | Tool probes and runs, snippet runs, tool suggestions, the public showcase, secret reads, the secret refresh test, and imported-number (BYOT) credentials. Refresh configurations on secrets need a full-access key, both to set one and to touch a secret that has one. |
+| Alerts | `alerts:read`, `alerts:write` | `alerts:read` reads the alert list and detail, history and events, metrics and the calls behind them, condition previews, and the citation, disposition, and pathway-tag pickers. `alerts:write` adds creating, editing, and deleting alerts that notify by email. | Phone and tool delivery. A restricted key gets `403` when it creates an alert with phone or tool delivery, or edits an alert that keeps it. The eval-agent source picker. |
+| Tests | `tests:read`, `tests:run` | `tests:read` reads test cases, their eval agents and source calls, runs, and simulation results. `tests:run` creates, edits, deletes, and reassigns cases, attaches source calls, and runs and simulates cases. A run dispatches the agent's webhook and tool nodes for real, billed to your organization. | Model-driven case generation, regeneration, and run analysis, template seeding, batch, simulation-set, and tornado runs, and the Test Bed. |
 
-Each permission brings the read or stop access it depends on. A key granted `pathways:write` also holds `pathways:read`, and a key granted `calls:create` also holds `calls:stop`, so it can end the calls it places. The `scopes` field in the response and in [List API Keys](/api-v1/post/keys-list) shows the full set.
+### Permissions that include others
 
-Every restricted key can also read your account details, voices, models, and knowledge bases, since pathways reference them. Tool definitions are not readable with a restricted key, because they can hold third-party credentials.
+A write permission includes its resource's read permission. The action permissions `evals:run`, `sms:send`, `tests:run`, and `voices:generate` include their resource's read permission too. `calls:create` includes `calls:stop`, so a key can end the calls it places. The `scopes` field in the response and in [List API Keys](/api-v1/post/keys-list) shows the full set. The dashboard's key list hides a permission when another permission on the same key includes it.
+
+### Names shared with the hosted MCP server
+
+`calls:create`, `calls:stop`, and `evals:run` are also OAuth scopes for the hosted MCP server. Placing and stopping calls mean the same thing on both. For a key, `evals:run` also opens creating, editing, and deleting the judges, call sets, and setups a run uses. For an MCP app it only runs evaluations.
+
+### Permissions you can grant
+
+Key creation accepts only permissions that open something today, which is every permission in the table. Any other value returns `400` with the error `INVALID_SCOPES`, and the message lists the accepted set.
+
+Every restricted key can also read your account details and the catalogues of voices, models, and knowledge bases, since pathways reference them.
 
 ### Requests outside a key's permissions
 
