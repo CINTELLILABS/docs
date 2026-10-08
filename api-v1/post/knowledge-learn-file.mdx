@@ -4,7 +4,7 @@ api: "POST https://api.bland.ai/v1/knowledge/learn"
 description: "Creates a new knowledge base item by uploading a file."
 ---
 
-Upload a file to create a knowledge base item that can be used to provide contextual information to your AI agents. Supported file formats include PDF, Word documents, text files, and more.
+Upload a file to create a knowledge base item that can be used to provide contextual information to your AI agents. Supported file formats are PDF, DOCX, XLSX, TXT, MD, CSV, and JSON.
 
 ### Headers
 
@@ -31,7 +31,11 @@ Upload a file to create a knowledge base item that can be used to provide contex
 </ParamField>
 
 <ParamField body="file" type="file" required>
-  The file to upload and process into a knowledge base item.
+  The file to upload and process into a knowledge base item. Accepted formats: `.pdf`, `.docx`, `.xlsx`, `.txt`, `.md`, `.csv`, and `.json`. Maximum file size: 20 MB.
+
+  Bland checks that the file's contents match its extension. Text files (`.txt`, `.md`, `.csv`, `.json`) must be saved as UTF-8. Legacy Office files (`.doc`, `.xls`) are rejected, so save them as `.docx` or `.xlsx` first.
+
+  A file that fails these checks returns `400` with `INVALID_FILE_TYPE`. A file over 20 MB returns `413` with `FILE_TOO_LARGE`.
 </ParamField>
 
 ### Response
@@ -142,6 +146,18 @@ curl -X POST https://api.bland.ai/v1/knowledge/learn \
     {
       "error": "KB_UPLOAD_LIMIT_EXCEEDED",
       "message": "You have reached your knowledge base upload limit"
+    }
+  ]
+}
+```
+
+```json Invalid File Type Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_FILE_TYPE",
+      "message": "This file's contents don't match its .pdf extension."
     }
   ]
 }
