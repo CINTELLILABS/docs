@@ -19,7 +19,7 @@ The examples here build a front desk agent for Northwind Dental, a fictional pra
 
 Open an agent and everything you need is already on screen. The sidebar switches to that agent's own sections, and to its right there are three regions.
 
-**Agent and Guardrails**, across the top. Agent is where you build. Guardrails is where you set rules that are checked on every call.
+**Agent, Identity, and Guardrails**, across the top. Agent is where you build. Identity holds the agent's messaging identity, such as its contact card, and is enterprise only. Guardrails is where you set rules that are checked on every call.
 
 **The agent itself**, filling the middle. Two tabs, **Prompt** and Settings, and almost everything in this guide happens on Prompt. It runs top to bottom as:
 
@@ -52,6 +52,16 @@ Only the first field supports `@` tagging. The system prompt is agent-wide confi
 Both prompt fields are rich text editors. The empty **Prompt** field opens with "Your goal is to help the caller accomplish...", which is a sentence to finish rather than an instruction to start one.
 
 Write in plain language. Describe the job, the order things should happen in, and what the agent should do when the caller goes sideways. You do not need to script exact wording, and agents generally sound better when you do not.
+
+### Insert variables with `{{`
+
+Type `{{` in either prompt field to open a menu of variables, then pick one to insert it as `{{name}}`. The menu lists every variable the agent knows about: system values, request data, and the variables extracted across its pathways. The system prompt has no node of its own, so its menu leaves out the current node's group.
+
+Every variable reference in a prompt is highlighted so you can spot it at a glance. The highlight is display only, and the saved prompt is plain text.
+
+```text
+Greet {{caller_name}} and confirm their appointment on {{appointment_date}}.
+```
 
 ### Tag tools and knowledge with @
 
@@ -92,7 +102,7 @@ A single prompt handles a surprising amount. When it stops being enough, pathway
 Searching for scenarios? They are called pathways now. If you were looking for simulated testing, that is [simulations and test cases](/agents/evaluations).
 </Note>
 
-Add one with **New pathway**. The menu offers three kinds to create, plus **Add existing** to reuse a pathway from this agent or another one.
+Add one with **Add pathway**, in the Pathways section or beside the agent card in the graph. The menu offers three kinds to create, plus **Add existing** to reuse a pathway from this agent or another one.
 
 ### Prompt
 
@@ -117,6 +127,15 @@ In the Pathways list, drag other pathways underneath an authentication zone to p
 ### Set the routing condition
 
 Creating a pathway does not make it run. Click its row in the Pathways section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the pathway never fires.
+
+A routing condition runs in one of two modes. The same choice appears on a route between steps inside a pathway's canvas.
+
+| Mode | How the route is chosen | Use it when |
+|---|---|---|
+| **Conditions** | Variables match the values you set | The decision depends on known data, like a member type or an extracted date |
+| **AI decides** | The agent decides from the prompt you write | The decision depends on what the caller means, like wanting to reschedule |
+
+A route runs only the mode you select. Switching modes clears the settings of the mode you left. If those settings had anything filled in, a toast offers **Undo** to bring them back.
 
 A Prompt opens in a panel, so you stay where you are. A Pathway or an Authentication zone opens into its own canvas, with the routing condition on a panel beside it.
 
@@ -166,7 +185,7 @@ Guardrails are monitoring. They do not guarantee regulatory compliance, and they
 
 The right side of the builder toggles between **Graph** and Testing.
 
-At the top level the graph is a fixed picture of how the agent is put together, not an editing surface, which is why testing can take its place. Open a Pathway or an Authentication zone and that same column becomes the editable canvas where you build its nodes and edges.
+At the top level the graph shows how the agent is put together, with its pathways hanging off the agent card as a tree. You can drag pathways to reorder them, and an authentication zone moves with the pathways it protects. Right-click a pathway to **Archive** or **Delete** it. These graph edits require edit access to the agent. Beyond that, the top-level graph is not an editing surface, which is why testing can take its place. Open a Pathway or an Authentication zone and that same column becomes the editable canvas where you build its nodes and edges.
 
 Testing has two tabs:
 
