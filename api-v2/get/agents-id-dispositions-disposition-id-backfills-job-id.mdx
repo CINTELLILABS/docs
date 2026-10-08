@@ -1,0 +1,157 @@
+---
+title: "Get Disposition Backfill"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/backfills/{job_id}"
+description: "Check the status, progress, and cost of a disposition backfill that scores an agent's past calls with a published version."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns one backfill job started with [Create Disposition Backfill](/api-v2/post/agents-id-dispositions-disposition-id-backfills). Poll this endpoint to follow a backfill until `status` leaves `queued` and `running`. You can still read a backfill after its disposition is deleted.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+<ParamField path="job_id" type="string" required>
+  The backfill's `id`. Must be a UUID; otherwise returns `400` with the message `jobId must be a valid UUID`. Returns `404 Backfill not found` if no backfill with this id belongs to the disposition.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The backfill job.
+
+  <Expandable title="backfill object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the backfill.
+    </ResponseField>
+    <ResponseField name="dispositionId" type="string">
+      The disposition being backfilled.
+    </ResponseField>
+    <ResponseField name="versionId" type="string">
+      The published or archived disposition version that scores the calls.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      One of `queued`, `running`, `complete`, `partial`, `failed`, or `cancelled`. `partial` means the backfill finished but some calls failed to score.
+    </ResponseField>
+    <ResponseField name="window" type="object">
+      `{ "start", "end" }` as ISO 8601 timestamps. Only calls in this range are scored.
+    </ResponseField>
+    <ResponseField name="sampling" type="number">
+      Fraction of eligible calls in the window that the backfill scores, from `0.0001` to `1`.
+    </ResponseField>
+    <ResponseField name="requestedSize" type="number">
+      Number of eligible calls counted when the backfill was created.
+    </ResponseField>
+    <ResponseField name="resolvedSize" type="number">
+      Number of calls the backfill admitted for scoring.
+    </ResponseField>
+    <ResponseField name="completedSize" type="number">
+      Number of calls scored so far.
+    </ResponseField>
+    <ResponseField name="failedSize" type="number">
+      Number of calls that failed to score.
+    </ResponseField>
+    <ResponseField name="excluded" type="object">
+      Calls removed from the backfill after it started, keyed by reason, with a count for each.
+    </ResponseField>
+    <ResponseField name="estimatedCostUsd" type="string | null">
+      Expected cost of the whole backfill in USD, as a decimal string, at creation time.
+    </ResponseField>
+    <ResponseField name="actualCostUsd" type="string | null">
+      Amount charged so far in USD, as a decimal string.
+    </ResponseField>
+    <ResponseField name="deadlineAt" type="string | null">
+      ISO 8601 time by which the backfill must finish.
+    </ResponseField>
+    <ResponseField name="errorCode" type="string | null">
+      Machine-readable reason when `status` is `failed`.
+    </ResponseField>
+    <ResponseField name="errorMessage" type="string | null">
+      Human-readable reason when `status` is `failed`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 time the backfill was created.
+    </ResponseField>
+    <ResponseField name="startedAt" type="string | null">
+      ISO 8601 time the backfill started scoring calls.
+    </ResponseField>
+    <ResponseField name="completedAt" type="string | null">
+      ISO 8601 time the backfill reached a final status.
+    </ResponseField>
+    <ResponseField name="cohortId, progress, rollupDays" type="mixed">
+      Bookkeeping fields for the backfill's progress. Their shape can change, so don't build on them.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "4f0f3c1e-8a52-4d7e-9a3b-2b1d6c0e9f11",
+    "dispositionId": "1b179d4d-8830-43bd-b095-632f23bc4c57",
+    "versionId": "6168a24b-1863-422b-bbec-ed6d38395c41",
+    "cohortId": "b7e2a9d0-3c41-4f8e-8d2a-5e6f7a8b9c01",
+    "status": "running",
+    "window": {
+      "start": "2026-08-01T00:00:00.000Z",
+      "end": "2026-09-01T00:00:00.000Z"
+    },
+    "sampling": 0.25,
+    "requestedSize": 1840,
+    "resolvedSize": 1840,
+    "completedSize": 912,
+    "failedSize": 3,
+    "excluded": {},
+    "progress": {},
+    "estimatedCostUsd": "42.1360",
+    "actualCostUsd": "20.8836",
+    "rollupDays": null,
+    "deadlineAt": "2026-09-12T18:40:03.512Z",
+    "errorCode": null,
+    "errorMessage": null,
+    "createdAt": "2026-09-10T18:40:03.512Z",
+    "startedAt": "2026-09-10T18:40:05.104Z",
+    "completedAt": null
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Backfill not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

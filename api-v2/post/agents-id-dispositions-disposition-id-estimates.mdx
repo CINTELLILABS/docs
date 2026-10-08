@@ -10,7 +10,7 @@ description: "Estimate a disposition's per-call cost before publishing."
 Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
 </Note>
 
-Prices the current draft as it would execute once published and returns a per-value and total cost range in USD per processed call. The request takes no body. The estimate is stateless: its `id` is a digest of the draft, its pinned dependencies, and the current pricing basis, so the same draft always yields the same `id`, and any change yields a new one. Pass the `id` as `estimateId` to [Publish Disposition](/api-v2/post/agents-id-dispositions-disposition-id-publish), which recomputes it and rejects a stale one.
+Prices the current draft as it would execute once published and returns a per-value and total cost range in USD per processed call. Send no body for a draft estimate. To price a backfill instead, send a `backfill` object (see [Backfill estimate](#backfill-estimate)). The estimate is stateless: its `id` is a digest of the draft, its pinned dependencies, and the current pricing basis, so the same draft always yields the same `id`, and any change yields a new one. Pass the `id` as `estimateId` to [Publish Disposition](/api-v2/post/agents-id-dispositions-disposition-id-publish), which recomputes it and rejects a stale one.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -28,6 +28,12 @@ Requires an admin, owner, operator, or prompter role.
 
 <ParamField path="disposition_id" type="string" required>
   The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="backfill" type="object">
+  Omit for a draft estimate. Include it to price a [backfill](/api-v2/post/agents-id-dispositions-disposition-id-backfills) of past calls. It takes the same `window`, `versionId`, and `sampling` fields as Create Disposition Backfill, and they're validated the same way. Backfills must be enabled for your organization; otherwise returns `403 FORBIDDEN`. Backfill estimates count toward the limit of 10 backfill requests per hour.
 </ParamField>
 
 ### Response
@@ -92,6 +98,64 @@ All money fields are USD per processed call, formatted as decimal strings with f
 <ResponseField name="errors" type="null | array">
   `null` on success, or a list of error objects if the request failed.
 </ResponseField>
+
+### Backfill estimate
+
+When the body includes `backfill`, `data` has two fields instead:
+
+<ResponseField name="data.estimate" type="object">
+  The per-call estimate of the backfill's version, in the same shape as a draft estimate above.
+</ResponseField>
+
+<ResponseField name="data.backfill" type="object">
+  The backfill as it would run.
+
+  <Expandable title="backfill object">
+    <ResponseField name="versionId" type="string">
+      The version that would score the calls.
+    </ResponseField>
+    <ResponseField name="window" type="object">
+      `{ "start", "end" }` as ISO 8601 timestamps.
+    </ResponseField>
+    <ResponseField name="sampling" type="number">
+      The sampling fraction applied.
+    </ResponseField>
+    <ResponseField name="eligibleCalls" type="number">
+      Number of completed calls the backfill would score.
+    </ResponseField>
+    <ResponseField name="estimatedCostUsd" type="object">
+      `{ "min", "expected", "max" }` in USD for the whole backfill: `totalUsdPerCall` multiplied by `eligibleCalls`.
+    </ResponseField>
+    <ResponseField name="availableBalanceUsd" type="number | null">
+      Your credit balance minus the cost still owed by your other running backfills. `null` if your organization does not pay with credits.
+    </ResponseField>
+    <ResponseField name="committedByRunningJobsUsd" type="number | null">
+      Cost still owed by your other running backfills. `null` if your organization does not pay with credits.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash Draft estimate
+curl -X POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/estimates \
+  -H "authorization: YOUR_API_KEY"
+```
+
+```bash Backfill estimate
+curl -X POST https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/estimates \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "backfill": {
+      "window": {
+        "start": "2026-08-01T00:00:00Z",
+        "end": "2026-09-01T00:00:00Z"
+      },
+      "sampling": 0.25
+    }
+  }'
+```
+</RequestExample>
 
 <ResponseExample>
 ```json Response
