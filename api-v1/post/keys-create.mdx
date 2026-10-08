@@ -1,0 +1,140 @@
+---
+title: "Create API Key"
+api: "POST https://api.bland.ai/keys/create"
+description: "Create a full-access or restricted API key for your organization."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. Restricted keys cannot create keys, so use a full-access key.
+</ParamField>
+
+### Body
+
+<ParamField body="type" type="string" required>
+  The kind of key to create. Use `org` for an organization key. Restricted keys require `org`.
+</ParamField>
+
+<ParamField body="target_id" type="string">
+  The ID of your organization. Required when `type` is `org`. The key is created for the organization your credentials belong to, and you must be an owner or admin of it.
+</ParamField>
+
+<ParamField body="name" type="string">
+  A label for the key, up to 64 characters. Omit it or pass `null` to leave the key unnamed.
+</ParamField>
+
+<ParamField body="scopes" type="string[]">
+  The permissions for a restricted key. Omit it to create a full-access key.
+
+  When present, it must be a non-empty list of `pathways:read`, `pathways:write`, `calls:read`, `calls:create`, and `calls:stop`. See [Restricted keys](#restricted-keys) for what each one allows.
+
+  Restricted key creation is rolling out by organization. When it is not enabled for yours, the request returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The created key.
+</ResponseField>
+
+<ResponseField name="data.key" type="string">
+  The full API key. This is the only time the full value is returned, so store it securely. Restricted keys start with `org_s_`.
+</ResponseField>
+
+<ResponseField name="data.name" type="string | null">
+  The key's name, or `null` if it has none.
+</ResponseField>
+
+<ResponseField name="data.scopes" type="string[] | null">
+  The permissions the key holds, with implied permissions included. `null` means the key has full access.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of errors.
+</ResponseField>
+
+## Restricted keys
+
+A restricted key can only call the endpoints its permissions cover. Use one when you hand a key to a contractor, a CI job, or an integration that needs part of your account and not all of it.
+
+You can grant these three permissions:
+
+| Permission | Allows |
+| --- | --- |
+| `pathways:write` | Create, edit, publish, and roll back pathways and agents. Includes `pathways:read`, which reads definitions, versions, folders, and branches. |
+| `calls:read` | Read call logs: details, transcripts, recordings, analysis, and batches. |
+| `calls:create` | Place phone calls, billed to your organization. Includes `calls:stop`, which ends calls in progress. |
+
+Each permission brings the read or stop access it depends on. A key granted `pathways:write` also holds `pathways:read`, and a key granted `calls:create` also holds `calls:stop`, so it can end the calls it places. The `scopes` field in the response and in [List API Keys](/api-v1/post/keys-list) shows the full set.
+
+Every restricted key can also read your account details, voices, models, and knowledge bases, since pathways reference them. Tool definitions are not readable with a restricted key, because they can hold third-party credentials.
+
+### Requests outside a key's permissions
+
+A request to an endpoint the key's permissions do not cover returns `403` with a `WWW-Authenticate: Bearer error="insufficient_scope"` header. The body names the permission that would allow the request when one exists.
+
+```json 403 Response
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INSUFFICIENT_SCOPE",
+      "message": "string",
+      "required_scope": "calls:create"
+    }
+  ]
+}
+```
+
+New endpoints are denied to restricted keys until they are assigned a permission.
+
+### What restricted keys cannot do
+
+- Create, list, rename, or delete API keys.
+- Use the hosted MCP server at `/v1/mcp`.
+- Exchange the key for a session token or another key.
+
+### Keep one full-access key
+
+Your organization must keep at least one full-access key while it has restricted keys. Live calls and dashboard sessions depend on it. [Delete API Key](/api-v1/delete/keys-delete) refuses to delete the last one.
+
+<ResponseExample>
+```json Full access
+{
+  "data": {
+    "key": "org_9f3c...",
+    "name": "Production server",
+    "scopes": null
+  },
+  "errors": null
+}
+```
+
+```json Restricted
+{
+  "data": {
+    "key": "org_s_4b1e...",
+    "name": "Pathway CI",
+    "scopes": ["calls:create", "calls:stop", "pathways:read", "pathways:write"]
+  },
+  "errors": null
+}
+```
+
+```json Invalid Scopes
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "INVALID_SCOPES",
+      "message": "string"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

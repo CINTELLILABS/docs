@@ -1,0 +1,60 @@
+---
+title: "Delete API Key"
+api: "DELETE https://api.bland.ai/keys/delete"
+description: "Revoke an API key."
+---
+
+<Warning>
+  Deleting a key revokes it immediately. Any request still using it will fail.
+</Warning>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. Restricted keys cannot delete keys.
+</ParamField>
+
+### Body
+
+<ParamField body="key" type="string" required>
+  The first 14 characters of the key, as returned by [List API Keys](/api-v1/post/keys-list). Works for full-access and restricted keys.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="null">
+  `null` on success.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of errors.
+</ResponseField>
+
+### Last full-access key
+
+While your organization has [restricted keys](/api-v1/post/keys-create#restricted-keys), it must keep at least one full-access key, because live calls and dashboard sessions depend on it. Deleting the last full-access key returns `409` with the error `LAST_FULL_ACCESS_KEY`. Delete the restricted keys first, or create another full-access key.
+
+<ResponseExample>
+```json Response
+{
+  "data": null,
+  "errors": null
+}
+```
+
+```json Last Full-Access Key
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "LAST_FULL_ACCESS_KEY",
+      "message": "string"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

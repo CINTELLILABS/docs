@@ -1,0 +1,85 @@
+---
+title: "List API Keys"
+api: "POST https://api.bland.ai/keys/list"
+description: "List your organization's API keys and the permissions each one holds."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. Restricted keys cannot list keys.
+</ParamField>
+
+### Body
+
+<ParamField body="type" type="string" required>
+  The kind of keys to list. Use `org` for organization keys.
+</ParamField>
+
+<ParamField body="target_id" type="string">
+  The ID of your organization. Required when `type` is `org`. You must be an owner or admin of it.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.keys" type="array">
+  The organization's keys. Each entry identifies a key by its first 14 characters and never includes the full value.
+</ResponseField>
+
+<ResponseField name="data.keys[].key" type="string">
+  The first 14 characters of the key. Pass this value to [Rename API Key](/api-v1/patch/keys-rename) and [Delete API Key](/api-v1/delete/keys-delete).
+</ResponseField>
+
+<ResponseField name="data.keys[].owner" type="string">
+  The ID of the user who created the key, when known.
+</ResponseField>
+
+<ResponseField name="data.keys[].name" type="string | null">
+  The key's name, or `null` if it has none.
+</ResponseField>
+
+<ResponseField name="data.keys[].scopes" type="string[] | null">
+  The permissions the key holds, with implied permissions included. `null` means the key has full access. See [Restricted keys](/api-v1/post/keys-create#restricted-keys).
+</ResponseField>
+
+<ResponseField name="data.keys[].created_at" type="string">
+  ISO timestamp when the key was created, when known.
+</ResponseField>
+
+<ResponseField name="data.scoped_keys_enabled" type="boolean">
+  Whether your organization can create restricted keys. When `false`, `POST /keys/create` with `scopes` returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of errors.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "keys": [
+      {
+        "key": "org_9f3c1a7b2d",
+        "owner": "3c2f7a91-1b4e-4d6a-9e0f-5a8b7c6d5e4f",
+        "name": "Production server",
+        "scopes": null
+      },
+      {
+        "key": "org_s_4b1e9c07",
+        "owner": "3c2f7a91-1b4e-4d6a-9e0f-5a8b7c6d5e4f",
+        "name": "Pathway CI",
+        "scopes": ["pathways:read", "pathways:write"],
+        "created_at": "2026-10-07T18:22:41.000Z"
+      }
+    ],
+    "scoped_keys_enabled": true
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
