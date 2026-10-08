@@ -37,10 +37,13 @@ You can build and run Evals from the **Evals** section of the [dashboard](https:
 An eval agent is a single LLM judge that grades one quality of a call. Each agent has:
 
 - **Instruction prompt**: the rubric the judge follows when grading a call.
-- **Modality**: `text` (grades the transcript) or `audio` (grades the recording).
+- **Modality**: `text` (grades the transcript) or `audio` (grades the recording). The dashboard editor calls this **Judge mode**. New judges start in transcript mode, and switching modes resets the context sources to that mode's defaults.
+- **Context sources**: the evidence the judge can read when it grades a call. Transcript judges choose from sources like the transcript, call metadata, pathway logs, disposition results, and tool logs. Audio judges read the call recording alongside supporting sources. Select sources in the **Context** section of the editor, above the judge task.
 - **Levels**: the verdicts the judge can choose from. An agent runs in one of two modes:
   - **Pass/fail**: `0` levels. The judge returns a simple pass or fail.
   - **Graded**: `2` to `5` levels (for example *Poor*, *Adequate*, *Excellent*). Each level has a key, a label, a description prompt, and an optional color.
+
+  New judges verdict as a simple pass or fail by default, including judges created from templates. You can add an *Inconclusive* verdict from the editor if you want the judge to abstain when a call lacks evidence.
 - **Target levels**: which levels count as "hitting the target." Used to compute hit rate. Pass/fail agents do not set targets.
 - **Weight**: `0` to `100`. Controls how much this agent contributes to a call's overall score when it runs alongside other agents.
 
@@ -56,6 +59,26 @@ Eval agents are versioned. Editing an agent writes your changes into an **editab
 - `active_version_id`: the published version that experiments run against.
 
 Versioning means historical results never drift: an experiment freezes the exact agent version it ran, so editing an agent later does not change past results.
+
+### Judge ownership
+
+Every judge belongs to one voice agent. Creating a judge from an agent's own judges page assigns that agent automatically. Creating one from the org-level Judges page asks you to select the owning agent first.
+
+Ownership decides where the judge can be used: only the owning agent's checks and dispositions can run it. To reuse a judge on another agent, use **Copy to another agent** from the judges table.
+
+### Saving and publishing in the dashboard
+
+In the dashboard, the judge editor autosaves your edits into the draft as you type. The buttons in the top bar decide what becomes live:
+
+- **Create judge** publishes a brand-new judge that has never been saved. Nothing references it yet, so it publishes immediately.
+- **Update** publishes changes to an existing judge. If anything runs the judge, a confirmation lists every reference first: test suites, checks required for publishing, and dispositions.
+- **Save as draft** stores your changes without touching the live version. Experiments keep running against the published version until you publish.
+
+From the confirmation, **Save as new judge** forks your draft into a separate judge and publishes it. The original judge's live version, and everything referencing it, stays unchanged.
+
+The editor also shows a **References** section listing everywhere the judge is used, so you can see what a publish reaches while you edit.
+
+A judge's name and description are not part of its versions. They save on their own and do not require publishing.
 
 ### Verdicts
 
