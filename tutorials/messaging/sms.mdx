@@ -8,26 +8,33 @@ description: "SMS specifics in Bland: A2P registration, bring-your-own-Twilio, a
 SMS is the lowest-common-denominator messaging channel. It works on every phone in the US and is the most regulated. This page covers what is specific to SMS. For everything channel-agnostic (pathways, conversation lifecycle, outcomes, the API surface), see [Overview](/tutorials/messaging/overview).
 
 <Info>
-  **Enterprise feature** — SMS is available on Enterprise plans. Contact your Account Executive or [reach out to sales](https://www.bland.ai/book-a-demo) to get set up.
+  SMS is available with Enterprise or an Agent Phone Plan. The dashboard's A2P
+  registration action requires Enterprise.
 </Info>
 
 ## A2P registration
 
-In the United States, all phone numbers used for SMS must be registered with an A2P (Application to Person) campaign.
+For US application-to-person messaging from local 10-digit numbers, complete A2P 10DLC registration with your carrier.
 
-Each number must be linked to a Twilio Messaging Service SID to send and receive SMS. Numbers purchased from Bland are linked to a Messaging Service SID automatically.
+For BYOT sending, configure a Twilio Messaging Service SID. Numbers purchased from Bland are linked automatically. The SID requirement for BYOT sending does not establish a requirement for every inbound SMS path.
 
-For bring-your-own (BYOT) numbers, the ability to set up your own A2P campaign in Bland is coming soon. Until then, set up your A2P campaign with Twilio and pass the Messaging Service SID when configuring your SMS number in Bland. For a number attached to an agent, enter it under **Messaging service SID** in the agent's Messages channel settings. See [Per-number messaging settings](/agents/dispatch#per-number-messaging-settings).
+### Register in Bland
+
+With Enterprise, open the agent's **Build → Identity** page and its A2P registration wizard. Complete **Business**, **Campaign**, and **Consent and content** using your verified business details, campaign use case and description, sample messages, opt-in flow, content flags, policy links, and sending number. Select **Submit for review** and check the registration status before sending production messages. Submission is not carrier approval.
+
+### Bring your own Twilio number
+
+You can register the campaign with Twilio and configure its Messaging Service SID in Bland. For a number attached to an agent, enter the SID under **Messaging service SID** in **Channels → Messages**. See [Per-number messaging settings](/agents/dispatch#per-number-messaging-settings).
 
 ## Pricing
 
-Each SMS message is [billed at $0.02](/platform/billing#sms-billing) (inbound and outbound).
+Metered incoming and outgoing SMS are billed according to your plan or Enterprise contract. An Agent Phone Plan includes SMS to the US and Canada, subject to its usage terms. Check [Billing](/platform/billing#sms-billing) and your agreement for the applicable rate.
 
 ## Sending an SMS
 
 Pass `channel: "sms"` (the default) when calling [Send SMS](/api-v1/post/sms-send), or let it be auto-derived from the number's configuration. The same endpoints are used for SMS, RCS, and iMessage.
 
-When the recipient supports a richer channel and your number is configured for it, Bland upgrades to RCS or iMessage automatically. See [RCS](/tutorials/messaging/rcs) and [iMessage](/tutorials/messaging/imessage) for what those channels add.
+Choose a preferred channel under the number's **Channel priority** setting and review **Fallback order**. Actual delivery depends on the provider, number provisioning, and recipient support; verify it with test messages. See [RCS](/tutorials/messaging/rcs) and [iMessage](/tutorials/messaging/imessage) for what those channels add.
 
 ## Handing a conversation to a human
 
@@ -38,11 +45,7 @@ Two ways to start it:
 - **In the pathway**: add a **Transfer to Human** node. Its dialogue prompt is the agent's last message ("Looping in a broker now"); after it sends, the thread is handed off. Optionally set a reason, a number to notify, and a webhook URL for this conversation from that point on (the `human_handoff` event, every relayed inbound message, and later status events go there instead of the number's SMS webhook).
 - **From your platform**: call [Hand Off Conversation to a Human](/api-v1/post/sms-conversations-handoff) whenever your own logic decides.
 
-Then your rep sends with [Send Message on Conversation](/api-v1/post/sms-conversations-messages) (attributed as `HUMAN` in the transcript), and when the human is done you either [resume](/api-v1/post/sms-conversations-resume) the agent, optionally at a specific node, or [end](/api-v1/post/sms-conversations-end) the conversation outright so the agent never comes back on it. The `human_handoff` and `human_handoff_ended` [status webhooks](/tutorials/post-call-webhooks#sms-webhooks) bracket the takeover. The SMS inbox in the dashboard offers the same controls (Take over, reply as a human, Return to agent).
-
-## Coming up
-
-- A2P campaign setup directly inside Bland.
+Then your rep sends with [Send Message on Conversation](/api-v1/post/sms-conversations-messages) (attributed as `HUMAN` in the transcript), and when the human is done you either [resume](/api-v1/post/sms-conversations-resume) the agent, optionally at a specific node, or [end](/api-v1/post/sms-conversations-end) the conversation outright so the agent never comes back on it. The `human_handoff` and `human_handoff_ended` [status webhooks](/tutorials/post-call-webhooks#sms-conversation-webhooks) bracket the takeover. [Conversations](/agents/conversations) offers the same controls (Take over, reply as a human, Return to agent).
 
 ## Related
 

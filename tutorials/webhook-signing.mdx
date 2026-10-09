@@ -1,5 +1,6 @@
 ---
-title: Webhook Signing
+title: Webhook signing
+description: "Create a signing secret and verify signatures on Bland webhooks."
 ---
 
 Bland webhooks are signed with a secret key to ensure that they are not tampered with in transit and to confirm that they were sent by Bland.
@@ -8,46 +9,52 @@ Bland webhooks are signed with a secret key to ensure that they are not tampered
 
 When Bland sends a webhook, it calculates a signature using the HMAC algorithm with the SHA-256 hash function. The signature is then included in the `X-Webhook-Signature` header of the request.
 
-To create a webhook signing secret, first go to the [Account Settings in the Dev Portal](https://app.bland.ai/dashboard?page=settings) and click on the "Keys" tab.
+To create a webhook signing secret, open [Settings → Organization](https://app.bland.ai/settings/organization), then **Webhook → Signing secret**.
 
-Here you can create a new secret by clicking "Replace Secret". It will only be shown once, so save it securely.
+Select **Generate signing secret** to create your first secret, or **Replace signing secret** to replace an existing one. The secret is shown once, so save it securely. Update your webhook verifier when you replace it.
 
 ## Verifying Webhooks
 
 To verify a webhook, you need to calculate the HMAC signature of the request body using the secret key and compare it to the signature in the `X-Webhook-Signature` header.
 
-Note that you must first create a webhook signing secret in the [Account Settings in the Dev Portal](https://app.bland.ai/dashboard?page=settings).
+Note that you must first create a webhook signing secret under **Settings → Organization → Webhook → Signing secret**.
 
 Here is an example of how to verify a webhook in Node.js:
+
+Use the raw request body when verifying. Install this route before any JSON body parser so it receives the bytes that Bland signed:
+
 ```javascript
-const crypto = require('node:crypto');
+const crypto = require("node:crypto");
+const express = require("express");
+const app = express();
 
-function verifyWebhookSignature(key, data, signature) {
-
-	const expectedSignature = crypto.createHmac('sha256', key)
-        .update(data)
-        .digest('hex');
-
-	return expectedSignature === signature;
+function verifyWebhookSignature(key, body, signature) {
+  if (
+    !key ||
+    typeof signature !== "string" ||
+    !/^[a-f0-9]{64}$/i.test(signature)
+  ) {
+    return false;
+  }
+  const expected = crypto.createHmac("sha256", key).update(body).digest();
+  return crypto.timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }
 
-//...
-
-app.post('/webhook', (req, res) => {
-    const isValid = verifyWebhookSignature(
-        process.env.WEBHOOK_SECRET,
-        JSON.stringify(req.body),
-        req.headers['x-webhook-signature']
-    );
-
-    //...
+app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  if (
+    !verifyWebhookSignature(
+      process.env.WEBHOOK_SECRET,
+      req.body,
+      req.headers["x-webhook-signature"],
+    )
+  ) {
+    return res.sendStatus(401);
+  }
+  const payload = JSON.parse(req.body.toString("utf8"));
+  // Process payload here.
+  return res.sendStatus(200);
 });
 ```
-
-
-
-
-
 
 ---
 

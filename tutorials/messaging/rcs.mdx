@@ -5,78 +5,102 @@ description: "Rich Communication Services in Bland: verified business profile, s
 
 # RCS
 
-RCS (Rich Communication Services) lets you deliver rich, interactive messages with verified business profiles, suggested replies, action buttons, cards, and media. Bland supports RCS through the **same APIs and endpoints** used for SMS. No separate integration is required.
+RCS (Rich Communication Services) lets you deliver rich, interactive messages with verified business profiles, suggested replies, action buttons, cards, and media. Bland supports RCS through the **same APIs and endpoints** used for SMS. Sender registration and provisioning are still required.
 
 <Info>
-  **Enterprise feature** — RCS is available on Enterprise plans. Contact your Account Executive or [reach out to sales](https://www.bland.ai/book-a-demo) to enable RCS for your numbers.
+  **Enterprise feature**: RCS is available on Enterprise plans. Contact your
+  Account Executive or [reach out to sales](https://www.bland.ai/book-a-demo) to
+  enable RCS for your numbers.
 </Info>
 
 ## How it works
 
-- **Same endpoints as SMS.** Use the same send, receive, and conversation endpoints. If your number has an RCS profile set up via your Messaging Service, Bland defaults to RCS when the recipient supports it.
+- **Same endpoints as SMS.** Use the same send, receive, and conversation endpoints. Select a preferred channel under **Channel priority** for the number. Provisioning an RCS sender alone does not make every request use RCS.
 - **Automatic content templates.** RCS content templates are generated from your pathways and conversation flow. Quick replies, action buttons, and rich cards are derived from your node logic and messaging context, so replies stay on-brand and on-path.
-- **Automatic fallback.** When a recipient does not support RCS, Bland routes the message over SMS instead.
+- **Provider fallback.** A Twilio Messaging Service can use SMS when RCS is unavailable. A direct RCS sender has no SMS fallback. Confirm the delivery path and recipient support before relying on fallback.
 
 ## What RCS looks like
 
-An RCS conversation can show a verified business profile, structured messages, and tap-to-reply options. Your business profile can display verification and contact details.
+An RCS conversation can show a verified business profile, structured messages, and tap-to-reply options. Your business profile can display verification and contact details. The images below are example recipient views; appearance varies by device, carrier, and approved sender profile.
 
-<div style={{
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: "1.5rem",
-  flexWrap: "wrap",
-  margin: "1.25rem 0 2rem",
-  padding: "2rem",
-  borderRadius: "1rem",
-  background: "rgba(127, 127, 127, 0.08)",
-  border: "1px solid rgba(127, 127, 127, 0.15)"
-}}>
-  <div style={{
-    width: "220px",
-    height: "440px",
-    borderRadius: "1.25rem",
-    overflow: "hidden",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-    border: "1px solid rgba(127,127,127,0.2)",
-    flexShrink: 0
-  }}>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "1.5rem",
+    flexWrap: "wrap",
+    margin: "1.25rem 0 2rem",
+    padding: "2rem",
+    borderRadius: "1rem",
+    background: "rgba(127, 127, 127, 0.08)",
+    border: "1px solid rgba(127, 127, 127, 0.15)",
+  }}
+>
+  <div
+    style={{
+      width: "220px",
+      height: "440px",
+      borderRadius: "1.25rem",
+      overflow: "hidden",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+      border: "1px solid rgba(127,127,127,0.2)",
+      flexShrink: 0,
+    }}
+  >
     <img
-      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        display: "block",
+      }}
       src="/tutorials/tutorials-assets/rcs/RCSText.png"
       alt="RCS conversation with suggested replies and action buttons"
     />
   </div>
-  <div style={{
-    width: "220px",
-    height: "440px",
-    borderRadius: "1.25rem",
-    overflow: "hidden",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-    border: "1px solid rgba(127,127,127,0.2)",
-    flexShrink: 0
-  }}>
+  <div
+    style={{
+      width: "220px",
+      height: "440px",
+      borderRadius: "1.25rem",
+      overflow: "hidden",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+      border: "1px solid rgba(127,127,127,0.2)",
+      flexShrink: 0,
+    }}
+  >
     <img
-      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        display: "block",
+      }}
       src="/tutorials/tutorials-assets/rcs/RCSProfile.png"
       alt="RCS business profile verified by Google"
     />
   </div>
 </div>
 
-## Sending RCS
+## Register an RCS sender
 
-You don't need to do anything special to send RCS. Send messages the same way you would for SMS using [Send SMS](/api-v1/post/sms-send) or [Create conversation](/api-v1/post/sms-create). When the recipient supports RCS and your number has an RCS profile, Bland routes the message over RCS automatically.
+RCS requires Enterprise and an approved sender. Inside an agent, open **Build → Identity** and the RCS sender setup.
 
-## Setup
+1. Complete **Branding**, **Business identity**, and **Contact details**, including the legal business name, policy links, support contacts, use case, and destination countries. The logo comes from the agent's identity.
+2. Save the sender before adding **Test devices**. Up to 20 test devices can be registered in E.164 format to preview a draft sender.
+3. Complete **Compliance**: Google registration is mandatory; include the US address registration when the destination includes the US.
+4. Review the information and **Submit for review**. Submission locks branding fields; check them first. A saved draft is not an approved sender.
+5. Wait for approval and **Online** status, then use **Attach to messaging** to connect it to the Messaging Service. Carrier review times vary; confirm status rather than relying on a fixed deadline.
 
-Contact your Account Executive to enable RCS on your messaging numbers. Once enabled, RCS uses the same configuration (pathway, persona, prompt, timeouts, analytics) as the rest of your messaging stack.
+## Send RCS
+
+Use [Send SMS](/api-v1/post/sms-send) or [Create conversation](/api-v1/post/sms-create) with the provisioned number. Review **Channel priority** and **Fallback order** under **Channels → Messages**, then test recipient support and actual delivery. A Twilio Messaging Service may provide SMS fallback; a direct RCS sender does not.
 
 ## Related
 
 - [Overview](/tutorials/messaging/overview) (channel-agnostic concepts and API)
-- [SMS](/tutorials/messaging/sms) (RCS falls back to SMS when a recipient is not supported)
+- [SMS](/tutorials/messaging/sms) (SMS setup and provider-dependent fallback)
 - [iMessage](/tutorials/messaging/imessage) (rich messaging on Apple devices)
 
 ---

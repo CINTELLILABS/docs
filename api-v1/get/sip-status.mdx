@@ -13,24 +13,49 @@ description: "Get the health status of a SIP trunk by probing the endpoint with 
 ### Query Parameters
 
 <ParamField query="phone_number" type="string" required>
-  The phone number to check health for. Must be in E.164 format.
+  The phone number to check health for. Accepts E.164 phone numbers, DIDs, and
+  extensions attached to a trunk.
 </ParamField>
 
 ### Response
 
-<ResponseField name="status" type="string">
-  Health status: `"healthy"`, `"unreachable"`, or `"unchecked"`. Inbound-only trunks show `"unchecked"` since there is no outbound endpoint to probe.
+The response is under `data`. This endpoint checks per-number SIP configuration and probes an outbound endpoint with SIP OPTIONS over TLS. Inbound-only numbers are not probed.
+
+<ResponseField name="configured" type="boolean">
+  Whether the number has an inbound or outbound SIP configuration. An
+  unconfigured number returns `configured: false` and `health: "unconfigured"`.
 </ResponseField>
 
-<ResponseField name="response_time_ms" type="number">
-  Response time of the SIP OPTIONS probe in milliseconds. `null` if unreachable or unchecked.
+<ResponseField name="health" type="string">
+  `healthy`, `unreachable`, `unchecked`, `mutual_tls`, or `unconfigured`.
+  `mutual_tls` means the endpoint requested a client certificate instead of
+  replying to OPTIONS; it is distinct from unreachable.
 </ResponseField>
 
-<ResponseField name="checked_at" type="string">
-  ISO 8601 timestamp of when the health check was performed.
+<ResponseField name="inbound" type="object">
+  Configured inbound endpoint and `active` flag, or `null`. Omitted when
+  unconfigured.
 </ResponseField>
 
-```json Example Request
+<ResponseField name="outbound" type="object">
+  Configured outbound endpoint and `active` flag, or `null`. Omitted when
+  unconfigured.
+</ResponseField>
+
+<ResponseField name="uptime_percent" type="number">
+  Currently `null`; this endpoint does not calculate continuous uptime.
+</ResponseField>
+
+<ResponseField name="avg_response_ms" type="number">
+  Response time of this probe in milliseconds, or `null` when no timing is
+  available.
+</ResponseField>
+
+<ResponseField name="last_checked" type="string">
+  ISO 8601 timestamp for the check. Omitted when unconfigured.
+</ResponseField>
+
+```bash Example request
 curl -X GET 'https://api.bland.ai/v1/sip/status?phone_number=%2B14150000000' \
   -H "Authorization: Bearer <token>"
 ```
@@ -39,9 +64,13 @@ curl -X GET 'https://api.bland.ai/v1/sip/status?phone_number=%2B14150000000' \
 ```json Response
 {
   "data": {
-    "status": "healthy",
-    "response_time_ms": 42,
-    "checked_at": "2026-03-09T12:00:00Z"
+    "configured": true,
+    "health": "healthy",
+    "inbound": null,
+    "outbound": { "endpoint": "sip:pbx.example.com:5061;transport=tls", "active": true },
+    "uptime_percent": null,
+    "avg_response_ms": 42,
+    "last_checked": "2026-10-09T12:00:00Z"
   },
   "errors": null
 }
