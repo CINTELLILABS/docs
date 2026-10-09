@@ -54,11 +54,19 @@ The sidebar remembers the scope you were last in. If you open Dispatch and find 
   </Step>
 
   <Step title="Attach it to the agent">
-    Press Configure on the number's row. In the sheet, find the line that reads Not assigned to an agent and use the dropdown beside it. It has no label of its own.
+    Press Configure on the number's row. In the sheet, under **Assignment**, open the **Agent** dropdown.
 
-    Pick from the Agents section. If your organization still has personas from the prior dashboard there is a Classic agents section too, and picking from there routes the number to one of those instead.
+    Pick from the Agents section. If your organization still has personas from the prior dashboard there is a Classic agents section too, and picking from there routes the number to one of those instead. Pick **Unassigned** to take the number off its agent.
 
-    You get a dialog headed Replace this number's current behavior? if the number is already attached somewhere, and also if it belongs to nobody but carries settings from the prior dashboard. **Replace and assign** is the one that goes through.
+    Picking does not save anything yet. The sheet reads Not saved yet until you save at the bottom.
+  </Step>
+
+  <Step title="Review and save">
+    Scroll to **Review and save**. It lists what is pending, such as the agent change and any settings you edited.
+
+    Tick the confirmation sentence. It names what happens, for example that assigning the number replaces its current prompt, pathway, webhook, and call behavior. If the number answers a pathway from the prior dashboard, the sentence warns that this dashboard can't put it back.
+
+    Press **Save**. It stays disabled until you tick the box. Any edit after you tick clears it, so tick again before you save.
   </Step>
 
   <Step title="Publish the agent to production">
@@ -76,6 +84,26 @@ A number that belongs to nobody can also be attached from the agent's side. On C
 It will not offer a number another agent has, and it cannot buy one. Both of those are jobs for All agents.
 </Note>
 
+## Configure a number
+
+Each number carries its own call configuration, separate from the agent's settings. You can edit it from All agents, without opening each agent. This helps when one agent answers many numbers, such as one per location, and each number needs its own data.
+
+At All agents, open **Phone numbers** and press Configure on the number's row. The sheet has these sections:
+
+| Section | What it covers |
+|---|---|
+| **Assignment** | Which agent answers calls and messages on this number. |
+| **Channels** | Each channel and its status. iMessage and WhatsApp show **Set up** when the agent's Messaging settings can turn them on. Otherwise they read Not supported, with the reason. |
+| **Call configuration** | Language and time, call data (request data and metadata), webhook and events, dynamic data, and transfers. |
+| **Call screening** | **Blocked numbers**, which rejects incoming calls from listed numbers before they reach your agent. See [Blocked numbers](/tutorials/blocked-numbers). |
+| **Review and save** | The pending changes, the confirmation, and **Save**. |
+
+Settings changes and an agent change save together, through the same confirmation and **Save** described in [Put an agent on a phone number](#put-an-agent-on-a-phone-number). Settings you change here reach every call to the number, including calls the assigned agent answers.
+
+If the agent change saves but the settings do not, the sheet keeps your settings edits. Review them and press **Save** again.
+
+The same Call configuration sections are available inside an agent, from the number on its Channels page.
+
 ## Set how the agent behaves
 
 Switch the sidebar selector back to the agent and open Channels, under Dispatch. It has three tabs, and Messages is enterprise only.
@@ -88,13 +116,43 @@ Switch the sidebar selector back to the agent and open Channels, under Dispatch.
 
 The Numbers list sits above the tabs on Calls and Messages, and holds the agent's fallback number.
 
-Calls and Messages have no Save of their own. What you set there is held with the rest of your unsaved work in the builder and written the next time it saves, so go back into the builder and save. Reloading the page loses it.
+Calls and Messages have no Save of their own. Most of what you set there is held with the rest of your unsaved work in the builder and written the next time it saves, so go back into the builder and save. Reloading the page loses it.
 
-Web chat is the exception: the widget editor has its own **Save**, and **Publish** beside it.
+There are two exceptions. The widget editor on Web chat has its own **Save**, and **Publish** beside it. The per-number messaging settings below save straight to the number.
 
 <Warning>
 Voice settings apply to every number the agent has. Messaging settings are saved separately for each number.
 </Warning>
+
+### Per-number messaging settings
+
+Select a number in the Numbers list, then open Messages. These rows apply only to the number you selected:
+
+| Setting | What it does |
+|---|---|
+| **Webhook** | Receives message and status events for SMS conversations on this number. A conversation that sets its own webhook overrides it. |
+| **Messaging service SID** | Shown only on bring-your-own Twilio (BYOT) numbers, and required for them. Enter the Twilio Messaging Service SID the number sends through. It starts with `MG` and is followed by 32 hexadecimal characters. |
+| **Reply timeout** | Ends the conversation when the customer does not reply within a set window. See [Reply timeout](#reply-timeout). |
+
+Webhook and Messaging service SID save when you press Enter or leave the field. They do not save while you type. iMessage numbers do not show Messaging service SID.
+
+#### Reply timeout
+
+Turn on **Reply timeout** to end a conversation that goes quiet. Then set:
+
+- **Time out (minutes)**: how long the agent waits for a reply, from 1 to 60 minutes.
+- **Closing message**: sent when the window ends. Leave it blank to end the conversation without a message.
+- **Send a reminder first**: sends one reminder partway through the window. Set **Remind after (minutes)** to a value shorter than the time out. Then set **Reminder message**. If you leave the reminder message blank, the customer gets nothing, but your webhook still receives a `timeout_warning` event.
+
+Sliders save when you release them. Messages save when you leave the field.
+
+<Note>
+Earlier versions of this tab saved reply timeouts that never took effect, and those values were not carried over. If you set one earlier, Reply timeout now shows as off. Turn it on again to use it.
+</Note>
+
+#### WhatsApp
+
+The WhatsApp drawer sets the number's webhook URL, a reply timeout in seconds, and **Request data**. Request data is a set of key-value facts the agent knows during WhatsApp conversations on that number, like a facility ID or its opening hours. The agent sees both the keys and their values. Select **Save** in the drawer to apply your changes.
 
 Messaging and web chat each have a guide of their own: [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
 
