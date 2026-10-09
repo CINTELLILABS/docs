@@ -110,19 +110,53 @@ Switch the sidebar selector back to the agent and open Channels, under Dispatch.
 
 | Tab | What it covers |
 |---|---|
-| **Calls** | How the agent answers the phone: maximum call length, recording, and what to do with voicemail. |
-| **Messages** | SMS, RCS and iMessage behavior, set per number. |
+| **Calls** | How the agent answers the phone: maximum call length, Branded Caller ID, recording, and what to do with voicemail. |
+| **Messages** | Channel priority, messaging behavior, iMessage apps, and the agent context, set per number. |
 | **Web chat** | The widget you embed on a site. |
 
-The Numbers list sits above the tabs on Calls and Messages, and holds the agent's fallback number.
+Calls and Messages share one layout: the Numbers card at the top, with the settings panels side by side below it. The Numbers card holds the agent's fallback number.
 
 Calls and Messages have no Save of their own. Most of what you set there is held with the rest of your unsaved work in the builder and written the next time it saves, so go back into the builder and save. Reloading the page loses it.
 
-There are two exceptions. The widget editor on Web chat has its own **Save**, and **Publish** beside it. The per-number messaging settings below save straight to the number.
+There are a few exceptions. The widget editor on Web chat has its own **Save**, and **Publish** beside it. Channel priority and the per-number messaging settings below save straight to the number. The Branded Caller ID and First-message VCF delivery switches save straight to the agent's identity.
 
 <Warning>
 Voice settings apply to every number the agent has. Messaging settings are saved separately for each number.
 </Warning>
+
+### Staging and Production are read-only
+
+The environment switcher in the top bar also appears on Calls and Messages. It is hidden on Web chat. When you switch to Staging or Production, a banner says the agent settings are read-only, and **Switch to Development** takes you back to edit them.
+
+Some settings stay editable in every environment, because they belong to the phone number or the agent's identity rather than a version:
+
+- Phone number settings, including channel priority and the [per-number messaging settings](#per-number-messaging-settings). Changes apply instantly in every environment.
+- The **Branded Caller ID** and **First-message VCF delivery** switches. These are the same switches as on the agent's Identity page, and **Configure** beside them opens Identity. Roles that can't edit agents see them disabled.
+
+See [Environments](/agents/environments) for how publishing and promotion work.
+
+### Channel priority
+
+On Messages, **Channel priority** lists the channels the selected number sends on, in order. The **Primary** channel sends first. If a message can't go out on it, the agent falls back to the next channel down the list. Select **Make primary** on any other channel to move it to the top. Channel priority saves straight to the number.
+
+A channel that needs setup shows a warning icon. Hover it to see what's missing. If the selected number can't carry iMessage but another of the agent's numbers can, the iMessage row offers **Use iMessage number**, which switches the page to that number.
+
+### Messaging behavior
+
+The **Behavior** panel on Messages applies to every agent: reasoning effort, company website, computer use, reply timeout and the webhook, then **First-message VCF delivery**, which sends your contact card once, after your agent's first message to a customer. **Progress updates** and tapbacks only work on iMessage, so they are disabled when the selected number doesn't carry iMessage.
+
+### Agent context
+
+The **Agent context** panel, on the right of Messages, shows what the agent reads when it replies to a message. It is compiled from your current draft, and you can switch the channel it previews. Each part is a collapsible section, labelled with when it is included:
+
+| Label | Sections |
+|---|---|
+| **Every message** | Global prompt, Channel instructions, Requirements, and Ending and handing off. |
+| **Current pathway only** | Pathways. Only the pathway the conversation is on is included. |
+| **When needed** | Tools, Knowledge and Memory schema. The agent reads them when a message calls for it. What it remembers about this customer is sent with every message. |
+| **After the context** | Conversation history. The last 30 messages are sent after the context. |
+
+When you switch channel, the previous context stays on screen, labelled with its channel, until the new one compiles. If it can't compile from your draft, fix the save errors and select **Retry**. Agents whose messages run node by node don't use this context.
 
 ### Per-number messaging settings
 
