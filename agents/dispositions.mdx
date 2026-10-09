@@ -180,6 +180,8 @@ With Follow-up event, the results arrive as their own event once the disposition
 
 `evidence` is the quotes the values cited, taken from the transcript. It appears only when a value cited something, so a strict schema on your side has to allow for it. The quotes arrive as one flat list, with nothing tying a quote back to the value that cited it.
 
+A value that reads the transcript normally scores on the corrected post-call transcript. If that transcript never arrives, judge, extractor and custom code values score on the live call transcript instead. They don't fail. Each value scored this way carries `"evidence_source": "live_transcript"` in `values`, and the conversation shows the line "Scored on the live transcript; the corrected transcript was unavailable." A pathway variable still needs the corrected transcript, so it errors in that case.
+
 With Hold original webhook, there's no second event. The results ride the call's own webhook instead, under the same `agent_dispositions` field. If the disposition misses the hold deadline, its entry arrives with `status` set to `failed` and an `error`, carrying no `payload` and no `values`.
 
 Results also appear on the conversation itself, in [Conversations](/agents/conversations).
