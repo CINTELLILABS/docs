@@ -14,10 +14,10 @@ Configure alerts at the [Alerts dashboard](https://app.bland.ai/dashboard/alerts
 Each alert is a configuration that combines three things:
 
 1. **A condition**: what to measure on each call (a built-in metric or a custom signal).
-2. **One or more severity levels**: INFO, WARNING, and CRITICAL, each with its own threshold, percentage trigger, and lookback window.
+2. **One or more severity levels**: INFO, WARNING, and CRITICAL, each with its own threshold and percentage trigger.
 3. **A delivery target**: email, phone, or a custom tool to notify when a level fires.
 
-The platform evaluates every completed call in your org against the alert's condition, then checks whether the percentage of violating calls within the lookback window crosses a level's threshold. If it does, the alert becomes "Triggered" and your notifications go out.
+The platform evaluates every completed call in your org against the alert's condition, then checks whether the percentage of flagged calls within the time window crosses a level's threshold. If it does, the alert becomes "Triggered" and your notifications go out.
 
 ## Conditions
 
@@ -62,14 +62,16 @@ Every alert supports up to three levels:
 Each level has its own:
 
 - **Operator and value**: e.g. `call_length > 600s`.
-- **Percentage trigger**: the share of calls in the window that must violate before the level fires (e.g. fire when 10% of calls exceed the threshold).
-- **Lookback window**: how far back to look. Options are 10 minutes, 30 minutes, 1 hour, 3 hours, or 24 hours.
+- **Percentage trigger**: the share of calls in the time window that must be flagged before the level fires (e.g. fire when 10% of calls exceed the threshold). A flagged call is a call that meets the alert's condition.
 
-The percentage trigger is what keeps alerts from being noisy. A single long call won't fire a CRITICAL alert. The platform waits until enough calls in the window are violating before it considers the condition "trending."
+The percentage trigger is what keeps alerts from being noisy. A single long call won't fire a CRITICAL alert. The platform waits until enough calls in the time window are flagged before it considers the condition "trending."
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/alerts/severity-config.png" alt="Configuring INFO, WARNING, and CRITICAL thresholds with percentage triggers and lookback windows" />
+<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/alerts/severity-config.png" alt="Configuring INFO, WARNING, and CRITICAL thresholds with percentage triggers" />
 
-You can also set a **minimum call count** so alerts don't fire during low-volume periods where percentages are misleading.
+Two more settings apply to the whole alert:
+
+- **Time window**: how far back the alert looks at calls. Options are 10 minutes, 30 minutes, 1 hour, 3 hours, or 24 hours.
+- **Minimum calls**: the alert can't trigger until at least this many calls happen in the time window. Use it so alerts don't fire during low-volume periods where percentages are misleading. Set it to 0 for no minimum.
 
 ## Notifications
 
@@ -85,12 +87,12 @@ You can mix and match. The same alert can email a team alias *and* trigger a Sla
 
 ## Alert lifecycle
 
-An alert config has two pieces of state visible in the dashboard:
+The alerts list shows two columns that describe each alert:
 
-- **Status**: whether the config is **Active** (currently evaluating) or **Inactive** (paused). Toggle this without deleting the alert.
-- **Alert state**: the live result. **OK** if no level is currently breached, or **Triggered** with a severity badge if one is. The dashboard also shows the time of the last trigger so you can spot patterns.
+- **Status**: whether the alert is on. **Enabled** alerts check your calls. **Disabled** alerts are paused, and you can turn them back on without deleting them. **Unsupported** marks an older custom alert that you can't enable. Open the alert to see what to do next.
+- **State**: whether the alert is going off right now. **Triggered** shows a severity badge when a level is crossed. **Not triggered** means no level is crossed. Disabled and unsupported alerts show a dash. The **Last triggered** column shows when the alert last went off so you can spot patterns.
 
-When a triggered alert recovers (the percentage drops back below all thresholds), the alert state returns to OK. The history is preserved so you can review past incidents.
+When a triggered alert recovers (the percentage drops back below all thresholds), the state returns to **Not triggered**. The history is preserved so you can review past incidents.
 
 ---
 
