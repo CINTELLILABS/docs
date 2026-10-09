@@ -1,6 +1,6 @@
 ---
-title: 'Environments'
-description: 'Ship an agent safely: what development, staging and production hold, how to publish and promote, and why a call needs a production version'
+title: "Environments"
+description: "Ship an agent safely: what development, staging and production hold, how to publish and promote, and why a call needs a production version"
 ---
 
 Every agent has three environments: development, staging and production.
@@ -33,39 +33,42 @@ The controls that act on what is live, **Rollback**, **Staged rollout** and **Pr
 A call runs the **production** version by default. An agent with nothing pinned to production has nothing to serve, and an API call is refused with a 400 and the code `AGENT_ENV_UNPINNED`.
 
 Building and saving is not shipping.
+
 </Warning>
 
 ## Publish
 
 **Publish** sits in two places and does the same thing in both: the button at the top right of the builder, and the Development row on the Environments tab. It saves your current work as a new version, then ships that exact version somewhere.
 
-Where it ships depends on one thing: whether this agent has ever been in production.
+The first-deploy shortcut requires no deployment history, no Production pin, and no enabled required evaluations. Otherwise publishing uses the normal staging or force-promotion flow.
 
 ### The first publish goes straight to production
 
-An agent that has never been live skips staging. There is no menu, just one button.
+When those first-deploy conditions hold, publishing lands in Production. There is no destination menu.
 
 The confirmation asks for a phone number, and tells you that publishing changes what the agent answers but not which numbers or pathways reach it. You can publish without attaching one.
 
 Staging gets the same version on the way through, so it does not start out behind.
 
 <Note>
-Configuring a required evaluation puts the agent back on the normal staging path, since a one-press release would have nothing to evaluate against.
+  Enabling required evaluations puts the agent on the normal staging path, since
+  a one-press release would have nothing to evaluate against.
 </Note>
 
 ### After that, Publish offers a choice
 
-Once production holds a version, Publish opens a menu with two destinations:
+After the first production deployment, Publish opens a menu with two destinations:
 
-- **Publish to staging** saves a new version and pins it to staging. Production does not move, so callers keep the version it already holds.
-- **Force promote** sends development straight to production in one step, skipping staging. Staging is repointed to that version on the way, which the confirmation says outright.
+- **Publish to Staging** saves a new version and pins it to staging. Production does not move, so callers keep the version it already holds.
+- **Force promote to Production** sends development straight to production in one step, skipping staging. Staging is repointed to that version on the way, which the confirmation says outright.
 
 Picking from the menu is not agreeing to ship. Each destination opens its own confirmation.
 
 <Warning>
-What **Force promote** skips is the evaluation gate. That is its purpose, and the bypass is recorded in the audit log rather than on the deployment, so deployment history will not show you which releases were forced.
+What **Force promote to Production** skips is the evaluation gate. That is its purpose, and the bypass is recorded in the audit log rather than on the deployment, so deployment history will not show you which releases were forced.
 
 It is the control that puts unevaluated work in front of live callers.
+
 </Warning>
 
 ## Promote to production
@@ -85,7 +88,8 @@ On enterprise plans, you can point a phone number at staging instead of producti
 Every number on the Channels page shows which environment it answers on, **Production** or **Staging**.
 
 <Warning>
-Only calls follow staging. Texts to a staging number still run the production version.
+  Only calls follow staging. Texts to a staging number still run the production
+  version.
 </Warning>
 
 A staging number runs staging's variable values, so every variable the agent references needs a staging value before you can attach. Numbers can't be attached to staging on dedicated infrastructure. To move a number back to production, detach it and attach it again with **Production** selected.
@@ -125,7 +129,9 @@ With no evaluations configured at all, neither move is gated and both happen imm
 Configuring any evaluation changes that, even one you have not marked **Req'd**. The run still executes and the publish waits for it, which takes as long as the conversations take. What the required flag decides is whether a verdict can stop you: a judge, the evaluation that scores a run, reports its result and blocks nothing when it is not required.
 
 <Note>
-One evaluation configuration does both jobs. The one saved on **staging** gates the publish into staging and the promotion out of it. There is no separate production gate to configure.
+  One evaluation configuration does both jobs. The one saved on **staging**
+  gates the publish into staging and the promotion out of it. There is no
+  separate production gate to configure.
 </Note>
 
 Publishing to staging saves your changes as a new version, runs the evaluations against that exact version, and only assigns it a version number and pins it to staging once every required evaluation passes. When a required evaluation fails, a toast reads **Publish blocked** with the number that failed. A run that times out or errors stops the publish too, with its own message.
@@ -134,6 +140,7 @@ Publishing to staging saves your changes as a new version, runs the evaluations 
 A blocked publish is not a rollback. The version is already saved on development, without a number and without a pin, and it stays there.
 
 Nothing is undone and nothing is lost. Fix what failed and publish again.
+
 </Warning>
 
 A blocked promotion is stopped twice. The dashboard dims **Promote**, explains why on hover, and does nothing if you press it. The server enforces the same rule again on the wire, which is what catches an API caller. Either way production keeps serving the version it already had.
@@ -152,6 +159,7 @@ Marking a value **Secret** stores it in your secret vault and keeps only a refer
 A key with no value in the environment the call is running in does not fall back to another environment. It fails the call before it starts, with `AGENT_VARIABLE_UNRESOLVED`.
 
 So a variable added on development and never set on production breaks production the moment something references it.
+
 </Warning>
 
 ## Common failures
@@ -161,21 +169,32 @@ So a variable added on development and never set on production breaks production
     Production is pinned to an older version. Publishing to staging does not move production; check what production says it is pinned to, then **Promote**.
   </Accordion>
 
-  <Accordion title="Calls fail and the agent looks fine in the builder">
-    The agent has never reached production. The builder shows development, which is not what a call runs by default. On an API call the error is a 400 with `AGENT_ENV_UNPINNED`, which also names the alternative: pass `agent_version` to run a specific version deliberately.
-  </Accordion>
+<Accordion title="Calls fail and the agent looks fine in the builder">
+  The agent has never reached production. The builder shows development, which
+  is not what a call runs by default. On an API call the error is a 400 with
+  `AGENT_ENV_UNPINNED`, which also names the alternative: pass `agent_version`
+  to run a specific version deliberately.
+</Accordion>
 
-  <Accordion title="Publish finished but staging did not move">
-    A required evaluation failed, and the toast said so. The version is saved on development with no number and no pin, which is why nothing appears to have happened on staging.
-  </Accordion>
+<Accordion title="Publish finished but staging did not move">
+  A required evaluation failed, and the toast said so. The version is saved on
+  development with no number and no pin, which is why nothing appears to have
+  happened on staging.
+</Accordion>
 
-  <Accordion title="Promotion is blocked although the evaluations passed">
-    The configuration changed after that run. Promotion compares the run against the whole configuration saved now, which covers the required evaluations and the shared test inputs, so changing the test cases or the conversation count invalidates a pass just as editing an evaluation does. Publish to staging again to run them against the current configuration.
-  </Accordion>
+<Accordion title="Promotion is blocked although the evaluations passed">
+  The configuration changed after that run. Promotion compares the run against
+  the whole configuration saved now, which covers the required evaluations and
+  the shared test inputs, so changing the test cases or the conversation count
+  invalidates a pass just as editing an evaluation does. Publish to staging
+  again to run them against the current configuration.
+</Accordion>
 
-  <Accordion title="A button does nothing and the error says nothing">
-    Publishing, promoting, rolling back and saving a variable all need an owner, admin, operator or prompter role. The buttons are not disabled for a viewer, so the press fails with a generic message rather than telling you the cause.
-  </Accordion>
+<Accordion title="A button does nothing and the error says nothing">
+  Publishing, promoting, rolling back and saving a variable all need an owner,
+  admin, operator or prompter role. The buttons are not disabled for a viewer,
+  so the press fails with a generic message rather than telling you the cause.
+</Accordion>
 
   <Accordion title="A variable is right in one place and wrong in another">
     Variables are per environment. Setting one on development leaves staging and production untouched, and promoting an agent does not carry values across.
@@ -199,6 +218,6 @@ So a variable added on development and never set on production breaks production
   </Card>
 </CardGroup>
 
-<div style={{ marginTop: '2rem' }} />
+<div style={{ marginTop: "2rem" }} />
 
 Docs for agents: [llms.txt](/llms.txt)

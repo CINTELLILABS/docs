@@ -8,7 +8,7 @@ Post-call webhooks are HTTP notifications that Bland AI automatically sends to y
 
 - **Process call outcomes immediately** - Trigger follow-up actions based on call results
 - **Integrate with your CRM or database** - Automatically update customer records with call transcripts and extracted data
-- **Build custom analytics** - Track call performance and agent effectiveness 
+- **Build custom analytics** - Track call performance and agent effectiveness
 - **Create automated workflows** - Send emails, create tickets, or update dashboards based on call data
 - **Access rich call data** - Get complete transcripts, extracted variables, call duration, and more
 
@@ -16,7 +16,7 @@ Webhooks make it easy to integrate with Bland, so your system can react to call 
 
 ## About This Tutorial
 
-This tutorial will help you set up and test your Bland AI webhooks for both inbound and outbound phone calls. 
+This tutorial will help you set up and test your Bland AI webhooks for both inbound and outbound phone calls.
 
 ## Step 1: Create your test webhook
 
@@ -24,36 +24,37 @@ For testing purposes, we'll use [Webhook.site](https://webhook.site/) to create 
 
 When you visit Webhook.site, it automatically provides you a unique webhook URL that will capture any HTTP requests sent to it. This is perfect for testing before you implement your own webhook endpoint.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhooksite.jpeg" />
+<img
+  style={{ borderRadius: "0.5rem" }}
+  src="/tutorials/tutorials-assets/webhooksite.jpeg"
+alt="Temporary webhook endpoint on Webhook.site" />
 
 Copy your unique webhook URL - you'll need it in the next step.
 
 ## Step 2: Configure webhook for inbound calls
 
-### Navigate to Inbound Numbers
+### Configure the number
 
-1. Open your [Bland AI developer portal](https://app.bland.ai)
-2. Go to the [Inbound Phone Numbers](https://app.bland.ai/home?page=inbound-number) page from the sidebar
+1. At **All agents**, open **Phone numbers**.
+2. Choose **Configure** on the number's row.
+3. Under **Call configuration**, set the webhook URL and any event subscriptions.
+4. Review the changes and select **Save**.
 
-### Configure Your Webhook
+This webhook receives post-call data. For live call events, review `webhook_events` in [Send a call](/api-v1/post/calls).
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhook-url.jpeg" />
+Place a test call from your own number to this configured inbound number, then wait for the call to end before checking delivery.
 
-1. **Find your phone number** in the list of inbound numbers
-2. **Click to expand the Advanced section** of your inbound number details
-3. **Locate the webhook field** - this is where you'll configure your post-call webhook
-4. **Paste your webhook URL** - Use the Webhook.site URL from Step 1
-5. **Click "Test Webhook"** - This sends a test payload to verify your webhook is working
+## Step 3: Verify delivery
 
-**Need live events during the call?** This webhook parameter sends data after the call completes. If you want to receive webhook events during the call (like when the call starts, transfers, or ends), check out the `webhook_events` parameter in our [Send Call API documentation](https://docs.bland.ai/api-v1/post/calls#webhook-events).
+Navigate back to your Webhook.site page and check that the post-call webhook arrived. You'll know it worked because a new HTTP request will appear in the list.
 
-## Step 3: Verify webhook test
-
-Navigate back to your Webhook.site page and check if the test webhook fired correctly. You'll know it worked because a new HTTP request will appear in the list.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/webhooksite-result.jpeg" />
+<img
+  style={{ borderRadius: "0.5rem" }}
+  src="/tutorials/tutorials-assets/webhooksite-result.jpeg"
+alt="Received webhook request on Webhook.site" />
 
 **If the test fails:**
+
 - Double-check that you provided the correct URL
 - Make sure there are no extra spaces or characters
 
@@ -64,7 +65,7 @@ If issues persist, reach out in our [Discord community](https://discord.gg/QvxDz
 Now test with an actual phone call:
 
 1. **Call your inbound phone number** and have a conversation with your AI agent
-2. **End the call** completely 
+2. **End the call** completely
 3. **Return to Webhook.site** and you should see a new webhook delivery with the complete call data
 4. **Inspect the payload** to see the full transcript, call duration, and other call metadata
 
@@ -93,10 +94,10 @@ See the [Send Phone Call API documentation](https://docs.bland.ai/api-v1/post/ca
 
 You can also configure a webhook when creating outbound calls in the dashboard:
 
-1. **Navigate to the Send Call page** in your [developer portal](https://app.bland.ai)
-2. **Click to expand the Advanced section** (similar to inbound numbers)
-3. **Add your webhook URL** to the webhook field
-4. **Send your call**
+1. Open **Send call** in the [dashboard](https://app.bland.ai).
+2. Expand **Scheduling & webhook**.
+3. Enter **Webhook URL**.
+4. Select **Send call**, or **Schedule call** for a future scheduled time.
 
 This webhook will receive the post-call data when that specific call completes.
 
@@ -189,10 +190,7 @@ This is the immediate webhook sent right after a call completes:
   "transferred_to": "+12345678909",
   "pre_transfer_duration": 0.3955,
   "post_transfer_duration": 0.571166666666667,
-  "pathway_tags": [
-    "Intro Node",
-    "Call Completion"
-  ],
+  "pathway_tags": ["Intro Node", "Call Completion"],
   "recording_expiration": "2030-10-15T17:20:55.779Z",
   "status": "completed",
   "pathway_id": "b71c4c5c-33e3-496b-a5f4-91b7e8e6a931",
@@ -260,10 +258,12 @@ When you enable citation extraction, you can choose to delay the post-call webho
 To use delayed webhooks with citations, you must configure **both** webhook events and dashboard settings.
 
 **Quick Setup:**
+
 1. Include `citations` in your API `webhook_events` parameter
 2. Enable "Delay post call webhook" toggle in [Citations Settings](https://app.bland.ai/dashboard/analytics?tab=citations)
 
 For detailed configuration options and troubleshooting, see the complete [Citations documentation](/enterprise-features/citations#option-2%3A-delayed-post-call-webhook-with-citations).
+
 </Warning>
 
 <Accordion title="View Delayed Webhook with Citations Payload">
@@ -320,7 +320,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
     },
     {
       "id": 176,
-      "text": "Hey James, great to meet you! I just wanted to confirm that you’ll be able to attend your upcoming appointment tomorrow at ten A M?",
+      "text": "Hey James, great to meet you! I just wanted to confirm that you'll be able to attend your upcoming appointment tomorrow at ten A M?",
       "user": "assistant",
       "created_at": "2025-09-19T18:22:22.375+00:00"
     },
@@ -369,9 +369,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
   "transferred_to": "+12345678901",
   "disposition_tag": "COMPLETED_ACTION",
   "corrected_duration": "19",
-  "citation_schema_ids": [
-    "b0477cba-1c97-4105-8ac9-46cb8eae5cf1"
-  ],
+  "citation_schema_ids": ["b0477cba-1c97-4105-8ac9-46cb8eae5cf1"],
   "is_proxy_agent_call": false,
   "is_canary": false,
   "warm_transfer_call": {
@@ -387,7 +385,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
   "recording_expiration": "2025-10-19T18:22:36.641+00:00",
   "pre_transfer_duration": 0.3955,
   "post_transfer_duration": 0.571166666666667,
-  "concatenated_transcript": "assistant: Hey, this is Jean from Nutriva Health. Could you confirm your name for me? \n user: Yeah. My name is James. \n assistant: Hey James, great to meet you! I just wanted to confirm that you’ll be able to attend your upcoming appointment tomorrow at ten A M? \n user: Yeah. I will be able to. Goodbye. \n ",
+  "concatenated_transcript": "assistant: Hey, this is Jean from Nutriva Health. Could you confirm your name for me? \n user: Yeah. My name is James. \n assistant: Hey James, great to meet you! I just wanted to confirm that you'll be able to attend your upcoming appointment tomorrow at ten A M? \n user: Yeah. I will be able to. Goodbye. \n ",
   "citations": [
     {
       "call_id": "8a9620f6-d634-4b92-8d75-93280a894a71",
@@ -406,9 +404,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
           "speaker_id": "SPEAKER_1_0",
           "speaker_name": "James (Customer)",
           "speaker_description": "The customer being called to confirm his appointment.",
-          "topics": [
-            "identity_confirmation"
-          ],
+          "topics": ["identity_confirmation"],
           "topics_meta": "{\"identity_confirmation\":\"The customer confirms his name is James.\"}",
           "utterance_type": "answer"
         },
@@ -423,10 +419,7 @@ For detailed configuration options and troubleshooting, see the complete [Citati
           "speaker_id": "SPEAKER_0_0",
           "speaker_name": "Jean (Agent)",
           "speaker_description": "An agent from Nutriva Health calling to confirm an appointment.",
-          "topics": [
-            "greeting",
-            "appointment_confirmation"
-          ],
+          "topics": ["greeting", "appointment_confirmation"],
           "topics_meta": "{\"appointment_confirmation\":\"The agent asks the customer to confirm his attendance for an appointment at a specific date and time.\",\"greeting\":\"The agent greets the customer by name.\"}",
           "utterance_type": "question"
         }
@@ -474,29 +467,35 @@ For detailed configuration options and troubleshooting, see the complete [Citati
 </Accordion>
 
 <Info>
-**Understanding Warm Transfer States**: The example above shows a warm transfer with `"state": "MERGED"` and `"call_ended_by": "USER"`. For complete state definitions, see the [Warm Transfer documentation](/tutorials/warm-transfer#warm-transfer-state-definitions).
+  **Understanding Warm Transfer States**: The example above shows a warm
+  transfer with `"state": "MERGED"` and `"call_ended_by": "USER"`. For complete
+  state definitions, see the [Warm Transfer
+  documentation](/tutorials/warm-transfer#warm-transfer-state-definitions).
 </Info>
 
 ### Key Differences
 
 **Standard Post-Call Webhook:**
+
 - Sent immediately after call completion
 - Contains call metadata, transcripts, and basic variables
 - No citations or corrected transcript
 
 **Delayed Webhook with Citations:**
+
 - Sent after post-call processing (30-60 seconds later)
 - Includes enhanced `corrected_transcript` with improved formatting, accuracy, speaker labels, and confidence scores
 - Contains detailed `citations` array with extracted variables linked to specific utterances
 
 **Configuration Note:** When you enable citation extraction, you can choose to delay the post-call webhook until citations are processed and include citation data in a single webhook. When disabled, the post-call webhook fires immediately, and citations are sent via a separate webhook.
 
-**Important:** Both the dashboard "Delay post call webhook" toggle AND the `webhook_events` configuration must be properly set for delays to work.
+The current Send call form has no delay toggle. Delayed delivery uses the organization preference `delay_post_call_until_citations` together with the applicable `webhook_events` subscription. Ask your account team to confirm your organization's preference before depending on a combined webhook.
 
 ### Post-Transfer Transcript
 
 <Note>
-  The post-transfer transcript is in limited rollout. If it is not enabled for your organization, these properties are absent.
+  The post-transfer transcript is in limited rollout. If it is not enabled for
+  your organization, these properties are absent.
 </Note>
 
 To receive the post-transfer transcript, subscribe by including `"post_transfer_transcript"` in the call's `webhook_events`. No citation schema is needed. Subscribing requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside the subscription returns a 400. Both cold and warm transfers are covered.
@@ -556,21 +555,21 @@ Every time a message is sent or received, a webhook fires with the message detai
 - `conversation_id`, `phone_number`, `agent_number`, `channel` (`"sms"`, `"rcs"`, or `"whatsapp"`)
 - `pathway_id`, `pathway_version`
 - `message`, `sender` (`"USER"`, `"AGENT"`, or `"HUMAN"` for a rep replying during a [human handoff](/api-v1/post/sms-conversations-handoff))
-- `chat_history` — the full conversation so far
-- `variables` — pathway variables collected during the conversation
-- `metadata` — custom metadata passed when the conversation was created
-- `pathway_tags` — tags from pathway nodes visited during the conversation
+- `chat_history`: the full conversation so far
+- `variables`: pathway variables collected during the conversation
+- `metadata`: custom metadata passed when the conversation was created
+- `pathway_tags`: tags from pathway nodes visited during the conversation
 
 ### Status Webhooks
 
 When a conversation ends (via timeout, end-call node, or opt-out), a status webhook fires with the complete conversation context. In addition to the fields above, the status payload includes:
 
-- `status` — `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"human_handoff"`, `"human_handoff_ended"`, `"read"`, or `"link_clicked"`
-- `message_count` — total messages in the conversation
-- `concatenated_transcript` — the full conversation as a single string
-- `summary` — AI-generated summary (when a summary prompt is configured)
-- `citations` — extracted citation variables (when citation schemas are configured)
-- `dispositions` — outcome run results (when outcomes are configured)
+- `status`: `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"human_handoff"`, `"human_handoff_ended"`, `"read"`, or `"link_clicked"`
+- `message_count`: total messages in the conversation
+- `concatenated_transcript`: the full conversation as a single string
+- `summary`: AI-generated summary (when a summary prompt is configured)
+- `citations`: extracted citation variables (when citation schemas are configured)
+- `dispositions`: outcome run results (when outcomes are configured)
 
 SMS also supports `read` and `link_clicked` status events for RCS and WhatsApp channels, which fire when a recipient reads a message or taps an action button link.
 
@@ -580,9 +579,9 @@ SMS also supports `read` and `link_clicked` status events for RCS and WhatsApp c
 
 You can set a webhook URL in three ways:
 
-1. **On the SMS number** — configure via the Messaging dashboard or [Update SMS Webhook](/api-v1/post/sms-webhook-update) endpoint
-2. **Per request** — pass a `webhook` parameter in [Send SMS](/api-v1/post/sms-send) to override the number's configured webhook
-3. **Per batch** — pass a `webhook` in the `global` object of [Send SMS Batch](/api-v1/post/sms-batch)
+1. **On the SMS number**: configure via the Messaging dashboard or [Update SMS Webhook](/api-v1/post/sms-webhook-update) endpoint
+2. **Per request**: pass a `webhook` parameter in [Send SMS](/api-v1/post/sms-send) to override the number's configured webhook
+3. **Per batch**: pass a `webhook` in the `global` object of [Send SMS Batch](/api-v1/post/sms-batch)
 
 ---
 
@@ -593,25 +592,29 @@ All possible values for the `error_message` field in post-call webhooks. Note th
 ### Webhook HTTP Status Codes
 
 **Successful Webhook Delivery:**
+
 - `200` - Webhook delivered successfully (regardless of call outcome)
 - `2xx` - Any 2xx status indicates successful webhook delivery
 
 **Webhook Delivery Failures:**
+
 - `4xx` - Client errors (invalid webhook URL, authentication issues)
 - `429` - Rate limiting (webhook endpoint receiving too many requests)
 - `5xx` - Server errors (webhook endpoint unavailable or internal errors)
 
-*Webhook delivery failures will trigger automatic retries based on the response code.*
+_Webhook delivery failures will trigger automatic retries based on the response code._
 
 ### Call Error Messages
 
 The following error messages appear in the `error_message` field within successfully delivered webhook payloads:
 
 ### Successful Calls
+
 - `null` - Call completed successfully
 
 ### Call Connection Failures
-**HTTP Status: 200** *(All call failures result in successful webhook delivery with error details in the payload)*
+
+**HTTP Status: 200** _(All call failures result in successful webhook delivery with error details in the payload)_
 
 - `"Call failed."` - Base failure message
 - `"Call failed. The number you dialed is not found."` - Invalid/disconnected number (SIP 404)
@@ -620,7 +623,8 @@ The following error messages appear in the `error_message` field within successf
 - `"Call failed. Service Provider Blocked Call due to Spam or Number Reputation. Try a different number."` - Carrier blocked (SIP 608)
 
 ### System Errors
-**HTTP Status: 200** *(System errors result in successful webhook delivery with error details in the payload)*
+
+**HTTP Status: 200** _(System errors result in successful webhook delivery with error details in the payload)_
 
 - `"A database error occurred. Please contact support."` - Internal database error
 - `"Unable to start call. Check the call details error_message for more details."` - Call dispatch failure

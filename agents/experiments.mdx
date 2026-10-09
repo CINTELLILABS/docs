@@ -1,0 +1,61 @@
+---
+title: "Experiments"
+description: "Compare phone-call traffic between versions or from a legacy pathway to an agent."
+---
+
+Experiments split real phone calls between a current version or legacy pathway and a candidate agent version. They require Enterprise. Messaging and web chat do not follow these phone-call traffic splits.
+
+Open an agent's **Experiments** page. Choose whether to compare agent versions or migrate a legacy pathway. A version experiment needs a pinned Production baseline and a different candidate version. Required evaluation checks must permit the candidate before a version experiment can start or finish.
+
+## Choose a plan
+
+- **Staged rollout** increases the candidate's share through configured steps. Each step has a traffic share, duration, and any required connected-call sample or approval. The final bake window observes the candidate at 100% before finishing.
+- **A/B test** holds a fixed share until you finish or roll back. It does not increase traffic automatically.
+
+Review the target, steps, limits, watched metrics, and guardrails before starting. A legacy pathway can have only one active migration split; an already live split cannot be silently reassigned by another experiment.
+
+## Limits and timing
+
+**Connected call limit** counts connected calls on the candidate since the experiment started. It is approximate: counts update every few minutes, so traffic can exceed the limit. Reaching it stops new candidate traffic and sends new calls to the current version or pathway.
+
+**End date and time** also stops new candidate traffic. To resume after either limit, raise or remove the reached limit first.
+
+**Run hours** and a future start time restrict when new calls can use the candidate. Outside the configured hours they use the baseline. Step duration and minimum samples govern advancement; they do not guarantee that a step advances at an exact clock time.
+
+## Read results
+
+The **Metrics** table compares both sides over the same window, with columns for each version and **Difference**. The dashboard requests a 24-hour window. Calls must belong to the experiment's split; a pathway's entire history is not its baseline sample.
+
+Connected calls are completed calls that are not voicemail and have no queue error. Simulated and proxy calls are excluded. Connected-call rates use connected calls as their denominator. Transfer and abandonment rates and average talk time should be interpreted with that sample in mind. Outcome-specific measures may use their own eligible or measured samples; an unavailable result is not zero or a pass.
+
+Guardrails use their own configured windows and minimum samples. Their verdict can therefore differ from the adjacent 24-hour Metrics table. Some analytics data arrives later than the call record, so recent calls may not yet appear in those measures.
+
+**View agent analytics** opens agent-wide analytics over the experiment's time range. It does not apply an experiment-only traffic filter.
+
+## Guardrails
+
+Configure experiment guardrails explicitly; production alerts are not automatically inherited. Choose the measured source, threshold, window, minimum sample, and **Pause** or **Roll back** consequence. A comparison against the baseline uses both arms over the same guardrail window.
+
+A source with insufficient or unavailable measurements cannot establish a safe result. Read the guardrail status and last check time before increasing traffic. Review flagged calls when a guardrail triggers.
+
+## Control live traffic
+
+| Action                                | Effect on new calls                                                                                             |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Pause experiment**                  | Freezes advancement and retains the current split. Candidate calls can continue.                                |
+| A reached limit or an end date        | Stops candidate traffic; new calls use the baseline.                                                            |
+| **Roll back**                         | Returns new calls to the current version or legacy pathway and ends the experiment.                             |
+| **Finish experiment** for versions    | Promotes the candidate to Production, subject to required checks, and ends the split.                           |
+| **Finish experiment** for a migration | Leaves the migration split at 100% on the agent. Moving numbers and API callers permanently is a separate step. |
+
+These controls affect new routing decisions, not calls already in progress. Finish is a permanent decision: experiment rollback is not available after it finishes. Use [Environments](/agents/environments) for subsequent version recovery.
+
+During a version rollout, use its traffic controls and finish action instead of promoting through a conflicting environment action. A migration follows the agent's Production pin, so publishing a different Production version changes its candidate; review the experiment again after such a change.
+
+## Next steps
+
+- [Evaluations](/agents/evaluations)
+- [Environments](/agents/environments)
+- [Migrate to agents](/platform/migrate-to-agents)
+
+Docs for agents: [llms.txt](/llms.txt)
