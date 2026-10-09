@@ -55,6 +55,8 @@ Searching for custom APIs? That is a webhook tool.
 
 Runs code you write, for the cases a single HTTP call cannot cover: reshaping a response, calling two services and combining them, or a calculation the agent should not be doing in its head.
 
+Whatever your code returns comes back under `$.data.custom_code_result`. New output fields start their path there, so a returned `appointment.id` is `$.data.custom_code_result.appointment.id`.
+
 This is not the custom code node you place inside a pathway. Same name, different thing: a tool is called from a prompt, a node is a step inside a pathway.
 
 ### Integration
@@ -125,7 +127,9 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
 
     `ok` and `message` come pre-checked. The rest is yours to choose, and the rows below the table are yours to write: give one a name and a JSONPath and you can pull a single field straight out of the response body.
 
-    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now. Save it, reopen, and check the `rest_api_post_*` rows then.
+    A new row's path already starts at the response body, so you only type the rest. To read `id` from your endpoint's response, the full path is `$.data.rest_api_get_data.id`. The description above the table shows where the body lives for the method you picked.
+
+    The names follow the method. A GET tool returns `rest_api_get_*`. A POST tool returns the same three fields named `rest_api_post_*`, so the same field on a POST tool is `$.data.rest_api_post_data.id`. Change the method and the builder moves your paths to the matching names.
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
 
