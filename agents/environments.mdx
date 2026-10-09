@@ -55,10 +55,11 @@ Configuring a required evaluation puts the agent back on the normal staging path
 
 ### After that, Publish offers a choice
 
-Once production holds a version, Publish opens a menu with two destinations:
+Once production holds a version, Publish opens a menu of destinations:
 
 - **Publish to staging** saves a new version and pins it to staging. Production does not move, so callers keep the version it already holds.
 - **Force promote** sends development straight to production in one step, skipping staging. Staging is repointed to that version on the way, which the confirmation says outright.
+- **Staged release to Production** releases the new version to production gradually. See [Staged release](#staged-release).
 
 Picking from the menu is not agreeing to ship. Each destination opens its own confirmation.
 
@@ -73,6 +74,51 @@ It is the control that puts unevaluated work in front of live callers.
 **Promote** in the Environments page header points production at the version staging is holding. Nothing is copied and nothing is rebuilt.
 
 Its confirmation carries the same phone number section and the same reassurance as the first publish: promoting does not change which numbers or pathways reach the agent.
+
+## Staged release
+
+A staged release is the middle path between publishing to staging and promoting everything at once. It splits production traffic between the new version and the version live now. You choose how much traffic goes to the new version and raise its share step by step.
+
+Staged release is available when all of these are true:
+
+- Your organization is on an enterprise plan.
+- Production already holds a version to split traffic away from.
+- No rollout is live for this agent.
+
+You can start a staged release from three places:
+
+- **Publish menu**: select **Staged release to Production**, then **Set up staged release**. Bland saves your work, runs your evaluations, and publishes the version to staging. It then opens Experiment settings on a new draft.
+- **Promote confirmation**: select **Staged release** beside **Promote to Production**. The version is already on staging, so the draft opens without publishing anything.
+- **Staged rollout** in the Environments page header.
+
+The draft splits traffic between the version in production and the new version. Review the plan, then select **Start experiment**. No production traffic moves until you start it.
+
+### Plan the steps
+
+The plan is a list of steps. Each step sends a share of production traffic to the new version and holds it there until a date. Select a step's **Hold until** date to pick a new one from the calendar. A step can hold for up to 14 days.
+
+The **Standard** plan starts with these steps:
+
+| Traffic | Hold until |
+| --- | --- |
+| 5% | 4 days after the start |
+| 25% | 4 days after the previous step |
+| 50% | 7 days after the previous step |
+| 100% | 7 days after the previous step |
+
+Dates count from **Start on** when you set it, otherwise from when you opened the plan. Changing **Start on** moves the dates of a preset plan to match.
+
+Dates the plan fills in for you never land on a weekend. A Saturday or Sunday moves to the following Monday. This applies to preset steps, steps added with **Add step**, and later steps pushed out by an earlier edit. A date you pick yourself stays as you picked it, weekends included.
+
+When you move a step's date, later steps keep their dates. A later step that would no longer end after the step before it moves out by its own hold length.
+
+<Note>
+The dates are a plan. A step that needs approval waits for it, and every step after it slides by that wait.
+</Note>
+
+<Note>
+A staged release never skips the evaluation gate. Starting the experiment checks the same required evaluations as a promotion, so a version that can't be promoted can't be released in stages either.
+</Note>
 
 ## Attach a number to staging
 
