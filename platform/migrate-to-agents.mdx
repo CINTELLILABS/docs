@@ -131,11 +131,43 @@ The import says so when it happens. Add an End call node at the agent level if t
 
 It also carries a few call-level settings from the number bound to your pathway, such as voice, language and max duration. Anything with no home in agent settings is reported rather than dropped silently, and the number itself is not attached to the agent.
 
-This migration path cannot be cancelled once it starts, though it is quick. Running it twice gives you two agents, since nothing is deduplicated: the migration has no memory of having run, so a hesitant second attempt leaves you tidying up. That is safe, because nothing is overwritten.
+### What carries over
 
-Warnings do not appear in the modal. You get a toast saying how many items are flagged, then a banner over the builder canvas naming the pathway and the count, which you can dismiss.
+Node settings from the pathway editor carry over to the matching step in the agent builder, including:
+
+- Warm transfer "if agent unavailable, go to node" fallbacks, proxy pathway and live translation
+- Code and webhook tools attached to nodes, plus tool assist, speech, wrapper line and staging settings
+- Custom Tool overrides and Custom Code execution timeouts
+- Press Button "continue conversation"
+- Edge conditions, including ones written by the AI editor or the API
+- Per-step interruption controls, Watchtower guard rails, and return to previous before a global
+- Fine-tuning examples and custom extraction instructions
+- SMS code node settings
+- Retry Transfer, Transfer Chat, Schedule Meeting, Add to Conference and Orchestrator nodes, which become steps of the same type
+
+A persona also brings its guardrails, language, and turn-taking settings.
+
+### Where the pathway lands
+
+The imported pathway sits in the agent's **Pathways** list as an ordinary pathway you can edit. Calls still start in it, because the migration sets the agent's **Starts in** setting to that pathway. The pathway shows a **Starts here** tag.
+
+The migration chose that start, not you. The first time you edit the agent's own prompt, tools, mentions or variables, calls start at the agent again. A toast reads "Calls now start at the agent." and offers to keep starting in the pathway. See [Choose where calls start](/agents/agent-builder#choose-where-calls-start).
+
+When you import pathways into an agent that already exists, they are added to that agent's routing.
+
+### Review import warnings
+
+Any setting that still has no equivalent in the agent builder produces a warning rather than disappearing. The warnings are saved on the agent, so every teammate who opens it sees them.
+
+Warnings do not appear in the modal. You get a toast saying how many items are flagged, then a banner over the builder canvas. The banner names the pathway, shows how many items to review, and lists each one. Dismissing the banner hides it in your browser only.
 
 Three smaller things are dropped, each reported as a warning: a pathway's own global prompt when you migrate a persona, exit pointers on fanned-out components, and tool overrides on a persona's skills.
+
+If the import is refused, the dashboard shows the reason it was refused.
+
+### Cancel or rerun
+
+This migration path cannot be cancelled once it starts, though it is quick. Running it twice gives you two agents, since nothing is deduplicated: the migration has no memory of having run, so a hesitant second attempt leaves you tidying up. That is safe, because nothing is overwritten.
 
 ## Migrate and upgrade
 
