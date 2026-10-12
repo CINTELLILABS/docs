@@ -1,0 +1,167 @@
+---
+title: "Cancel Agent Phone Plan"
+api: "POST https://api.bland.ai/billing/cancel_agent_phone"
+description: "Cancel your organization's Agent Phone Plan immediately, with an optional offboarding survey."
+---
+
+### Overview
+
+Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan) right away. The \$29.99/month charge stops, there's no refund for the current month, and your included phone number stays on your account.
+
+You can answer a short, optional offboarding survey in the same request with `feedback`. If you leave it out, the response includes `cancellation_survey`, which lists the questions and their allowed answers. You can send your answers afterwards with [Submit Cancellation Feedback](/api-v1/post/agent-phone-plan-cancel-feedback). The survey never affects the cancel.
+
+<Note>
+Requires an organization API key that belongs to an admin or owner of the organization. A personal account key gets `403 FORBIDDEN`.
+</Note>
+
+<Tip>
+If you're an agent canceling for a person, ask them the survey questions and pass their answers through. Don't answer on their behalf.
+</Tip>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your organization API key.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="feedback" type="object">
+  Optional answers to the offboarding survey. Every field is optional, and blank answers count as no answer. An invalid survey gets `400 BAD_REQUEST` and nothing is canceled.
+
+  <Expandable title="properties">
+    <ParamField body="use_cases" type="string[]">
+      What the plan was mainly used for. Any of `answering_calls`, `booking_appointments`, `outbound_calls`, `texting`, `testing`, `other`.
+    </ParamField>
+    <ParamField body="use_case_other" type="string">
+      What else it was used for, when `use_cases` includes `other`. Up to 500 characters.
+    </ParamField>
+    <ParamField body="reason" type="string">
+      The main reason for canceling. One of `too_expensive`, `not_used_enough`, `did_not_work`, `switching_service`, `short_term`, `other`.
+    </ParamField>
+    <ParamField body="reason_detail" type="string">
+      The service you're switching to (with `switching_service`), or the reason (with `other`). Up to 500 characters.
+    </ParamField>
+    <ParamField body="stay_suggestion" type="string">
+      What would have made you stay. Up to 500 characters.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  Your plan after the cancel. `status` is `canceled` and `phone_number` is the number you keep.
+</ResponseField>
+
+<ResponseField name="data.cancellation_survey" type="object">
+  Present only when you canceled without `feedback`. It lists the survey questions (`questions[]`, each with a `field`, `question`, `type`, and `options` or `max_length`) and where to send the answers (`submit`).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<RequestExample>
+```bash With feedback
+curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
+  -H "authorization: <org-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feedback": {
+      "use_cases": ["answering_calls"],
+      "reason": "switching_service",
+      "reason_detail": "Another voice provider",
+      "stay_suggestion": "A cheaper tier"
+    }
+  }'
+```
+
+```bash Without feedback
+curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
+  -H "authorization: <org-api-key>"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response without feedback
+{
+  "data": {
+    "name": "agent_phone_basic",
+    "display_name": "Agent Phone Plan",
+    "status": "canceled",
+    "phone_number": "+15551234567",
+    "cancellation_survey": {
+      "optional": true,
+      "submit": {
+        "method": "POST",
+        "path": "/billing/cancel_agent_phone/feedback",
+        "body": "{ \"feedback\": { <field>: <answer>, ... } }"
+      },
+      "prompt": "Sorry to see you go. Mind telling us why? Every question is optional.",
+      "questions": [
+        {
+          "field": "use_cases",
+          "question": "What did you mainly use your Agent Phone plan for?",
+          "type": "multi_select",
+          "options": [
+            { "value": "answering_calls", "label": "Answering my business calls" },
+            { "value": "booking_appointments", "label": "Booking appointments or reservations" },
+            { "value": "outbound_calls", "label": "Making errand or outbound calls for me" },
+            { "value": "texting", "label": "Texting" },
+            { "value": "testing", "label": "Just testing it out" },
+            { "value": "other", "label": "Other" }
+          ]
+        },
+        {
+          "field": "use_case_other",
+          "question": "What else did you use it for?",
+          "asked_when": "use_cases includes other",
+          "type": "text",
+          "max_length": 500
+        },
+        {
+          "field": "reason",
+          "question": "What's the main reason you're canceling?",
+          "type": "single_select",
+          "options": [
+            { "value": "too_expensive", "label": "Too expensive for what I got" },
+            { "value": "not_used_enough", "label": "I didn't use it enough" },
+            { "value": "did_not_work", "label": "It didn't work the way I expected" },
+            { "value": "switching_service", "label": "Switching to a different service" },
+            { "value": "short_term", "label": "I only needed it for a short-term project" },
+            { "value": "other", "label": "Other" }
+          ]
+        },
+        {
+          "field": "reason_detail",
+          "question": "Which service are you switching to, or what's the reason?",
+          "asked_when": "reason is switching_service or other",
+          "type": "text",
+          "max_length": 500
+        },
+        {
+          "field": "stay_suggestion",
+          "question": "What would have made you stay?",
+          "type": "text",
+          "max_length": 500
+        }
+      ]
+    }
+  },
+  "errors": null
+}
+```
+
+```json No plan to cancel (409)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "This organization does not have an Agent Phone Plan to cancel."
+    }
+  ]
+}
+```
+</ResponseExample>
