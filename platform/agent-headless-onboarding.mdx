@@ -44,7 +44,7 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     ```bash
     curl -X POST https://api.bland.ai/v1/agent/onboarding/headless/start \
       -H "Content-Type: application/json" \
-      -d '{"client_name": "grok", "owner_phone": "+14155550123", "owner_email": "owner@example.com"}'
+      -d '{"client_name": "grok", "owner_phone": "+14155550123", "owner_email": "owner@example.com", "area_code": "415"}'
     ```
 
     ```json Response
@@ -58,6 +58,8 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     ```
 
     `client_name` is optional (up to 64 characters, letters, numbers, spaces, and `._/-`). Send the name of the platform you run on (`grok`, `openclaw`, `poke`, `meta`, or your product's name): it never reaches the owner and lets Bland see which assistants complete setup.
+
+    `area_code` is optional: the owner's preferred three-digit US area code for the plan's phone number, for example `"415"`. Ask the owner before you call `/start`. Omit it, or send `""`, to get any US number. When you send it, the number is only ever bought in that area code, and Bland never falls back to another one. If you're paying, `/start` checks that numbers are available in that area code before it texts the owner. If none are, it answers `409 AREA_CODE_UNAVAILABLE` and nothing is sent or charged. Ask the owner for another area code, or none, and call `/start` again. The area code is fixed for the session.
 
     `payment_intent` is optional: `"shared_payment_token"` if you will pay with an agent wallet, `"none"` if you won't. With `"none"`, and only when free signup is off, `/start` answers `402 PLAN_REQUIRED` with the browser `fallback` before any text is sent, so the owner isn't asked for a code the flow can't use. Today free signup is on, so `"none"` proceeds like any other start. `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
 
@@ -239,6 +241,8 @@ Both endpoints:
 | `SERVICE_UNAVAILABLE` | 503 | Session storage is temporarily unreachable. Retry in a moment; on `/complete`, the session is unaffected. |
 | `INVALID_PHONE_NUMBER`, `BLOCKED_COUNTRY`, `USER_BANNED`, `BLOCKED_EMAIL`, `SSO_REQUIRED`, `BANNED_SIGNUP` | 400 | The phone or email was refused. `/complete` re-checks these right before charging. |
 | `ACCOUNT_EXISTS` | 409 | An account already uses this phone or email. Use the [link-based flow](/platform/connect-your-agent) instead. Plus fallback on `/complete`. |
+| `AREA_CODE_UNAVAILABLE` | 409 | No US numbers are available in the requested area code right now. You haven't been charged. Ask the owner for another area code, or none for any US number, and start over with a fresh `/start` call. |
+| `AREA_CODE_CHECK_FAILED` | 502 | Bland couldn't confirm number availability for the requested area code. You haven't been charged. Try again in a moment. |
 | `INTERNAL_ERROR`, `DATABASE_ERROR` (on `/start`); `INTERNAL_SERVER_ERROR` (on `/complete`) | 500 | Something unexpected happened. |
 
 `/headless/start` only:
@@ -246,6 +250,7 @@ Both endpoints:
 | Code | HTTP status | Meaning |
 | --- | --- | --- |
 | `OTP_SEND_FAILED` | 502 | The verification text couldn't be sent. Try again in a moment. |
+| `INVALID_AREA_CODE` | 400 | `area_code` isn't a three-digit US area code, like `415`. |
 
 `/headless/complete` only:
 
