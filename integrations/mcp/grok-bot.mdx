@@ -24,6 +24,7 @@ Tell Grok Bot:
 
 ```text
 Read https://docs.bland.ai/integrations/mcp/grok-bot and set up a new Bland account for me with headless onboarding. Use my phone number and email, and send client_name "grok".
+Before you start, ask me which US area code I want for my phone number, and send it as area_code. If I say any, leave it out.
 Pay for the Agent Phone Plan with a Link shared payment token through the Link CLI, never a virtual card. Ask me for the SMS code, and show me any link instead of opening it.
 When you have the API key, add it as a custom MCP connection and confirm it works by listing my pathways.
 ```
@@ -38,7 +39,9 @@ The paid path is four requests and one Link approval. [Headless agent onboarding
 
 <Steps>
   <Step title="Start the session">
-    `POST /v1/agent/onboarding/headless/start` with your phone, your email, `client_name: "grok"`, and `payment_intent: "shared_payment_token"`. A 6-digit code is texted to your phone.
+    `POST /v1/agent/onboarding/headless/start` with your phone, your email, `client_name: "grok"`, `payment_intent: "shared_payment_token"`, and the area code you asked for as `area_code`. A 6-digit code is texted to your phone.
+
+    Your number is only ever bought in that area code. If it has no numbers right now, `/start` answers `409 AREA_CODE_UNAVAILABLE` before any text is sent, and Grok Bot asks you for another area code or whether any US number is fine.
   </Step>
   <Step title="Get the code">
     Grok Bot asks you for the code.
