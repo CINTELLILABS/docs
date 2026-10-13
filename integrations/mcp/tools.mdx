@@ -15,7 +15,7 @@ The Bland MCP server exposes the tools below plus 3 prompts. All of them are sco
 | `get_call_log` | Read | Fetch a single call: its transcript, recording, summary, and metadata. |
 | `wait_for_call` | Read | Wait up to 45 seconds for a call to finish, then return its call log. Use it instead of polling `get_call_log`. |
 | `stop_call` | Destructive | End a call in progress, or cancel one that is still queued. |
-| `list_voices` | Read | List Bland's curated voices, the recommended set for `create_call`. Any voice the user names still works. |
+| `list_voices` | Read | List Bland's curated voices, the recommended set for `create_call`. Each voice shows the same public label as the rest of the API. Any voice the user names still works. |
 
 ### Pathways
 
@@ -71,6 +71,46 @@ Full lifecycle for the v2 agents model: versioned, branched, and promoted throug
 | `get_eval_agent` | Read | Fetch one eval agent: criterion prompt, scoring levels, targets, weight, modality. |
 | `get_eval_run` | Read | Fetch one eval run and its per-atom verdicts. |
 | `create_eval_run` | Destructive | Enqueue scoring of a batch of calls against eval agents or a saved workbench setup. |
+
+### Knowledge bases
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `upload_knowledge_file` | Write | Add a file to the organization's [knowledge base](/agents/knowledge) from a public `https` link. Returns the new source's `id`, `name`, and a `PROCESSING` status. |
+
+Bland downloads the file from the link. The file must be a PDF, DOCX, XLSX, TXT, MD, CSV, or JSON file of 20 MB or less. Uploads follow the same upload-frequency and plan limits as the dashboard. Only one upload per organization runs at a time, so if the tool returns `kb_upload_rate_limited`, wait about 10 seconds and retry. If the tool returns `kb_upload_limit_exceeded`, your plan's source limit is reached.
+
+Bland indexes the file in the background. Poll `GET /v1/knowledge/{id}` with `bland_api_get` until the status is `COMPLETED` or `FAILED` before you attach the source to an agent.
+
+```json
+{
+  "url": "https://example.com/files/return-policy.pdf",
+  "name": "Return policy",
+  "description": "Store return and refund rules"
+}
+```
+
+For a CSV file, pass `csv_columns` to choose which columns Bland indexes. By default, Bland indexes all columns.
+
+### Custom code
+
+| Tool | Access | Description |
+| --- | --- | --- |
+| `save_code_snippet` | Write | Create a JavaScript custom-code snippet, or save new code as the next version of an existing snippet. Confirmation-gated. Returns `snippetId`, the `version` just written, and `name`. |
+
+To create a snippet, omit `snippet_id` and pass a `name` that uses only Latin letters and underscores. To save a new version, pass the existing `snippet_id`. A snippet keeps the name it was created with. Code is limited to 200,000 characters.
+
+```json
+{
+  "name": "format_order_total",
+  "language": "js",
+  "code": "<your JavaScript source>"
+}
+```
+
+<Warning>
+A tool that runs a snippet without a pinned `snippet_version` runs the latest version. Saving a new version changes what those tools run on live calls. Pin `snippet_version` to the returned `version` to avoid this.
+</Warning>
 
 ### Documentation
 
