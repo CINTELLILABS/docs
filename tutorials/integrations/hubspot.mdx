@@ -1,0 +1,92 @@
+---
+title: "HubSpot Setup Guide"
+description: "Install the Bland app from the HubSpot App Marketplace, connect your HubSpot account, and let your AI agents read and update your CRM."
+---
+
+Bland is an AI phone and messaging agent platform. The Bland app for HubSpot connects a HubSpot account to a Bland workspace so your agents can look up and update CRM records during conversations, and so HubSpot changes can start calls and messages.
+
+## What the app does
+
+Once connected, the integration works in three places inside Bland:
+
+| Where | What it does |
+| :---- | :---- |
+| **Tools** | Agents can create and update contacts, companies, deals, tickets, tasks, meetings, and notes, and search contacts, companies, and products, during a live conversation. |
+| **Triggers** | Created and updated events on HubSpot companies, contacts, deals, meetings, tasks, and tickets can start a call, send a message, or run a workflow. Bland checks HubSpot for changes every few minutes. |
+| **Contacts → CRM sync** | Keeps HubSpot fed after each conversation: contact identity, call summaries, memory entities, deals, and interaction history, each switchable on its own. |
+
+Data flows both ways: Bland reads the objects above from HubSpot, and writes records and activity back. Nothing in HubSpot is deleted by the integration.
+
+## Before you start
+
+- A HubSpot account where you can install apps (Super admin, or a user with **App Marketplace access** permission).
+- A Bland account. If you do not have one yet, the install flow lets you create one.
+- A Bland workspace to attach the connection to. If you belong to several workspaces, note which one you want to use.
+
+## Install from the HubSpot App Marketplace
+
+1. In the HubSpot App Marketplace, open the **Bland** listing and click **Install app**.
+2. You are taken to Bland. Sign in, or create an account, with your phone number, Google, or SSO.
+3. Bland shows which workspace the connection will be added to. Click **Continue to HubSpot**.
+4. HubSpot asks you to choose the HubSpot account to connect and to approve the permissions Bland requests. Review the list and click **Connect app**.
+5. HubSpot returns you to Bland for one last step. Click **Finish connecting**. A small window opens to confirm the authorization with HubSpot and closes on its own.
+6. You are returned to HubSpot. The connection is live.
+
+The permissions screen lists exactly what Bland can access. Bland only requests access to the CRM objects described in [What the app does](#what-the-app-does); it does not request access to marketing email, billing, or account settings.
+
+<Note>
+If you are not signed in to HubSpot when you click Install, HubSpot asks you to sign in first and may send a confirmation code to your email. This is HubSpot's own login verification, not part of the Bland app.
+</Note>
+
+## Connect from inside Bland instead
+
+You can also start the connection from Bland, without going through the Marketplace:
+
+1. In the Bland dashboard, open **Tools** → **Connections** (the **Integrations** tab in the legacy dashboard).
+2. Click **Add connection** and choose **HubSpot**.
+3. Give the connection a name and click **Connect**. HubSpot's authorization window opens; approve it.
+
+Either route produces the same connection, and you can see it afterwards under **Tools** → **Connections**.
+
+## Configure the integration
+
+A connection does nothing on its own until you point a feature at it.
+
+- **Give an agent a HubSpot tool.** Open the agent, go to **Tools**, add a HubSpot action (for example *Create contact* or *Search contacts by property*), and pick the connection. Map the inputs the agent should fill in from the conversation. See [Integration Tools](/tutorials/tools/integration-tools) for the shared concepts.
+- **Start calls from HubSpot changes.** Open **Dispatch** → **Triggers**, create a trigger, choose a HubSpot event such as *Deal created*, pick the connection, add any conditions, and choose the agent that should act. See [Triggers](/agents/triggers).
+- **Keep HubSpot updated after conversations.** Open **Contacts**, choose **CRM sync**, pick HubSpot, and switch on the categories you want written back. See [Conversations](/agents/conversations).
+
+You can connect more than one HubSpot account to a workspace and choose per tool or trigger which one to use.
+
+## Using the integration
+
+- **During a call or chat**, when an agent reaches a step with a HubSpot tool, it reads from or writes to HubSpot in real time, and the result is available to the rest of the conversation. Every tool call is recorded in the conversation's log.
+- **Automatically**, a trigger fires when Bland detects a matching HubSpot event. Bland polls HubSpot every few minutes, so a trigger reacts within that window, not instantly.
+- **After each conversation**, CRM sync writes the categories you enabled to the matching HubSpot contact, creating one if none matches.
+
+## Disconnect a HubSpot account
+
+1. In Bland, open **Tools** → **Connections**.
+2. Open the HubSpot connection and click **Disconnect**.
+
+After disconnecting, tools that used the connection fail at that step, triggers on HubSpot events stop firing, and CRM sync stops. Data already written to either side stays where it is: Bland does not delete anything from HubSpot, and conversation records in Bland are kept. Reconnect at any time by repeating either install route; agents, triggers, and sync settings pick the connection back up once you select it again.
+
+## Uninstall the app from HubSpot
+
+1. In HubSpot, go to **Settings** → **Integrations** → **Connected apps**.
+2. Find **Bland** and choose **Uninstall**.
+
+Uninstalling revokes Bland's access tokens. Within a few minutes Bland marks the connection as disconnected and shows that state under **Tools** → **Connections**; the consequences are the same as disconnecting from Bland. Your HubSpot data is not changed by uninstalling.
+
+## Troubleshooting
+
+| Symptom | What to do |
+| :---- | :---- |
+| "This installation link is invalid or has expired." | The install link is valid for 15 minutes. Go back to the Marketplace listing and click **Install app** again. |
+| The authorization window did not open at **Finish connecting**. | Your browser blocked the pop-up. Allow pop-ups for `bland.ai` and click **Finish connecting** again. |
+| The connection was added to the wrong workspace. | Disconnect it under **Tools** → **Connections**, switch workspaces in Bland, and run the install again. |
+| A trigger is not firing. | Bland checks HubSpot every few minutes. If it still does not fire, open the trigger and confirm the connection is still **Connected** and the event and conditions match the record. |
+
+## Support
+
+Email [support@bland.ai](mailto:support@bland.ai), or use the chat in the Bland dashboard. Include your workspace name and, for a specific conversation, its call ID.
