@@ -29,7 +29,7 @@ description: "Create a full-access or restricted API key for your organization."
 
   When present, it must be a non-empty list of `agents:read`, `agents:write`, `calls:read`, `calls:create`, and `calls:stop`. See [Restricted keys](#restricted-keys) for what each one allows.
 
-  Restricted key creation is rolling out by organization. When it is not enabled for yours, the request returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`.
+  Restricted key creation is rolling out by organization. When it is not enabled for yours, the request returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`. When your organization runs on a pinned deployment, the request returns `409` with the error `RESTRICTED_KEYS_UNAVAILABLE`. See [Pinned deployments](#pinned-deployments).
 </ParamField>
 
 ### Response
@@ -39,7 +39,7 @@ description: "Create a full-access or restricted API key for your organization."
 </ResponseField>
 
 <ResponseField name="data.key" type="string">
-  The full API key. This is the only time the full value is returned, so store it securely. Restricted keys start with `org_s_` and are stored hashed, so a lost key cannot be recovered; create a new one.
+  The full API key. This is the only time the full value is returned, so store it securely. Restricted keys start with `org_s_`.
 </ResponseField>
 
 <ResponseField name="data.name" type="string | null">
@@ -62,9 +62,9 @@ You can grant these three permissions:
 
 | Permission | Allows |
 | --- | --- |
-| `agents:write` | Create, edit, publish, and roll back agents and pathways. Includes `agents:read`, which reads definitions, versions, folders, and branches. |
+| `agents:write` | Create, edit, publish, and roll back agents and pathways. Can use your organization's stored secrets and connected credentials in webhooks, tools, and dynamic data. Includes `agents:read`, which reads definitions, versions, folders, and branches. |
 | `calls:read` | Read call logs: details, transcripts, recordings, analysis, and batches. |
-| `calls:create` | Place phone calls, billed to your organization. Includes `calls:stop`, which ends calls in progress. |
+| `calls:create` | Place phone calls, billed to your organization. Can use your organization's stored secrets and connected credentials in webhooks, tools, and dynamic data. Includes `calls:stop`, which ends calls in progress. |
 
 Each permission brings the read or stop access it depends on. A key granted `agents:write` also holds `agents:read`, and a key granted `calls:create` also holds `calls:stop`, so it can end the calls it places. The `scopes` field in the response and in [List API Keys](/api-v1/post/keys-list) shows the full set.
 
@@ -99,6 +99,10 @@ New endpoints are denied to restricted keys until they are assigned a permission
 
 A restricted key keeps working when the member who created it leaves the organization, changes role, or is banned. The key list shows who created each key so an admin can review it, and an admin revokes a key with [Delete API Key](/api-v1/delete/keys-delete). Someone who leaves with a copy of a key keeps its access until an admin deletes it, so revoke keys as part of offboarding.
 
+### Pinned deployments
+
+Restricted keys are not available to organizations on a pinned deployment. Creating one returns `409` with the error `RESTRICTED_KEYS_UNAVAILABLE`, and the dashboard hides the restricted option. Full-access keys work as usual.
+
 ### Keep one full-access key
 
 Your organization must keep at least one full-access key while it has restricted keys. Live calls and dashboard sessions depend on it. [Delete API Key](/api-v1/delete/keys-delete) refuses to delete the last one.
@@ -123,6 +127,18 @@ Your organization must keep at least one full-access key while it has restricted
     "scopes": ["calls:create", "calls:stop", "agents:read", "agents:write"]
   },
   "errors": null
+}
+```
+
+```json Restricted Keys Unavailable
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "RESTRICTED_KEYS_UNAVAILABLE",
+      "message": "string"
+    }
+  ]
 }
 ```
 
