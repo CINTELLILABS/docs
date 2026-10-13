@@ -1,0 +1,104 @@
+---
+title: "Submit Cancellation Feedback"
+api: "POST https://api.bland.ai/billing/cancel_agent_phone/feedback"
+description: "Answer the optional Agent Phone Plan offboarding survey after you've canceled."
+---
+
+### Overview
+
+Sends answers to the offboarding survey after you've [canceled the Agent Phone Plan](/api-v1/post/agent-phone-plan-cancel) without them. The questions and allowed answers are the same ones the cancel returns as `cancellation_survey`. Sending answers again replaces your earlier ones.
+
+This works only after a cancel. An organization whose plan is still active, or that never had one, gets `409 CONFLICT`.
+
+<Note>
+Requires an organization API key that belongs to an admin or owner of the organization.
+</Note>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your organization API key.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="feedback" type="object" required>
+  Your answers. Every field is optional, but at least one must have an answer.
+
+  <Expandable title="properties">
+    <ParamField body="use_cases" type="string[]">
+      What the plan was mainly used for. Any of `answering_calls`, `booking_appointments`, `outbound_calls`, `texting`, `testing`, `other`.
+    </ParamField>
+    <ParamField body="use_case_other" type="string">
+      What else it was used for, when `use_cases` includes `other`. Up to 500 characters.
+    </ParamField>
+    <ParamField body="reason" type="string">
+      The main reason for canceling. One of `too_expensive`, `not_used_enough`, `did_not_work`, `switching_service`, `short_term`, `other`.
+    </ParamField>
+    <ParamField body="reason_detail" type="string">
+      The service you're switching to (with `switching_service`), or the reason (with `other`). Up to 500 characters.
+    </ParamField>
+    <ParamField body="stay_suggestion" type="string">
+      What would have made you stay. Up to 500 characters.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="data.submitted" type="boolean">
+  `true` once your answers are saved.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/billing/cancel_agent_phone/feedback \
+  -H "authorization: <org-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feedback": {
+      "use_cases": ["texting", "other"],
+      "use_case_other": "Screening spam calls",
+      "reason": "short_term",
+      "stay_suggestion": "A way to pause the plan"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": { "submitted": true },
+  "errors": null
+}
+```
+
+```json No answers (400)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "feedback must answer at least one question."
+    }
+  ]
+}
+```
+
+```json Plan not canceled (409)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CONFLICT",
+      "message": "This organization has no canceled Agent Phone Plan to leave feedback on."
+    }
+  ]
+}
+```
+</ResponseExample>
