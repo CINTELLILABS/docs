@@ -1,18 +1,18 @@
 ---
 title: "Norm plugin"
-description: "Install norm@bland to build, migrate, validate, and test Bland v2 agents from your coding agent."
+description: "Install norm@bland to build, migrate, validate, and test Bland Agents from your coding agent."
 ---
 
-The **Norm plugin** (`norm@bland`) is the recommended setup for building Bland v2 agents from your coding agent. It connects to your account through the [Bland MCP server](/integrations/mcp/overview) and supplies the skills and commands to build, migrate, validate, and test agents.
+The **Norm plugin** (`norm@bland`) is the recommended setup for building Bland Agents from your coding agent. It connects to your account through the [Bland MCP server](/integrations/mcp/overview) and supplies the skills and commands to build, migrate, validate, and test agents.
 
 One plugin, three layers:
 
 - **The hosted MCP server** at `api.bland.ai/v1/mcp` reads and writes against your account: agents, versions, simulations, call logs, analytics, and docs search.
-- **Skills** teach the agent how to work with v2 authoring, runtime behavior, evaluations, call analysis, tools, knowledge, environments, channels, and launch workflows.
+- **Skills** teach the agent how to work with Bland Agents authoring, runtime behavior, evaluations, call analysis, tools, knowledge, environments, channels, and launch workflows.
 - **The `/norm:*` commands** guide new builds and migrations using raw JSON agent snapshots. Deterministic builders and audits preserve source content, and a convergence loop checks the saved version against simulations.
 
 <Note>
-  `norm@bland` is the v2-agent plugin. The separate `bland@bland` plugin covers v1 pathways, personas, and the file-based pathway workspace. Install both only if you work on both platforms. The `/bland:*` workspace commands are not part of Norm.
+  `norm@bland` is the plugin for Bland Agents. The separate `bland@bland` plugin covers v1 pathways, personas, and the file-based pathway workspace. Install both only if you work on both platforms. The `/bland:*` workspace commands are not part of Norm.
 </Note>
 
 Using VS Code, Windsurf, Gemini CLI, or a client the plugin does not support? Connect the server directly from the [MCP clients](/integrations/mcp/clients) page.
@@ -51,10 +51,10 @@ Using VS Code, Windsurf, Gemini CLI, or a client the plugin does not support? Co
     Restart the app afterwards so the MCP connection picks it up.
   </Tab>
   <Tab title="Cursor">
-    Norm's Cursor manifest is in the [`v2` directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2), but currently references a missing `mcp.json`. Do not assume the package configures the hosted connection. Until that packaging is fixed, use the [direct Cursor MCP setup](/integrations/mcp/clients/cursor) for server access. The root Bland plugin is the v1 package, not a substitute for Norm's v2 skills.
+    Norm's Cursor manifest is in the [Norm package directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2), but currently references a missing `mcp.json`. Do not assume the package configures the hosted connection. Until that packaging is fixed, use the [direct Cursor MCP setup](/integrations/mcp/clients/cursor) for server access. The root Bland plugin is the v1 package, not a substitute for Norm's Bland Agents skills.
   </Tab>
   <Tab title="Codex">
-    Norm includes a Codex manifest in the [`v2` directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2). The repository's root Codex marketplace currently lists the v1 `bland` plugin, not Norm; do not select that entry for v2 work.
+    Norm includes a Codex manifest in the [Norm package directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2). The repository's root Codex marketplace currently lists the v1 `bland` plugin, not Norm; do not select that entry for Bland Agents work.
 
     If your host cannot install the Norm package, clone `CINTELLILABS/bland-plugins`, tell your agent to follow `v2/commands` and `v2/skills`, and connect through the [direct Codex MCP setup](/integrations/mcp/clients/codex). This is the fallback used by Bland's migration setup prompt for other coding agents.
 
@@ -82,11 +82,11 @@ Using VS Code, Windsurf, Gemini CLI, or a client the plugin does not support? Co
 
 ### Already using the Bland plugin?
 
-Install `norm@bland` alongside it and configure Norm's API key for the correct organization. Use `/norm:*` for v2 agents and `/bland:*` only for v1 pathway work. Do not uninstall Norm or replace it with `bland@bland` for v2 work.
+Install `norm@bland` alongside it and configure Norm's API key for the correct organization. Use `/norm:*` for Bland Agents and `/bland:*` only for v1 pathway work. Do not uninstall Norm or replace it with `bland@bland` for Bland Agents work.
 
 ## The flow, start to production
 
-1. **Build it.** `/norm:build Build a v2 booking agent that collects name, callback number, and a time, then confirms it back.` Norm proposes the architecture, authors a JSON snapshot, audits it, and asks before saving an agent version.
+1. **Build it.** `/norm:build Build a Bland Agent for booking that collects name, callback number, and a time, then confirms it back.` Norm proposes the architecture, authors a JSON snapshot, audits it, and asks before saving an agent version.
 2. **Give it tools and knowledge.** Ask Norm to connect your booking API and attach the information callers need. Review every integration's read and write behavior before testing.
 3. **Prove it works.** `/norm:simulate <agent_id> Verify booking, unavailable times, and requests for a human.` Ask Norm to pin the saved candidate version explicitly and verify the run's recorded version. An agent ID alone does not pin a version: unpinned agent simulations use the latest development head. Norm inspects failure traces and repeats the full suite after changes. Untestable lanes are reported as uncovered.
 4. **Define what to measure.** Ask for evaluation judges and dispositions for booking success, appointment time, and the reason a caller did not book.
@@ -96,14 +96,14 @@ Install `norm@bland` alongside it and configure Norm's API key for the correct o
 ## Migrate an existing v1 pathway
 
 ```text
-/norm:migrate Migrate my v1 pathway <PATHWAY_ID> into a new v2 agent named "Booking".
+/norm:migrate Migrate my v1 pathway <PATHWAY_ID> into a new Bland Agent named "Booking".
 Show me the proposed architecture, ask before the first version push,
 and finish with the full simulation suite and migration report.
 ```
 
-Norm uses your v1 export as a read-only source, carries its content into a v2 snapshot, audits parity, and verifies the new agent. Migration does not move phone numbers or change live v1 traffic. See [Migrate to agents](/platform/migrate-to-agents) for the full walkthrough.
+Norm uses your v1 export as a read-only source, carries its content into a Bland Agents snapshot, audits parity, and verifies the new agent. Migration does not move phone numbers or change live v1 traffic. See [Migrate to agents](/platform/migrate-to-agents) for the full walkthrough.
 
-## Edit an existing v2 agent
+## Edit an existing Bland Agent
 
 Ask Norm to fetch the agent and make a specific change while preserving stable IDs. It works with raw JSON snapshots rather than the v1 Markdown/YAML pathway workspace. Run `/norm:validate` on the updated snapshot, save a new version with approval, and use `/norm:simulate` to verify that exact version before promotion.
 
@@ -111,8 +111,8 @@ Ask Norm to fetch the agent and make a specific change while preserving stable I
 
 | Command | What it does |
 |---------|--------------|
-| `/norm:build <request>` | Design, author, audit, save, and verify a new v2 agent. |
-| `/norm:migrate <request>` | Migrate a v1 pathway or persona into a v2 agent: discover, architect, author, audit, save, and simulate. |
+| `/norm:build <request>` | Design, author, audit, save, and verify a new Bland Agent. |
+| `/norm:migrate <request>` | Migrate a v1 pathway or persona into a Bland Agent: discover, architect, author, audit, save, and simulate. |
 | `/norm:validate <snapshot>` | Audit a JSON snapshot for structure and routing problems, plus source parity when migrating. |
 | `/norm:analytics <request>` | Build or edit an agent's analytics Sankey, or create a conversation cohort. |
 | `/norm:simulate <agent_id, what to verify>` | Run and grade simulations, inspect failures, and verify a full suite on the exact saved version. |
@@ -121,19 +121,19 @@ Ask Norm to fetch the agent and make a specific change while preserving stable I
 
 On hosts that load the Norm package, skills are available when the conversation matches their description. Use the host's skill-loading behavior; having a manifest in the repository does not by itself verify a working installation.
 
-| Skill | Use when |
+| Skill area | Use when |
 |-------|----------|
-| v2-authoring, v2-snapshot, v2-runtime | Design new agents, author snapshots, and understand routing and execution. |
-| v2-migration | Carry v1 content into v2 without losing prompts, rules, tools, or pinned versions. |
-| v2-maintenance | Update and debug existing agents with stable IDs and concurrency checks. |
-| v2-testing, evaluations | Run simulations, inspect traces, create judges, and verify exact versions. |
-| v2-lifecycle, agent-environments, agent-launch | Manage versions, environment values, staging checks, promotion, and launch readiness. |
-| analytics-authoring, analytics-cohorts, call-analysis | Build analytics views, find conversation cohorts, and investigate calls with evidence. |
-| tool-library, knowledge-sources | Create and test tools, manage secrets by reference, and attach knowledge. |
-| dispositions | Define, test, and publish post-call outputs. |
-| phone-numbers, agent-channels, outbound-calls | Bind numbers, configure channels, and place calls with approval. |
-| automations, triage-issues | Configure triggers and track failures with evidence. |
-| api-workspace | Find product references and work through the current Bland MCP/API schemas. |
+| Authoring, snapshots, and runtime | Design new agents, author snapshots, and understand routing and execution. |
+| Migration | Carry v1 content into Bland Agents without losing prompts, rules, tools, or pinned versions. |
+| Maintenance | Update and debug existing agents with stable IDs and concurrency checks. |
+| Testing and evaluations | Run simulations, inspect traces, create judges, and verify exact versions. |
+| Lifecycle, environments, and launch | Manage versions, environment values, staging checks, promotion, and launch readiness. |
+| Analytics and call analysis | Build analytics views, find conversation cohorts, and investigate calls with evidence. |
+| Tools and knowledge | Create and test tools, manage secrets by reference, and attach knowledge. |
+| Dispositions | Define, test, and publish post-call outputs. |
+| Phone numbers, channels, and calls | Bind numbers, configure channels, and place calls with approval. |
+| Automations and issues | Configure triggers and track failures with evidence. |
+| API workspace | Find product references and work through the current Bland MCP/API schemas. |
 
 ## Safety
 
@@ -160,7 +160,7 @@ On hosts that load the Norm package, skills are available when the conversation 
     The in-app version of Norm in the Bland dashboard.
   </Card>
   <Card title="Agent builder" icon="diagram-project" href="/agents/agent-builder">
-    The v2 agents Norm builds and edits.
+    Build and edit Bland Agents with Norm.
   </Card>
 </CardGroup>
 
