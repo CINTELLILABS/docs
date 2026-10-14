@@ -51,10 +51,12 @@ Using VS Code, Windsurf, Gemini CLI, or a client the plugin does not support? Co
     Restart the app afterwards so the MCP connection picks it up.
   </Tab>
   <Tab title="Cursor">
-    Select **Norm for v2 Agents**, not the v1 Bland plugin. Its Cursor manifest is in the [`v2` directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2) of `CINTELLILABS/bland-plugins`. Open **Plugins → Configure** and set `BLAND_API_KEY`. Reload the window and confirm the Norm plugin's MCP connection is available.
+    Norm's Cursor manifest is in the [`v2` directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2), but currently references a missing `mcp.json`. Do not assume the package configures the hosted connection. Until that packaging is fixed, use the [direct Cursor MCP setup](/integrations/mcp/clients/cursor) for server access. The root Bland plugin is the v1 package, not a substitute for Norm's v2 skills.
   </Tab>
   <Tab title="Codex">
-    Use the Norm plugin package from the [`v2` directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2), which includes a Codex manifest. The repository's root Codex marketplace currently lists the v1 `bland` plugin, not Norm; do not select that entry for v2 work.
+    Norm includes a Codex manifest in the [`v2` directory](https://github.com/CINTELLILABS/bland-plugins/tree/main/v2). The repository's root Codex marketplace currently lists the v1 `bland` plugin, not Norm; do not select that entry for v2 work.
+
+    If your host cannot install the Norm package, clone `CINTELLILABS/bland-plugins`, tell your agent to follow `v2/commands` and `v2/skills`, and connect through the [direct Codex MCP setup](/integrations/mcp/clients/codex). This is the fallback used by Bland's migration setup prompt for other coding agents.
 
     Set `BLAND_API_KEY` in the environment that launches Codex. Enter it in your own terminal without echoing it or leaving it in shell history:
 
@@ -75,7 +77,7 @@ Using VS Code, Windsurf, Gemini CLI, or a client the plugin does not support? Co
 </Warning>
 
 <Info>
-  On Codex, ask for the same work in plain language; it loads Norm's skills rather than Claude Code slash commands. The enforced Stop-hook convergence gate runs only in Claude Code. On other hosts, follow the audit, save, and simulation checks explicitly.
+  On Codex, ask for the same work in plain language; it loads Norm's skills rather than Claude Code slash commands. The Stop-hook convergence gate runs only in Claude Code, after loop initialization. It checks the local audit and recorded save/simulation results, but can release on iteration limits, repeated failures, or a timeout. Those releases are incomplete, not passing verification. On other hosts, follow the audit, save, and simulation checks explicitly.
 </Info>
 
 ### Already using the Bland plugin?
@@ -117,7 +119,7 @@ Ask Norm to fetch the agent and make a specific change while preserving stable I
 
 ## Skills
 
-Skills load automatically when the conversation matches their description, on every host that reads `SKILL.md`.
+On hosts that load the Norm package, skills are available when the conversation matches their description. Use the host's skill-loading behavior; having a manifest in the repository does not by itself verify a working installation.
 
 | Skill | Use when |
 |-------|----------|
@@ -138,11 +140,11 @@ Skills load automatically when the conversation matches their description, on ev
 - Confirm the organization through Norm's own MCP connection before the first write. Multiple Bland connections in one session can belong to different organizations.
 - Review and approve writes, paid actions, calls, and promotions. Approval to save a version is not approval to move live traffic.
 - Simulations can invoke real integrations. Keep write-side actions out of routine tests unless you explicitly authorize them, and report uncovered lanes rather than claiming they passed.
-- Never bypass required staging checks to promote a failing candidate.
+- Review the saved staging evaluation policy. When it enables required evaluations, run and pass them for the candidate before promotion. Norm should not use `force` or weaken the policy to bypass a failure.
 - Your API key stays in the host's configuration or environment, not the chat.
 
 <Info>
-  Advanced: configure `bland_api_url` in Claude's plugin settings, or `BLAND_API_URL` in Cursor, to target a staging server. Codex's packaged manifest uses the production URL. A keyless Claude install supports local builders and audits, but API operations still need a configured key or explicit approval to use a project-supplied Bland connection.
+  Advanced: configure `bland_api_url` in Claude's plugin settings to target a staging server. Codex's packaged manifest uses the production URL. For Cursor's direct MCP setup, set the server URL in your MCP configuration rather than relying on the incomplete plugin package. A keyless Claude install supports local builders and audits, but API operations still need a configured key or explicit approval to use a project-supplied Bland connection.
 </Info>
 
 ## Related
