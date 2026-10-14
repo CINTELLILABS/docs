@@ -88,7 +88,7 @@ Install `norm@bland` alongside it and configure Norm's API key for the correct o
 
 1. **Build it.** `/norm:build Build a v2 booking agent that collects name, callback number, and a time, then confirms it back.` Norm proposes the architecture, authors a JSON snapshot, audits it, and asks before saving an agent version.
 2. **Give it tools and knowledge.** Ask Norm to connect your booking API and attach the information callers need. Review every integration's read and write behavior before testing.
-3. **Prove it works.** `/norm:simulate <agent_id> Verify booking, unavailable times, and requests for a human.` Norm runs simulations, inspects failure traces, and repeats the full suite on the changed version. Untestable lanes are reported as uncovered.
+3. **Prove it works.** `/norm:simulate <agent_id> Verify booking, unavailable times, and requests for a human.` Ask Norm to pin the saved candidate version explicitly and verify the run's recorded version. An agent ID alone does not pin a version: unpinned agent simulations use the latest development head. Norm inspects failure traces and repeats the full suite after changes. Untestable lanes are reported as uncovered.
 4. **Define what to measure.** Ask for evaluation judges and dispositions for booking success, appointment time, and the reason a caller did not book.
 5. **Ship safely.** Ask Norm to publish the verified version to staging, check the required evaluations and environment values, and promote only after you approve the exact candidate. Saving a version does not authorize changing live traffic.
 6. **Watch and iterate.** Ask Norm to analyze calls and failures. Use `/norm:analytics` to build a Sankey or conversation cohort, then validate and simulate any agent changes before promoting them.
@@ -138,7 +138,7 @@ On hosts that load the Norm package, skills are available when the conversation 
 ## Safety
 
 - Confirm the organization through Norm's own MCP connection before the first write. Multiple Bland connections in one session can belong to different organizations.
-- Review and approve writes, paid actions, calls, and promotions. Approval to save a version is not approval to move live traffic.
+- Keep your host's tool-approval controls enabled and review writes, paid actions, calls, and promotions. These approval steps are host/operator responsibilities, not a guarantee that the server requires a human click. Approval to save a version is not approval to move live traffic.
 - Simulations can invoke real integrations. Keep write-side actions out of routine tests unless you explicitly authorize them, and report uncovered lanes rather than claiming they passed.
 - Review the saved staging evaluation policy. When it enables required evaluations, run and pass them for the candidate before promotion. Norm should not use `force` or weaken the policy to bypass a failure.
 - Your API key stays in the host's configuration or environment, not the chat.
