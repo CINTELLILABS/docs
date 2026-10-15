@@ -2,23 +2,25 @@
 noindex: true
 title: "Update SMS Number"
 api: "POST https://api.bland.ai/v1/sms/update"
-description: "Update your SMS agent's configuration."
+description: "Alias of the Update SMS Configuration endpoint. Update an SMS number's agent settings, webhook, timeouts, and auto-reply."
 ---
 
 <Info>
   **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
 </Info>
 
+`POST /v1/sms/update` is an alias of `POST /v1/sms/number/update`. It accepts the same body and returns the same response. For the full list of parameters, including `auto_reply_enabled`, see [Update SMS Configuration](/api-v1/post/sms-update).
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
 </ParamField>
+
 ### Body
 
-
-<ParamField body="phone_number" type="string">
-The phone number to update.
+<ParamField body="phone_number" type="string" required>
+  The E.164 formatted phone number to update. It must belong to the authenticated user.
 </ParamField>
 
 <ParamField body="channel" type="string" required={false}>
@@ -27,33 +29,32 @@ The channel whose configuration to update. Defaults to `"sms"`. Allowed values: 
 For numbers provisioned for iMessage, the channel is auto-derived from the number's configuration, so you don't have to pass it. See [iMessage](/tutorials/messaging/imessage).
 </ParamField>
 
-<ParamField body="prompt" type="string">
-The prompt for the AI to use when replying. 
+<ParamField body="auto_reply_enabled" type="boolean" required={false}>
+  Whether the agent automatically replies to inbound texts on this number. Defaults to `true`. When `false`, inbound texts are still saved and sent to your webhook and automations, but the agent does not reply.
 </ParamField>
 
-<ParamField body="ignore_keywords" type="array">
-Pass in an array of strings, that if present, the AI should not respond to. Set to `null` to disable.
+<ParamField body="objective" type="string" required={false}>
+  Assistant system prompt or conversational goal.
 </ParamField>
 
-<ParamField body="temperature" type="number">
-The temperature for prompt and underlying model.
+<ParamField body="temperature" type="number" required={false}>
+  The model's temperature setting, controlling creativity.
 </ParamField>
 
 <ResponseExample>
 
 ```json Response
 {
-  "status": "Prompt updated"
+  "data": {
+    "message": "SMS config updated for number +15550001111",
+    "sms_config": {
+      "auto_reply_enabled": false,
+      "objective": "Chat with the user",
+      "temperature": 0
+    }
+  },
+  "errors": null
 }
 ```
 
 </ResponseExample>
-
-
-
-
-
-
-
-
-
