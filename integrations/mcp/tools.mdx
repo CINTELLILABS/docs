@@ -17,6 +17,30 @@ The Bland MCP server exposes the tools below plus 3 prompts. All of them are sco
 | `stop_call` | Destructive | End a call in progress, or cancel one that is still queued. |
 | `list_voices` | Read | List Bland's curated voices, the recommended set for `create_call`. Any voice the user names still works. |
 
+#### Choose the call resource before invoking a tool
+
+Follow [Choose what runs your call](/api-v1/post/calls#choose-what-runs-your-call): resolve whether the user wants a dashboard agent, persona, or pathway before sending. Honor an established choice, verify the exact ID and environment or version, and ask before changing routes.
+
+`create_call` accepts `phoneNumber`, `task`, `pathwayId`, `voice`, `from`, and `firstSentence`. It does **not** accept `agent_id`, `agent_version`, `persona_id`, or pathway-version selectors. Do not replace an agent choice with `pathwayId` just to fit this schema.
+
+When available in your connection, use `call_bland_api` with `method: "POST"`, `path: "/v1/calls"`, and the snake_case request body from [Send Call](/api-v1/post/calls#request-examples). This supports agent, persona, and version-specific pathway dispatch. For example, after verifying the destination and agent ID:
+
+```json
+{
+  "method": "POST",
+  "path": "/v1/calls",
+  "body": {
+    "phone_number": "+14155550100",
+    "agent_id": "00000000-0000-4000-8000-000000000001",
+    "agent_version": "production"
+  }
+}
+```
+
+Use `list_agents`, `get_agent`, and `list_agent_environments` to verify an agent and its deployment before calling. If the required tool or route is unavailable, explain the limitation and ask the user how to proceed. Do not silently use a persona or pathway instead.
+
+After submission, retain the `call_id`, check the actual source and destination numbers and resource/version association, and verify agent calls under the intended agent's Conversations view. The `create_call` result and call-log widget alone do not establish agent attribution. Report a successful call and an attribution problem separately, without placing a duplicate call.
+
 ### Pathways
 
 | Tool | Access | Description |
