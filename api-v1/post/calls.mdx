@@ -12,6 +12,129 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 International calls need a completed purchase: buy at least $5 of credits in the [dashboard](https://app.bland.ai/dashboard/pay) under Billing, or turn on auto-recharge. Numbers on the [Agent Phone Plan](/platform/agent-phone-plan) call the US and Canada only, regardless of your credit balance.
 </Note>
 
+## Choose what runs your call
+
+Before sending, choose the resource you want to run. If you want the call associated with a Bland Agent in the current dashboard, use **`agent_id`**.
+
+| Dispatch choice | What runs | Verify before sending |
+| --- | --- | --- |
+| **Agent ID** (`agent_id`) | A saved Bland Agent version. | The exact agent ID, organization, and intended environment or version. Requires an organization API key. |
+| **Persona ID** (`persona_id`) | A persona's reusable call configuration and routing. | The exact persona ID, selected persona version, configuration, and any pathway overrides. |
+| **Pathway ID** (`pathway_id`) | A conversational pathway directly. | The exact pathway ID, intended pathway version, and required `request_data` variables. |
+
+These IDs identify different objects. They are not interchangeable, even when names or prompts match. A pathway compiled from an agent does not make pathway dispatch equivalent to agent dispatch.
+
+The caller ID (`from`) is a separate choice. Using a phone number assigned to an agent does not select that agent for an outbound call.
+
+### Instructions for AI assistants
+
+1. **Resolve the dispatch choice before sending.** If the user has not selected a resource type, ask: "Should I send this call through a dashboard agent, a persona, or a specific pathway?" Make the choices concrete with the resources you found. For example: "I found the dashboard agent Taylor and a pathway named Taylor - Cardholder status check. Which should run the call?" Recommend agent dispatch when the user wants the conversation under that dashboard agent.
+2. **Honor an established choice.** If the user already chose a resource type and target, use it without asking again. Keep that choice for subsequent calls in the same agreed task unless the user changes it or a new ambiguity arises. A name alone is insufficient when it matches multiple resource types.
+3. **Verify the exact resource.** Check its type, account or organization, name, ID, and environment or version. Read the current endpoint or tool schema. Do not substitute an agent's persona or pathway because its ID is easier to obtain, or combine selectors without checking the supported behavior below.
+4. **Ask before changing routes.** If the requested route is unavailable, explain the limitation and ask whether the user wants an alternative. Do not silently fall back to another resource type.
+5. **Verify the resulting conversation.** Save the `call_id`, check the actual source and destination numbers, and confirm the recorded resource and version. For agent dispatch, also check the intended agent's Conversations view. Report call success and an attribution problem separately. Do not place a duplicate call just to repair dashboard visibility.
+
+### Request examples
+
+Each example sends one call. Replace the example destination and resource ID with values you have verified in the intended organization. Export your key as `BLAND_API_KEY`. Supply any variables required by your agent, persona, or pathway in `request_data`.
+
+<Tabs>
+  <Tab title="Bland Agent">
+    Use `agent_id` with an organization API key. This example explicitly selects the production pin and production environment variables. Do not include `persona_id` or `pathway_id`.
+
+    ```bash
+    curl --request POST https://api.bland.ai/v1/calls \
+      --header "Authorization: Bearer $BLAND_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_number": "+14155550100",
+        "agent_id": "00000000-0000-4000-8000-000000000001",
+        "agent_version": "production"
+      }'
+    ```
+
+    Find the conversation under **your agent > Conversations**. Verify the recorded agent and version; a successful submission alone does not prove the intended version ran.
+  </Tab>
+  <Tab title="Persona">
+    Use `persona_id` to run its reusable configuration. This example selects the production persona version.
+
+    ```bash
+    curl --request POST https://api.bland.ai/v1/calls \
+      --header "Authorization: Bearer $BLAND_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_number": "+14155550100",
+        "persona_id": "00000000-0000-4000-8000-000000000002",
+        "persona_version": "production"
+      }'
+    ```
+
+    Find the call under **All agents > Conversations**, using its `call_id`. Do not assume it belongs to a Bland Agent because the persona uses a related pathway or number.
+  </Tab>
+  <Tab title="Pathway">
+    Use `pathway_id` to run that pathway directly. This example selects its production version.
+
+    ```bash
+    curl --request POST https://api.bland.ai/v1/calls \
+      --header "Authorization: Bearer $BLAND_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_number": "+14155550100",
+        "pathway_id": "00000000-0000-4000-8000-000000000003",
+        "pathway_version": "production"
+      }'
+    ```
+
+    Find the call under **All agents > Conversations**, using its `call_id`. A matching pathway name or a description referencing an agent ID does not establish agent attribution.
+  </Tab>
+</Tabs>
+
+### Selector combinations and precedence
+
+- `agent_id` cannot be combined with `persona_id` or `pathway_id`; the API rejects the combination. `agent_version` requires `agent_id`. The agent graph drives the call, so omit `task` on agent requests.
+- Agent call settings supply defaults. Explicit call settings such as `voice`, `record`, and `max_duration` override their agent defaults. Explicit `request_data` and `metadata` replace their respective default objects, including when you pass `{}`.
+- A persona can be combined with `pathway_id` and `pathway_version` to override its pathway routing. An explicit `persona_settings` object takes precedence over those pathway overrides. For versioned personas, stored call configuration is applied over matching top-level request fields. Legacy persona presets apply the request over the preset instead. Inspect the persona configuration rather than assuming all request fields win.
+- A direct pathway request does not need `task`; its graph controls the conversation. `request_data` supplies call variables.
+
+<Warning>
+Call completion and agent attribution are separate checks. A persona or pathway call can complete and appear under All agents without appearing under the intended Bland Agent. Check the recorded association and dashboard view instead of inferring attribution from a name, prompt, description, or caller ID.
+</Warning>
+
+<RequestExample>
+```bash Bland Agent
+curl --request POST https://api.bland.ai/v1/calls \
+  --header "Authorization: Bearer $BLAND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "phone_number": "+14155550100",
+    "agent_id": "00000000-0000-4000-8000-000000000001",
+    "agent_version": "production"
+  }'
+```
+
+```bash Persona
+curl --request POST https://api.bland.ai/v1/calls \
+  --header "Authorization: Bearer $BLAND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "phone_number": "+14155550100",
+    "persona_id": "00000000-0000-4000-8000-000000000002",
+    "persona_version": "production"
+  }'
+```
+
+```bash Pathway
+curl --request POST https://api.bland.ai/v1/calls \
+  --header "Authorization: Bearer $BLAND_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "phone_number": "+14155550100",
+    "pathway_id": "00000000-0000-4000-8000-000000000003",
+    "pathway_version": "production"
+  }'
+```
+</RequestExample>
+
 ---
 
 ## Headers
@@ -36,6 +159,29 @@ International calls need a completed purchase: buy at least $5 of credits in the
 
 <ParamField body="phone_number" type="string" required>
   The phone number to call. Must be a valid phone number in [E.164](https://en.wikipedia.org/wiki/E.164) format.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  The UUID of a Bland Agent in the current organization. Requires an organization API key. Runs the agent's saved graph and records the agent/version association on the call.
+
+  Use this when the conversation should belong to a dashboard agent. Do not combine it with `persona_id` or `pathway_id`. Omit `task` because the agent graph supplies the instructions. See [Choose what runs your call](#choose-what-runs-your-call).
+</ParamField>
+
+<ParamField body="agent_version" type="string">
+  Selects the agent version and environment. Requires `agent_id`.
+
+  | Value | Version selected | Environment variables |
+  | --- | --- | --- |
+  | Omitted | Production pin, eligible for active experiment routing. | Production |
+  | `"production"` | Production pin, bypassing experiments. | Production |
+  | `"staging"` | Staging pin, bypassing experiments. | Staging |
+  | `"dev"` or `"latest"` | Latest saved version on the main line, bypassing experiments. | Dev |
+  | A semantic version such as `"1.2.0"` | That published version, bypassing experiments. | Dev |
+  | `"branch:<name>"` | The open branch's head, bypassing experiments. | Dev |
+
+  A semantic version or branch selector uses dev variables even if the same version is deployed to production or staging. Use an environment label when you need that environment's variables. Branch names contain 1 to 64 letters, digits, underscores, periods, or hyphens.
+
+  If the agent is unavailable, the selected environment has no deployed version, or preparation fails, inspect the API error before retrying. Do not replace the requested route with a persona or pathway without the user's choice.
 </ParamField>
 
 <ParamField body="voice" type="string" default="Karen">
@@ -63,12 +209,12 @@ International calls need a completed purchase: buy at least $5 of credits in the
   ```
 </ParamField>
 
-<ParamField body="pathway_version" type="integer">
-  The version number of the pathway to use for the call. Defaults to the production version.
+<ParamField body="pathway_version" type="integer | string">
+  Select a numeric pathway version, `"production"`, or `"staging"`. Omitted, `0`, and `"production"` select production. A missing numeric version can fall back to production, so verify the resolved version when an exact version matters.
 </ParamField>
 
-<ParamField body="task" type="string" required>
-  Note: Do not specify if using a pathway.
+<ParamField body="task" type="string">
+  Required when you do not supply `agent_id`, `persona_id`, or `pathway_id`. Do not specify it for agent or pathway dispatch.
 
   Provide instructions, relevant information, and examples of the ideal conversation flow.
 
@@ -91,9 +237,13 @@ International calls need a completed purchase: buy at least $5 of credits in the
 
   Personas act as pre-configured templates that automatically apply a configuration when you pass a persona_id to an outbound call. Think of them as "call presets" that you can reuse across multiple calls.
 
-  When using a persona_id, any parameters specified in your request body will override the corresponding parameters from the persona's configuration.
+  Check the selected persona's stored configuration and [selector precedence](#selector-combinations-and-precedence) before applying overrides. `persona_id` cannot be combined with `agent_id`.
 
   You can access your persona IDs by clicking the "Personas" button at the bottom of the Send Call page, and then "Use and Manage".
+</ParamField>
+
+<ParamField body="persona_version" type="string" default="production">
+  For versioned personas, selects `"production"` or `"draft"`. If `"draft"` is requested but no draft exists, the server uses production when available. Verify that the intended version exists before sending.
 </ParamField>
 
 ### Model Parameters
