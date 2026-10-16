@@ -80,9 +80,47 @@ A knowledge source uploaded and never tagged is a different case. It is in your 
 
 **Variables to extract** holds key and value pairs the agent pulls out of the conversation and reuses later in the same call. A caller's name, a date they asked for, a member number.
 
-The section says so plainly: "Key:value pairs the agent extracts to reuse during the conversation. Adds turn latency."
+The section says so plainly: "Capture values to reuse during the conversation. Extraction adds latency to each turn."
 
 Take that last part seriously. Every variable is work the agent does mid-conversation, and each one costs a little response time. Extract what you will use. Skip what you will not.
+
+Each variable has a type: **String**, **Number**, **Boolean**, or **JSON**. A fifth option, **Capture as**, turns the variable into a value the agent actively collects and confirms with the caller.
+
+### Capture caller details with Capture as
+
+Use **Capture as** for details that have to be exactly right, like a caller's name, callback number, email, or account ID. A captured variable is asked for, read back, and confirmed before the agent writes it.
+
+To set it up:
+
+1. In **Variables to extract**, open the type menu on a variable's row.
+2. Select **Capture as**, then pick what the variable holds from the submenu.
+3. Drag the rows by their handles into the order you want the agent to ask for them.
+
+The submenu groups the choices:
+
+| Group | Choices |
+| --- | --- |
+| Name | Full name, First name, Middle name, Last name, Honorific, Suffix |
+| Phone | Phone number |
+| Address | Full address, Street address, Unit, City, State, ZIP code, Country |
+| Other | Email, ID |
+
+Capture is opt-in. The agent never infers it from a variable's name, so a variable named `email` with a **String** type is extracted the ordinary way. To turn capture off, pick a plain type again.
+
+How captured values behave on a call:
+
+- **Capture starts on entry.** The agent asks for the first captured value in its first reply on that prompt or step, and mentions the others so it can follow your prompt's order.
+- **Callers can answer out of order.** If the caller gives a different captured value, the agent takes it and comes back to the one it asked for.
+- **Whole or part matters.** A variable set to **Full name** or **Full address** takes whatever the caller gives. A variable set to one part, like **Last name** or **ZIP code**, asks for that part if the caller leaves it out.
+- **One value per variable.** Phone numbers, emails, and IDs are collected one per variable, so you can capture two of a kind on one step. Name them clearly, like `work_email` and `personal_email`, because the agent refers to each one by its variable name.
+- **Emails are spelled and confirmed.** The agent reads back the part before the @ letter by letter and asks the caller to spell it if they only said it. The domain is read as spoken, and the address is saved in lowercase.
+- **Phone numbers are saved in one format.** A US number is saved as `512-555-0187`, or `1-512-555-0187` with a leading 1. Extensions and non-US numbers are saved as the caller gave them.
+- **IDs are read back character by character.** Letters, digits, dashes, slashes, dots, and colons are kept, and the value is saved in capitals.
+- **Spellings are understood the way people say them.** "F as in Frank", spelling-alphabet words like "Bravo", and "double e" all resolve to the letters meant. Callers can also fix a single character, like "an underscore, not a dot".
+
+<Note>
+Capture runs on voice calls and in [test case simulations](/agents/evaluations), so simulated callers hear the same readbacks and confirmations. Web chat, the widget, and SMS conversations do not capture values. **Capture as** is not offered on scheduling steps. It appears in the type menu only when capture is enabled for your organization.
+</Note>
 
 ## Extend the agent with pathways
 
