@@ -29,7 +29,7 @@ description: "Create a full-access or restricted API key for your organization."
 
   When present, it must be a non-empty list of `agents:read`, `agents:write`, `calls:read`, `calls:create`, and `calls:stop`. See [Restricted keys](#restricted-keys) for what each one allows.
 
-  Restricted key creation is rolling out by organization. When it is not enabled for yours, the request returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`. When your organization runs on a pinned deployment, the request returns `409` with the error `RESTRICTED_KEYS_UNAVAILABLE`. See [Pinned deployments](#pinned-deployments).
+  Restricted key creation is rolling out by organization. When it is not enabled for yours, the request returns `403` with the error `SCOPED_KEYS_NOT_ENABLED`. When your organization runs on a pinned deployment, the request returns `409` with the error `RESTRICTED_KEYS_UNAVAILABLE`. See [Pinned deployments](#pinned-deployments). When your organization has no full-access key, the request returns `409` with the error `NO_FULL_ACCESS_KEY`. See [Keep one full-access key](#keep-one-full-access-key).
 </ParamField>
 
 ### Response
@@ -105,7 +105,7 @@ Restricted keys are not available to organizations on a pinned deployment. Creat
 
 ### Keep one full-access key
 
-Your organization must keep at least one full-access key while it has restricted keys. Live calls and dashboard sessions depend on it. [Delete API Key](/api-v1/delete/keys-delete) refuses to delete the last one.
+Your organization must keep at least one full-access key while it has restricted keys. Live calls and dashboard sessions depend on it. [Delete API Key](/api-v1/delete/keys-delete) refuses to delete the last one, and creating a restricted key while your organization has none returns `409` with the error `NO_FULL_ACCESS_KEY`.
 
 <ResponseExample>
 ```json Full access
@@ -124,7 +124,7 @@ Your organization must keep at least one full-access key while it has restricted
   "data": {
     "key": "org_s_4b1e...",
     "name": "Pathway CI",
-    "scopes": ["calls:create", "calls:stop", "agents:read", "agents:write"]
+    "scopes": ["agents:read", "agents:write", "calls:create", "calls:stop"]
   },
   "errors": null
 }
