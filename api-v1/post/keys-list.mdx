@@ -47,7 +47,7 @@ description: "List your organization's API keys and the permissions each one hol
 </ResponseField>
 
 <ResponseField name="data.restricted_keys_available" type="boolean">
-  Whether your organization's deployment supports restricted keys. `false` when your organization runs on a pinned deployment. When `false`, `POST /keys/create` with `scopes` returns `409` with the error `RESTRICTED_KEYS_UNAVAILABLE`. See [Pinned deployments](/api-v1/post/keys-create#pinned-deployments).
+  Whether restricted key creation is currently available for your organization. This is `false` when the rollout is not enabled, your organization runs on a pinned deployment, or the availability check fails. `POST /keys/create` checks again: it returns `403` with `SCOPED_KEYS_NOT_ENABLED` when the rollout is not enabled, or `409` with `RESTRICTED_KEYS_UNAVAILABLE` when enabled but blocked by a pinned deployment. A `false` value alone does not identify the reason. See [Pinned deployments](/api-v1/post/keys-create#pinned-deployments).
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
