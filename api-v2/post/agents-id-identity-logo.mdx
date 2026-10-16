@@ -35,7 +35,7 @@ curl -X POST https://api.bland.ai/v2/agents/{agent_id}/identity/logo \
 ### Body Parameters
 
 <ParamField body="file" type="file" required>
-  The logo image. PNG or JPEG only, at most 2 MB, one file per request. A request with no file returns `400 BAD_REQUEST`, and any other image type is rejected with `Logo must be a PNG or JPEG image`.
+  The logo image. PNG or JPEG only, at most 2 MB, one file per request. A request with no file returns `400 BAD_REQUEST`. Bland checks that the file's contents match its extension. Any other file type, or a file whose contents don't match, returns `400 INVALID_FILE_TYPE`. A file over 2 MB returns `413 FILE_TOO_LARGE`.
 </ParamField>
 
 ### Response
@@ -96,8 +96,8 @@ Returns the full identity in the same shape as [Get Agent Identity](/api-v2/get/
   "data": null,
   "errors": [
     {
-      "error": "BAD_REQUEST",
-      "message": "Logo must be a PNG or JPEG image"
+      "error": "INVALID_FILE_TYPE",
+      "message": "Only these file types are allowed: png, jpg, jpeg."
     }
   ]
 }
