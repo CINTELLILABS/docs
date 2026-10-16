@@ -1,0 +1,116 @@
+---
+title: "Get Active Disposition Backfill"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/backfills/active"
+description: "Find the queued or running backfill for a disposition version without its job ID, so you can resume progress tracking or cancel it."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Returns the `queued` or `running` backfill for a disposition version. Use it when you don't have the backfill's `id`, for example after a page refresh or when you come back later. It checks the published version by default. Only one backfill per version can be active at a time, so this endpoint returns at most one.
+
+`data` is `null` when no backfill is active. It is also `null` when the disposition has never been published and you don't pass `versionId`.
+
+After you republish, the default lookup checks the new published version. A backfill of an older version can still be running. Pass that version's `versionId` to find it.
+
+Use the returned `id` with [Get Disposition Backfill](/api-v2/get/agents-id-dispositions-disposition-id-backfills-job-id) to poll progress or [Cancel Disposition Backfill](/api-v2/post/agents-id-dispositions-disposition-id-backfills-job-id-cancel) to stop it.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+<ParamField path="disposition_id" type="string" required>
+  The disposition's unique identifier. Must be a UUID; otherwise returns `400` with the message `dispositionId must be a valid UUID`. Returns `404 Disposition not found` if it does not belong to this agent.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="versionId" type="string">
+  The disposition version to check. Defaults to the published version. Must be a UUID; otherwise returns `400` with the message `versionId must be a valid UUID`. Returns `404 Disposition version not found` if the version doesn't belong to this disposition. Returns `400` with the message `Only a published or archived version can have a backfill` for the draft.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object | null">
+  The active backfill, or `null` if none is queued or running. See [Get Disposition Backfill](/api-v2/get/agents-id-dispositions-disposition-id-backfills-job-id) for every field.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.bland.ai/v2/agents/{agent_id}/dispositions/{disposition_id}/backfills/active \
+  -H "authorization: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "4f0f3c1e-8a52-4d7e-9a3b-2b1d6c0e9f11",
+    "dispositionId": "1b179d4d-8830-43bd-b095-632f23bc4c57",
+    "versionId": "6168a24b-1863-422b-bbec-ed6d38395c41",
+    "cohortId": "b7e2a9d0-3c41-4f8e-8d2a-5e6f7a8b9c01",
+    "status": "running",
+    "window": {
+      "start": "2026-08-01T00:00:00.000Z",
+      "end": "2026-09-01T00:00:00.000Z"
+    },
+    "sampling": 0.25,
+    "requestedSize": 1840,
+    "resolvedSize": 1840,
+    "completedSize": 912,
+    "failedSize": 3,
+    "excluded": {},
+    "progress": {},
+    "estimatedCostUsd": "42.1360",
+    "actualCostUsd": "20.8836",
+    "rollupDays": null,
+    "deadlineAt": "2026-09-12T18:40:03.512Z",
+    "errorCode": null,
+    "errorMessage": null,
+    "createdAt": "2026-09-10T18:40:03.512Z",
+    "startedAt": "2026-09-10T18:40:05.104Z",
+    "completedAt": null
+  },
+  "errors": null
+}
+```
+
+```json No Active Backfill
+{
+  "data": null,
+  "errors": null
+}
+```
+
+```json Draft Version
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Only a published or archived version can have a backfill"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
