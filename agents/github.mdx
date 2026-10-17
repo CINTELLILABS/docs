@@ -38,33 +38,45 @@ Bland writes the instructions, skills, and validator once, when it creates the r
 
 ## Connect a repository
 
-Open the agent and select **GitHub** at the top right, next to **Publish**.
+Open the agent and select the **GitHub** icon. It sits at the top right of the builder, next to **Publish**, and in the header of the [Environments](/agents/environments) page. Hover over the icon to see the repository name and its sync status.
 
-<Tabs>
-  <Tab title="Create a new repository">
-    1. Select **Create repository**. A GitHub tab opens.
-    2. On GitHub, install or authorize the Bland GitHub App. Choose **Only select repositories** to limit access. For your first installation, GitHub asks you to select at least one existing repository.
-    3. Approve access. Bland creates a separate private repository for this agent in your account and connects it. You can close the panel while setup runs.
+Setup walks you through three steps.
 
-    **All repositories** grants Bland access to every current and future repository in that account.
-  </Tab>
-  <Tab title="Use an existing repository">
-    1. Select **Use an existing repository**, then **Authorize GitHub**.
-    2. On GitHub, choose **Only select repositories** and select the repository you want to connect.
-    3. Back in Bland, choose the repository and select **Connect repository**.
+<Steps>
+  <Step title="Connect your GitHub">
+    Select **Connect GitHub**. A GitHub tab opens. Install or authorize the Bland GitHub App, then approve access.
 
-    One repository connects to one agent. If the repository already belongs to another agent, disconnect it there first.
+    Choose **Only select repositories** to limit access. **All repositories** grants Bland access to every current and future repository in that account.
 
-    If the repository and the agent contain different source, Bland asks which side to keep:
+    To change access later, select **Manage GitHub access**.
+  </Step>
+  <Step title="Connect a repository">
+    Choose where the agent's source lives:
+
+    - **Create repo**: Bland creates a separate private repository for this agent in your account and connects it. You can close the dialog while setup runs.
+    - **Use existing repo**: choose a repository and select **Connect repository**. The repository must have access granted in the Bland GitHub App. If it isn't listed, select **Manage GitHub access** and grant it on GitHub.
+
+    One repository syncs with one agent. If the repository already belongs to another agent, disconnect it there first.
+
+    If an existing repository and the agent contain different source, Bland asks which one to keep:
 
     - **Replace this agent with GitHub** replaces the agent's current draft and evaluations with the repository's source.
     - **Replace GitHub source with this agent** replaces the repository's managed source at the next sync.
 
-    Saved versions and Git history are kept either way. Running deployments don't change.
-  </Tab>
-</Tabs>
+    Saved versions and Git history are kept either way. Live deployments don't change.
+  </Step>
+  <Step title="Set up locally">
+    Select **Copy setup prompt** and paste it into Claude Code or Codex to clone the repository or open your local copy. Any coding agent works. See [Edit locally with a coding agent](#edit-locally-with-a-coding-agent).
+  </Step>
+</Steps>
 
-Once connected, the GitHub panel shows the repository name, the branch you're viewing, and its sync status. Select **Open in GitHub** to go to the repository.
+Once connected, the GitHub dialog shows the repository details:
+
+- **Connected branches** lists the branch for Production, Staging, and Development. Select **Open in GitHub** to go to the repository.
+- **Merge protection** shows whether failing checks block merges. See [On pull requests](#on-pull-requests).
+- **Repository tests** lets you review the evaluations saved with the branch and run checks. See [Test and publish](#test-and-publish).
+
+The **Repository actions** menu in the dialog header holds **Copy setup prompt** and **Disconnect repo**.
 
 ## How branches map to environments
 
@@ -75,9 +87,9 @@ Once connected, the GitHub panel shows the repository name, the branch you're vi
 | `staging` | Staging source |
 | `main` | Production source |
 
-To see the branches for your agent, open the GitHub panel and select the settings icon. **Connected branches** lists the branch for Development, Staging, and Production.
+**Connected branches** in the GitHub dialog shows which branch each environment uses.
 
-If you're on a development draft that isn't tracked yet, select **Sync this branch** in the GitHub panel.
+If you're on a development draft that isn't tracked yet, **Connected branches** shows the branch it will sync to. Select **Sync this branch** to start syncing it.
 
 <Warning>
 `main` and `staging` hold source, not what is live. A merge into `main` doesn't change the version that answers calls. Production keeps its pinned version until you publish and promote from Bland.
@@ -87,7 +99,7 @@ If you're on a development draft that isn't tracked yet, select **Sync this bran
 
 When you save in the dashboard, Bland pushes the change to the matching branch. When you push to a tracked branch, Bland imports it into the matching draft. Collaborators who have the agent open see the incoming change.
 
-The GitHub panel shows the current state, such as **Synced**, **Saved. Syncing to GitHub…**, or **Importing GitHub changes…**.
+The GitHub dialog shows the current state, such as **Synced**, **Saved. Syncing to GitHub…**, or **Importing GitHub changes…**.
 
 When edits on both sides conflict, Bland doesn't overwrite either one:
 
@@ -122,24 +134,36 @@ Whether a failing check blocks the merge depends on your GitHub plan:
 | GitHub Pro (personal accounts), Team, or Enterprise | Bland adds a rule that requires a pull request and a passing check before merging into `main` |
 | GitHub Free (private repositories) | Checks run but are advisory, so GitHub can merge source that fails |
 
-**Merge protection** in the repository settings shows **Configured**, **Advisory**, or **Pending setup**. If it shows **Pending setup**, restore access in the Bland GitHub App and select **Retry setup**.
+**Merge protection** in the GitHub dialog shows **Configured**, **Advisory**, or **Pending setup**. If it shows **Pending setup**, restore access in the Bland GitHub App and select **Retry setup**.
 
-With advisory checks, Bland still rejects invalid source. The GitHub panel shows **Source validation failed**, and Bland keeps its last accepted version. Live traffic doesn't change. Fix the branch in GitHub, then select **Retry after correction**.
+With advisory checks, Bland still rejects invalid source. The GitHub dialog shows **Source validation failed**, and Bland keeps its last accepted version. Live traffic doesn't change. Fix the branch in GitHub, then select **Retry after correction**.
 
 ## Test and publish
 
-Git pushes don't run paid tests. To run your agent's evaluations against the branch, open the repository settings and select **Run checks (uses credits)**. Results appear in the agent's check history. See [Evaluations](/agents/evaluations) to set up the judges and test cases these checks run.
+Git pushes don't run paid tests. To run your agent's evaluations against the branch, open the GitHub dialog and select **Run checks (uses credits)** under **Repository tests**. Bland confirms that the run started. Select **View evaluation runs** to follow its results, which appear alongside your other Staging and Production runs. See [Evaluations](/agents/evaluations) to set up the judges and test cases these checks run.
+
+### Review evaluation source
+
+Judges, test cases, and promotion suites are saved with each branch. Runs, recordings, and contact memory stay outside Git. To review them, select **Evaluation source** under **Repository tests**.
+
+If someone saved newer source while you were editing, select **Review latest source**. Bland shows the latest saved source and your draft in a side-by-side diff:
+
+1. Review the highlighted changes. If the sources are too large or too different to highlight, Bland shows both in full instead.
+2. Select **Edit draft** to combine changes into your draft. Select **Compare changes** to return to the diff.
+3. Select **Save evaluations**. Saving replaces the saved evaluations with your draft.
+
+Your unsaved draft is kept while you review.
 
 To ship a change, use the buttons in the agent's top bar:
 
 - On Development, select **Publish to staging**.
 - On Staging, select **Promote to production**.
 
-When the GitHub panel shows **New changes are ready to publish**, the branch has source that isn't live yet. Your live version stays the same until you publish.
+When the GitHub dialog shows **New changes are ready to publish**, the branch has source that isn't live yet. Your live version stays the same until you publish.
 
 ## Edit locally with a coding agent
 
-The GitHub panel includes a setup prompt for Claude Code. Select **Copy setup prompt** and paste it into Claude Code to clone the repository or open your existing copy.
+Select **Copy setup prompt** from the **Repository actions** menu in the GitHub dialog. Paste it into Claude Code or Codex to clone the repository or open your existing copy. Any coding agent works.
 
 Coding agents read `AGENTS.md` for the agent's identity and Git workflow. Codex and Cursor also load the bundled workspace skill. If you already have Norm installed, the repository reuses it and doesn't install a second copy.
 
@@ -147,9 +171,11 @@ To run simulations from your editor, connect Bland to it with access to the same
 
 ## Disconnect a repository
 
-Open the repository settings and select **Disconnect repository**, then confirm.
+In the GitHub dialog, open the **Repository actions** menu and select **Disconnect repo**, then confirm.
 
-Disconnecting stops sync for every branch of the agent. Bland keeps your agent, its deployments, and the GitHub repository, along with sync and evaluation history. Saved Bland changes that haven't synced yet aren't sent to GitHub. You can reconnect later.
+Disconnecting stops sync for every branch of the agent. Pending publishes and promotions stop, and Bland removes any GitHub validation rule it created. Saved Bland changes that haven't synced yet aren't sent to GitHub.
+
+Bland keeps your agent, its deployments, the GitHub repository, and checkpoint and test history. You can reconnect later.
 
 ## Common failures
 
@@ -167,7 +193,7 @@ Disconnecting stops sync for every branch of the agent. Bland keeps your agent, 
   </Accordion>
 
   <Accordion title="No repositories are available">
-    The Bland GitHub App has no access to the repository you want. Select **Manage GitHub access** and add the repository on GitHub.
+    The Bland GitHub App has no access to the repository you want. Select **Manage GitHub access** and grant the repository access on GitHub.
   </Accordion>
 </AccordionGroup>
 
