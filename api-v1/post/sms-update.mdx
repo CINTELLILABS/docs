@@ -8,6 +8,8 @@ description: "Update the SMS configuration for a phone number owned by the authe
   **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
 </Info>
 
+You can also call this endpoint at `POST https://api.bland.ai/v1/sms/update`. Both URLs behave the same way.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -18,6 +20,12 @@ description: "Update the SMS configuration for a phone number owned by the authe
 
 <ParamField body="phone_number" type="string" required>
   The E.164 formatted phone number to update (must belong to the authenticated user).
+</ParamField>
+
+<ParamField body="auto_reply_enabled" type="boolean" required={false}>
+  Whether the agent automatically replies to inbound texts on this number. Defaults to `true`. SMS only.
+
+  When `false`, inbound texts are still saved and sent to your webhook and automations, but the agent does not reply. Timeout and completion events still fire, but `warning_message` and `timeout_message` are not sent. Messages you send through the API are still delivered. A non-boolean value returns a `400` with the error code `INVALID_AUTO_REPLY_ENABLED`.
 </ParamField>
 
 <ParamField body="webhook" type="string" required={false}>
@@ -96,6 +104,18 @@ description: "Update the SMS configuration for a phone number owned by the authe
   An array of citation schema IDs to extract when conversations end on this number. See [Citations](/enterprise-features/citations).
 </ParamField>
 
+### Example: turn off auto-reply
+
+```bash cURL
+curl -X POST https://api.bland.ai/v1/sms/number/update \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+15550001111",
+    "auto_reply_enabled": false
+  }'
+```
+
 ### Response
 
 <ResponseField name="data" type="object">
@@ -130,6 +150,7 @@ description: "Update the SMS configuration for a phone number owned by the authe
   "data": {
     "message": "SMS config updated for number +15550001111",
     "sms_config": {
+      "auto_reply_enabled": true,
       "webhook": null,
       "request_data": [],
       "time_out": null,
