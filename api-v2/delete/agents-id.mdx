@@ -6,7 +6,7 @@ description: "Soft-delete an agent. Versions and history are kept."
 
 ### Overview
 
-Marks the agent deleted. It disappears from [List Agents](/api-v2/get/agents) and returns `404` from [Get Agent](/api-v2/get/agents-id), but its versions, deployments, and history are retained. Alerts scoped to the agent are deleted with it.
+Marks the agent deleted. It disappears from [List Agents](/api-v2/get/agents) and returns `404` from [Get Agent](/api-v2/get/agents-id), but its versions, deployments, and history are retained. Alerts scoped to the agent are deleted with it. You can't delete an agent while a [web chat widget is bound to it](/api-v2/post/agents-id-widgets-widget-id-bind). Switch each bound widget to a prompt or pathway first.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -33,7 +33,7 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed.
+  `null` on success, or a list of error objects if the request failed. Returns `409 AGENT_HAS_BOUND_WIDGETS` when a web chat widget runs the agent. The IDs of those widgets are returned in `data.widget_ids`.
 </ResponseField>
 
 <ResponseExample>
@@ -44,6 +44,22 @@ Requires an admin, owner, operator, or prompter role.
     "deleted": true
   },
   "errors": null
+}
+```
+
+```json Bound Widgets
+{
+  "data": {
+    "widget_ids": [
+      "b5f3fb6b-2285-4c73-95be-6609eca09986"
+    ]
+  },
+  "errors": [
+    {
+      "error": "AGENT_HAS_BOUND_WIDGETS",
+      "message": "This agent runs a web chat widget. Switch the widget to a prompt or pathway, then delete the agent."
+    }
+  ]
 }
 ```
 

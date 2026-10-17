@@ -57,6 +57,28 @@ You can pass custom data to your widget at initialization using the `request_dat
 
 Now this information will be available to your agent as variables.
 
+## Run an agent in your widget
+
+A saved widget can run an [agent](/platform/migrate-to-agents) instead of a prompt or pathway. The widget runs the agent's production version. When you promote or roll back the agent, the widget picks up the change without a rebind. Live-agent handoff works the same way it does on a pathway widget.
+
+<Steps>
+  <Step title="Save the widget">
+    Agent backing is available only on a widget that has already been saved.
+  </Step>
+  <Step title="Choose the agent">
+    In the agent's **Web chat** editor, set **Backed by** to **Agent**, then select **Save**.
+  </Step>
+</Steps>
+
+To bind a widget through the API, call [Bind Web Chat Widget to Agent](/api-v2/post/agents-id-widgets-widget-id-bind):
+
+```bash
+curl -X POST https://api.bland.ai/v2/agents/YOUR_AGENT_ID/widgets/YOUR_WIDGET_ID/bind \
+  -H "authorization: YOUR_API_KEY"
+```
+
+Custom components aren't available on agent-backed widgets. You can't delete an agent while a widget runs it. Switch the widget back to a prompt or pathway first.
+
 ## Advanced: Custom Components
 
 When using pathways in your widget, you can create custom components that display at specific points in the conversation. These components are embedded as iframes within the widget window.
@@ -151,7 +173,7 @@ With `persist_open` on:
 
 ## Escalate to Live Agents
 
-<Note>This feature only works on [pathways](/tutorials/pathways).</Note>
+<Note>This feature only works on widgets backed by a [pathway](/tutorials/pathways) or an [agent](#run-an-agent-in-your-widget).</Note>
 
 Connect your Bland widget to any live agent platform (Zendesk, Intercom, Freshdesk, or your own custom solution) via webhooks. When the AI determines a human is needed, it seamlessly hands off the conversation with full context.
 
