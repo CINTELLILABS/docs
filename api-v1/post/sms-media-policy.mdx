@@ -1,0 +1,83 @@
+---
+title: "Update Inbound Media Policy"
+api: "POST https://api.bland.ai/v1/sms/media_policy"
+description: "Control whether your messaging agents can see images and files customers send, store them without agent access, or ignore them entirely."
+---
+
+<Info>
+  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+Set how your messaging agents handle media that customers send to your numbers. The policy applies to every messaging number in your organization, across SMS/MMS, RCS, WhatsApp, and iMessage. Voice calls are not affected.
+
+Use this endpoint when your agent must not view or describe customer attachments. Prompting the agent to ignore attachments is not enough on its own, because the agent still receives the file contents. Setting `mode` to `attach_only` keeps the file in your conversation history but removes its contents from the agent.
+
+Only organization owners and admins can update the policy. Changes apply to media received after the update. Attachments received earlier keep their previous handling, so an open conversation can still reference media sent before the change.
+
+### Modes
+
+| Mode | File stored | Agent sees |
+| --- | --- | --- |
+| `full` (default) | Yes | The file contents, such as image descriptions, transcriptions, and document text. |
+| `attach_only` | Yes | A notice that the customer sent a file the agent cannot view. The file name is not shared. |
+| `off` | No | Nothing from the file. |
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body
+
+Send only the fields you want to change. Fields you omit keep their current values.
+
+<ParamField body="mode" type="string">
+  How inbound media is handled. One of `full`, `attach_only`, or `off`.
+</ParamField>
+
+<ParamField body="image_redaction" type="boolean">
+  Whether stored images are redacted. Defaults to `true`. Set to `false` to store images without redaction. Redaction of stored text is not affected.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v1/sms/media_policy \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "attach_only"}'
+```
+</RequestExample>
+
+### Response
+
+Returns the updated policy, with defaults filled in for any field you have never set.
+
+<ResponseField name="data.mode" type="string">
+  The current media mode.
+</ResponseField>
+
+<ResponseField name="data.image_redaction" type="boolean">
+  Whether stored images are redacted.
+</ResponseField>
+
+<ResponseField name="data.available_modes" type="array">
+  All supported values for `mode`.
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  Any errors that occurred. `null` on success. Returns `400` with `VALIDATION_ERROR` for an invalid body and `403` with `UNAUTHORIZED` if you are not an owner or admin.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "mode": "attach_only",
+    "image_redaction": true,
+    "available_modes": ["full", "attach_only", "off"]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
