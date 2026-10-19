@@ -50,6 +50,28 @@ When you enable warm transfer on a Transfer Call node, you're switching from a b
 **Default**: Disabled (uses standard transfer)  
 **Impact**: Unlocks all warm transfer configuration options below
 
+### Prompt-based calls
+
+Calls you send with a `task` prompt instead of a pathway can also use warm transfer. They use the same options described below.
+
+- **Send call page**: With a prompt as the call source, open the **Warm transfer** settings section, turn on **Warm transfer**, and fill in **Agent briefing** and **Merge announcement**.
+- **API**: Pass `warm_transfer_fields` to [Send Call](/api-v1/post/calls) to warm transfer to `transfer_phone_number`. Use `transfer_list_warm` to give individual `transfer_list` destinations their own settings.
+
+```json
+{
+  "phone_number": "+15551234567",
+  "task": "You are a support agent for Acme. Transfer the caller to a human if they ask for one.",
+  "transfer_phone_number": "+12223334444",
+  "warm_transfer_fields": {
+    "isEnabled": true,
+    "agentPrompt": "Introduce yourself and summarize the call: {{call_summary}}",
+    "mergeCallPrompt": "Let the caller know a specialist is joining the call."
+  }
+}
+```
+
+On prompt-based calls, hold music and the unavailable message are on unless you turn them off.
+
 ---
 
 ## Core Configuration Options
