@@ -29,9 +29,9 @@ https://api.bland.ai/v1/mcp
 ## How it works
 
 - **Transport:** Streamable HTTP (the current MCP standard). The server is stateless, so there are no sessions to manage and any request can hit any node.
-- **Authentication:** [sign in with Bland](/integrations/mcp/oauth) (OAuth; ChatGPT, Claude, and Claude Code today, other clients once dynamic client registration is available), or your Bland API key in the `Authorization` header (`Bearer org_...`), which works with every client. Either way, one organization scopes every tool: an agent connected to your org sees only that org's calls, pathways, and agents. Get a key from the [dashboard](https://app.bland.ai/dashboard/settings), or let an agent obtain its own through the [Agent onboarding API](/platform/connect-your-agent).
+- **Authentication:** [sign in with Bland](/integrations/mcp/oauth) (OAuth; ChatGPT, Claude, and Claude Code today, other clients once dynamic client registration is available), or a full-access Bland API key in the `Authorization` header (`Bearer org_...`), which works with every client. [Restricted keys](/api-v1/post/keys-create#restricted-keys) can't connect. Either way, one organization scopes every tool: an agent connected to your org sees only that org's calls, pathways, and agents. Get a key from the [dashboard](https://app.bland.ai/dashboard/settings), or let an agent obtain its own through the [Agent onboarding API](/platform/connect-your-agent).
 - **Rate limits:** 120 requests per minute per organization.
-- **Safety:** every tool is annotated read-only or destructive, so well-behaved clients ask before the agent does anything with side effects (like placing a real phone call). Mutating tools additionally require an explicit confirmation argument.
+- **Safety:** every tool carries read-only and destructive annotations, so well-behaved clients ask before the agent does anything with side effects (like placing a real phone call). The server doesn't ask for confirmation itself, so keep your client's tool-approval prompts on.
 
 ## Discovering the server from a 401
 
@@ -62,11 +62,12 @@ Which piece a client uses depends on what it supports:
 | **Evals** | List and inspect LLM judges, kick off eval runs over batches of calls. |
 | **Docs** | Search and read docs.bland.ai from inside the session (`search_bland_docs`, `get_bland_doc`). |
 | **Pathways (Legacy)** | Compile-check a pathway graph before saving (`validate_pathway`), fetch the authoritative schema (`get_pathway_schema`), and get deep node/edge semantics (`get_pathway_context`). |
-| **Full API reach** | Anything not covered by a dedicated tool: `bland_api_get` for any GET endpoint, `call_bland_api` for any mutating endpoint. |
+| **API Reference tools** | One tool per [API Reference](/api-v1/post/calls) page, such as `send_call` for every Send Call field, `send_sms`, and the knowledge base, number, and evals endpoints. |
+| **Full API reach** | Over an API key connection, anything else: `bland_api_get` for any GET endpoint, `call_bland_api` for any mutating endpoint. |
 
 See the full [tool reference](/integrations/mcp/tools).
 
-The server also ships MCP **prompts** for legacy pathways: `bland_pathways`, `build_pathway`, and `edit_pathway`. They appear as slash commands in clients that support them (like Claude Code). For Bland Agents, use the [Norm plugin](/integrations/mcp/norm) instead.
+Over an API key connection, the server also ships MCP **prompts** for legacy pathways: `bland_pathways`, `build_pathway`, and `edit_pathway`. They appear as slash commands in clients that support them (like Claude Code). For Bland Agents, use the [Norm plugin](/integrations/mcp/norm) instead.
 
 ## One endpoint, three MCP surfaces
 
@@ -83,7 +84,7 @@ Bland has three MCP-related surfaces. If you're unsure, use the first one.
 - Treat your API key like a password. Use environment variables or your client's secret storage. Never commit it to a repo.
 - A sign-in connection acts as you, in the organization you chose, with the permissions of your role there. Review the consent screen before you approve, and disconnect apps you no longer use.
 - OAuth tokens are only valid on `/v1/mcp`. They don't work on the REST API.
-- Tools that spend money or touch live traffic (placing calls, publishing agents) are marked destructive and confirmation-gated, but review what your agent proposes before approving.
+- Tools that spend money or touch live traffic (placing calls, publishing agents) are marked destructive so your client asks before running them. Review what your agent proposes before approving.
 - MCP tool results can contain untrusted content (e.g. call transcripts of real conversations). Prompt-injection-aware clients like Claude Code treat tool output as data, but keep it in mind when building your own agent loops.
 
 ## Next steps

@@ -1,45 +1,20 @@
 ---
 title: "Tool Reference"
-description: "Every tool exposed by the Bland MCP server"
+description: "Every tool exposed by the Bland MCP server, with its access level and the scope it needs over sign-in"
 ---
 
-The Bland MCP server exposes the tools below plus 3 prompts. All of them are scoped to one organization: the one that owns the API key, or the one you chose when you [signed in with Bland](/integrations/mcp/oauth).
+The Bland MCP server exposes two kinds of tools, plus 3 [prompts](#prompts-legacy-pathways) on API key connections:
 
-**Access** describes each tool's annotation: **Read** tools never change anything and clients can call them freely; **Write** and **Destructive** tools have side effects (Destructive ones spend money, touch live traffic, or delete things) and are confirmation-gated: the tool asks for an explicit confirmation argument before executing. Over a sign-in connection, Read tools need the `mcp:read` scope and Write and Destructive tools need `mcp:write`.
+- **Dedicated tools** cover the common workflows with typed inputs. Some render inline UI in clients that support it, such as the call-log inspector, eval scorecards, and the analytics panel.
+- **API Reference tools** are one tool per page of the [API Reference](/api-v1/post/calls). Each takes the inputs on its linked page, sends the request as your organization, and returns the API's JSON under `data`.
 
-### Calls
+Every tool is scoped to one organization: the one that owns the API key, or the one you chose when you [signed in with Bland](/integrations/mcp/oauth). Connect with a full-access API key or by signing in. [Restricted API keys](/api-v1/post/keys-create#restricted-keys) can't connect to the MCP server.
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `create_call` | Destructive | Place an outbound call to a phone number, optionally with a task or pathway. Omit `voice` to use Karen. |
-| `get_call_log` | Read | Fetch a single call: its transcript, recording, summary, and metadata. |
-| `wait_for_call` | Read | Wait up to 45 seconds for a call to finish, then return its call log. Use it instead of polling `get_call_log`. |
-| `stop_call` | Destructive | End a call in progress, or cancel one that is still queued. |
-| `list_voices` | Read | List Bland's curated voices, the recommended set for `create_call`. Any voice the user names still works. |
+**Access** is each tool's annotation. **Read** tools never change anything. **Write** tools have side effects. **Destructive** tools delete things, spend money, or touch live traffic, so your client should ask you before it runs one. The server doesn't ask for confirmation itself, so keep your client's tool-approval prompts on.
 
-#### Choose the call resource before invoking a tool
+**Sign-in** is the scope a [sign-in connection](/integrations/mcp/oauth#scopes-and-consent) needs to call the tool. `mcp:write` also grants `mcp:read`. **Not offered** means the tool isn't listed over sign-in; use an API key connection for it. **None** means the tool needs no scope. A full-access API key reaches every tool without scope checks.
 
-Follow [Choose what runs your call](/api-v1/post/calls#choose-what-runs-your-call): resolve whether the user wants a dashboard agent, persona, or pathway before sending. Honor an established choice, verify the exact ID and environment or version, and ask before changing routes.
-
-`create_call` accepts `phoneNumber`, `task`, `pathwayId`, `voice`, `from`, and `firstSentence`. It does **not** accept `agent_id`, `agent_version`, `persona_id`, or pathway-version selectors. Do not replace an agent choice with `pathwayId` just to fit this schema.
-
-When available in your connection, use `call_bland_api` with `method: "POST"`, `path: "/v1/calls"`, and the snake_case request body from [Send Call](/api-v1/post/calls#request-examples). This supports agent, persona, and version-specific pathway dispatch. For example, after verifying the destination and agent ID:
-
-```json
-{
-  "method": "POST",
-  "path": "/v1/calls",
-  "body": {
-    "phone_number": "+14155550100",
-    "agent_id": "00000000-0000-4000-8000-000000000001",
-    "agent_version": "production"
-  }
-}
-```
-
-Use `list_agents`, `get_agent`, and `list_agent_environments` to verify an agent and its deployment before calling. If the required tool or route is unavailable, explain the limitation and ask the user how to proceed. Do not silently use a persona or pathway instead.
-
-After submission, retain the `call_id`, check the actual source and destination numbers and resource/version association, and verify agent calls under the intended agent's Conversations view. The `create_call` result and call-log widget alone do not establish agent attribution. Report a successful call and an attribution problem separately, without placing a duplicate call.
+## Dedicated tools
 
 ### Agents
 
@@ -49,88 +24,601 @@ Full lifecycle for the Bland Agents platform: versioned, branched, and promoted 
 For Bland Agents builds, migrations, snapshot audits, and simulations, use the [Norm plugin](/integrations/mcp/norm) (`norm@bland`). The separate `bland@bland` plugin covers the v1 pathway workspace.
 </Tip>
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `create_agent` | Write | Create a new agent plus its dev/staging/production environments. |
-| `list_agents` | Read | List the organization's agents, most recently updated first. |
-| `get_agent` | Read | Fetch one agent by id, including which version each environment is pinned to. |
-| `rename_agent` | Write | Rename an agent. |
-| `delete_agent` | Destructive | Soft-delete an agent. |
-| `save_agent_version` | Write | Save an agent's config as an immutable version snapshot. |
-| `list_agent_versions` | Read | List an agent's saved version history (metadata only), newest first. |
-| `get_latest_agent_version` | Read | Fetch the latest saved version including its full config snapshot. |
-| `get_agent_version` | Read | Fetch a specific published version by semver, including its full snapshot. |
-| `list_agent_environments` | Read | List dev/staging/production environments and the semver each is pinned to. |
-| `publish_agent` | Destructive | Save a snapshot as a new version, mint the next semver, and pin staging to it. |
-| `promote_agent` | Destructive | Pin production to whatever staging currently points at. |
-| `list_agent_variables` | Read | List an environment's variables for an agent. |
-| `set_agent_variable` | Destructive | Create or update one environment variable (supports secrets). |
-| `delete_agent_variable` | Destructive | Delete one environment variable. |
-| `list_agent_branches` | Read | List an agent's open branches (isolated dev workspaces). |
-| `create_agent_branch` | Write | Branch off the agent's current dev head. |
-| `delete_agent_branch` | Destructive | Abandon an open branch (soft delete; its versions stay). |
-| `rebase_preview_agent_branch` | Read | Dry-run a branch merge: three-way diff reporting what auto-merges and what conflicts. |
-| `rebase_agent_branch` | Destructive | Rebase a branch onto the dev head with per-conflict resolutions. |
-| `merge_agent_branch` | Destructive | Merge an open branch into dev (fast-forward only) and archive the branch. |
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `create_agent` | Write | `mcp:write` | Create a new agent plus its dev, staging, and production environments, all unpinned. |
+| `list_agents` | Read | `mcp:read` | List the organization's agents, most recently updated first. Deleted agents are excluded. |
+| `get_agent` | Read | `mcp:read` | Fetch one agent by ID, including which version staging and production are pinned to. |
+| `rename_agent` | Write | `mcp:write` | Rename an agent. |
+| `delete_agent` | Destructive | `mcp:write` | Soft-delete an agent. Its version history and deployment records stay. |
+| `save_agent_version` | Write | `mcp:write` | Save the agent's full `{behavior, settings, contact}` config as an immutable version snapshot. |
+| `list_agent_versions` | Read | `mcp:read` | List an agent's saved version history (metadata only), newest first. |
+| `get_latest_agent_version` | Read | `mcp:read` | Fetch the latest saved version, including its full config snapshot. |
+| `get_agent_version` | Read | `mcp:read` | Fetch a specific published version by semver, including its full snapshot. |
+| `list_agent_environments` | Read | `mcp:read` | List the dev, staging, and production environments and the semver each is pinned to. |
+| `publish_agent` | Destructive | `mcp:write` | Publish to staging: a new `snapshot`, an existing `versionId`, or the dev head. A new version gets the next semver. |
+| `promote_agent` | Destructive | `mcp:write` | Promote to production: what staging points at, or a specific `versionId`. Enforces the saved evaluation policy unless `force` is set. |
+| `rollback_agent` | Destructive | `mcp:write` | Point production back at a version that was deployed there before, keeping its original semver. |
+| `list_agent_deployments` | Read | `mcp:read` | List an environment's deployment history (production by default), with rollback candidates flagged. |
+| `get_agent_check_config` | Read | `mcp:read` | Fetch the judges and scenarios that gate promotions into an environment. |
+| `set_agent_check_config` | Destructive | `mcp:write` | Create or replace the production check config: which evals score a candidate, which are required, and which scenarios run. |
+| `delete_agent_check_config` | Destructive | `mcp:write` | Delete an environment's check config. |
+| `start_agent_check_run` | Destructive | `evals:run` | Score simulated conversations against a candidate version with the environment's judges. Bills the organization. Never moves environment pointers. |
+| `list_agent_check_runs` | Read | `mcp:read` | List an environment's check runs, newest first, with per-eval verdicts. |
+| `get_agent_check_run` | Read | `mcp:read` | Fetch one check run, including its per-eval verdicts and simulation set. |
+| `cancel_agent_check_run` | Destructive | `mcp:write` | Cancel a pending or running check run. |
+| `list_agent_variables` | Read | `mcp:read` | List an environment's variables for an agent. |
+| `set_agent_variable` | Destructive | `mcp:write` | Create or update one environment variable. Set `isSecret` to store the value as a secret. |
+| `delete_agent_variable` | Destructive | `mcp:write` | Delete one environment variable. |
+| `list_agent_branches` | Read | `mcp:read` | List an agent's open branches (isolated dev workspaces). |
+| `create_agent_branch` | Write | `mcp:write` | Branch off the agent's current dev head. |
+| `delete_agent_branch` | Destructive | `mcp:write` | Abandon an open branch. Its saved versions stay. |
+| `rebase_preview_agent_branch` | Read | `mcp:read` | Dry-run a branch merge: a three-way diff of what merges cleanly and what conflicts. |
+| `rebase_agent_branch` | Destructive | `mcp:write` | Rebase a branch onto the dev head with per-conflict resolutions. |
+| `merge_agent_branch` | Destructive | `mcp:write` | Merge an open branch into dev (fast-forward only) and archive the branch. |
+
+More agent tools (inbound numbers, experiments, dispositions, migration) are under [API Reference tools](#agent-inbound-numbers).
+
+### Calls
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `create_call` | Destructive | `calls:create` | Place an outbound call with the common fields only: `phoneNumber`, `task`, `pathwayId`, `voice`, `from`, and `firstSentence`. Omit `voice` to use Karen. |
+| `get_call_log` | Read | `mcp:read` | Fetch a single call: its transcript, recording, summary, and metadata. |
+| `wait_for_call` | Read | `mcp:read` | Wait up to 45 seconds (30 by default) for a call to finish, then return its call log. Use it instead of polling `get_call_log`. |
+| `stop_call` | Destructive | `calls:stop` | End a call in progress, or cancel one that is still queued. |
+| `list_voices` | Read | `mcp:read` | List Bland's curated voices, the recommended set for new calls, personas, numbers, and pathways. Any voice the user names still works. |
+
+#### Choose the call resource before invoking a tool
+
+Follow [Choose what runs your call](/api-v1/post/calls#choose-what-runs-your-call): resolve whether the user wants a dashboard agent, persona, or pathway before sending. Honor an established choice, verify the exact ID and environment or version, and ask before changing routes.
+
+`create_call` does **not** accept `agent_id`, `agent_version`, `persona_id`, or pathway-version selectors. Do not replace an agent choice with `pathwayId` just to fit this schema.
+
+Use [`send_call`](#calls-api) instead. It takes every [Send Call](/api-v1/post/calls#request-examples) field in the same snake_case shape, needs the same `calls:create` scope over sign-in, and runs the call through exactly one of `agent_id`, `persona_id`, `pathway_id`, or `task`. For example, after verifying the destination and agent ID:
+
+```json
+{
+  "phone_number": "+14155550100",
+  "agent_id": "00000000-0000-4000-8000-000000000001",
+  "agent_version": "production"
+}
+```
+
+Over an API key connection, `call_bland_api` with `method: "POST"` and `path: "/v1/calls"` takes the same body.
+
+Use `list_agents`, `get_agent`, and `list_agent_environments` to verify an agent and its deployment before calling. If the required tool or route is unavailable, explain the limitation and ask the user how to proceed. Do not silently use a persona or pathway instead.
+
+After submission, retain the `call_id`, check the actual source and destination numbers and resource/version association, and verify agent calls under the intended agent's Conversations view. The `create_call` result and call-log widget alone do not establish agent attribution. Report a successful call and an attribution problem separately, without placing a duplicate call.
 
 ### Analytics
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `query_analytics` | Read | Structured call-analytics queries (metrics, filters, dimensions, and time ranges) returning aggregated results. |
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `query_analytics` | Read | `mcp:read` | Structured call-analytics queries (metrics, grouping, filters, and time ranges) returning aggregated results. |
 
 ### Evals
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `list_eval_agents` | Read | List the organization's eval agents (LLM judges) with their latest-run summaries. |
-| `get_eval_agent` | Read | Fetch one eval agent: criterion prompt, scoring levels, targets, weight, modality. |
-| `get_eval_run` | Read | Fetch one eval run and its per-atom verdicts. |
-| `create_eval_run` | Destructive | Enqueue scoring of a batch of calls against eval agents or a saved workbench setup. |
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `list_eval_agents` | Read | `mcp:read` | List the organization's eval agents (LLM judges) with their latest-run summaries. |
+| `get_eval_agent` | Read | `mcp:read` | Fetch one eval agent: criterion prompt, scoring levels, targets, weight, and modality. |
+| `get_eval_run` | Read | `mcp:read` | Fetch one eval run and its per-atom verdicts. |
+| `create_eval_run` | Destructive | `evals:run` | Enqueue scoring of a batch of calls against eval agents or a saved workbench setup. |
+
+### Knowledge and code
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `upload_knowledge_file` | Write | `mcp:write` | Add a file to the knowledge base from an `https` URL (20 MB max; pdf, docx, xlsx, txt, md, csv, or json). Indexing runs in the background. |
+| `save_code_snippet` | Destructive | `mcp:write` | Create a JavaScript custom-code snippet, or save new code as an existing snippet's next version. Tools that don't pin `snippet_version` run the latest version. |
+
+### Billing
+
+Both tools take a `shared_payment_token` (`spt_...`) that the owner approves in their agent wallet. They need an organization API key and aren't offered over sign-in. If purchases aren't enabled for your organization, they return `FEATURE_DISABLED`.
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `buy_credits` | Destructive | Not offered | Buy prepaid credits, \$5 to \$100 per purchase. The caller must be an owner, admin, or operator. A settled purchase unlocks international calling for an organization without the Agent Phone Plan. |
+| `buy_phone_plan` | Destructive | Not offered | Add the [Agent Phone Plan](/platform/agent-phone-plan) to the organization, with an optional US `area_code` for its number. The caller must be an owner or admin. |
 
 ### Documentation
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `search_bland_docs` | Read | Search docs.bland.ai; returns matching pages with title, URL, and description. |
-| `get_bland_doc` | Read | Fetch the full markdown of one docs page (e.g. `api-v1/post/calls`). |
-| `search_bland` | Read | Search the Bland knowledge base for guides, code examples, and API references. |
-| `query_docs_filesystem_bland` | Read | Read-only shell-like queries over a virtual filesystem of all docs pages and OpenAPI specs. |
-| `submit_feedback` | Read | Report a documentation problem to the docs team. |
+`search_bland`, `query_docs_filesystem_bland`, and `submit_feedback` are passed through from the docs site's own MCP server (`https://docs.bland.ai/mcp`). If that server is unreachable, they're missing from the list.
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `search_bland_docs` | Read | `mcp:read` | Search docs.bland.ai and return matching pages with title, URL, and description. |
+| `get_bland_doc` | Read | `mcp:read` | Fetch the full markdown of one docs page (for example `api-v1/post/calls`). |
+| `search_bland` | Read | None | Search the Bland knowledge base for guides, code examples, and API references. |
+| `query_docs_filesystem_bland` | Read | None | Read-only shell-like queries over a virtual filesystem of the docs pages. |
+| `submit_feedback` | Write | None | Report a documentation problem to the docs team. |
 
 ### API passthrough
 
-For anything without a dedicated tool, the passthrough pair gives agents the entire [Bland REST API](/api-v1/post/calls):
+Over an API key connection, the passthrough pair reaches the entire [Bland REST API](/api-v1/post/calls), including fields a dedicated tool leaves out. Sign-in connections don't get it; use the dedicated and API Reference tools instead.
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `bland_api_get` | Read | GET any Bland API endpoint with the caller's key (e.g. `/v1/calls` with query params). |
-| `call_bland_api` | Destructive | Call any mutating Bland endpoint (POST/PUT/PATCH/DELETE). Confirmation-gated. |
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `bland_api_get` | Read | Not offered | GET any Bland API endpoint (for example `/v1/calls` with query params). |
+| `call_bland_api` | Destructive | Not offered | Call any mutating Bland endpoint (POST, PUT, PATCH, or DELETE). |
 
 ### Setup
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `get_bland_mcp_setup` | Read | Returns connection guidance for the Bland MCP server. |
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `get_bland_mcp_setup` | Read | None | Return connection guidance for the Bland MCP server. |
 
 ### Pathways (Legacy)
 
 These tools work with legacy [Conversational Pathways](/tutorials/pathways). For new builds, use the Agents tools above.
 
-| Tool | Access | Description |
-| --- | --- | --- |
-| `validate_pathway` | Read | The authoritative Bland pathway compiler. Pass the raw graph you're about to commit and get structural and runtime-contract errors before saving. |
-| `get_pathway_schema` | Read | The authoritative allowed shape and enums for a structured pathway surface. |
-| `get_pathway_context` | Read | Deep per-node and per-edge execution semantics, the same summaries Bland's server-side pathway agent uses. |
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| `validate_pathway` | Read | `mcp:read` | The authoritative Bland pathway compiler. Pass the raw graph you're about to commit and get structural and runtime-contract errors before saving. Pass `baseline` to see only what your edit introduced. |
+| `get_pathway_schema` | Read | `mcp:read` | The authoritative allowed shape and enums for a structured pathway surface, node, or edge. |
+| `get_pathway_context` | Read | `mcp:read` | Deep per-node and per-edge execution semantics, the same summaries Bland's server-side pathway agent uses. |
+
+## API Reference tools
+
+Each tool below matches one [API Reference](/api-v1/post/calls) page, and most names link to it. Its inputs are that page's path, query, and body parameters. Endpoints that already have a dedicated tool, such as Stop Call (`stop_call`) and Call Details (`get_call_log`), aren't repeated here.
+
+Sign-in connections reach an allowlist of everyday resources. A tool is **Not offered** over sign-in when its endpoint is outside that allowlist, or when it moves money, mints a key, session, or token, controls live calls, sends stored credentials to a third party, or runs model work Bland pays for.
+
+### Agent inbound numbers
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_agent_number_binding`](/api-v2/get/agents-id-inbound) | Read | `mcp:read` | Check which phone numbers are attached to an agent and whether each one answers on the production or staging environment. |
+| [`attach_agent_numbers`](/api-v2/post/agents-id-inbound-attach) | Write | `mcp:write` | Route inbound calls on your phone numbers to an agent. |
+| [`detach_agent_numbers`](/api-v2/post/agents-id-inbound-detach) | Write | `mcp:write` | Stop routing inbound calls on phone numbers to an agent. |
+
+### Agent versions
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_agent_scenario_history`](/api-v2/get/agents-id-scenarios-node-id-history) | Read | `mcp:read` | List how one scenario changed across saved versions. |
+
+### Agent checks
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`remove_agent_check_eval`](/api-v2/delete/agents-id-environments-env-checks-evals-eval-agent-id) | Destructive | `mcp:write` | Drop one eval from an environment's promotion checks. |
+
+### Agent experiments
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_agent_experiment`](/api-v2/post/agents-id-experiments) | Write | `mcp:write` | Start an A/B experiment on a variant version. |
+| [`list_agent_experiments`](/api-v2/get/agents-id-experiments) | Read | `mcp:read` | List an agent's experiments, newest first. |
+| [`get_agent_experiment`](/api-v2/get/agents-id-experiments-experiment-id) | Read | `mcp:read` | Retrieve one experiment and its live progress. |
+| [`update_agent_experiment`](/api-v2/patch/agents-id-experiments-experiment-id) | Write | `mcp:write` | Adjust an active experiment's split or conditions. |
+| [`stop_agent_experiment`](/api-v2/post/agents-id-experiments-experiment-id-stop) | Write | `mcp:write` | End an active experiment and return traffic to baseline. |
+
+### Agent identity
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_agent_identity`](/api-v2/get/agents-id-identity) | Read | Not offered | Read the agent's branded contact card and its delivery settings. |
+| [`update_agent_identity`](/api-v2/put/agents-id-identity) | Write | Not offered | Change the agent's contact card fields and delivery settings. |
+| [`get_agent_contact_card`](/api-v2/get/agents-id-identity-contact-card) | Read | Not offered | Download the agent's contact card as a vCard file. |
+| [`send_agent_test_contact_card`](/api-v2/post/agents-id-identity-contact-card-test) | Destructive | Not offered | Send the agent's contact card to one number to check how it arrives. |
+
+### Agent dispositions
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`list_agent_dispositions`](/api-v2/get/agents-id-dispositions) | Read | `mcp:read` | List the dispositions defined on an agent. |
+| [`delete_agent_disposition`](/api-v2/delete/agents-id-dispositions-disposition-id) | Destructive | `mcp:write` | Retire a disposition so it stops classifying new calls. |
+| [`create_agent_disposition`](/api-v2/post/agents-id-dispositions) | Write | `mcp:write` | Create a disposition with an initial draft definition. |
+| [`get_agent_disposition`](/api-v2/get/agents-id-dispositions-disposition-id) | Read | `mcp:read` | Retrieve a disposition's summary and lifecycle state. |
+| [`get_agent_disposition_draft`](/api-v2/get/agents-id-dispositions-disposition-id-draft) | Read | `mcp:read` | Retrieve a disposition's live draft definition. |
+| [`update_agent_disposition_draft`](/api-v2/patch/agents-id-dispositions-disposition-id-draft) | Write | `mcp:write` | Replace a disposition's draft definition. |
+| [`list_agent_disposition_versions`](/api-v2/get/agents-id-dispositions-disposition-id-versions) | Read | `mcp:read` | List a disposition's published versions, newest first. |
+| [`get_agent_disposition_version`](/api-v2/get/agents-id-dispositions-disposition-id-versions-version-id) | Read | `mcp:read` | Retrieve one published disposition version. |
+| [`estimate_agent_disposition`](/api-v2/post/agents-id-dispositions-disposition-id-estimates) | Write | `mcp:write` | Estimate a disposition's per-call cost before publishing. |
+| [`publish_agent_disposition`](/api-v2/post/agents-id-dispositions-disposition-id-publish) | Destructive | `mcp:write` | Publish a disposition draft as an immutable version. |
+| [`disable_agent_disposition`](/api-v2/post/agents-id-dispositions-disposition-id-disable) | Destructive | `mcp:write` | Stop a disposition from running on new calls. |
+| [`list_agent_call_disposition_runs`](/api-v2/get/agents-id-dispositions-call-runs) | Read | `mcp:read` | Get the latest production disposition results for up to 100 of an agent's calls, with each run's values, status, and delivery timing. |
+| [`list_disposition_test_runs`](/api-v2/get/agents-id-dispositions-disposition-id-runs) | Read | `mcp:read` | List test runs for a disposition. |
+| [`create_disposition_test_run`](/api-v2/post/agents-id-dispositions-disposition-id-runs) | Destructive | `evals:run` | Run a disposition against completed production calls. |
+| [`get_disposition_test_run`](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id) | Read | `mcp:read` | Retrieve a test run with live progress counts. |
+| [`list_disposition_test_run_rows`](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-rows) | Read | `mcp:read` | Page through a test run's per-call results. |
+| [`export_disposition_test_run_csv`](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-export-csv) | Read | `mcp:read` | Download a test run's results as CSV. |
+| [`align_disposition_test_run`](/api-v2/post/agents-id-dispositions-disposition-id-runs-run-id-align) | Destructive | Not offered | Propose definition edits from a test run's corrections. |
+| [`set_disposition_test_annotation`](/api-v2/put/agents-id-dispositions-disposition-id-runs-run-id-cases-call-id-annotations-value-id) | Write | `mcp:write` | Record a corrected value for one call in a test run. |
+| [`get_disposition_test_annotation`](/api-v2/get/agents-id-dispositions-disposition-id-runs-run-id-cases-call-id-annotations-value-id) | Read | `mcp:read` | List correction revisions for one call and value. |
+| [`list_disposition_extractors`](/api-v2/get/agents-id-dispositions-extractors) | Read | `mcp:read` | List the extractors available to an agent's dispositions. |
+| [`create_disposition_extractor`](/api-v2/post/agents-id-dispositions-extractors) | Write | `mcp:write` | Create an extractor with its first editable version. |
+| [`get_disposition_extractor`](/api-v2/get/agents-id-dispositions-extractors-extractor-id) | Read | `mcp:read` | Retrieve an extractor with its draft and published versions. |
+| [`get_disposition_extractor_version`](/api-v2/get/agents-id-dispositions-extractors-extractor-id-versions-version-id) | Read | `mcp:read` | Retrieve one version of an extractor. |
+| [`update_disposition_extractor_draft`](/api-v2/patch/agents-id-dispositions-extractors-extractor-id-draft) | Write | `mcp:write` | Edit an extractor's editable draft version. |
+| [`publish_disposition_extractor`](/api-v2/post/agents-id-dispositions-extractors-extractor-id-publish) | Write | `mcp:write` | Publish an extractor draft as an immutable version. |
+| [`get_disposition_judge_catalog`](/api-v2/get/agents-id-dispositions-judge-catalog) | Read | `mcp:read` | List the judges a disposition can pin for this agent. |
+| [`get_disposition_judge_version`](/api-v2/get/agents-id-dispositions-judges-judge-id-versions-version-id) | Read | `mcp:read` | Retrieve one version of a judge's rubric. |
+| [`get_disposition_variable_catalog`](/api-v2/get/agents-id-dispositions-variable-catalog) | Read | `mcp:read` | List the agent variables a disposition can re-extract. |
+| [`get_disposition_model_profile_catalog`](/api-v2/get/agents-id-dispositions-model-profile-catalog) | Read | `mcp:read` | List the model profiles available to extractors. |
+| [`get_disposition_extractor_catalog`](/api-v2/get/agents-id-dispositions-extractor-catalog) | Read | `mcp:read` | List the published extractors a disposition can pin. |
+
+### Agent library
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`list_library_scenarios`](/api-v2/get/agents-library-scenarios) | Read | `mcp:read` | List reusable scenarios from your other agents. |
+| [`list_archived_nodes`](/api-v2/get/agents-library-archived-nodes) | Read | `mcp:read` | List nodes archived from your organization's agents. |
+| [`delete_archived_node`](/api-v2/delete/agents-library-archived-nodes-archived-node-id) | Destructive | `mcp:write` | Permanently remove an entry from the node archive. |
+| [`archive_agent_node`](/api-v2/post/agents-id-archived-nodes) | Write | `mcp:write` | Copy a node from an agent into the organization archive. |
+
+### Migration to agents
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`migrate_pathway_to_agent`](/api-v2/post/agents-migrate) | Destructive | Not offered | Plan and build an agent from a legacy pathway graph. |
+| [`migrate_persona_to_agent`](/api-v2/post/agents-migrate-persona) | Write | Not offered | Build an agent from a persona and its attached pathways. |
+| [`migrate_pathways_to_agents`](/api-v2/post/agents-migrate-pathways) | Write | Not offered | Convert stored or inline pathways into agent scenarios. |
+| [`start_pathway_translation`](/api-v2/post/agents-migrate-translations) | Write | Not offered | Start an async job translating pathways into scenarios. |
+| [`get_pathway_translation_run`](/api-v2/get/agents-migrate-translations-run-id) | Read | Not offered | Poll the status and result of a translation job. |
+| [`cancel_pathway_translation_run`](/api-v2/post/agents-migrate-translations-run-id-cancellations) | Write | Not offered | Cancel a pending or running translation job. |
+
+### Calls API
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`send_call`](/api-v1/post/calls) | Destructive | `calls:create` | Send an AI phone call with a custom objective and actions. |
+| [`analyze_call`](/api-v1/post/calls-id-analyze) | Destructive | Not offered | Analyze a call with AI, using questions and goals you supply. |
+| [`get_call_listen_url`](/api-v1/post/calls-id-listen) | Write | Not offered | Initiate a live listen session for an active call. |
+| [`get_call_transcript_stream_url`](/api-v1/post/calls-id-transcript-stream-token) | Write | Not offered | Get a short-lived, ready-to-connect WebSocket URL for a call's live post-transfer transcript stream. |
+| [`stop_all_active_calls`](/api-v1/post/calls-active-stop) | Destructive | Not offered | End all active phone calls on your account. |
+| [`transfer_active_call`](/api-v1/post/calls-active-transfer) | Destructive | Not offered | Transfer an in-progress call to a different phone number. |
+| [`list_calls`](/api-v1/get/calls) | Read | `mcp:read` | Returns a set of metadata for each call dispatched by your account. |
+| [`list_active_calls`](/api-v1/get/active) | Read | `mcp:read` | Retrieve all currently active calls for your organization. |
+| [`list_call_events`](/api-v1/get/event-stream) | Read | Not offered | Retrieve stream of events that occurred during the call. |
+| [`get_corrected_transcript`](/api-v1/get/calls-corrected-transcript) | Read | Not offered | Get the corrected transcript from your call's recording. |
+| [`get_post_call_webhook`](/api-v1/get/postcall-webhooks-get) | Read | `mcp:read` | Get the post call webhook data for a specific call. |
+| [`create_post_call_webhooks`](/api-v1/post/postcall-webhooks-create) | Destructive | `mcp:write` | Create and send post call webhooks for specified calls. |
+| [`resend_post_call_webhooks`](/api-v1/post/postcall-webhooks-resend) | Destructive | `mcp:write` | Resend post call webhooks for specified calls. |
+
+### Batches
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_batch`](/api-v2/post/batches) | Destructive | `calls:create` | Create a new batch of calls using direct input. |
+| [`list_batches`](/api-v2/get/batches) | Read | `mcp:read` | Retrieve a list of all batches created by your organization. |
+| [`get_batch`](/api-v2/get/batches-id) | Read | `mcp:read` | Retrieve metadata for a specific batch. |
+| [`get_batch_logs`](/api-v2/get/batches-id-logs) | Read | `mcp:read` | Retrieve logs for a specific batch. |
+| [`stop_batch`](/api-v2/post/batches-id-stop) | Destructive | `calls:stop` | Stop a batch that is currently running or scheduled. |
+
+### SMS
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`list_sms_numbers`](/api-v1/get/sms-numbers) | Read | `mcp:read` | Retrieve all phone numbers configured for SMS, along with their configuration and conversation counts. |
+| [`update_sms_number_config`](/api-v1/post/sms-update) | Write | `mcp:write` | Update the SMS configuration for a phone number owned by the authenticated user. |
+| [`send_sms`](/api-v1/post/sms-send) | Destructive | `mcp:write` | Send an SMS message from an agent to a user. |
+| [`send_sms_batch`](/api-v1/post/sms-batch) | Destructive | `mcp:write` | Send SMS messages to a large list of recipients from a pre-uploaded CSV file. |
+| [`create_sms_conversation`](/api-v1/post/sms-create) | Write | `mcp:write` | Create an SMS conversation with specific pathway state without triggering immediate message sending. |
+| [`list_sms_conversations`](/api-v1/get/sms-conversations) | Read | `mcp:read` | Retrieve a paginated list of SMS conversations for the authenticated user, with filtering, sorting, and metadata. |
+| [`get_sms_conversation`](/api-v1/get/sms-conversations-id) | Read | `mcp:read` | Retrieve a single SMS conversation and its messages by its ID. |
+| [`update_sms_conversation`](/api-v1/patch/sms-conversations-id) | Write | `mcp:write` | Updates properties of an existing SMS conversation. |
+| [`hand_off_sms_conversation`](/api-v1/post/sms-conversations-handoff) | Write | `mcp:write` | Pause the agent on a conversation so a human can take over the thread. |
+| [`send_sms_conversation_message`](/api-v1/post/sms-conversations-messages) | Destructive | `mcp:write` | Send a message on an existing conversation from the agent number, as a human rep or as the agent. |
+| [`resume_sms_conversation`](/api-v1/post/sms-conversations-resume) | Write | `mcp:write` | Hand a conversation back to the agent after a human handoff. |
+| [`end_sms_conversation`](/api-v1/post/sms-conversations-end) | Write | `mcp:write` | Close a conversation for good, typically when a human rep is done with it. |
+| [`delete_sms_conversation_messages`](/api-v1/delete/sms-conversations-message) | Destructive | `mcp:write` | Delete messages from an SMS conversation. |
+| [`delete_sms_conversation`](/api-v1/delete/sms-conversations) | Destructive | `mcp:write` | Delete a specific conversation and all of its associated messages. |
+| [`get_sms_conversation_webhook`](/api-v1/get/sms-conversations-webhook) | Read | `mcp:read` | Retrieve the webhook delivery log for an SMS conversation, including the payload, URL, response codes, and timing. |
+| [`analyze_sms_conversation`](/api-v1/post/sms-analyze) | Write | Not offered | Answer questions and extract information from an SMS conversation. |
+
+### Numbers
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`purchase_phone_number`](/api-v1/post/inbound-purchase) | Destructive | Not offered | Purchase a new phone number (inbound/outbound). |
+| [`update_inbound_number`](/api-v1/post/inbound-number-update) | Write | `mcp:write` | Update your inbound agent's settings, prompt and other details. |
+| [`update_inbound_number_label`](/api-v1/post/inbound-update-label) | Write | Not offered | Update the label shown for one of your inbound phone numbers. |
+| [`list_phone_numbers`](/api-v1/get/inbound) | Read | `mcp:read` | Retrieves a list of all inbound phone numbers configured for your account, along with their associated settings. |
+| [`get_phone_number`](/api-v1/get/inbound-number) | Read | `mcp:read` | Retrieve settings for your inbound phone number. |
+| [`create_inbound_session`](/api-v1/post/inbound-session) | Write | Not offered | Create a session token that can be used to pass variables to inbound calls via SIP headers. |
+| [`get_number_voice_pool`](/api-v1/get/inbound-number-voice-pool) | Read | `mcp:read` | List the voices in an inbound number's voice pool. |
+| [`set_number_voice_pool`](/api-v1/post/inbound-number-voice-pool) | Write | `mcp:write` | Replace the voice pool on an inbound number. |
+
+### Blocked numbers
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_block_rules`](/api-v1/post/blocked-numbers) | Write | Not offered | Create one or more block rules to prevent specific phone numbers from reaching your inbound numbers. |
+| [`list_block_rules`](/api-v1/get/blocked-numbers) | Read | `mcp:read` | Retrieve block rules associated with your inbound numbers. |
+| [`get_block_rule`](/api-v1/get/blocked-numbers-id) | Read | `mcp:read` | Retrieve the details of a specific block rule. |
+| [`delete_block_rule`](/api-v1/delete/blocked-numbers-id) | Destructive | Not offered | Permanently delete a block rule. |
+| [`edit_block_rule`](/api-v1/post/blocked-numbers-id-edit) | Write | Not offered | Update attributes of an existing block rule. |
+
+### Custom dialing pools
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_custom_dialing_pool`](/api-v1/get/custom-dialing-pool) | Read | Not offered | Retrieve a specific custom dialing pool by its ID. |
+| [`list_custom_dialing_pools`](/api-v1/get/custom-dialing-pools) | Read | Not offered | Retrieve all custom dialing pools for your organization. |
+| [`create_custom_dialing_pool`](/api-v1/post/custom-dialing-pools) | Write | Not offered | Create a new custom dialing pool with phone numbers for optimized call routing. |
+| [`update_custom_dialing_pool`](/api-v1/post/custom-dialing-pool-update) | Write | Not offered | Update an existing custom dialing pool with new phone numbers or credentials. |
+
+### SIP trunks
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_sip_config`](/api-v1/get/sip-config) | Read | Not offered | Retrieve the current SIP configuration for a phone number. |
+| [`list_sip_numbers`](/api-v1/get/sip-numbers) | Read | Not offered | List all phone numbers with SIP configurations for your organization. |
+| [`attach_sip_config`](/api-v1/post/sip-attach) | Write | Not offered | Attach SIP configuration to one or more phone numbers for inbound and/or outbound routing. |
+| [`update_sip_direction`](/api-v1/post/sip-update) | Write | Not offered | Update an existing SIP routing direction for a phone number. |
+| [`detach_sip_config`](/api-v1/post/sip-detach) | Destructive | Not offered | Remove SIP configuration from a phone number for specified directions. |
+| [`parse_sip_destination`](/api-v1/post/sip-parse-destination) | Write | Not offered | Parse and validate a raw SIP destination string into its host, port, user, and transport before attaching it to a trunk. |
+| [`discover_sip_endpoint`](/api-v1/post/sip-discover) | Write | Not offered | Auto-discover optimal SIP connection settings by probing your endpoint with DNS resolution and SIP OPTIONS. |
+| [`get_sip_discovery_status`](/api-v1/get/sip-discover-status) | Read | Not offered | Poll the status and results of a SIP endpoint discovery session. |
+| [`send_sip_test_call`](/api-v1/post/sip-test-call) | Destructive | Not offered | Place a live test call to your SIP endpoint to verify connectivity. |
+| [`get_sip_test_call_status`](/api-v1/get/sip-test-call-status) | Read | Not offered | Poll the status and trace of a SIP test call. |
+| [`get_sip_firewall_ips`](/api-v1/get/sip-firewall-ips) | Read | Not offered | Get Bland's static SIP signaling and media IP addresses and ports for your region. |
+| [`get_sip_outbound_setup`](/api-v1/get/sip-outbound-setup) | Read | Not offered | Get Bland's SIP server details and PBX configuration instructions for outbound call routing. |
+| [`generate_sip_password`](/api-v1/get/sip-generate-password) | Read | Not offered | Generate a strong, PBX-safe SIP password for register-based authentication, at a configurable length. |
+| [`get_sip_trunk_health`](/api-v1/get/sip-status) | Read | Not offered | Get the health status of a SIP trunk by probing the endpoint with SIP OPTIONS. |
+| [`list_sip_calls`](/api-v1/get/sip-calls) | Read | Not offered | Retrieve SIP call logs for a phone number with cursor-based pagination. |
+| [`update_sip_advanced_config`](/api-v1/patch/sip-config) | Write | Not offered | Update advanced SIP configuration including failover, codecs, and alerts. |
+| [`check_number_portability`](/api-v1/get/sip-port-check) | Read | Not offered | Check whether phone numbers are eligible for porting to Bland. |
+| [`initiate_port_request`](/api-v1/post/sip-port-initiate) | Destructive | Not offered | Submit a number porting request to transfer phone numbers from another carrier to Bland. |
+| [`list_port_requests`](/api-v1/get/sip-port-requests) | Read | Not offered | List all number porting requests for your organization. |
+| [`cancel_port_request`](/api-v1/delete/sip-port-cancel) | Destructive | Not offered | Cancel an in-progress number porting request. |
+
+### Custom Twilio accounts
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_encrypted_key`](/api-v1/post/accounts) | Destructive | Not offered | Integrate your own Twilio account with Bland. |
+| [`delete_encrypted_key`](/api-v1/post/accounts-delete) | Destructive | Not offered | Disable an encrypted key for a Twilio account integration. |
+| [`upload_inbound_numbers`](/api-v1/post/inbound-insert) | Destructive | Not offered | Add inbound numbers to Bland from your own Twilio account. |
+| [`delete_inbound_number`](/api-v1/post/inbound-number-delete) | Destructive | Not offered | Remove an inbound number that was uploaded through your own Twilio account. |
+
+### Knowledge bases
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_knowledge_base_from_text`](/api-v1/post/knowledge-learn-text) | Write | `mcp:write` | Creates a new knowledge base item from direct text input. |
+| [`create_knowledge_base_from_websites`](/api-v1/post/knowledge-learn-web) | Write | `mcp:write` | Creates a new knowledge base item by scraping content from web URLs. |
+| [`list_knowledge_bases`](/api-v1/get/knowledge) | Read | `mcp:read` | Retrieves a paginated list of knowledge base items for the authenticated organization. |
+| [`get_knowledge_base`](/api-v1/get/knowledge-id) | Read | `mcp:read` | Retrieves a specific knowledge base item by ID. |
+| [`update_knowledge_base`](/api-v1/put/knowledge-id) | Write | `mcp:write` | Updates a knowledge base item's name and/or description. |
+| [`delete_knowledge_base`](/api-v1/delete/knowledge-id) | Destructive | `mcp:write` | Soft deletes a knowledge base item by setting its status to 'DELETED'. |
+| [`discover_sitemap_urls`](/api-v1/post/knowledge-crawl) | Write | `mcp:write` | Discovers URLs from a website's sitemap for web scraping. |
+| [`chat_with_knowledge_base`](/api-v1/post/knowledge-chat) | Write | Not offered | Performs a conversational query against knowledge base items with context. |
+
+### Custom tools
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_tool`](/api-v2/post/tools) | Write | Not offered | Create a new tool. |
+| [`update_tool`](/api-v2/post/tools-tool-id) | Write | Not offered | Update an existing tool. |
+| [`list_tools`](/api-v2/get/tools) | Read | Not offered | Retrieve a paginated list of your tools. |
+| [`list_tool_execution_logs`](/api-v2/get/tools-logs) | Read | Not offered | Retrieve per-execution logs for your tools with optional filtering and pagination. |
+| [`get_tool_execution_stats`](/api-v2/get/tools-logs-stats) | Read | Not offered | Retrieve aggregated execution statistics for your tools, grouped and filtered by integration, status, date, and more. |
+
+### Contacts
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`list_contacts`](/api-v1/get/contacts) | Read | `mcp:read` | List all contacts for your organization. |
+| [`find_contact`](/api-v1/get/contacts-find) | Write | `mcp:write` | Find a contact by phone number, email, or external ID. |
+| [`get_contact`](/api-v1/get/contacts-id) | Read | `mcp:read` | Retrieve a contact by its unique ID, including all identifiers, contact_memories (per persona/agent), and memory entities. |
+| [`resolve_contact`](/api-v1/post/contacts-resolve) | Write | `mcp:write` | Find an existing contact or create a new one. |
+| [`update_contact`](/api-v1/patch/contacts-id) | Write | `mcp:write` | Update an existing contact's information. |
+| [`merge_contacts`](/api-v1/post/contacts-merge) | Destructive | `mcp:write` | Merge two contacts into one. |
+
+### Memory
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_contact_memory`](/api-v1/post/memory-contact) | Write | `mcp:write` | Create a memory record for a contact scoped to a persona or agent number. |
+| [`get_contact_memory`](/api-v1/get/memory-contact-id) | Read | `mcp:read` | Retrieve a contact's full memory record by ID, including their conversation summary, structured facts, recent messages, and open items. |
+| [`list_contact_memory_messages`](/api-v1/get/memory-contact-id-messages) | Read | `mcp:read` | Retrieve the recent message history for a contact memory. |
+| [`update_contact_memory_summary`](/api-v1/patch/memory-contact-id-summary) | Write | `mcp:write` | Overwrite the conversation summary for a contact memory. |
+| [`update_contact_memory_facts`](/api-v1/patch/memory-contact-id-facts) | Write | `mcp:write` | Merge new facts into a contact's memory record. |
+| [`get_memory_context`](/api-v1/get/memory-context) | Read | Not offered | Retrieve the full memory context for a contact scoped to a persona or agent number. |
+| [`get_memory_changes`](/api-v1/get/memory-changes) | Read | `mcp:read` | Retrieve what memory was captured or updated during a specific call or SMS conversation. |
+| [`reset_contact_memory`](/api-v1/post/memory-reset) | Destructive | `mcp:write` | Permanently delete all memory for a contact scoped to a specific persona or agent number. |
+| [`set_memory_enabled`](/api-v1/post/memory-enable) | Write | `mcp:write` | Enable or disable memory for a pathway or persona version. |
+| [`get_agent_memory_schema`](/api-v2/get/agents-id-memory-schema) | Read | `mcp:read` | Read what the agent remembers about each contact between calls. |
+| [`infer_agent_memory_schema`](/api-v2/post/agents-id-memory-schema-infer) | Write | Not offered | Generate a suggested memory schema by reading the agent. |
+
+### Agent testing
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_test_scenario`](/api-v1/post/agent-testing-scenarios) | Write | `mcp:write` | Create a new test scenario with assertions for a pathway or persona. |
+| [`list_test_scenarios`](/api-v1/get/agent-testing-scenarios) | Read | `mcp:read` | List all test scenarios for your organization. |
+| [`get_test_scenario`](/api-v1/get/agent-testing-scenarios-id) | Read | `mcp:read` | Retrieve a specific test scenario with its assertions. |
+| [`update_test_scenario`](/api-v1/put/agent-testing-scenarios-id) | Write | `mcp:write` | Update an existing test scenario. |
+| [`delete_test_scenario`](/api-v1/delete/agent-testing-scenarios-id) | Destructive | `mcp:write` | Delete a test scenario and all related data. |
+| [`list_test_templates`](/api-v1/get/agent-testing-templates) | Read | Not offered | List out-of-box test scenario templates. |
+| [`clone_test_template`](/api-v1/post/agent-testing-templates-clone) | Write | `mcp:write` | Clone a template to create a new scenario bound to your pathway or persona. |
+| [`generate_test_scenario_from_call`](/api-v1/post/agent-testing-scenarios-generate) | Write | Not offered | Generate a test scenario from a historical call transcript using AI analysis. |
+| [`run_test_scenario`](/api-v1/post/agent-testing-scenarios-run) | Destructive | `evals:run` | Execute a single test scenario. |
+| [`batch_run_test_scenarios`](/api-v1/post/agent-testing-batch-run) | Destructive | `evals:run` | Execute multiple test scenarios as a batch. |
+| [`list_test_runs`](/api-v1/get/agent-testing-runs) | Read | `mcp:read` | List test runs with optional filtering and pagination. |
+| [`get_test_run`](/api-v1/get/agent-testing-runs-id) | Read | `mcp:read` | Retrieve detailed results for a specific test run including chat history, assertion results, and scores. |
+| [`get_test_batch`](/api-v1/get/agent-testing-batches-id) | Read | `mcp:read` | Retrieve a test batch and all its runs. |
+| [`analyze_failed_test_run`](/api-v1/post/agent-testing-runs-analyze) | Write | Not offered | Run AI-powered analysis on a failed test run to get root cause and fix suggestions. |
+| [`get_test_analytics`](/api-v1/get/agent-testing-analytics) | Read | `mcp:read` | Get basic testing analytics for a pathway over a time window. |
+| [`get_enhanced_test_analytics`](/api-v1/get/agent-testing-analytics-enhanced) | Read | `mcp:read` | Get enhanced testing analytics including node failure heatmap, weakest link, trend analysis, and Sankey flow data. |
+| [`create_simulation_set`](/api-v1/post/agent-testing-simulation-sets) | Destructive | `evals:run` | Create a simulation set that runs each scenario multiple times to detect flaky behavior. |
+| [`get_simulation_set`](/api-v1/get/agent-testing-simulation-sets-id) | Read | `mcp:read` | Retrieve a simulation set with its statistics including pass rates, flakiness detection, and score distributions. |
+| `start_tornado_session` | Destructive | `evals:run` | Start an iterative fix loop that runs tests, analyzes failures, applies fixes, and retests until all scenarios pass. |
+| `get_active_tornado_session` | Read | `mcp:read` | Get the currently active tornado session for a pathway. |
+| `get_tornado_status` | Read | `mcp:read` | Get detailed progress for a tornado session including iteration data and fix plans. |
+| `cancel_tornado_session` | Write | `mcp:write` | Cancel a running tornado session. |
+
+### Evals API
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_evals_status`](/api-v1/get/evals-status) | Read | `mcp:read` | Check whether the Evals feature is enabled for your organization. |
+| [`create_eval_agent`](/api-v1/post/evals-agents) | Write | `mcp:write` | Create a new eval agent, optionally seeded from a template. |
+| [`update_eval_agent`](/api-v1/patch/evals-agents-id) | Write | `mcp:write` | Update an eval agent's metadata or repoint its active version. |
+| [`delete_eval_agent`](/api-v1/delete/evals-agents-id) | Destructive | `mcp:write` | Soft-delete an eval agent. |
+| [`publish_eval_agent`](/api-v1/post/evals-agents-id-publish) | Write | `mcp:write` | Publish the agent's current draft as a new active version. |
+| [`list_eval_agent_versions`](/api-v1/get/evals-agents-id-versions) | Read | `mcp:read` | List all versions of an eval agent. |
+| [`create_eval_agent_version`](/api-v1/post/evals-agents-id-versions) | Write | `mcp:write` | Fork a new editable draft version of an eval agent. |
+| [`get_eval_agent_version`](/api-v1/get/evals-agents-id-versions-id) | Read | `mcp:read` | Fetch one version of an eval agent. |
+| [`update_eval_agent_version`](/api-v1/patch/evals-agents-id-versions-id) | Write | `mcp:write` | Edit a draft version's prompt, levels, targets, or weight. |
+| [`list_eval_runs`](/api-v1/get/evals-runs) | Read | `mcp:read` | List eval runs in your organization, with optional filters. |
+| [`estimate_eval_run`](/api-v1/post/evals-runs-estimates) | Write | `mcp:write` | Preview the size and cost of a run before starting it. |
+| [`cancel_eval_run`](/api-v1/post/evals-runs-id-cancel) | Write | `mcp:write` | Cancel a pending, queued, or running eval run. |
+| [`list_eval_run_call_results`](/api-v1/get/evals-runs-id-call-results) | Read | `mcp:read` | List the per-call results for an eval run. |
+| [`list_eval_run_agent_results`](/api-v1/get/evals-runs-id-agent-results) | Read | `mcp:read` | List every individual judge verdict in an eval run. |
+| [`list_eval_run_agent_snapshots`](/api-v1/get/evals-runs-id-agent-snapshots) | Read | `mcp:read` | List the frozen agent configurations a run scored against. |
+| [`list_workbench_setups`](/api-v1/get/evals-workbench-setups) | Read | `mcp:read` | List the workbench setups in your organization. |
+| [`create_workbench_setup`](/api-v1/post/evals-workbench-setups) | Write | `mcp:write` | Create a new workbench setup with an empty draft version. |
+| [`get_workbench_setup`](/api-v1/get/evals-workbench-setups-id) | Read | `mcp:read` | Fetch one workbench setup and its current draft version. |
+| [`update_workbench_setup`](/api-v1/patch/evals-workbench-setups-id) | Write | `mcp:write` | Update a workbench setup's metadata or repoint its active version. |
+| [`delete_workbench_setup`](/api-v1/delete/evals-workbench-setups-id) | Destructive | `mcp:write` | Soft-delete a workbench setup. |
+| [`publish_workbench_setup`](/api-v1/post/evals-workbench-setups-id-publish) | Write | `mcp:write` | Publish the setup's current draft as a new active version. |
+| [`list_workbench_setup_versions`](/api-v1/get/evals-workbench-setups-id-versions) | Read | `mcp:read` | List all versions of a workbench setup. |
+| [`create_workbench_setup_version`](/api-v1/post/evals-workbench-setups-id-versions) | Write | `mcp:write` | Fork a new editable draft version of a workbench setup. |
+| [`get_workbench_setup_version`](/api-v1/get/evals-workbench-setups-id-versions-id) | Read | `mcp:read` | Fetch one version of a workbench setup. |
+| [`update_workbench_setup_version`](/api-v1/patch/evals-workbench-setups-id-versions-id) | Write | `mcp:write` | Edit a draft version's attached agents, threshold, run mode, or default calls. |
+| [`list_eval_agent_templates`](/api-v1/get/evals-agent-templates) | Read | `mcp:read` | List the read-only library of shipped eval agent templates. |
+| [`get_eval_agent_template`](/api-v1/get/evals-agent-templates-key) | Read | `mcp:read` | Fetch a single shipped eval agent template by its key. |
+| [`list_eval_user_templates`](/api-v1/get/evals-user-templates) | Read | `mcp:read` | List your organization's saved eval agent templates. |
+| [`create_eval_user_template`](/api-v1/post/evals-user-templates) | Write | `mcp:write` | Save a new eval agent template, from scratch or by snapshotting an existing eval agent. |
+| [`get_eval_user_template`](/api-v1/get/evals-user-templates-id) | Read | `mcp:read` | Fetch one of your organization's saved eval agent templates. |
+| [`update_eval_user_template`](/api-v1/patch/evals-user-templates-id) | Write | `mcp:write` | Update a saved eval agent template. |
+| [`delete_eval_user_template`](/api-v1/delete/evals-user-templates-id) | Destructive | `mcp:write` | Soft-delete a saved eval agent template. |
+
+### Guard rails
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`list_guard_rails`](/api-v1/get/guard-rails) | Read | `mcp:read` | Retrieve a list of all guard rails in your organization. |
+| [`get_guard_rail`](/api-v1/get/guard-rails-id) | Read | `mcp:read` | Retrieve a specific guard rail by ID. |
+| [`create_guard_rail`](/api-v1/post/guard-rails) | Write | `mcp:write` | Create a new guard rail for compliance monitoring. |
+| [`update_guard_rail`](/api-v1/patch/guard-rails-id) | Write | `mcp:write` | Update an existing guard rail configuration. |
+| [`delete_guard_rail`](/api-v1/delete/guard-rails-id) | Destructive | `mcp:write` | Delete a guard rail. |
+
+### Prompts library
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`list_prompts`](/api-v1/get/prompts) | Read | `mcp:read` | Retrieves all your saved prompts. |
+| [`get_prompt`](/api-v1/get/prompts-id) | Read | `mcp:read` | Retrieves data for a specific prompt_id. |
+| [`create_prompt`](/api-v1/post/prompts) | Write | `mcp:write` | Create and store a prompt for future use. |
+
+### Widgets
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_widget`](/api-v1/post/widget) | Write | `mcp:write` | Creates a new widget. |
+| [`list_widgets`](/api-v1/get/widgets) | Read | `mcp:read` | Retrieves all widgets associated with your account. |
+| [`get_widget`](/api-v1/get/widget-id) | Read | `mcp:read` | Retrieves a specific widget by ID. |
+| [`update_widget`](/api-v1/patch/widget-id) | Write | `mcp:write` | Updates an existing widget. |
+| [`list_widget_threads`](/api-v1/get/widget-id-threads) | Read | `mcp:read` | Retrieves all conversation threads for a specific widget. |
+| [`send_widget_live_agent_message`](/api-v1/post/widget-thread-webhook) | Destructive | `mcp:write` | Send a message from a live agent to the user, or end the conversation. |
+| [`list_widget_custom_components`](/api-v1/get/widget-custom-components) | Read | `mcp:read` | List your widget custom components. |
+| [`create_widget_custom_component`](/api-v1/post/widget-custom-components) | Write | `mcp:write` | Create a new custom component. |
+| [`update_widget_custom_component`](/api-v1/patch/widget-custom-components-id) | Write | `mcp:write` | Update a widget custom component. |
+| [`delete_widget_custom_component`](/api-v1/delete/widget-custom-components-id) | Destructive | `mcp:write` | Deletes a specific custom component by ID. |
+
+### Live translation
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_translation_session`](/api-v1/post/translation-sessions) | Write | Not offered | Create a real-time translation session and receive a WebSocket URL for streaming audio. |
+| [`get_translation_session`](/api-v1/get/translation-sessions-id) | Read | Not offered | Retrieve the status, duration, and billing details of a translation session. |
+| [`end_translation_session`](/api-v1/delete/translation-sessions-id) | Destructive | Not offered | Terminate a translation session from the server side. |
+
+### Triage
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_triage_issue`](/api-v1/post/triage-issues) | Write | `mcp:write` | Create a triage issue. |
+| [`list_triage_issues`](/api-v1/get/triage-issues) | Read | `mcp:read` | List triage issues with filters and keyset pagination. |
+| [`get_triage_issue`](/api-v1/get/triage-issues-id) | Read | `mcp:read` | Get a triage issue by ID. |
+| [`update_triage_issue`](/api-v1/patch/triage-issues-id) | Write | `mcp:write` | Update a triage issue. |
+| [`delete_triage_issue`](/api-v1/delete/triage-issues-id) | Destructive | `mcp:write` | Permanently delete a triage issue. |
+| [`attach_triage_resource`](/api-v1/post/triage-issues-id-resources) | Write | `mcp:write` | Attach a call, SMS conversation, or file to an issue. |
+| [`list_triage_resources`](/api-v1/get/triage-issues-id-resources) | Read | `mcp:read` | List resources attached to an issue. |
+| [`remove_triage_resource`](/api-v1/delete/triage-issues-id-resources-resource-link-id) | Destructive | `mcp:write` | Detach a resource from an issue. |
+| [`attach_triage_call`](/api-v1/put/triage-issues-id-calls-call-id) | Write | `mcp:write` | Attach a call to an issue. |
+| [`detach_triage_call`](/api-v1/delete/triage-issues-id-calls-call-id) | Destructive | `mcp:write` | Detach a call from an issue. |
+| [`get_triage_affected_context`](/api-v1/get/triage-issues-id-affected) | Read | `mcp:read` | Calls, pathways, and personas affected by an issue. |
+| [`add_triage_flag`](/api-v1/post/triage-issues-id-flags) | Write | `mcp:write` | Flag a moment on an attached call. |
+| [`list_triage_flags`](/api-v1/get/triage-issues-id-flags) | Read | `mcp:read` | List flags on an issue. |
+| [`remove_triage_flag`](/api-v1/delete/triage-issues-id-flags-flag-id) | Destructive | `mcp:write` | Remove a flag from an issue. |
+| [`list_triage_flag_types`](/api-v1/get/triage-flag-types) | Read | `mcp:read` | List reusable flag types in your org. |
+| [`list_triage_activity`](/api-v1/get/triage-issues-id-activity) | Read | `mcp:read` | Activity feed for an issue. |
+| [`add_triage_comment`](/api-v1/post/triage-issues-id-comments) | Write | Not offered | Comment on an issue. |
+| [`mark_triage_issue_viewed`](/api-v1/put/triage-issues-id-view) | Write | `mcp:write` | Mark an issue as viewed by the calling user. |
+| [`list_triage_categories`](/api-v1/get/triage-categories) | Read | `mcp:read` | List issue categories. |
+| [`create_triage_category`](/api-v1/post/triage-categories) | Write | `mcp:write` | Create a custom issue category. |
+| [`link_triage_issue`](/api-v1/post/triage-issues-id-relations) | Write | `mcp:write` | Link an issue to another issue. |
+| [`list_triage_relations`](/api-v1/get/triage-issues-id-relations) | Read | `mcp:read` | List relations on an issue. |
+| [`remove_triage_relation`](/api-v1/delete/triage-issues-id-relations-relation-id) | Destructive | `mcp:write` | Remove a relation. |
+| [`list_triage_norm_agents`](/api-v1/get/triage-agents) | Read | `mcp:read` | List triage agent profiles. |
+| [`create_triage_norm_session`](/api-v1/post/triage-issues-id-agent-sessions) | Write | Not offered | Create a Norm agent session on an issue. |
+| [`prompt_triage_norm_session`](/api-v1/post/triage-issues-id-agent-sessions-session-id-prompts) | Write | Not offered | Send a prompt to Norm. |
+
+### Account
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`get_account_details`](/api-v1/get/me) | Read | Not offered | Get your account details. |
+
+### API keys
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_api_key`](/api-v1/post/keys-create) | Destructive | Not offered | Create a full-access or restricted API key for your organization. |
+| [`list_api_keys`](/api-v1/post/keys-list) | Write | Not offered | List your organization's API keys and the permissions each one holds. |
+| [`rename_api_key`](/api-v1/patch/keys-rename) | Write | Not offered | Change the name of an API key. |
+| [`delete_api_key`](/api-v1/delete/keys-delete) | Destructive | Not offered | Revoke an API key. |
+
+### Organizations
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`create_organization`](/api-v1/post/orgs) | Destructive | Not offered | Create a new organization. |
+| [`delete_organization`](/api-v1/delete/orgs) | Destructive | Not offered | Delete an organization. |
+| [`get_organization`](/api-v1/get/orgs) | Read | Not offered | Retrieve details of an organization. |
+| [`list_organization_members`](/api-v1/get/org_members) | Read | Not offered | Retrieve the list of members in an organization. |
+| [`get_org_current_service_version`](/api-v1/get/org_current_version) | Read | Not offered | Retrieve the current version of a specified service for an organization. |
+| [`list_org_service_versions`](/api-v1/get/org_list_versions) | Read | Not offered | Retrieve a list of available versions for a specified service within an organization. |
+| [`update_org_service_version`](/api-v1/patch/org_version) | Destructive | Not offered | Update the current version of a specified service for an organization. |
+| [`update_organization_members`](/api-v1/patch/org_members) | Destructive | Not offered | Add or remove members from an organization. |
+| [`update_organization_member_permissions`](/api-v1/patch/org_member_permissions) | Destructive | Not offered | Modify the permissions of an existing member within an organization. |
+| [`update_organization_properties`](/api-v1/patch/org_properties) | Write | Not offered | Modify specific properties of an organization. |
+| [`list_my_org_memberships`](/api-v1/get/org_list_self_memberships) | Read | Not offered | Retrieve a list of organizations the authenticated user is a member of. |
+| [`leave_organization`](/api-v1/delete/org_leave_self_memberships_id) | Destructive | Not offered | Remove the authenticated user from an organization. |
+| [`get_org_billing_information`](/api-v1/get/org_billing_information) | Read | Not offered | Retrieve the current billing details for an organization. |
+| [`get_org_billing_refill_information`](/api-v1/get/org_billing_refill_information) | Read | Not offered | Retrieve the recharge amount for an organization's billing. |
+| [`list_audit_logs`](/api-v1/get/audit-logs) | Read | Not offered | Retrieve a paginated, filterable list of audit events for your organization. |
+
+### Agent onboarding
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`start_agent_onboarding`](/api-v1/post/agent-onboarding-start) | Write | Not offered | Start the device-authorization flow a bot uses to get its own Bland API key, plus a phone number if its owner starts the Agent Phone Plan. |
+| [`poll_agent_onboarding`](/api-v1/post/agent-onboarding-poll) | Write | Not offered | Poll for the result of a device-authorization flow started with /v1/agent/onboarding/start. |
+| [`approve_agent_onboarding`](/api-v1/post/agent-onboarding-approve) | Destructive | Not offered | Claim a device-authorization code after the owner signs up in the browser. |
+
+### Agent Phone Plan
+
+| Tool | Access | Sign-in | Description |
+| --- | --- | --- | --- |
+| [`cancel_agent_phone_plan`](/api-v1/post/agent-phone-plan-cancel) | Destructive | Not offered | Cancel your organization's Agent Phone Plan immediately, with an optional offboarding survey. |
+| [`submit_agent_phone_plan_cancel_feedback`](/api-v1/post/agent-phone-plan-cancel-feedback) | Write | Not offered | Answer the optional Agent Phone Plan offboarding survey after you've canceled. |
 
 ## Prompts (Legacy pathways)
 
-Clients that support MCP prompts (Claude Code surfaces them as slash commands) also get these prompts. All three work with legacy pathways. For Bland Agents, use the [Norm plugin](/integrations/mcp/norm) commands instead.
+Over an API key connection, clients that support MCP prompts (Claude Code surfaces them as slash commands) also get these prompts. Sign-in connections don't get them. All three work with legacy pathways through `search_bland_docs`, `get_bland_doc`, `bland_api_get`, `call_bland_api`, `create_call`, and `get_call_log`. For Bland Agents, use the [Norm plugin](/integrations/mcp/norm) commands instead.
 
-| Prompt | What it does |
-| --- | --- |
-| `bland_pathways` | Loads Bland's pathway node/edge doctrine into the session. |
-| `build_pathway` | Guided create → validate → test → publish workflow for a new pathway (takes a `goal`). |
-| `edit_pathway` | Guided safe-edit workflow for an existing pathway (takes `pathway_id` and `change`). |
+| Prompt | Arguments | What it does |
+| --- | --- | --- |
+| `bland_pathways` | None | Loads Bland's pathway doctrine into the session: the node and edge model, node types, variable extraction, routing, the hard rules, and the create, test, and publish workflow. |
+| `build_pathway` | `goal` | Plans and builds a new pathway for the goal: create, save a version, self-validate, and place one test call. Asks before publishing to production. |
+| `edit_pathway` | `pathway_id`, optional `change` | Inspects and safely edits an existing pathway, preserving the nodes and edges you don't change, then re-validates and tests. Asks what to change when `change` is omitted, and asks before publishing. |
 
 Docs for agents: [llms.txt](/llms.txt)
