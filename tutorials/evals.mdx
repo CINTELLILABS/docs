@@ -5,9 +5,9 @@ description: "Grade real calls for quality at scale using configurable LLM judge
 
 ## Introduction
 
-Evals let you measure the quality of your calls with LLM judges. You define **eval agents**, each of which grades one dimension of a call (resolution, tone, hallucination, audio quality, and so on), then run them against a batch of real or test calls to get per-call verdicts and aggregate scores. Use Evals to track quality over time, compare prompt or pathway changes, and catch regressions before they reach production.
+Evals let you measure the quality of your calls with LLM judges. You define **eval agents**, each of which grades one dimension of a call (resolution, tone, hallucination, audio quality, and so on), then run them against a batch of real or test calls to get per-call verdicts and aggregate scores. Use Evals to track quality over time, compare changes to your agent, and catch regressions before they reach production.
 
-You can build and run Evals from the **Evals** section of the [dashboard](https://app.bland.ai), or drive the entire workflow through the [Evals API](/api-v1/get/evals-status).
+This page covers the [Evals API](/api-v1/get/evals-status) and workbench. In the dashboard, an eval agent is called a **judge**, and judges live under **Validate**, in **Evaluations**. See [Evaluations](/agents/evaluations) for the dashboard workflow, including how to make judges a required check before an agent ships.
 
 <CardGroup cols={2}>
   <Card title="Eval agents" icon="gavel">
@@ -113,8 +113,6 @@ A workbench setup is a saved, named, versioned bundle of attached agents, their 
 
 Like eval agents, setups are versioned with a draft and a published active version. When you start a run from a setup, the run pins the setup version it used, so editing the setup afterward does not change that run's results.
 
-A published setup can also be attached to a [Persona](/tutorials/personas) from its Analysis tab to score every call that persona handles automatically once the call ends.
-
 ### Templates
 
 Templates are starting points for new eval agents:
@@ -140,7 +138,7 @@ Verdicts marked `is_insufficient_evidence` or that failed to grade are excluded 
 
 ## Test cases
 
-Test cases are simulated conversations you run your agent against. Each test case defines a caller persona that a simulated caller follows when talking to your agent. A test case carries no judges. Judges attach when you start a run from the **Runs** tab. Manage test cases from the **Test cases** tab of your agent's **Evaluations** section in the dashboard.
+Test cases are simulated conversations you run your agent against. Each test case defines a caller persona that a simulated caller follows when talking to your agent. A test case carries no judges. Judges attach when you start a run from the **Runs** tab. Manage test cases from the **Test cases** tab of your agent's **Evaluations** section in the dashboard. See [Evaluations](/agents/evaluations#write-a-test-case).
 
 ### Create a test case
 
@@ -169,14 +167,14 @@ If some calls fail to generate, Bland keeps the test cases that succeeded and li
 
 ## Test and align a judge
 
-Testing a judge is a closed loop: pick calls, run the judge, refute any verdict it got wrong, and turn those corrections into the next version of the judge. Open it with the **Test** button beside **Save** in the judge editor. Use `← Back to setup` to return.
+Testing a judge is a closed loop: pick calls, run the judge, refute any verdict it got wrong, and turn those corrections into the next version of the judge. Open it with the **Test** button in the judge editor. Use `← Back to setup` to return.
 
 ### Create a test
 
 Select **Create new test** to open the population picker. Every test runs on the calls you pick.
 
-- **Production — Recent** grades the N most recent production calls for the agent.
-- **Production — Specific** lets you filter the call log in a side panel or paste a list of conversation IDs, then runs the judge on exactly those calls.
+- **Recent production calls** grades the N most recent production calls for the agent.
+- **Specific production calls** lets you filter the call log in a side panel or paste a list of conversation IDs, then runs the judge on exactly those calls.
 - **Simulated** takes a caller description (40 character minimum) and a count. Bland creates a scenario, attaches the judge at its current draft, and simulates that many conversations against it.
 
 The results table starts drawing rows as soon as the test starts. Calls the judge is still grading appear as spinner rows and fill in one by one.
@@ -195,7 +193,7 @@ Once you have refuted the verdicts you disagree with, select **Align with AI** a
 - The proposed judge changes as a red/green diff per field (instruction prompt, levels, level descriptions).
 - An **Advanced** box for optional reviewer instructions to steer the proposal.
 
-Bland reads the corrections and the transcripts of the same calls, then proposes changes constrained to the judge's own set of levels — it will not invent a level that does not exist.
+Bland reads the corrections and the transcripts of the same calls, then proposes changes constrained to the judge's own set of levels. It will not invent a level that does not exist.
 
 ### Apply or apply and retest
 
