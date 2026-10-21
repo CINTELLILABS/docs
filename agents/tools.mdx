@@ -123,9 +123,31 @@ If you already have a working `curl`, choose **Import from cURL** instead, in th
     | `$.data.rest_api_get_status_text` | The status text |
     | `$.data.rest_api_get_data` | The response body from your endpoint |
 
-    `ok` and `message` come pre-checked. The rest is yours to choose, and the rows below the table are yours to write: give one a name and a JSONPath and you can pull a single field straight out of the response body.
+    `ok` and `message` come pre-checked. The rest is yours to choose.
 
-    The builder lists these `rest_api_get_*` paths whatever method you pick. A POST tool returns the same three fields named `rest_api_post_*`. So on a POST tool, take `ok` and `message` now. Save it, reopen, and check the `rest_api_post_*` rows then.
+    The `rest_api_get_*` names above are for a GET tool. The builder names these rows after the method you pick:
+
+    | Method | Response fields |
+    |---|---|
+    | GET, DELETE | `rest_api_get_*` |
+    | POST, PUT, PATCH | `rest_api_post_*` |
+
+    The rows below the table are yours to write: give one a name and a path, and you pull a single field straight out of your endpoint's response body. The builder shows the start of the path for you, `$.data.rest_api_get_data.` on a GET tool or `$.data.rest_api_post_data.` on a POST tool. Type only the part inside your response body.
+
+    Say your endpoint returns this:
+
+    ```json
+    {
+      "appointment": {
+        "id": "apt_1042",
+        "time": "2026-11-03T09:30:00Z"
+      }
+    }
+    ```
+
+    Name the row `appointmentId` and type `appointment.id`. On a POST tool, the full path becomes `$.data.rest_api_post_data.appointment.id`.
+
+    Change the method after adding rows and their paths move to match the new method.
 
     Keep `ok` checked. A failed call returns `ok` and `message` and nothing else, so every path under `data` comes back empty. `ok` is the only signal that the call did not work.
 
