@@ -1,6 +1,6 @@
 ---
 title: 'Agent builder'
-description: 'Build an agent end to end: prompts, variables, pathways, tools, knowledge, settings, and publishing'
+description: 'Build an agent end to end: prompts, variables, pathways, tools, knowledge, per-channel settings, transfers, and publishing'
 ---
 
 The agent builder is where you describe what your agent does and how it behaves. An agent is a single thing to build, test, and publish: its instructions, the tools and knowledge it can reach, and the branches of behavior it needs.
@@ -119,6 +119,55 @@ In the Pathways list, drag other pathways underneath an authentication zone to p
 Creating a pathway does not make it run. Click its row in the Pathways section to open it, then set its **Routing condition**, which decides when the conversation enters it. Without one, the agent has no reason to hand off, and the pathway never fires.
 
 A Prompt opens in a panel, so you stay where you are. A Pathway or an Authentication zone opens into its own canvas, with the routing condition on a panel beside it.
+
+## Give each channel its own settings
+
+One agent can answer calls, text messages, and web chat. By default, a step behaves the same on every channel. When a channel needs different handling, give it its own copy of the step. For example, a call can skip reading a URL aloud while a text sends it as a link.
+
+The **Channel** row at the top of a step's settings controls this. The row lists only channels you have already configured for the agent. If none are configured, the row reads "Configure a channel to customize its settings."
+
+- **All channels** keeps one prompt, one set of tools, and one set of settings for every conversation.
+- Pick a specific channel to edit that channel's own copy of the prompt, tools, and settings. A channel with its own copy shows a **Custom** badge.
+
+A Prompt, Pathway, or Authentication zone has the same row with two options: **All channels** or **Separate per channel**. Choose **Separate per channel** to give every step inside it a copy for each channel, then edit each copy on the step itself. While the container stays on **All channels**, the row on its steps is locked. Change the container first to split a step inside it.
+
+### Merge channels back together
+
+Switching back to **All channels** opens a **Merge channel settings?** dialog. It lists the nodes and tools that differ between channels. Under **Keep the settings from**, choose the channel whose copy applies everywhere, then confirm. Bland discards the other channels' copies, so check the list before you confirm.
+
+## Transfer or end the conversation
+
+Transfer and End conversation each work on every channel. You set the phone behavior and the messaging behavior in one place, and the agent uses whichever matches the conversation it is in. Add **End conversation** from the **Add node** menu, or use the transfer and end tools inside a pathway.
+
+### Transfer
+
+Transfer has two sections:
+
+- **Phone destination** applies to calls. Choose a **Transfer type** of **Phone number** or **Twilio app**, then set the destination. Optional settings include a SIP REFER hand-off, a **Warm transfer** with hold music and a timeout, and a custom from number.
+- **Messaging handoff** applies to SMS, iMessage, RCS, WhatsApp, and API chat. Turn on **Enable messaging handoff** to have a person take over the thread. The agent pauses, and the customer keeps messaging the same number.
+
+For a messaging handoff, set:
+
+| Field | What it does |
+| --- | --- |
+| **Handoff destination** | **Human takeover in Conversations** lets a teammate open the thread in [Conversations](/agents/conversations), reply, return it to the agent, or end it. Nobody is assigned and there is no queue. **External system via webhook** sends the handoff and every later message to your **Handoff webhook URL**. |
+| **Notify a teammate** | Optional. Sends one SMS to this number when the handoff happens. The customer's messages are not forwarded. |
+| **Message to the customer** | What the customer sees at handoff. |
+| **Handoff reason** | Optional. Travels with the handoff for whoever picks it up. You can use conversation variables here. |
+
+Turn on **Customize message before transfer** to replace the default message with your own.
+
+### End conversation
+
+On a call, the agent hangs up after the closing message finishes. On a messaging channel, the agent closes the session after it sends its reply. Turn on **Customize closing message** to control what the agent says last. Under **Advanced**, **Internal end reason** records why the conversation ended for debugging. Customers never see it.
+
+### Choose the message mode
+
+Each customer-facing message has a mode:
+
+- **Prompt**: the agent writes the message from your instructions and the conversation. Bland never sends the instructions themselves.
+- **Static text**: Bland sends the message exactly as written, with conversation variables filled in.
+- **No message**: the conversation ends without another message. This mode is available on the closing message. It is also available on the message before a transfer, when the transfer has no messaging handoff.
 
 ## Configure settings
 
