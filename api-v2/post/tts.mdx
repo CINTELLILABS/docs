@@ -84,7 +84,7 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 </ParamField>
 
 <ParamField body="controls" type="object">
-  How the voice performs. Both are optional and range from `0.0` to `1.0`.
+  How the voice performs. All fields are optional. `expressiveness` and `stability` range from `0.0` to `1.0`.
 
   <Expandable title="controls fields">
     <ParamField body="expressiveness" type="number">
@@ -93,6 +93,12 @@ Billing follows delivery. A synthesis that fails before any bytes are written is
 
     <ParamField body="stability" type="number">
       Higher is more consistent between renders; lower is more creative and varied.
+    </ParamField>
+
+    <ParamField body="speed" type="number" default="1">
+      Speaking rate multiplier for `BTTS_V3` voices, from `0.6` to `1.2`. `1` leaves the rate unchanged. Values below `1` slow speech down, and values above `1` speed it up. The wording, voice, and audio format stay the same.
+
+      Read the supported range for each model from [List TTS models](/api-v2/get/tts-models) instead of hardcoding it. Voices on older models reject `speed` with `unsupported_control` instead of ignoring it. The WebSocket endpoints do not accept `speed`.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -148,6 +154,7 @@ Every error returns the same shape, with a stable machine-readable code:
 | `unsupported_encoding` | 400 | `audio.encoding` is not an allowed value. |
 | `unsupported_sample_rate` | 400 | `audio.sample_rate` is not allowed for the encoding. |
 | `unsupported_container` | 400 | `audio.container` is not `raw` or `wav`. |
+| `unsupported_control` | 400 | The voice's model does not support a requested control, such as `controls.speed` on a `BTTS_V2` voice. |
 | `unsupported_voice` | 400 | The voice exists but is not a `BTTS_V2` or `BTTS_V3` voice. |
 | `insufficient_credits` | 402 | The account is out of credits. |
 | `voice_not_live` | 403 | The professional voice is still a draft. Promote it to live first. |
@@ -198,6 +205,21 @@ curl -X POST "https://api.bland.ai/v2/tts" \
     "audio": { "encoding": "mulaw", "sample_rate": 8000 }
   }' \
   --output prompt.ulaw
+```
+
+### Slower speech
+
+```bash cURL
+curl -X POST "https://api.bland.ai/v2/tts" \
+  -H "Authorization: Bearer $BLAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Please have your account number ready.",
+    "voice": "29158307-9893-4149-8a75-bc9ce313d64e",
+    "audio": { "container": "wav" },
+    "controls": { "speed": 0.9 }
+  }' \
+  --output slower.wav
 ```
 
 <ResponseExample>
