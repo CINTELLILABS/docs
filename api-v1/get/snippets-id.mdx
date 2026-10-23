@@ -1,0 +1,82 @@
+---
+title: "Get Snippet"
+api: "GET https://api.bland.ai/v1/snippets/get/{snippet_id}"
+description: "Retrieve a snippet's source code, either the latest version or all versions."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="snippet_id" type="string" required>
+  ID of the snippet to retrieve.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="all_versions" type="boolean" default="false">
+  Pass `true` to return every version of the snippet, newest first. When set, `data` is an array of snippet objects instead of a single object.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The latest version of the snippet. An array of these objects when `all_versions=true`.
+
+  <Expandable title="snippet object">
+    <ResponseField name="snippet_id" type="string">
+      Unique identifier for the snippet.
+    </ResponseField>
+    <ResponseField name="version" type="integer">
+      Version number.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when this version was created.
+    </ResponseField>
+    <ResponseField name="display_name" type="string">
+      Name of the snippet.
+    </ResponseField>
+    <ResponseField name="content" type="string">
+      The snippet's source code.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "snippet_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "version": 2,
+    "created_at": "2026-07-20T10:30:00.000Z",
+    "display_name": "order_lookup",
+    "content": "export default {\n  async fetch(request, env, ctx) {\n    const input = await request.json();\n    return Response.json({ message: `Hi again, ${input.name}` });\n  }\n}"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "SCRIPT_GET_FAILED",
+      "message": "Snippet not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
