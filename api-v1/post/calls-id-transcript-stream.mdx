@@ -5,12 +5,18 @@ description: "Live transcript of the conversation after a call is transferred to
 
 ## Overview
 
-When a call created with `stream_post_transfer_transcript: true` is transferred to a human (cold or warm), Bland transcribes the bridged conversation live. Connect to this WebSocket to receive finalized transcript segments as the caller and the transferred-to representative speak.
+When a call that opted into the stream is transferred to a human (cold or warm), Bland transcribes the bridged conversation live. Connect to this WebSocket to receive finalized transcript segments as the caller and the transferred-to representative speak.
+
+Both call directions can opt in: create an outbound call with [`stream_post_transfer_transcript: true`](/api-v1/post/calls#param-stream-post-transfer-transcript), or enable [`stream_post_transfer_transcript`](/api-v1/post/inbound-number-update#param-stream-post-transfer-transcript) on an inbound number so every call to that number is covered.
 
 The stream is a real-time preview. For a durable record, subscribe with `"post_transfer_transcript"` in `webhook_events`: the [post-call webhook](/tutorials/post-call-webhooks#post-transfer-transcript) then carries the same segment format, built from the call recording after the call ends. The stream and the webhook are independent opt-ins.
 
 <Note>
   The post-transfer transcript stream is in limited rollout. If the [Get Transcript Stream URL endpoint](/api-v1/post/calls-id-transcript-stream-token) returns 403, it is not yet enabled for your organization.
+</Note>
+
+<Note>
+  The live stream serves raw, unredacted text, so it is not available on calls with redaction enabled. The token endpoint returns 404 with `REDACTION_ENABLED` for those calls. The post-call webhook still carries the transfer transcript, redacted like the rest of the call.
 </Note>
 
 ---
