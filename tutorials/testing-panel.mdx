@@ -1,0 +1,58 @@
+---
+title: "Test agents in the builder"
+description: "Run a live test conversation against any agent version over phone, web voice, web chat, SMS, RCS, or iMessage from the Testing panel."
+---
+
+## Overview
+
+The agent builder's Testing panel lets you hold a live conversation with your agent before it goes live. Every channel runs the agent version you select, so you can verify a draft, a branch, or a published version without touching production traffic.
+
+You don't need a phone number attached to the agent. Web voice, web chat, and the messaging channels all work on an agent with no number.
+
+## Channels
+
+The panel offers six channels:
+
+| Channel | What it does | Requirements |
+|---|---|---|
+| **Phone call** | Places a real phone call to the number you enter. Defaults to your account's phone number. | A number to call |
+| **Web voice** | Runs a voice conversation through your browser microphone. | None |
+| **Web chat** | Runs a text conversation in the panel. | None |
+| **SMS** | Runs a two-way messaging conversation where you type as the customer. | None |
+| **RCS** | Same messaging preview, over the RCS channel. | None |
+| **iMessage** | Same messaging preview, over the iMessage channel. | None |
+
+Messaging tests need no messaging number and deliver nothing to a real handset. The conversation runs entirely in the panel.
+
+<Warning>
+Tests are real conversations. Webhooks, tools, and integrations your agent uses run for real during a test, on every channel. Point test inputs at non-production systems if a dispatch would have side effects.
+</Warning>
+
+## Select a version
+
+The **Agent version** selector controls which version every channel runs:
+
+- **Latest save** — the current editable state of the agent.
+- **Branch head** — the latest state of the branch you're working on, when one is active.
+- **Published versions** — each published semver, tagged with the environment (such as staging or production) pinned to it.
+
+The version selection is not part of a saved configuration. It follows what you're editing, so a loaded configuration never silently runs an old version.
+
+## Configure test inputs
+
+Below the channel and version, set the inputs the test runs with:
+
+- **Starting scenario** — begin the conversation at a specific scenario instead of the agent's default starting point. Useful for testing a single branch without playing through everything before it.
+- **Request data** — variables the agent has access to during the test, referenced with `{{variable_name}}`. Pre-filled with the agent's saved request data.
+- **Metadata** — passthrough values returned in webhooks and call details. Pre-filled with the agent's saved metadata.
+- **Webhook** — optionally overrides where the call's end-of-call payload is sent.
+
+Metadata and the webhook override are offered only on **Phone call** and **Web voice**. Those are the channels that record a call and send an end-of-call payload. Web chat and messaging tests produce neither, so the two fields aren't shown there. Values you set are kept in saved configurations either way.
+
+## Saved configurations
+
+Save a set of test inputs as a named configuration to reuse it across sessions:
+
+1. Select the **+** button next to **Saved configurations** and enter a name.
+2. Start the test. Starting is what saves the configuration.
+3. Load it later from the **Saved configurations** dropdown. If you edit a loaded configuration, use **Save** to keep the changes or **Revert** to discard them.
