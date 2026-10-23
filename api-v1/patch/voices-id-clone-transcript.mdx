@@ -1,0 +1,90 @@
+---
+title: "Update Clone Transcript"
+api: "PATCH https://api.bland.ai/v1/voices/{id}/clone/transcript"
+description: "Correct the transcript on an instant clone you own."
+---
+
+## Overview
+
+Updates the transcript on a `BTTS_V3` instant clone. The transcript conditions synthesis when the clone runs in prompt-continuation mode, so correcting a misheard word from the source recording can improve output on later `/v2/tts` calls without retraining the voice.
+
+Bland invalidates every cached copy of the voice on save, so the next synthesis reads the new transcript.
+
+Only voices owned by your org that report `transcript_editable: true` on [Get Clone Info](/api-v1/get/voices-id-clone) can be updated. Voices in other modes (or on other engines) return `400 VOICE_CLONE_TRANSCRIPT_ERROR`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  UUID of the instant clone.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="transcript" type="string" required>
+  New transcript text. Must be a non-empty string of at most 1000 characters.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  `success` on success.
+</ResponseField>
+
+<ResponseField name="clone" type="object">
+  <Expandable title="Clone fields">
+    <ResponseField name="id" type="string">
+      UUID of the voice.
+    </ResponseField>
+    <ResponseField name="transcript" type="string">
+      The updated transcript.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "status": "success",
+  "clone": {
+    "id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+    "transcript": "Hello and welcome to Bland. This is a corrected transcript."
+  }
+}
+```
+
+```json Not Editable
+{
+  "data": null,
+  "errors": [
+    { "error": "VOICE_CLONE_TRANSCRIPT_ERROR", "message": "This voice has no editable clone transcript." }
+  ]
+}
+```
+
+```json Invalid Request
+{
+  "data": null,
+  "errors": [
+    { "error": "INVALID_REQUEST", "message": "transcript must be a non-empty string" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
