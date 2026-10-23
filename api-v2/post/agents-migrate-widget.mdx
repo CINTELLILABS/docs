@@ -1,0 +1,151 @@
+---
+title: "Migrate Widget"
+api: "POST https://api.bland.ai/v2/agents/migrate/widget"
+description: "Turn a prompt-backed web chat widget into a new agent, using the widget's prompt as the agent prompt and assigning the widget to that agent."
+---
+
+### Overview
+
+Deterministically converts a web chat widget that runs a prompt into a new agent, with no AI planning involved. The widget's prompt becomes the agent's prompt, and every other setting uses the agent defaults. The widget is assigned to the new agent in the same step, so the agent and the assignment are created together or not at all.
+
+The widget keeps running its current prompt until you promote the agent or route traffic to it.
+
+A widget that runs a pathway is not migrated here. It moves with its pathway when you migrate that pathway with [Migrate Pathways](/api-v2/post/agents-migrate-pathways), [Migrate Pathway](/api-v2/post/agents-migrate), or [Start Pathway Translation](/api-v2/post/agents-migrate-translations).
+
+Limited to 60 imports per hour per organization, counted together with [Migrate Pathways](/api-v2/post/agents-migrate-pathways). Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="widget_id" type="string" required>
+  UUID of a web chat widget in your organization. Returns `400 INVALID_WIDGET_ID` if it is not a UUID and `404 WIDGET_NOT_FOUND` if no such widget exists in your organization.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the new agent. Whitespace is trimmed. Defaults to the widget's name, or `Web chat widget` when the widget has no name. Returns `400 INVALID_NAME` if present and not a string.
+</ParamField>
+
+### Response
+
+Returns `201` on success. Other responses:
+
+- `422 WIDGET_FOLLOWS_PATHWAY`: the widget runs a pathway. `data.pathway_id` names that pathway. Migrate the pathway instead and the widget moves with it.
+- `422 WIDGET_HAS_NO_PROMPT`: the widget has no prompt to migrate.
+- `409 WIDGET_ALREADY_MIGRATED`: the widget is already assigned to an agent. `data.agent_id` names that agent.
+- `409 WIDGET_CHANGED`: the widget was edited while the migration ran. Nothing was created, so retry the request.
+- `422` with `INVALID_MIGRATED_SNAPSHOT` or `MIGRATION_LINT_FAILED`: the converted agent does not validate.
+
+<ResponseField name="data.created" type="boolean">
+  Always `true` on a `201`.
+</ResponseField>
+
+<ResponseField name="data.agent" type="object">
+  The new agent record: `id`, `org_id`, `name`, `created_by` (`string | null`), `created_at`, `updated_at`, and `deleted_at` (`null`). See [Get Agent](/api-v2/get/agents-id) for its environments.
+</ResponseField>
+
+<ResponseField name="data.version" type="object">
+  The agent's first version, saved on the dev timeline: `id`, `org_id`, `agent_id`, `branch_id` (`null`), `snapshot` (the full agent configuration, abbreviated in the example below), `name` (`Migrated from widget: <agent name>`), `created_via` (`manual`), `revision` (`0`), `created_by` (`string | null`), and `created_at`.
+</ResponseField>
+
+<ResponseField name="data.carried" type="object">
+  Web chat widgets assigned to the new agent. `widgets` (integer) is `1` on success.
+</ResponseField>
+
+<ResponseField name="data.warnings" type="array">
+  Human-readable notes about anything the conversion could not carry faithfully. Review each before publishing the agent.
+</ResponseField>
+
+<ResponseField name="data.lint" type="object">
+  Structural checks on the saved snapshot: `errors` (always empty on a `201`) and `warnings` (array of strings).
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v2/agents/migrate/widget \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "widget_id": "8c1f4a52-6f0e-4d2b-9a57-3e1b2d7c9f10",
+    "name": "Website support chat"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "created": true,
+    "agent": {
+      "id": "3096f27e-d17c-4fe8-a469-dac7da1d8d57",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "name": "Website support chat",
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-28T15:04:11.207Z",
+      "updated_at": "2026-09-28T15:04:11.207Z",
+      "deleted_at": null
+    },
+    "version": {
+      "id": "d24c0c2b-ea67-4ad2-97f7-aad1c9aef52f",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "agent_id": "3096f27e-d17c-4fe8-a469-dac7da1d8d57",
+      "branch_id": null,
+      "snapshot": {
+        "behavior": { "nodes": ["..."], "edges": ["..."] },
+        "settings": { "displayName": "Website support chat" },
+        "contact": { "inboundNumbers": [] }
+      },
+      "name": "Migrated from widget: Website support chat",
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-09-28T15:04:11.207Z"
+    },
+    "carried": { "widgets": 1 },
+    "warnings": [],
+    "lint": {
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "errors": null
+}
+```
+
+```json Widget Follows Pathway
+{
+  "data": { "pathway_id": "0b8d6c3e-2a41-4f7e-9c15-6d2e8f1a4b90" },
+  "errors": [
+    {
+      "error": "WIDGET_FOLLOWS_PATHWAY",
+      "message": "this widget runs a pathway; migrate that pathway and the widget follows it"
+    }
+  ]
+}
+```
+
+```json Widget Already Migrated
+{
+  "data": { "agent_id": "3096f27e-d17c-4fe8-a469-dac7da1d8d57" },
+  "errors": [
+    {
+      "error": "WIDGET_ALREADY_MIGRATED",
+      "message": "widget already belongs to an agent"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

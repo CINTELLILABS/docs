@@ -41,6 +41,10 @@ Limited to 10 migration starts per hour per organization, counted together with 
   Display name for the new agent when `create` is `true`. Whitespace is trimmed. Defaults to `<pathway.name> (migrated)`, or `unnamed pathway (migrated)` when the pathway has no name.
 </ParamField>
 
+<ParamField body="pathway_id" type="string">
+  UUID of the stored pathway the export came from. When it names a pathway your organization owns, it is recorded as the agent's source, and in create mode the web chat widgets that run that pathway are assigned to the new agent. Otherwise it is ignored and the migration proceeds.
+</ParamField>
+
 <ParamField body="create" type="boolean" default="false">
   When `true`, the migrated snapshot is saved as a new agent with its first version and the response is `201`. Any other value is treated as `false` (dry run, `200`).
 </ParamField>
@@ -99,6 +103,10 @@ Returns `200` for a dry run and `201` when an agent was created. Returns `422` w
 
 <ResponseField name="data.version" type="object">
   Present only when `created` is `true`. The agent's first version: `id`, `org_id`, `agent_id`, `branch_id` (`null`), `snapshot` (identical to `data.snapshot`), `name` (`Migrated from pathway: <pathway name>`), `created_via` (`manual`), `revision` (`0`), `created_by` (`string | null`), and `created_at`.
+</ResponseField>
+
+<ResponseField name="data.carried" type="object">
+  Present only when `created` is `true`. `widgets` (integer) is the number of web chat widgets assigned to the new agent. It is `0` unless `pathway_id` names a pathway your organization owns. Assigned widgets keep running the pathway until you promote the agent or route traffic to it, and a widget already assigned to an agent keeps its assignment.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">

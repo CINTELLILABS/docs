@@ -8,6 +8,8 @@ description: "Convert stored or inline pathways into agent scenarios."
 
 Deterministically converts up to 20 pathways into complex scenarios, one per pathway, with no AI planning involved. Each pathway is either referenced by ID or supplied inline as an exported graph (the JSON-file import). By default the scenarios are wrapped in a new agent whose system prompt is built from the pathways' global prompts, and the agent plus its first version are created (`201`). Set `create` to `false` to receive just the scenario nodes for insertion into an existing agent (`200`). For planner-driven translation, use [Start Pathway Translation](/api-v2/post/agents-migrate-translations).
 
+When an agent is created, web chat widgets that run any of the stored pathways in the request are assigned to it. A widget already assigned to an agent keeps its assignment. Assigned widgets keep running their pathway until you promote the agent or route traffic to it. To migrate a widget that runs a prompt instead of a pathway, use [Migrate Widget](/api-v2/post/agents-migrate-widget).
+
 Limited to 60 imports per hour per organization. Requires an admin, owner, operator, or prompter role.
 
 ### Headers
@@ -59,6 +61,10 @@ Returns `201` when an agent was created and `200` in convert-only mode. Returns 
 
 <ResponseField name="data.version" type="object">
   Present when `created` is `true`. The agent's first version: `id`, `org_id`, `agent_id`, `branch_id` (`null`), `snapshot` (the full agent configuration, abbreviated in the example below), `name` (`Migrated from N pathway(s)`), `created_via` (`manual`), `revision` (`0`), `created_by` (`string | null`), and `created_at`.
+</ResponseField>
+
+<ResponseField name="data.carried" type="object">
+  Present when `created` is `true`. `widgets` (integer) is the number of web chat widgets assigned to the new agent. Inline pathways have no widgets, so they add nothing to the count.
 </ResponseField>
 
 <ResponseField name="data.scenarios" type="array">
@@ -233,6 +239,7 @@ Returns `201` when an agent was created and `200` in convert-only mode. Returns 
       "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
       "created_at": "2026-09-10T19:30:41.118Z"
     },
+    "carried": { "widgets": 1 },
     "warnings": [],
     "lint": {
       "errors": [],
