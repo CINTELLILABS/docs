@@ -1,7 +1,7 @@
 ---
 title: "Update Eval Agent"
 api: "PATCH https://api.bland.ai/v1/evals/agents/{eval_agent_id}"
-description: "Update an eval agent's metadata or repoint its active version."
+description: "Update an eval agent's metadata, repoint its active version, or assign it to an agent or back to the organization."
 ---
 
 ### Headers
@@ -33,6 +33,23 @@ description: "Update an eval agent's metadata or repoint its active version."
 <ParamField body="metadata" type="object">
   Key-value metadata to associate with the eval agent. Values must be strings. Replaces the existing metadata object.
 </ParamField>
+
+<ParamField body="agent_id" type="string | null">
+  Assign the eval agent to this agent ID. An agent's dispositions can only use eval agents assigned to that agent. Pass `null` to return the eval agent to the organization.
+
+  Returns `404` with `TARGET_AGENT_NOT_FOUND` if the agent doesn't exist in your organization. Returns `409` with `JUDGE_PINNED_BY_OTHER_AGENT` if another agent's dispositions use the eval agent. Setting this field requires a role that can edit agents.
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X PATCH https://api.bland.ai/v1/evals/agents/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"agent_id": "d4e5f6a7-b8c9-0123-def0-234567890123"}'
+```
+
+</RequestExample>
 
 <Note>
   This endpoint updates agent-level fields only. To edit prompts, levels, or targets, update the agent's draft version using the Update Eval Agent Version endpoint.
