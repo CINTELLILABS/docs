@@ -1,0 +1,110 @@
+---
+title: "Set Traffic Split from v1"
+api: "PUT https://api.bland.ai/v1/convo_pathway/{pathway_id}/migration_split"
+description: "Send a chosen percentage of a v1 pathway's calls to a rebuilt v2 agent, with the rest running on v1 as before."
+---
+
+### Overview
+
+Attach or update a traffic split on a v1 pathway. The chosen `v2_percentage` of the pathway's calls (inbound and outbound) is sent to the v2 agent; the remainder keeps running on the v1 pathway. Phone numbers, API requests, request data, and webhooks are unchanged during the ramp.
+
+Setting `v2_percentage` to `0` immediately returns every call to v1 from the very next call (equivalent to [Delete Traffic Split from v1](/api-v1/delete/pathway-migration-split)). Use [Get Traffic Split from v1](/api-v1/get/pathway-migration-split) to read the current setting.
+
+Traffic split from v1 is gated per organization. Call [Get Traffic Split Availability](/api-v1/get/pathway-migration-split-enabled) first to check whether the feature is available for your account.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The ID of the v1 pathway whose calls should be split.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="agent_id" type="string" required>
+  The v2 agent that will receive split traffic. Must be an agent your organization owns.
+</ParamField>
+
+<ParamField body="v2_percentage" type="integer" required>
+  Percentage of the pathway's calls to route to the v2 agent, from `0` to `100`. Set to `0` to roll back — every call returns to v1 from the very next call.
+</ParamField>
+
+### Response
+
+<ResponseField name="migration_split" type="object">
+  The saved split.
+
+  <Expandable title="fields">
+    <ResponseField name="agent_id" type="string">
+      The v2 agent that receives the split percentage.
+    </ResponseField>
+    <ResponseField name="v2_percentage" type="integer">
+      The percentage now in effect.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request PUT \
+  --url 'https://api.bland.ai/v1/convo_pathway/PATHWAY_ID/migration_split' \
+  --header 'authorization: Bearer YOUR_API_KEY' \
+  --header 'content-type: application/json' \
+  --data '{
+    "agent_id": "b41e4d78-2f5a-4d4e-9d43-3d7e2f2c9a10",
+    "v2_percentage": 25
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "migration_split": {
+    "agent_id": "b41e4d78-2f5a-4d4e-9d43-3d7e2f2c9a10",
+    "v2_percentage": 25,
+    "updated_at": "2026-09-16T18:22:04.512Z"
+  }
+}
+```
+
+```json Feature Not Enabled
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "FEATURE_NOT_ENABLED",
+      "message": "v1 traffic splitting is not enabled for this organization"
+    }
+  ]
+}
+```
+
+```json Fleet Not Eligible
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "FLEET_NOT_ELIGIBLE",
+      "message": "This organization runs on a dedicated fleet whose runtime is not yet marked v2-capable — upgrade the fleet before splitting traffic"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -1,0 +1,53 @@
+---
+title: "Delete Traffic Split from v1"
+api: "DELETE https://api.bland.ai/v1/convo_pathway/{pathway_id}/migration_split"
+description: "Remove a v1 pathway's traffic split so every call returns to v1 from the very next call."
+---
+
+### Overview
+
+Remove the traffic split from a v1 pathway. Every call returns to the v1 pathway from the very next call. This is the instant rollback path and is always available, even if the [feature is otherwise disabled](/api-v1/get/pathway-migration-split-enabled) for your organization.
+
+Setting `v2_percentage` to `0` with [Set Traffic Split from v1](/api-v1/put/pathway-migration-split) has the same runtime effect but preserves the configured `agent_id` for later.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The ID of the v1 pathway.
+</ParamField>
+
+### Response
+
+<ResponseField name="deleted" type="boolean">
+  Always `true` on success. Deleting a pathway that has no split configured is a no-op and still returns `true`.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl --request DELETE \
+  --url 'https://api.bland.ai/v1/convo_pathway/PATHWAY_ID/migration_split' \
+  --header 'authorization: Bearer YOUR_API_KEY'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "deleted": true
+}
+```
+
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
