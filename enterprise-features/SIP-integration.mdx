@@ -178,7 +178,7 @@ Choose how the two sides authenticate.
 
 Two authentication modes are available:
 
-- **IP-based (recommended):** your server trusts Bland's signaling and media IPs as SIP peers, and Bland trusts your endpoint by source IP. No credentials to manage. Transfers and warm transfer consult calls that Bland sends to your server connect from the media IPs, so trust all of the IPs listed under [Connection Endpoints](#connection-endpoints).
+- **IP-based (recommended):** your server trusts Bland's signaling and media IPs as SIP peers, and Bland trusts your endpoint by source IP. No credentials to manage. Transfers and warm transfer consult calls that Bland sends to your server connect from the signaling IPs. Trust all of the IPs listed under [Connection Endpoints](#connection-endpoints).
 - **Registration-based** — Bland registers with your server using a username and password via SIP REGISTER. A derived password is returned that you configure in your PBX.
 
 You can also optionally provide **call authentication** credentials (SIP username/password) included on SIP INVITE requests.
@@ -285,7 +285,7 @@ You choose how the transfer is delivered:
 | What your SBC receives | A `REFER` inside the call your SBC already opened to Bland | A new `INVITE` from Bland to your trunk endpoint | A new `INVITE` from Bland for the consult call |
 | Who places the call to the target | Your PBX | Bland | Bland |
 | Bland after the transfer | Leaves the call | Stays in the call path and bridges the audio | Joins the caller once the briefing ends |
-| Requires | A call that arrived over SIP, and a PBX that supports `REFER` | Your SBC trusting Bland's media IPs as SIP peers | Your SBC trusting Bland's media IPs as SIP peers |
+| Requires | A call that arrived over SIP, and a PBX that supports `REFER` | Your SBC trusting Bland's signaling IPs as SIP peers | Your SBC trusting Bland's signaling IPs as SIP peers |
 
 **SIP REFER hand-off.** Bland sends the `REFER` on the existing dialog, so no new connection reaches your SBC and no firewall change is needed. Custom headers travel as header parameters on the `Refer-To` URI (`sip:2001@pbx.example.com?X-Account=42`). Your PBX must copy them onto the `INVITE` it sends to the target. If your PBX cannot do that, use a new INVITE instead.
 
@@ -305,8 +305,8 @@ Headers on a transfer come from the trunk's **outbound** header mapping, set on 
 
 | What you see on your SBC | Likely cause | Fix |
 |---|---|---|
-| An immediate `403 Forbidden` with no `401` or `407` first | The `INVITE` arrived from an IP your SBC does not trust as a SIP peer | Trust every IP listed under [Connection Endpoints](#connection-endpoints) as a SIP peer, including the media IPs |
-| No `INVITE` at all, and the caller's transfer fails after a few seconds | A firewall is dropping TLS from Bland's media IPs | Allow the media IPs to reach your SBC's SIP TLS port |
+| An immediate `403 Forbidden` with no `401` or `407` first | The `INVITE` arrived from an IP your SBC does not trust as a SIP peer | Trust every IP listed under [Connection Endpoints](#connection-endpoints) as a SIP peer, including both signaling IPs |
+| No `INVITE` at all, and the caller's transfer fails after a few seconds | A firewall is dropping TLS from Bland's signaling IPs | Allow the signaling IPs to reach your SBC's SIP TLS port |
 | `488 Not Acceptable Here` | Your SBC offered or required plain RTP | Enable SRTP on the trunk toward Bland |
 | Headers missing after a SIP REFER hand-off | Your PBX does not copy `Refer-To` header parameters onto the new `INVITE` | Turn **Hand off via SIP REFER** off so Bland sends the `INVITE` |
 
@@ -433,9 +433,9 @@ Bland separates **signaling** from **media**, and they use different IP addresse
 
 - **Signaling (calls you send to Bland):** SIP runs **exclusively over TLS on TCP port 5061**. There is no plaintext UDP/5060 listener. Each region has **two signaling IPs** (one per availability zone) behind its FQDN for high availability. Send SIP to the FQDN and it balances across both.
 - **Media (RTP):** Audio is carried over **SRTP** on a **separate set of media IPs** per region, over UDP ports **16384 to 32768**.
-- **Calls Bland places to you:** When Bland's SIP infrastructure originates an `INVITE` toward your SBC, for example a [transfer](#transferring-calls-over-sip) or a warm transfer consult call, the TLS connection comes from one of the region's **media IPs**, not from a signaling IP.
+- **Calls Bland places to you:** When Bland's SIP infrastructure originates an `INVITE` toward your SBC, for example a [transfer](#transferring-calls-over-sip) or a warm transfer consult call, the TLS connection comes from one of the region's two **signaling IPs**, not from a media IP.
 
-| Region | Endpoint (TLS 5061) | Signaling IPs (SIP you send to Bland) | Media IPs (RTP, and SIP over TLS that Bland sends to you) |
+| Region | Endpoint (TLS 5061) | Signaling IPs (SIP you send to Bland, and SIP over TLS that Bland sends to you) | Media IPs (RTP) |
 |--------|---------------------|---------------|-----------------|
 | United States | `us2.sip.bland.ai` | `35.82.60.77`, `52.27.163.2` | `52.13.231.129`, `35.160.144.213`, `44.234.13.26`, `54.218.96.252` |
 | Canada | `ca2.sip.bland.ai` | `15.156.129.66`, `15.157.196.128` | `3.96.68.79`, `35.183.80.246`, `52.60.169.171`, `16.54.43.127` |
@@ -459,7 +459,7 @@ You can also copy the list from the **Firewall & Ports** panel on the trunk page
 </Note>
 
 <Warning>
-  Match Bland by **source IP**, not by the `Via` or `Contact` header. On an `INVITE` that Bland originates, those headers carry a signaling IP while the connection itself comes from a media IP.
+  Match Bland by **source IP**, not by the `Via` or `Contact` header. On an `INVITE` that Bland originates, the connection comes from one of the region's signaling IPs.
 </Warning>
 
 ---
