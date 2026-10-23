@@ -10,6 +10,18 @@ description: "Retrieve Custom Tools you've created."
   Your API key for authentication.
 </ParamField>
 
+### Query parameters
+
+<ParamField query="agent_id" type="string">
+  Return only the tools owned by this agent. Must be a valid agent UUID. Omit to list every tool in your organization.
+</ParamField>
+
+<ParamField query="include_referenced" type="boolean" default="false">
+  Requires `agent_id`. When `true`, the response also includes shared organization tools that the agent's latest version calls from its nodes, even if the agent doesn't own them. Each tool in the response then includes an `owner` field.
+
+  If the agent is deleted or doesn't belong to your organization, only its owned tools are returned.
+</ParamField>
+
 ### Response
 
 <ResponseField name="status" type="string">
@@ -18,6 +30,14 @@ description: "Retrieve Custom Tools you've created."
 
 <ResponseField name="tools" type="array">
     An array of your available tools.
+
+    <Expandable title="tool object">
+        <ResponseField name="owner" type="string">
+            Only present when `include_referenced=true`. `agent` means the agent in `agent_id` owns the tool. `shared` means the tool belongs to your organization or another agent, and this agent calls it.
+
+            To change which agent owns a tool, use [Update Custom Tool owner](/api-v1/patch/tools-tool-id-owner).
+        </ResponseField>
+    </Expandable>
 </ResponseField>
 
 <ResponseExample>
