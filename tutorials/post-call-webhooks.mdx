@@ -584,6 +584,14 @@ You can set a webhook URL in three ways:
 2. **Per request** — pass a `webhook` parameter in [Send SMS](/api-v1/post/sms-send) to override the number's configured webhook
 3. **Per batch** — pass a `webhook` in the `global` object of [Send SMS Batch](/api-v1/post/sms-batch)
 
+### Trigger Automations on a Completed Conversation
+
+To run a no-code action when an SMS, WhatsApp, or iMessage conversation ends, build an automation on the **Post-SMS webhook** event in the [Automations dashboard](https://app.bland.ai/dashboard/automations). It fires once per conversation when the conversation ends, times out, or fails, and carries the same payload as the SMS status webhook so your conditions and field mappings can reference the transcript, summary, citations, dispositions, variables, and metadata.
+
+The event fires whether or not a webhook URL is configured on the number, so you can wire up an automation (for example, log the conversation to a CRM or notify a Slack channel) without also hosting a webhook endpoint. It does not fire for per-message updates, non-terminal statuses (such as `read` or `link_clicked`), or while a thread is under a [human handoff](/api-v1/post/sms-conversations-handoff).
+
+If you previously built a post-conversation automation on **Post-call webhook**, re-point it to **Post-SMS webhook** so it fires for messaging conversations.
+
 ---
 
 ## Error Message Reference
