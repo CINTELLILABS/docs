@@ -1,0 +1,80 @@
+---
+title: "Telephony and integration nodes in the agent builder"
+description: "Add IVR, Scheduling, Twilio Flow redirect, Amazon Connect, and Reset STT language nodes to your agent, and migrate pathways that use them."
+---
+
+## Introduction
+
+The agent builder includes five specialized node types for telephony and external integrations:
+
+- **IVR**: navigate an automated phone menu.
+- **Scheduling**: book an appointment against an availability API.
+- **Twilio Flow redirect**: hand the call back to a Twilio Studio flow.
+- **Amazon Connect**: collect Amazon Connect DTMF tones and post them to a webhook.
+- **Reset STT language**: switch speech-to-text to another language mid-call.
+
+These node types also work with pathway imports. When you import a [conversational pathway](/tutorials/pathways) into an agent as an exact 1:1 copy, nodes of these five types carry across with their configuration intact. Previously, a pathway containing any of them could not be imported as a 1:1 copy.
+
+## Add a telephony or integration node
+
+1. Open your agent in the dashboard and open a complex scenario.
+2. Select the add-node button on the canvas.
+3. Select **Tools**, then **Telephony & integrations**.
+4. Select the node type you want to add.
+5. Select the new node to configure it in the inspector.
+
+## IVR
+
+The IVR node gets your agent through an automated phone menu. Configure it like a dialogue node, with a prompt, a loop condition, and extracted variables. The node type changes how the runtime listens: the agent treats the other side as a machine, does not barge in, and stays on the node through the long pauses a menu produces instead of hanging up.
+
+The inspector includes an **IVR navigation builder** wizard that writes the prompt for you:
+
+1. Select **Open wizard** in the IVR node's inspector.
+2. Answer the questions you know, such as the purpose of the call, the company you are calling, account identifiers the menu asks for, and known menu options or extensions. Leave the rest blank.
+3. Select **Generate prompt**.
+
+Generating replaces the node's prompt and loop condition. The replacement is a single undo step, so you can undo it if you had hand-tuned the prompt. Your answers are saved with the node. Select **Edit answers** to adjust them and regenerate.
+
+## Scheduling
+
+The Scheduling node runs a built-in booking dialogue against your availability API. It fetches open time slots, offers them to the caller, and loops until the caller confirms one. See [Scheduling Node](/enterprise-features/scheduling-node) for the full call flow.
+
+Configure the node in the inspector:
+
+- **Dialogue**: optional guidance layered on the built-in scheduling script, such as tone or how many slots to offer.
+- **Available slots request**: the method, URL, headers, body, and authorization for the request that fetches open slots. The default body sends the time the caller asked for:
+
+```json
+{
+  "start_datetime": "{{start_datetime}}"
+}
+```
+
+- **Timeout**: how long to wait for the availability response before giving up.
+- **Response data**: variables extracted from the response. One row must hold a flat array of dates in ISO format. Those dates become the slots the agent offers.
+- **On repeated API failure**: the node to route to after the availability request fails twice, instead of looping on an unavailable API.
+- **Slot locking**: an optional second request that holds the chosen slot before the agent confirms it to the caller. The lock body can use `{{slot_date}}`, `{{slot_time}}`, and `{{chosen_datetime}}` from the confirmed slot, and the **Locked field** names the response field that confirms the hold.
+
+## Twilio Flow redirect
+
+The Twilio Flow redirect node hands the call back to a Twilio Studio flow. The redirect takes the call away from Bland, so the node's outgoing edges never run.
+
+- **Flow SID**: the Studio flow to redirect into. Copy it from the Twilio console. The field accepts a `{{variable}}`.
+- **Flow name**: a label for the flow in the builder. Bland does not send it to Twilio.
+- **Redirect variables**: key-value pairs passed to the flow as query parameters on the redirect. Values can contain `{{variables}}`.
+
+## Amazon Connect
+
+The Amazon Connect node collects the DTMF tones Amazon Connect sends during the call, then posts them to your webhook.
+
+- **Agent speech**: what the agent says while the tones arrive, as a prompt or static text. The caller's speech is ignored until every tone has been collected.
+- **Webhook URL**: the endpoint that receives the collected tones. Bland sends a POST request with a JSON body containing `dtmf` and `call_id`. Select **Test** to send a sample payload from Bland's servers and check the response status.
+
+## Reset STT language
+
+The Reset STT language node switches speech-to-text to another language mid-call. The node says nothing. It changes transcription and moves on.
+
+- **Language**: the language to switch to. The list contains only languages with verified speech-to-text reset support. Unsupported languages fall back to English mid-call.
+- **Then go to**: an optional node to jump to after the switch. Leave it unset to follow the node's own outgoing edge.
+
+This node works well behind a global trigger, such as switching to Spanish whenever the caller starts speaking it.
