@@ -45,9 +45,38 @@ The platform generates the transformation code from your field definitions. No c
 
 ### Back Testing
 
-After defining an outcome, you can back test it against historical calls to verify the results before deploying to live traffic. This lets you iterate on your field definitions until the extracted values match what you expect.
+After defining an outcome, you can back test it against production calls to verify the results before deploying to live traffic. This lets you iterate on your field definitions until the extracted values match what you expect.
+
+Select **Run test** in the outcome editor and choose which calls to test:
+
+- **Recent calls** - Test against your most recent production calls. Set a count and preview how many calls match before you run.
+- **Specific calls** - Pick calls from your call log or paste conversation IDs directly.
+
+The test runs your current draft against the selected calls. Results appear in a table with one row per call, and rows fill in as each call finishes.
 
 <img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/outcomes_results.jpeg" />
+
+#### Correcting Results
+
+When a test run produces a wrong value, you can correct it directly in the results table. Each correction records the value you expected and a short rationale explaining why. A Corrections section above the results table summarizes every correction on the run, showing the original value, your corrected value, and your rationale.
+
+#### Proposing Changes from Corrections
+
+Once a finished test run has corrections, select **Align with AI** to have Bland propose changes to the outcome's definition based on them. For each corrected value, Bland reviews your corrections alongside the original results and suggests edits to the prompts and descriptions that produce that value.
+
+Each proposal shows the current text, the suggested replacement, and the reasoning behind the change as a before/after diff. You choose which changes to keep, and you can add extra instructions and regenerate the proposals if the first pass misses the mark. Nothing is applied to your outcome until you apply it.
+
+When you're ready, choose one of two actions:
+
+- **Apply** - Saves the accepted changes to your outcome.
+- **Apply and retest** - Saves the accepted changes, then reruns the test against the same calls. You land on a comparison of the new run against the corrected one, so you can see whether the changes helped.
+
+A few things to know:
+
+- Proposals are only generated for values you corrected in that run.
+- Values powered by custom code are not changed by proposals.
+- Proposals require the test run to be finished and to have at least one correction.
+- If the outcome's definition changed after the proposals were generated, the affected proposals are disabled. Regenerate them to get proposals based on the current definition.
 
 ### Versioning
 
