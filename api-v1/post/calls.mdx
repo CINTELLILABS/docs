@@ -10,6 +10,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 <Note>
 International calls need a completed purchase: buy at least $5 of credits in the [dashboard](https://app.bland.ai/dashboard/pay) under Billing, or turn on auto-recharge. Numbers on the [Agent Phone Plan](/platform/agent-phone-plan) call the US and Canada only, regardless of your credit balance.
+
+Some countries aren't available on Bland phone numbers, and buying credits doesn't enable them. Calls to these countries return a `CALL_GEO_BLOCK` error that names the country. To call one, [connect your own Twilio account](/tutorials/custom-twilio) with calling to that country enabled, or email [hello@bland.ai](mailto:hello@bland.ai) to request access.
 </Note>
 
 ## Choose what runs your call
@@ -1431,6 +1433,24 @@ curl --request POST https://api.bland.ai/v1/calls \
     - Invalid characters in phone number
     - Missing country code for international numbers
     - Phone number fails Twilio validation
+  </ResponseField>
+  <ResponseField name="400 - Destination Country Not Enabled" type="object">
+    The destination country isn't enabled for calls from Bland phone numbers. Buying credits doesn't enable it. The message names the country and its dial code.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Calls to {country} (+{dial_code}) aren't available on Bland phone numbers, and buying credits won't enable them. To call this country, connect your own Twilio account with calling to it enabled (https://docs.bland.ai/tutorials/custom-twilio), or email hello@bland.ai to request access.",
+      "errors": [
+        {
+          "error": "CALL_GEO_BLOCK",
+          "message": "Calls to {country} (+{dial_code}) aren't available on Bland phone numbers, and buying credits won't enable them. To call this country, connect your own Twilio account with calling to it enabled (https://docs.bland.ai/tutorials/custom-twilio), or email hello@bland.ai to request access."
+        }
+      ]
+    }
+    ```
+
+    To call this country, [connect your own Twilio account](/tutorials/custom-twilio) with calling to it enabled, or email [hello@bland.ai](mailto:hello@bland.ai) to request access.
   </ResponseField>
   <ResponseField name="400 - Invalid Transfer Number" type="object">
     Transfer phone number is invalid.
