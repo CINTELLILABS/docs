@@ -12,8 +12,32 @@ description: "Create an instance of a pathway chat, which can be used to send an
 
 ### Body
 
-<ParamField body="pathway_id" type="string" required>
-Pathway ID of the pathway to create a chat instance for.
+<ParamField body="pathway_id" type="string">
+Pathway ID of the pathway to create a chat instance for. Required unless you pass `agent_id`.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+ID of the Bland Agent to chat with, instead of a pathway. The chat starts at the agent's entry, so you cannot combine `agent_id` with `start_node_id` or `pathway_version`. Use `agent_version` to select a version.
+</ParamField>
+
+<ParamField body="agent_version" type="string">
+Selects which agent version the chat runs. Requires `agent_id`. If omitted, the chat runs the agent's production version.
+
+Accepts the same values as [agent_version in v1/calls](/api-v1/post/calls#param-agent-version):
+
+- `"production"` or `"staging"`: the version deployed to that environment.
+- `"dev"` or `"latest"`: the latest saved version on the main line.
+- A semantic version such as `"1.2.0"`: that published version.
+- `"branch:<name>"`: the head of the named branch.
+
+Use this to test a staging, draft, or branch version over chat before you promote it. An unrecognized value returns a `400` error.
+
+```json
+{
+  "agent_id": "00000000-0000-4000-8000-000000000001",
+  "agent_version": "staging"
+}
+```
 </ParamField>
 
 <ParamField body="start_node_id" type="string">
