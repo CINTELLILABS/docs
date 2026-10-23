@@ -1,12 +1,14 @@
 ---
 title: "Cancel Agent Phone Plan"
 api: "POST https://api.bland.ai/billing/cancel_agent_phone"
-description: "Cancel your organization's Agent Phone Plan immediately, with an optional offboarding survey."
+description: "Cancel your organization's Agent Phone Plan at the end of the billing period, with an optional offboarding survey."
 ---
 
 ### Overview
 
-Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan) right away. The \$29.99/month charge stops, there's no refund for the current month, and your included phone number stays on your account.
+Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan) at the end of the current billing period. You keep the plan until then, and the \$29.99/month charge doesn't renew. There's no refund for the current period.
+
+When the plan ends, your included phone number stays on your account. Calls on it still work, but it stops sending texts. Subscribing again turns texting back on.
 
 You can answer a short, optional offboarding survey in the same request with `feedback`. If you leave it out, the response includes `cancellation_survey`, which lists the questions and their allowed answers. You can send your answers afterwards with [Submit Cancellation Feedback](/api-v1/post/agent-phone-plan-cancel-feedback). The survey never affects the cancel.
 
@@ -51,7 +53,7 @@ If you're an agent canceling for a person, ask them the survey questions and pas
 ### Response
 
 <ResponseField name="data" type="object">
-  Your plan after the cancel. `status` is `canceled` and `phone_number` is the number you keep.
+  Your plan after the cancel. `status` stays `active` until the billing period ends, then changes to `canceled`. `phone_number` is the number you keep.
 </ResponseField>
 
 <ResponseField name="data.cancellation_survey" type="object">
@@ -89,7 +91,7 @@ curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
   "data": {
     "name": "agent_phone_basic",
     "display_name": "Agent Phone Plan",
-    "status": "canceled",
+    "status": "active",
     "phone_number": "+15551234567",
     "cancellation_survey": {
       "submit": { "method": "POST", "path": "/billing/cancel_agent_phone/feedback" },
