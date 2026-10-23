@@ -29,13 +29,13 @@ Both scopes show the same five tabs.
 
 | Tab | What it holds |
 |---|---|
-| **Sources** | Everything you have added. Inside an agent, also where you attach. |
+| **Sources** | Everything you have added. Inside an agent, also which sources that agent uses. |
 | **Questions** | Questions callers asked that the agent could not answer. |
 | **Query logs** | Every retrieval: what it searched, and what came back. |
 | **Knowledge map** | Your sources plotted against the questions asked of them. |
 | **Source testing** | Ask a question and see what the agent would retrieve. |
 
-Sources belong to the organization, never to one agent. What changes inside an agent is that each row gains a checkbox, and Questions, Knowledge map and Source testing narrow to the sources that agent has attached. Query logs narrows differently, to the retrievals that agent's own calls made.
+Sources belong to the organization, never to one agent. What changes inside an agent is that the table gains a read-only **Usage** column, and Questions, Knowledge map and Source testing narrow to the sources that agent has attached. Query logs narrows differently, to the retrievals that agent's own calls made.
 
 Most of the table is a rolling 30-day window.
 
@@ -85,33 +85,33 @@ Whichever kind you pick, the source starts processing in the background. It is n
 
 ## Attach a source to an agent
 
-Adding a source does not give it to an agent. Attach it.
+Adding a source does not give it to an agent. Attach it by tagging it in the agent's prompt.
 
-There are two ways. Check it on the agent's Sources tab, or type `@` in the agent's prompt and pick it from the list. Either way the row ends up checked, and the source is available on every call, everywhere in the agent, including inside every [pathway](/agents/agent-builder#extend-the-agent-with-pathways), a branch of the agent's behavior with instructions of its own.
+Type `@` in the prompt and pick the source from the list. The source is then available on every call, everywhere in the agent, including inside every [pathway](/agents/agent-builder#extend-the-agent-with-pathways), a branch of the agent's behavior with instructions of its own.
 
 Pick the source from the list rather than typing the tag yourself. Picking writes it for you, as `@service-menu`. Typing that text attaches nothing and says nothing.
 
 <Steps>
   <Step title="Open the agent's Knowledge page">
-    Switch the sidebar selector to the agent, then open Knowledge. You get the same source list with a checkbox on every row.
-
-    Check the environment selector in the top bar reads Development. These tabs carry it, and on a [published](/agents/agent-builder#publish-and-promote) environment the checkboxes still look editable and the save will fail.
+    Switch the sidebar selector to the agent, then open Knowledge. You get the same source list, with **Type** and **Usage** columns after **Name**.
   </Step>
 
-  <Step title="Check the sources it should use">
-    The header counts them as you go.
+  <Step title="Check what the agent uses">
+    **Usage** reads **In use** for every source the agent uses, including sources pulled in by a Knowledge step inside a pathway. Every other source reads **Not used**. The column is read-only.
+
+    A source that is still processing, failed or is out of date shows its indexing state under its name.
   </Step>
 
-  <Step title="Save">
-    The save control is the floppy disk icon beside **Add sources**. It is dimmed until you have changed something, and it stays dimmed if the agent cannot be saved for some other reason. Hover it and it tells you which.
+  <Step title="Tag the sources it should use">
+    Select **Edit agent prompt** beside **Add sources**. This opens the agent's prompt. Type `@`, pick each source the agent should use, and save the prompt.
 
-    Nothing is attached until you press it. The checkboxes are an edit to the agent, so they reach a live call the same way any other edit does, when you [publish and promote](/agents/agent-builder#publish-and-promote).
+    The tag is an edit to the agent, so it reaches a live call the same way any other edit does, when you [publish and promote](/agents/agent-builder#publish-and-promote).
   </Step>
 </Steps>
 
 ### Tag a source in the prompt
 
-Tagging is worth doing on top of attaching, because it tells the agent where in the conversation you expect the source to matter. It is not what makes the source reachable, and it does not confine the source to that one prompt. It does change how the source can be detached, which is the rule at the end of this section.
+A tag also tells the agent where in the conversation you expect the source to matter. It does not confine the source to that one prompt.
 
 The Knowledge references section below the prompt lists what you tagged. Unlike Tool references, it is not the full list of what the agent can reach.
 
@@ -119,7 +119,7 @@ The Knowledge references section below the prompt lists what you tagged. Unlike 
 [Tools](/agents/tools) work the other way. A tool belongs to the one prompt you attached it to. A source belongs to the whole agent.
 </Note>
 
-Deleting the last `@` mention of a source detaches it, whatever attached it in the first place. Only a source that has never been tagged in any prompt is safe from a prompt edit.
+Deleting the last `@` mention of a source detaches it.
 
 One surface does not follow the agent-wide rule: a Knowledge step inside a pathway retrieves from its own list, not the agent's.
 
@@ -127,7 +127,7 @@ One surface does not follow the agent-wide rule: a Knowledge step inside a pathw
 
 **Source testing** answers a question the way the agent would, before a caller asks it.
 
-Pick your sources in the bar at the bottom, type a question, and press Enter. Inside an agent the picker starts with whatever is checked on the Sources tab, including checks you have not saved yet. Save first, or a passing test proves nothing about the agent you will ship.
+Pick your sources in the bar at the bottom, type a question, and press Enter. Inside an agent the picker starts with the sources the agent uses.
 
 The answer comes back with **Show diagnostics** underneath it, and the diagnostics are the point.
 
@@ -209,7 +209,7 @@ Inside an agent, **Query logs** starts empty on an agent whose traffic predates 
 
 <AccordionGroup>
   <Accordion title="The agent answers as though the source does not exist">
-    Check the agent's Sources tab. If the row is unchecked, it is not attached. If it is checked and you never pressed **Save**, it is still not attached.
+    Check the **Usage** column on the agent's Sources tab. If the row reads **Not used**, the source is not attached. Select **Edit agent prompt** and tag it with `@`.
   </Accordion>
 
   <Accordion title="It is attached and still never gets used">
@@ -218,12 +218,8 @@ Inside an agent, **Query logs** starts empty on an agent whose traffic predates 
     Rename it first, because renaming is free: say what is in it, in the words a caller would use. If the description itself is the problem, re-add the source, attach the new one everywhere the old one was, and delete the old one only after reading its **Contexts** cell.
   </Accordion>
 
-  <Accordion title="Save fails and says the agent was updated somewhere else">
-    Check the environment selector. On a published environment the checkboxes look editable and the save is rejected, and the message names the wrong cause. Switch to Development, check the sources there, and save again.
-  </Accordion>
-
   <Accordion title="A source came off an agent on its own">
-    Deleting the last `@` mention of a source detaches it, whatever attached it first. Someone edited a prompt. Re-check the row on the agent's Sources tab and press **Save**.
+    Deleting the last `@` mention of a source detaches it. Someone edited a prompt. Select **Edit agent prompt** on the agent's Sources tab and tag the source again.
   </Accordion>
 
   <Accordion title="It retrieves the wrong passage">
