@@ -12,6 +12,26 @@ title: "Web Chat Widget"
 
 In just a few minutes, you'll learn how to add powerful AI chat capabilities to enhance your user experience. You can set up the agent with a pathway ID or use a agent prompt. To get started with creating a widget, head over to our [Bland Dashboard](https://app.bland.ai/dashboard/web-widget).
 
+## Manage widgets from your agent
+
+You can also create and manage web chat widgets directly from an agent in the dashboard. Open your agent, go to **Channels**, and select the **Web chat** channel. Each agent can have multiple widgets, so you can run separate embeds for different sites or environments.
+
+Select **New widget** to open the widget editor. The editor is split into two tabs:
+
+- **Configuration**: the widget's backing (a prompt or a pathway), allowed domains, message rate limit, webhook URL and webhook mode, and inactivity timeout settings with optional warning and ending messages.
+- **Appearance**: the header text or logo, launcher icon, accent color, footer visibility, and widget size. A live preview updates as you make changes.
+
+Widgets backed by a pathway also get a **Components** tab for attaching rich blocks to pathway nodes. See [Custom Components](#advanced-custom-components).
+
+### Publish a widget
+
+New widgets start as drafts. A draft widget doesn't load on any site, so an unfinished embed is never live. To publish:
+
+1. Add at least one allowed domain on the **Configuration** tab. Publishing requires it, because the widget only loads on domains in this list.
+2. Select **Publish**.
+
+Once published, the widget is live on its allowed domains and the embed snippet in the editor loads it. Select **Unpublish** to take the widget offline. Your domain list is preserved, so republishing restores it.
+
 ## Installation
 
 You can create a web widget via the [API](/api-v1/post/widget), or through the [dashboard](https://app.bland.ai/dashboard/web-widget). Once you've created your widget, you should have an ID which you can pass into the following code snippet:
@@ -59,7 +79,7 @@ Now this information will be available to your agent as variables.
 
 ## Advanced: Custom Components
 
-When using pathways in your widget, you can create custom components that display at specific points in the conversation. These components are embedded as iframes within the widget window.
+When using pathways in your widget, you can create custom components that display rich blocks in the conversation at specific pathway nodes, instead of plain text only.
 
 <video 
   controls
@@ -69,6 +89,33 @@ When using pathways in your widget, you can create custom components that displa
   <track kind="captions" />
 </video>
 
+### Component types
+
+You can attach five kinds of components to a pathway node:
+
+| Type | What it shows |
+|------|---------------|
+| Quick Replies | A row of buttons. Each button either sends a user message or opens a redirect URL. |
+| Accordion | Expandable groups of items the visitor can click to respond. |
+| Cards | Markdown cards with a title, description, image, and actions. |
+| Scheduling | A time-slot picker with a configurable timezone. |
+| Iframe | Your own web content embedded in the chat window. Iframe URLs must use `https`. |
+
+### Creating components in the dashboard
+
+Author components from the **Components** tab of the widget editor:
+
+1. Open your agent, go to **Channels**, and select the **Web chat** channel.
+2. Open a widget. On the **Configuration** tab, set **Backed by** to **Pathway** and pick a pathway. Components fire when the conversation reaches a pathway node, so a prompt-backed widget can't show them.
+3. On the **Components** tab, add a component, choose its type, and bind it to a pathway node.
+
+For each component you can:
+
+- **Block text input**: hide the chat composer while the component is on screen, so the visitor answers through the component.
+- **Dynamic config**: supply the component's contents at runtime from a pathway variable (for example `{{welcome_card}}`) instead of writing them out in the dashboard.
+
+You can also manage components via the [widget custom components API](/api-v1/post/widget-custom-components).
+
 ### Passing data to custom components
 You can send agent variables to your custom components to personalize the user experience. These variables are passed as query parameters to your iframe URL.
 
@@ -76,8 +123,8 @@ You can send agent variables to your custom components to personalize the user e
 
 Define which variables to pass in one of two ways:
 
-- Through the platform UI in the custom component settings
-- Via the `variables` field in the [widget custom components API](/api-v1/post/widget)
+- Through the variables list on an iframe component in the widget editor
+- Via the `variables` field in the [widget custom components API](/api-v1/post/widget-custom-components)
 
 **Accessing variables in your component:**
 
