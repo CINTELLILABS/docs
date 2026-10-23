@@ -1,0 +1,76 @@
+---
+title: "Get Contact CRM Sync Status"
+api: "GET https://api.bland.ai/v1/contacts/{contact_id}/crm-sync"
+description: "Retrieve the per-CRM sync status for a contact, including whether the last push succeeded, failed, or partially completed for each connected integration."
+---
+
+Use this endpoint to show a contact's CRM sync state in your own UI, or to confirm that a manual sync landed correctly. Each connected CRM (HubSpot, Salesforce) returns its own row.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="contact_id" type="string" required>
+  The unique identifier of the contact.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  One entry per connected CRM integration. Empty if no CRM is connected.
+</ResponseField>
+
+<ResponseField name="data[].integration" type="string">
+  The CRM this row describes (for example, `hubspot` or `salesforce`).
+</ResponseField>
+
+<ResponseField name="data[].status" type="string">
+  Overall sync status for this contact and integration. One of `synced`, `partial`, `failed`, `pending`, or `disabled`.
+</ResponseField>
+
+<ResponseField name="data[].crm_record_id" type="string">
+  The CRM's identifier for the contact record, once Bland has created or matched one.
+</ResponseField>
+
+<ResponseField name="data[].type_results" type="object">
+  Per-type sync outcomes (for example, `contacts`, `notes`, `entities`, `bookings`, `interactions`, `meetings`). Each value describes whether that data type was pushed, skipped, or failed.
+</ResponseField>
+
+<ResponseField name="data[].error" type="string">
+  Human-readable error from the last attempt, if any.
+</ResponseField>
+
+<ResponseField name="data[].last_synced_at" type="string">
+  ISO timestamp of the most recent sync attempt.
+</ResponseField>
+
+<ResponseField name="errors" type="null">
+  Error array (null on success).
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "integration": "hubspot",
+      "status": "synced",
+      "crm_record_id": "1234567890",
+      "type_results": {
+        "contacts": { "status": "synced" },
+        "notes": { "status": "synced" },
+        "entities": { "status": "synced" },
+        "bookings": { "status": "skipped" }
+      },
+      "error": null,
+      "last_synced_at": "2026-07-01T12:34:56.000Z"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
