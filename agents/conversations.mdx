@@ -62,7 +62,7 @@ Scroll further, or use **Load more**, before you conclude that someone only call
 
 ## Find a conversation
 
-The list opens on the newest conversations and pages as you scroll, with a **Load more** button under the table. There is no date filter, so reaching something from last week means loading your way back to it.
+The list opens on the newest conversations and pages as you scroll, with a **Load more** button under the table. To jump to a date range without loading your way back, use a **Created at** or **Dialed at** condition under [Filter](#filter).
 
 Five controls narrow the list, and a sixth changes how it is sorted and what it shows. Some search everything you have; others only look at the rows already on screen, which is called out below where it matters.
 
@@ -96,21 +96,47 @@ Picking **Simulated calls** also empties the list of message threads and web cha
 
 ### Filter
 
-The **Filter** button opens a condition builder. The channel select inside it covers every conversation. The conditions under it only apply to the rows already loaded.
+The **Filter** button in the toolbar searches your full history on the server, across voice and messaging: SMS, iMessage, RCS, and WhatsApp. It does not stop at the rows already loaded. While a filter is applied, the count shows every match, not just the rows loaded so far.
 
-Add conditions on Status, Direction, Escalation, QC tags, or Contact. With more than one you get an **All** and **Any** switch, and it starts on All.
+It uses the same fields and operators as call log filters in the previous dashboard, so a filter you built there works here.
 
-Direction and QC tags only carry data on calls, so a positive condition on either drops every message thread and web chat from the list.
+1. Press **Filter** in the toolbar.
+2. Optionally pick a **Channel**.
+3. Set **Match** to **All conditions** or **Any condition**.
+4. Press **Add condition**, then pick a field, an operator, and a value. Repeat for each condition.
+5. Press **Apply**.
 
-The status filter offers seven values and the list can show more than that. A status the chip does not recognize reads **No Answer**, so filter on Status to narrow, not to conclude.
+Fields include status, direction, duration, price, dates, pathway, batch, answered by, variables, analysis, metadata, outcomes, QC status, and QC tags. Fields like **Variables** and **Metadata** take a key and a value.
 
-Name a set of conditions under **Saved filters** and it stays in this browser.
+A date takes `2026-09-25`, or a date and time with its timezone offset, such as `2026-09-25T09:00:00-07:00`.
 
-### Saved views
+Applied conditions show as chips under the toolbar. Remove a chip to drop that condition, or press **Clear** in the builder to remove them all.
 
-The chips above the toolbar are one-click filter presets. Two ship with the product: **Failed & No-Answer** and **Escalated**.
+#### Voice-only fields
 
-A view you create lives for one page load. If you want to keep it, build it under **Filter** as a saved filter instead.
+Some fields only exist on calls, such as **Duration**. They carry a phone icon in the field list. Filtering on one hides message threads, and a note under the toolbar says why, for example `Messages hidden: Duration applies to voice only.` The list never quietly widens a condition it cannot apply.
+
+Inside an agent, web chat cannot be filtered yet. Its rows are hidden while a filter is applied, with a note saying so.
+
+While a filter is applied:
+
+- In-progress calls are not added to the top of the list.
+- The filter stays in the page URL, so a reload or a shared link keeps it.
+- Agent, call source, and batch still narrow the results. An **Any condition** filter never widens past them.
+
+### Views
+
+The **Views** row under the toolbar holds one-click filters. Two ship with the product: **Failed & No Answer** and **Escalated**. After them come the views your organization saved in the previous dashboard's call logs, shared with everyone in your organization.
+
+Press a view to apply it, and press it again to clear it. Views work on the All agents page and inside an agent.
+
+For message threads, **Escalated** means the thread is currently handed off to a human. Once the agent resumes, the thread no longer matches.
+
+A shared view that uses a field or value this page cannot apply is marked unavailable and cannot be picked. It is never applied in part.
+
+Shared views are read-only here. Create, rename, or delete them in the previous dashboard. See [Call logs](/tutorials/call-logs).
+
+If the shared views fail to load, press **Retry shared views**. You can still build a filter by hand.
 
 ### Sort and columns
 
@@ -204,12 +230,13 @@ An issue you create from a call belongs to the agent that handled that call. To 
 The download icon in the toolbar opens **Export conversations**.
 
 <Warning>
-The export is not what is on your screen.
+The export is not always what is on your screen.
 
-It runs on the server, over the date range you pick, and it keeps only the filters the server knows about: call source, agent, channel, and batch. Your search box, your conditions, and your saved view are applied in the browser, so none of them reach the export. The modal lists what it did inherit under **Filters applied to this export**, so read that before you press the button.
+It runs on the server, over the date range you pick, and it keeps only the filters the server knows about: call source, agent, channel, batch, and your [filter](#filter). Your search box is applied in the browser, so it does not reach the export. The modal lists what it did inherit under **Filters applied to this export**, so read that before you press the button.
 
-Filter down to twelve failed calls, press Export, and you get every conversation in the window.
 </Warning>
+
+A call export cannot use a filter set to **Any condition**, and that includes the **Failed & No Answer** and **Escalated** views. The modal says so and blocks the export. Switch **Match** to **All conditions** before you export.
 
 Calls and message threads export as separate files. Pick one under **Data to export**. There is no web chat export.
 
@@ -247,7 +274,7 @@ With nothing running, the empty state offers to call your own number, which is t
 
 <AccordionGroup>
   <Accordion title="A conversation you know happened is not in the list">
-    Three things hide conversations by default. Call source is on Live calls, so simulations are out. A web chat only appears inside its agent, not at All agents. And the list pages as you scroll, so something older may not be loaded yet. Change Call source, switch the selector to the agent, or press **Load more**.
+    Check the notes under the toolbar first: a filter on a voice-only field hides message threads, and inside an agent any filter hides web chat. Three things hide conversations by default. Call source is on Live calls, so simulations are out. A web chat only appears inside its agent, not at All agents. And the list pages as you scroll, so something older may not be loaded yet. Change Call source, switch the selector to the agent, or press **Load more**.
   </Accordion>
 
   <Accordion title="Search does not find a phrase you remember">
@@ -262,12 +289,12 @@ With nothing running, the empty state offers to call your own number, which is t
     Issues does not fill in yet, even on a call you have flagged. Turn it off under **Columns**. A flagged call is not marked on this list at all: to see what you have flagged, go to Issues in the sidebar.
   </Accordion>
 
-  <Accordion title="A saved view you made is gone">
-    Saved views live for one page load. Rebuild it under **Filter**, as a saved filter, which persists in this browser.
+  <Accordion title="A view you saved in this browser is gone">
+    Views saved in this browser are no longer shown. Rebuild the filter under **Filter**, or save it as a shared view in the previous dashboard so everyone in your organization sees it under **Views**.
   </Accordion>
 
   <Accordion title="The export has far more in it than the list showed">
-    Expected. The export keeps only call source, agent, channel and batch. Narrow the date range in the modal, and filter the file once it arrives.
+    Expected when you narrowed the list with the search box, which the export ignores. The export keeps call source, agent, channel, batch, and your filter. Rebuild the narrowing as a condition under **Filter**, or narrow the date range in the modal and filter the file once it arrives.
   </Accordion>
 
   <Accordion title="A row reads No Answer and you know the call connected">
