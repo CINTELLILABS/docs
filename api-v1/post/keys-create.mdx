@@ -58,6 +58,8 @@ description: "Create a full-access or restricted API key for your organization."
 
 A restricted key can only call the endpoints its permissions cover. Use one when you hand a key to a contractor, a CI job, or an integration that needs part of your account and not all of it.
 
+For short-lived access tokens instead of a long-lived key, use an [OAuth client](/api-v1/oauth-client-credentials). Clients use the same permissions.
+
 Permissions are named by resource and action. Every resource has a read permission. Most also have a write permission, or an action permission for work that spends credits or sends messages. The table lists what each permission opens for a restricted key, and what stays closed to every restricted key no matter which permissions it holds.
 
 | Resource | Scopes | What they open | What stays denied |
@@ -73,6 +75,15 @@ Permissions are named by resource and action. Every resource has a read permissi
 | Tests | `tests:read`, `tests:run` | `tests:read` reads test cases, their eval agents and source calls, runs, and simulation results. `tests:run` creates, edits, deletes, and reassigns cases, sets their eval agents, attaches source calls, and runs and simulates cases. A run dispatches the agent's webhook and tool nodes for real, billed to your organization. | Model-driven case generation, regeneration, and run analysis, template seeding, batch, simulation-set, and tornado runs, and the Test Bed. |
 
 Personas, phone numbers, tools, alerts, and automations have no permissions yet. Their responses can carry stored credentials (tool headers, webhook authentication, imported-number credentials, alert delivery inputs, and pipeline webhook configuration), so they stay full-access only until their reads hide those values.
+
+### Create a restricted key in the dashboard
+
+You must be an owner or admin of your organization.
+
+1. Go to Settings > API keys and select **Create API key**.
+2. Optionally, enter a name. Under **Permissions**, choose **Restricted**. If you don't see **Restricted**, see [Pinned deployments](#pinned-deployments).
+3. Pick at least one permission. In the grid, a resource and an action together make a permission. For example, **Calls** and **Read** is `calls:read`, and **Evals** and **Manage** is `evals:run`. A permission that another pick includes shows as checked and locked.
+4. Select **Create API key**, then copy the key. Bland shows the full key only once.
 
 ### Permissions that include others
 
