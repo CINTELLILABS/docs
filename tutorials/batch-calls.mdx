@@ -26,52 +26,48 @@ Common use cases include:
 
 ---
 
-## Creating a Batch Call
+## Creating a batch call
 
 To start a batch call:
 
 1. Navigate to the [Batch Calls](https://app.bland.ai/dashboard/batches) page in the sidebar.
 2. Click **Create Batch Call** in the top right.
 
-You'll land on a configuration screen similar to the normal call creation flow, with the addition of a **CSV upload step**.
+The create batch flow is a three-step wizard: **Recipients**, **Script**, then **Review**.
 
-Batch calls are built around a CSV file containing all information on your recipients, with each row representing a single recipient.
+### Step 1: Recipients
 
-<img 
-  src="../tutorials/tutorials-assets/batch_call_create.jpeg"
-  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Batch Call Creation UI"
-/>
+Upload the CSV of people to call. Your file must include a `phone_number` column; every other column is available as a variable in your script.
 
-### Required Fields
-
-Your uploaded CSV must include at least one column titled `phone_number`.
-
-Additional columns can be included to define dynamic variables referenced during the call.
-
-> **Important**: Column names cannot contain spaces since they are used as variables in pathways. Use underscores or camelCase instead (e.g., `customer_name` or `customerName`, not `customer name`).
+<Info>
+Column names cannot contain spaces because they become variable names. Use underscores or camelCase (`customer_name` or `customerName`, not `customer name`).
+</Info>
 
 Example format:
 
-| phone_number | business_name    | previous_customer | champion_name | webhook                     |
-|--------------|------------------|-------------------|---------------|-----------------------------|
-| +12345678909  | South Bay Coffee | Yes               | Sarah H       | https://example.com/webhook1 |
-| +10987654321  | John's Laundry   | No                | John W        | https://example.com/webhook2 |
+| phone_number | business_name    | previous_customer | champion_name |
+|--------------|------------------|-------------------|---------------|
+| +12345678909 | South Bay Coffee | Yes               | Sarah H       |
+| +10987654321 | John's Laundry   | No                | John W        |
 
-With this CSV, we are aiming to send 2 calls out in our batch, to +12345678909 and +10987654321.
+Once the file is parsed, the wizard shows a preview of the first rows so you can confirm the columns landed where you expected. Before you can continue, the wizard checks the file up front and calls out:
 
-In each of those calls, we can have access to the information in the other columns (business_name, previous_customer, champion_name, webhook) throughout our prompt or pathway, similar to request data in a normal call.
+- **Duplicate numbers.** If the same number appears more than once, only the first row is called. The wizard tells you how many duplicates were folded so the recipient count matches what will actually dial.
+- **Undialable numbers.** Any row whose `phone_number` can't be dialed is named with its row number (for example, `A number cannot be dialed (+123 on row 6)`). Fix or remove those rows and re-upload before continuing.
 
-In order to gain access to these, we can either format the CSV column names to prepend 'request_data.' to each column name (request_data.business_name, request_data.previous_customer, etc.) or we can convert them all through our UI:
+### Step 2: Script
 
-<img 
-  src="../tutorials/tutorials-assets/batch_call_csv_conversion.jpeg"
-  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Batch Call CSV Conversion"
-/>
-> Above shows how we set each column to be mapped to use as request data during each call. Alternatively, you can set each column to be mapped to any other call configuration setting.
+Pick the agent that will run the calls and write the instructions for this batch.
 
-Once we mark the column as request data, we can reference it in our prompt or pathway using the familiar `{{column_name}}` syntax.
+The columns from your CSV appear as chips above the instructions box. Click a chip to insert `{{column_name}}` at the cursor. The wizard also wires that column up as a variable in the same click, so you don't need to prepend `request_data.` in your CSV or map the column separately.
+
+Below the instructions, **How your columns are used** lists each column and what it does on the call. Most columns default to a prompt variable (`Use as {{first_name}}`). `phone_number` and any `request_data.*` columns are shown as fixed rows so it's obvious nothing was dropped. You can reassign a column to another call setting from this list.
+
+### Step 3: Review
+
+The final step shows the call count as the headline, followed by the first recipient's instructions rendered with their values substituted. If a variable is broken or a column didn't wire up the way you expected, you see it here rather than after 500 calls have gone out.
+
+Below the preview, the wizard summarizes the batch settings in plain language. When everything looks right, send the batch.
 
 ---
 
@@ -150,7 +146,10 @@ The agent will automatically personalize each call using the values from that ro
 
 <AccordionGroup>
   <Accordion title="What happens if a number is invalid?">
-    Invalid or blank numbers will be skipped automatically and reported in the error logs
+    Undialable numbers are caught on the Recipients step and named with their row number, so you can fix the file before uploading. If an invalid number reaches the server, the whole file is rejected rather than silently skipped.
+  </Accordion>
+  <Accordion title="What happens if the same number appears more than once?">
+    Each unique number is only called once. The Recipients step tells you how many duplicate rows were folded so the recipient count on the Review step matches what will actually dial.
   </Accordion>
   <Accordion title="Can I use tools or pathways with batch calls?">
     Yes. Any tools or pathways configured in your call settings will apply across the batch
