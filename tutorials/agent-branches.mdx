@@ -1,0 +1,57 @@
+---
+title: "Agent branches and merging"
+description: "Edit an agent on an isolated branch, review incoming Development changes, and resolve merge conflicts field by field in the Bland dashboard."
+---
+
+## Introduction
+
+Branches let you edit an agent without touching its Development version. A branch starts as a copy of the current Development head. You make changes on the branch, then merge it back into Development when you're ready.
+
+Use a branch when:
+
+- You want to try a larger change, like restructuring scenarios or rewriting prompts, without disrupting the Development version.
+- Multiple people work on the same agent and you want to keep work-in-progress separate.
+- You want to review exactly what will change before it lands in Development.
+
+## Create and switch branches
+
+1. Open your agent in the dashboard and make sure you're on the Development version.
+2. Select the branch icon next to the environment selector in the top bar.
+3. Create a new branch, or select an existing one to switch to it.
+
+While a branch is selected, all edits and saves apply to the branch only. Use the same menu to return to Development or to archive a branch you no longer need.
+
+## Merge a branch into Development
+
+While you're on a branch, the **Merge with dev** button replaces the Publish button in the top bar. Selecting it opens a merge preview.
+
+If Development hasn't changed since you created the branch, there is nothing to resolve. The preview shows **No conflicts, ready to merge**, and merging saves your branch's changes as a new Development version.
+
+If Development has changed, the preview shows two things before you commit the merge:
+
+- **Incoming changes**: everything Development changed that your branch didn't touch. These merge in automatically. Expand the collapsed **changes from dev merge in automatically** section to review each field as a diff. This is review only, there is nothing to decide.
+- **Conflicts**: fields that changed on both sides. Each conflict must be resolved before you can merge.
+
+## Resolve conflicts
+
+Conflicts are grouped by the node or setting they belong to, and each conflicting field shows a diff of both sides. For every conflict, pick one of three options:
+
+- **Your branch's changes**: keep the value from your branch.
+- **Dev changes**: take the value from Development.
+- **Write my own**: author the merged value yourself. The editor is seeded with whichever side you last picked, so you can combine both versions instead of discarding one.
+
+Text fields, like prompts, edit as plain text. Any other value edits as JSON. If the JSON doesn't parse, the field shows **Not valid JSON**, counts as unresolved, and the merge button stays disabled until you fix it.
+
+To resolve everything at once, use **Keep all** for your branch or for Development. Bulk options overwrite any custom values you've written, so apply them before hand-editing individual fields.
+
+Once the resolved counter reaches the total, select **Update & merge**. Bland rebases your branch onto the latest Development version with your resolutions applied, validates the merged agent, and merges it into Development as a new version.
+
+<Note>
+Knowledge bases attached to the agent merge like any other setting. Attachments from both sides are preserved through the rebase, and conflicting attachment lists surface as a regular conflict you can resolve.
+</Note>
+
+If Development changes again while the merge preview is open, Bland asks you to review the preview again before merging.
+
+## Merge branches programmatically
+
+The same branch lifecycle is available through the [Bland MCP server](/integrations/mcp/tools#agents): list and create branches, preview a rebase, resolve conflicts (including custom values), and merge into Development.
