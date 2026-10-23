@@ -1,12 +1,12 @@
 ---
 title: "Rename Voice"
 api: "PATCH https://api.bland.ai/v1/voices/{id}/rename"
-description: "Change the display name of a cloned voice you own."
+description: "Update the display name and optional description of a cloned voice you own."
 ---
 
 ## Overview
 
-Renames a voice clone in your library. Only voices owned by your org can be renamed; default and shared-library voices return `403`.
+Updates a voice clone in your library. You can change the display name and, optionally, the description in the same request. Only voices owned by your org can be updated; default and shared-library voices return `403`.
 
 ---
 
@@ -21,7 +21,7 @@ Renames a voice clone in your library. Only voices owned by your org can be rena
 ## Path Parameters
 
 <ParamField path="id" type="string" required>
-  UUID of the voice to rename.
+  UUID of the voice to update.
 </ParamField>
 
 ---
@@ -30,6 +30,10 @@ Renames a voice clone in your library. Only voices owned by your org can be rena
 
 <ParamField body="name" type="string" required>
   New display name. 1-30 characters. Must be unique within your library.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional new description for the voice. Leading and trailing whitespace is trimmed. Omit the field to leave the existing description unchanged.
 </ParamField>
 
 ---
@@ -41,19 +45,39 @@ Renames a voice clone in your library. Only voices owned by your org can be rena
 </ResponseField>
 
 <ResponseField name="data.voice_id" type="string">
-  UUID of the renamed voice.
+  UUID of the updated voice.
+</ResponseField>
+
+<ResponseField name="data.description" type="string | null">
+  The current description on the voice after the update.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
   `null` on success.
 </ResponseField>
 
+<RequestExample>
+```json Name only
+{
+  "name": "DocTestRename"
+}
+```
+
+```json Name and description
+{
+  "name": "DocTestRename",
+  "description": "Warm, mid-pitch narrator voice for onboarding calls."
+}
+```
+</RequestExample>
+
 <ResponseExample>
 ```json Response
 {
   "data": {
     "name": "DocTestRename",
-    "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9"
+    "voice_id": "73d4c04b-1e15-4272-9c7f-8d2955914ba9",
+    "description": "Warm, mid-pitch narrator voice for onboarding calls."
   },
   "errors": null
 }
