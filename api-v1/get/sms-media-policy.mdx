@@ -1,0 +1,48 @@
+---
+title: "Get Inbound Media Policy"
+api: "GET https://api.bland.ai/v1/sms/media_policy"
+description: "Retrieve your organization's inbound media policy, which controls how messaging agents handle images and files customers send over SMS, RCS, WhatsApp, and iMessage."
+---
+
+<Info>
+  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+Returns the inbound media settings that apply to every messaging number in your organization. If you have never set a policy, the response shows the defaults. To change the policy, use [Update Inbound Media Policy](/api-v1/post/sms-media-policy).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.mode" type="string">
+  How inbound media is handled. One of `full`, `attach_only`, or `off`. Defaults to `full`.
+</ResponseField>
+
+<ResponseField name="data.image_redaction" type="boolean">
+  Whether stored images are redacted. Defaults to `true`.
+</ResponseField>
+
+<ResponseField name="data.available_modes" type="array">
+  All supported values for `mode`.
+</ResponseField>
+
+<ResponseField name="errors" type="array | null">
+  Any errors that occurred. `null` on success.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "mode": "full",
+    "image_redaction": true,
+    "available_modes": ["full", "attach_only", "off"]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
