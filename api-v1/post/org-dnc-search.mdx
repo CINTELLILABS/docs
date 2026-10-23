@@ -1,0 +1,69 @@
+---
+title: "Search Org DNC Number"
+api: "POST https://api.bland.ai/v1/org_dnc/search"
+description: "Look up a single phone number on your organization's outbound do-not-call list."
+---
+
+<Info>
+  **POST, not GET** – The number is passed in the request body so it is not written to access logs, proxy caches, or browser history.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="phone_number" type="string" required>
+  The phone number to look up. Any format accepted; the number is normalized to E.164 before matching, so `(212) 456-7890` matches an entry stored as `+12124567890`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.entries" type="array">
+  Matching entries. Empty if the number is not on the list.
+</ResponseField>
+
+<ResponseField name="data.total_count" type="number">
+  Number of matching entries returned.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if the number is invalid.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/org_dnc/search \
+  --header 'authorization: <your_api_key>' \
+  --header 'content-type: application/json' \
+  --data '{ "phone_number": "+12124567890" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "entries": [
+      {
+        "id": "b7d3e9fc-5c4a-4c2a-9b8f-d1e1d1a2e333",
+        "phone_number": "+12124567890",
+        "reason": "Customer opt-out",
+        "created_at": "2026-08-04T12:00:00.000Z",
+        "updated_at": "2026-08-04T12:00:00.000Z"
+      }
+    ],
+    "total_count": 1
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

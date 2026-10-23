@@ -1,0 +1,77 @@
+---
+title: "Add Numbers to Org DNC List"
+api: "POST https://api.bland.ai/v1/org_dnc"
+description: "Add phone numbers to your organization's outbound do-not-call list. Numbers are stored in E.164 and refused at dial time."
+---
+
+<Info>
+  **Org do-not-call list** – Numbers added here are refused at dial time for outbound calls placed by your organization, including primary destinations, transfer numbers, and transfer lists. Numbers are also skipped when a batch is enqueued so a suppressed number does not consume a call attempt. This list is separate from the platform-wide DNC list.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="numbers" type="string[]" required>
+  A list of phone numbers to add. Numbers are normalized to E.164 before storage, so `(212) 456-7890` matches a call placed to `+12124567890`. Maximum 5,000 numbers per request.
+</ParamField>
+
+<ParamField body="reason" type="string" required={false}>
+  Optional text describing why these numbers were added.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.added_count" type="number">
+  Number of rows actually created by this request.
+</ResponseField>
+
+<ResponseField name="data.already_present_count" type="number">
+  Number of submitted entries that were already on the list. Re-uploading the same list is safe.
+</ResponseField>
+
+<ResponseField name="data.invalid_numbers" type="string[]">
+  The submitted values that could not be parsed as dialable phone numbers.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if validation fails.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/org_dnc \
+  --header 'authorization: <your_api_key>' \
+  --header 'content-type: application/json' \
+  --data '{
+    "numbers": ["+12124567890", "(415) 555-0100"],
+    "reason": "Customer opt-out"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "added_count": 2,
+    "already_present_count": 0,
+    "invalid_numbers": []
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+### Access
+
+Requires an owner or admin dashboard session for writes. Adds are idempotent — resubmitting the same numbers returns them in `already_present_count` rather than duplicating rows.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

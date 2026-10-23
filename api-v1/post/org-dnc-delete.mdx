@@ -1,0 +1,60 @@
+---
+title: "Bulk Remove Org DNC Numbers"
+api: "POST https://api.bland.ai/v1/org_dnc/delete"
+description: "Remove one or more phone numbers from your organization's outbound do-not-call list. Idempotent."
+---
+
+<Info>
+  **Idempotent delete** – Numbers that are not on the list are ignored rather than raising an error. Safe to retry.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="numbers" type="string[]" required>
+  Phone numbers to remove. Normalized to E.164 before matching. Maximum 5,000 numbers per request.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.deleted_count" type="number">
+  Number of entries actually removed by this request.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or an array of error objects if validation fails.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/org_dnc/delete \
+  --header 'authorization: <your_api_key>' \
+  --header 'content-type: application/json' \
+  --data '{ "numbers": ["+12124567890", "+14155550100"] }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "deleted_count": 2
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+### Access
+
+Requires an owner or admin dashboard session.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
