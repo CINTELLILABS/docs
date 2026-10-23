@@ -1,0 +1,174 @@
+---
+title: "Get Simulation Run Results"
+api: "GET https://api.bland.ai/v1/agent-testing/simulation-runs/{id}/results"
+description: "Get the assembled run-detail results for a simulation run: a run-level summary, per-eval-agent rollups, and one log entry per generated conversation."
+---
+
+Use this endpoint to fetch the results that power the simulation run-detail dashboard view. The `id` path parameter is the `simulation_set_id` returned by [Simulate Scenario](/api-v1/post/agent-testing-scenarios-id-simulate).
+
+While a run is still generating or scoring, `eval_run_id` is `null`, `summary.status` reflects the simulation-set status, and `assertions` / `logs` are empty.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The simulation set ID returned by `POST /scenarios/{id}/simulate`.
+</ParamField>
+
+### Response
+
+<ResponseField name="summary" type="object">
+  Run-level summary header.
+
+  <Expandable title="summary object">
+    <ResponseField name="simulation_set_id" type="string">
+      The simulation set ID this result belongs to.
+    </ResponseField>
+    <ResponseField name="eval_run_id" type="string">
+      The linked eval run ID. `null` when generation finished but no eval run exists yet.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Eval run status (`PENDING`, `RUNNING`, `COMPLETE`, `PARTIAL`, `FAILED`, or `CANCELLED`) — or the simulation-set status when no eval run exists yet.
+    </ResponseField>
+    <ResponseField name="score" type="number">
+      Aggregate run score from 0 to 100, rounded to one decimal place. `null` while pending or when nothing has been scored.
+    </ResponseField>
+    <ResponseField name="passed" type="boolean">
+      Whether the run passed overall. `null` while in progress or unscored.
+    </ResponseField>
+    <ResponseField name="total_calls" type="integer">
+      Total conversations generated for the run.
+    </ResponseField>
+    <ResponseField name="passed_count" type="integer">
+      Number of conversations whose call status finished as `COMPLETE`. This is an execution-status count, not a threshold-pass count — `summary.passed` may be `false` even when `passed_count` equals `total_calls` if the aggregate score missed the configured threshold.
+    </ResponseField>
+    <ResponseField name="failed_count" type="integer">
+      Number of conversations that failed or produced insufficient evidence.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the run was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="assertions" type="array of objects">
+  One rollup per eval agent attached to the scenario at the time of the run.
+
+  <Expandable title="assertion object">
+    <ResponseField name="eval_agent_id" type="string">
+      The eval agent ID.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Eval agent name from the frozen snapshot. Stable even if the agent is renamed after the run.
+    </ResponseField>
+    <ResponseField name="mode" type="string">
+      Scoring mode for the snapshot. One of `passfail` or `levels`.
+    </ResponseField>
+    <ResponseField name="score" type="number">
+      Mean of the per-conversation scores for this eval agent from 0 to 100. `null` when no conversation produced a scored verdict.
+    </ResponseField>
+    <ResponseField name="passed" type="boolean">
+      Whether this eval agent passed for the run as a whole, based on the target-level match rate across scored conversations. `null` when nothing was scored.
+    </ResponseField>
+    <ResponseField name="weight" type="number">
+      Per-experiment weight from the frozen snapshot.
+    </ResponseField>
+    <ResponseField name="breakdown" type="array of objects">
+      Level distribution for `levels`-mode eval agents. Omitted for `passfail` mode.
+
+      <Expandable title="breakdown entry">
+        <ResponseField name="label" type="string">
+          Level label from the frozen snapshot (for example `Excellent`).
+        </ResponseField>
+        <ResponseField name="pct" type="number">
+          Percentage of scored conversations that landed on this level, from 0 to 100.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="logs" type="array of objects">
+  One entry per generated conversation.
+
+  <Expandable title="log object">
+    <ResponseField name="run_id" type="string">
+      The agent test run ID for this conversation.
+    </ResponseField>
+    <ResponseField name="conversation_id" type="string">
+      Stable per-conversation ID. Equal to `run_id` for simulation runs.
+    </ResponseField>
+    <ResponseField name="case_name" type="string">
+      The scenario name this conversation exercised.
+    </ResponseField>
+    <ResponseField name="duration_seconds" type="number">
+      Conversation duration in seconds. `null` if not available.
+    </ResponseField>
+    <ResponseField name="score" type="number">
+      Per-conversation aggregate eval score from 0 to 100. `null` when not scored.
+    </ResponseField>
+    <ResponseField name="passed" type="boolean">
+      Whether the conversation passed (call status finished as `COMPLETE`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "summary": {
+    "simulation_set_id": "d4e5f6a7-89ab-cdef-0123-4567890abcde",
+    "eval_run_id": "e5f6a7b8-9abc-def0-1234-567890abcdef",
+    "status": "COMPLETE",
+    "score": 87.4,
+    "passed": true,
+    "total_calls": 10,
+    "passed_count": 9,
+    "failed_count": 1,
+    "created_at": "2026-06-30T10:00:00.000Z"
+  },
+  "assertions": [
+    {
+      "eval_agent_id": "22222222-2222-2222-2222-222222222222",
+      "name": "Tone & empathy",
+      "mode": "levels",
+      "score": 88.0,
+      "passed": true,
+      "weight": 1.0,
+      "breakdown": [
+        { "label": "Excellent", "pct": 60.0 },
+        { "label": "Good", "pct": 30.0 },
+        { "label": "Needs work", "pct": 10.0 }
+      ]
+    },
+    {
+      "eval_agent_id": "44444444-4444-4444-4444-444444444444",
+      "name": "Booking captured",
+      "mode": "passfail",
+      "score": 90.0,
+      "passed": true,
+      "weight": 1.0
+    }
+  ],
+  "logs": [
+    {
+      "run_id": "b8c9d0e1-2345-6789-abcd-ef0123456789",
+      "conversation_id": "b8c9d0e1-2345-6789-abcd-ef0123456789",
+      "case_name": "Happy Path - Booking",
+      "duration_seconds": 92.4,
+      "score": 91.0,
+      "passed": true
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
