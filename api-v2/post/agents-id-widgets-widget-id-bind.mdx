@@ -1,0 +1,97 @@
+---
+title: "Bind Web Chat Widget to Agent"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/widgets/{widget_id}/bind"
+description: "Run a web chat widget on an agent's production version, including live-agent handoff."
+---
+
+### Overview
+
+Points an existing [web chat widget](/tutorials/chat-widget) at the agent so its chats run the agent. The widget runs the agent's `production` version. Promoting or rolling back the agent updates the widget automatically, so you don't need to bind again. If the agent has never been promoted, the widget runs the newest saved version until you promote one.
+
+Live-agent handoff works on a bound widget the same way it does on a pathway widget.
+
+Binding replaces the widget's current prompt or pathway. To stop running the agent, switch the widget back to a prompt or pathway with [Update Widget](/api-v1/patch/widget-id). You can't [delete an agent](/api-v2/delete/agents-id) while a widget is bound to it.
+
+Requires an admin, owner, operator, or prompter role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier.
+</ParamField>
+
+<ParamField path="widget_id" type="string" required>
+  The ID of a saved widget in your organization. Create one with [Create Widget](/api-v1/post/widget) first.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.agent_id" type="string">
+  The agent ID from the request path.
+</ResponseField>
+
+<ResponseField name="data.widget_id" type="string">
+  The widget ID from the request path.
+</ResponseField>
+
+<ResponseField name="data.pathway_id" type="string">
+  ID of the pathway compiled from the agent's production version. The widget's `pathway_id` is set to this value.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `404 WIDGET_NOT_FOUND` for an unknown widget, `404 AGENT_NOT_FOUND` for an unknown agent, and `422 COMPILE_FAILED` when the agent has no saved versions or its version can't be compiled.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v2/agents/56ad3ffc-41c3-4466-b41f-220d17779a74/widgets/b5f3fb6b-2285-4c73-95be-6609eca09986/bind \
+  -H "authorization: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent_id": "56ad3ffc-41c3-4466-b41f-220d17779a74",
+    "widget_id": "b5f3fb6b-2285-4c73-95be-6609eca09986",
+    "pathway_id": "48e86cb8-4d1a-4be6-a85a-4c277255eeb4"
+  },
+  "errors": null
+}
+```
+
+```json Widget Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "WIDGET_NOT_FOUND",
+      "message": "widget not found in this organization"
+    }
+  ]
+}
+```
+
+```json Agent Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_NOT_FOUND",
+      "message": "Agent not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
