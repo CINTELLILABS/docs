@@ -1,0 +1,84 @@
+---
+title: "Prompting and scenarios in the agent builder"
+description: "Tag tools, knowledge sources, and Bland actions in your agent's prompt with @-mentions, and manage scenarios from the inspector."
+---
+
+## Introduction
+
+The agent builder's inspector organizes an agent into two tabs:
+
+- **Prompt**: the agent's core prompt, the resources it references, and its scenarios.
+- **Settings**: the agent's name, behavior options, and advanced configuration.
+
+Select the agent on the canvas to open the inspector.
+
+## Tag resources in the prompt
+
+Type `@` anywhere in the prompt to open a picker with three groups:
+
+- **Tools**: tools already attached to the agent, including custom tools and tool chains. A tool chain appears as a single mention under its own name.
+- **Bland actions**: built-in call actions such as End Call, Send SMS, and transfers. Tagging one attaches it to the agent as a tool, so it behaves exactly like a tool you added by hand.
+- **Knowledge**: knowledge sources available to the agent.
+
+Selecting an entry inserts a badge into the text, such as `@check-inventory`, and adds a row to the references list under the prompt. The badge and the row point at the same resource, so renaming the resource updates both.
+
+The prompt is stored as plain markdown. A tag appears in the text as the literal `@<name>` token, so tagging a resource never changes how the model reads your prompt.
+
+<Note>
+Mention badges cannot be bolded or italicized. Formatting applies to the surrounding text only.
+</Note>
+
+## Tool and knowledge references
+
+Two sections under the prompt list everything the prompt references:
+
+- **Tool references**: each tagged tool, with a control to open its configuration.
+- **Knowledge references**: each tagged knowledge source.
+
+These lists read from the same mentions as the badges in the text, so they always agree with the prompt.
+
+## Scenarios
+
+Scenarios extend your core agent's skills. The **Scenarios** section at the end of the Prompt tab lists them, and the same list is available wherever you manage scenarios in the inspector.
+
+### Add a scenario
+
+Select **Add scenario** and pick one of four options:
+
+- **Simple scenario**: a single prompt phase of the conversation.
+- **Complex scenario**: a multi-node flow routing across dialogues.
+- **Authentication scenario**: gate scenarios behind a verification step.
+- **Add existing**: reuse a scenario from this agent or another one, chosen from a library picker.
+
+Creating a complex or authentication scenario dives into its flow on the canvas so you can build it out immediately.
+
+### Reorder and gate scenarios
+
+The scenario list is drag-orderable:
+
+- Drag a scenario by its grip to reorder it within the list.
+- Drop a scenario onto an authentication scenario's row to gate it behind that verification step. Gated scenarios render nested under their zone.
+- Drag a gated scenario next to a top-level row to remove the gate.
+
+Reordering changes the list only. Nodes on the canvas stay where you placed them.
+
+### Edit a scenario
+
+Select a scenario row to open its detail view. Depending on the scenario kind, it includes:
+
+- **Title**: the scenario's name.
+- **Routing condition**: when the conversation enters this scenario.
+- **Prompt**: what the agent should accomplish during this phase, with the same `@`-mention support as the agent prompt.
+- **Loop while**: keep the agent in this scenario until the condition is true (simple scenarios).
+- **Variables** and **tagged references** for the scenario.
+
+The **⋯** menu in the detail header holds **Archive** and **Delete**. Delete asks for confirmation and removes the scenario's prompt, routing condition, and tagged references with it. This menu is where you delete complex scenarios and authentication scenarios.
+
+Use the back control in the header to return to the agent's Prompt tab.
+
+## Agent settings
+
+The **Settings** tab holds the agent's name and behavior options. Two things to know:
+
+- **Global prompt** lives under **Advanced settings**. It was previously labeled "System prompt". It applies across the whole agent, separate from the core prompt on the Prompt tab.
+- **Delete agent** sits in a danger zone at the bottom of the tab, behind its own confirmation.
