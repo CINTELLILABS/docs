@@ -6,7 +6,7 @@ description: "List an environment's deployment history, newest first."
 
 ### Overview
 
-Every publish, promote, and rollback appends a deployment to the target environment's history. This endpoint returns that history for one environment, newest first, with the latest check run recorded for each deployed version. Use `is_rollback_eligible` to find valid targets for [Roll Back Agent](/api-v2/post/agents-id-rollback).
+Every publish, promote, and rollback appends a deployment to the target environment's history. This endpoint returns that history for one environment, newest first, with the latest check run recorded for each deployed version. Use `kind` to tell which action recorded each row, and `is_rollback_eligible` to find valid targets for [Roll Back Agent](/api-v2/post/agents-id-rollback).
 
 ### Headers
 
@@ -56,6 +56,9 @@ Every publish, promote, and rollback appends a deployment to the target environm
     </ResponseField>
     <ResponseField name="deployed_at" type="string">
       ISO 8601 timestamp of the deployment.
+    </ResponseField>
+    <ResponseField name="kind" type="string | null">
+      The action that created this deployment: `publish`, `promote`, or `rollback`. `null` for deployments recorded before this field was introduced. Use `kind` instead of comparing `semver` values to tell a promote apart from a rollback.
     </ResponseField>
     <ResponseField name="check_run" type="object | null">
       The newest check run that scored this deployment's version, regardless of the environment the run targeted. `null` if the version has never been checked. See `data[].check_run` below.
@@ -146,6 +149,7 @@ Every publish, promote, and rollback appends a deployment to the target environm
       "semver": "1.3.2",
       "deployed_by": "f4cfacd2-d5b9-4498-ace1-8868e5b05b49",
       "deployed_at": "2026-09-10T18:42:11.904Z",
+      "kind": "promote",
       "check_run": {
         "id": "16a5fe15-9458-4237-b884-69ce44413aae",
         "agent_id": "449bbc38-188a-4533-b73a-ebf1debdf535",
@@ -190,6 +194,7 @@ Every publish, promote, and rollback appends a deployment to the target environm
       "semver": "1.3.1",
       "deployed_by": "f4cfacd2-d5b9-4498-ace1-8868e5b05b49",
       "deployed_at": "2026-09-03T15:07:39.318Z",
+      "kind": "publish",
       "check_run": null,
       "is_rollback_eligible": true
     }
