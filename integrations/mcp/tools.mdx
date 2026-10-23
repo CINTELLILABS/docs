@@ -12,6 +12,7 @@ The Bland MCP server exposes the tools below plus 3 prompts. All of them are sco
 | Tool | Access | Description |
 | --- | --- | --- |
 | `create_call` | Destructive | Place an outbound call to a phone number, optionally with a task or pathway. Omit `voice` to use Karen. |
+| `send_call` | Destructive | Place an outbound call with any field [Send Call](/api-v1/post/calls) accepts, including `agent_id` and `persona_id`. |
 | `get_call_log` | Read | Fetch a single call: its transcript, recording, summary, and metadata. |
 | `wait_for_call` | Read | Wait up to 45 seconds for a call to finish, then return its call log. Use it instead of polling `get_call_log`. |
 | `stop_call` | Destructive | End a call in progress, or cancel one that is still queued. |
@@ -23,21 +24,17 @@ Follow [Choose what runs your call](/api-v1/post/calls#choose-what-runs-your-cal
 
 `create_call` accepts `phoneNumber`, `task`, `pathwayId`, `voice`, `from`, and `firstSentence`. It does **not** accept `agent_id`, `agent_version`, `persona_id`, or pathway-version selectors. Do not replace an agent choice with `pathwayId` just to fit this schema.
 
-When available in your connection, use `call_bland_api` with `method: "POST"`, `path: "/v1/calls"`, and the snake_case request body from [Send Call](/api-v1/post/calls#request-examples). This supports agent, persona, and version-specific pathway dispatch. For example, after verifying the destination and agent ID:
+Use `send_call` for any other call. It takes every field from [Send Call](/api-v1/post/calls#request-examples) in snake_case, so it supports agent, persona, and version-specific pathway dispatch. Run the call through exactly one of `agent_id`, `persona_id`, `pathway_id`, or `task`. For example, after verifying the destination and agent ID:
 
 ```json
 {
-  "method": "POST",
-  "path": "/v1/calls",
-  "body": {
-    "phone_number": "+14155550100",
-    "agent_id": "00000000-0000-4000-8000-000000000001",
-    "agent_version": "production"
-  }
+  "phone_number": "+14155550100",
+  "agent_id": "00000000-0000-4000-8000-000000000001",
+  "agent_version": "production"
 }
 ```
 
-Use `list_agents`, `get_agent`, and `list_agent_environments` to verify an agent and its deployment before calling. If the required tool or route is unavailable, explain the limitation and ask the user how to proceed. Do not silently use a persona or pathway instead.
+Use `list_agents`, `get_agent`, and `list_agent_environments` to verify an agent and its deployment before calling. If `send_call` is unavailable in your connection, explain the limitation and ask the user how to proceed. Do not silently use a persona or pathway instead.
 
 After submission, retain the `call_id`, check the actual source and destination numbers and resource/version association, and verify agent calls under the intended agent's Conversations view. The `create_call` result and call-log widget alone do not establish agent attribution. Report a successful call and an attribution problem separately, without placing a duplicate call.
 
@@ -105,6 +102,22 @@ Full lifecycle for the Bland Agents platform: versioned, branched, and promoted 
 | `search_bland` | Read | Search the Bland knowledge base for guides, code examples, and API references. |
 | `query_docs_filesystem_bland` | Read | Read-only shell-like queries over a virtual filesystem of all docs pages and OpenAPI specs. |
 | `submit_feedback` | Read | Report a documentation problem to the docs team. |
+
+### API endpoint tools
+
+Every endpoint in the [API Reference](/api-v1/post/calls) also has its own tool, so MCP clients that don't allow a generic "call any endpoint" tool can still reach the whole API. This covers calls, agents, dispositions, experiments, knowledge bases, numbers, batches, SMS, SIP, evals, triage, and more.
+
+Each tool takes the same parameters as its API Reference page, and its description links to that page. Read the page for each parameter's meaning. Tools for endpoints that only read data are Read. Tools for endpoints that change data are Write or Destructive.
+
+| Example tool | Endpoint |
+| --- | --- |
+| `send_call` | [Send Call](/api-v1/post/calls) |
+| `create_batch` | [Create Batch](/api-v2/post/batches) |
+| `send_sms` | [Send SMS Message](/api-v1/post/sms-send) |
+| `list_phone_numbers` | [List Numbers](/api-v1/get/inbound) |
+| `list_knowledge_bases` | [List Knowledge Base Items](/api-v1/get/knowledge) |
+
+Call `tools/list` from your client to see every tool and its input schema. Endpoints that stream data (WebSockets and server-sent events) or upload files don't have a dedicated tool.
 
 ### API passthrough
 
