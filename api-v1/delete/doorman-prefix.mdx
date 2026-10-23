@@ -1,0 +1,55 @@
+---
+title: "Remove Prefix"
+api: "DELETE https://api.bland.ai/v1/doorman/prefixes/{prefix}"
+description: "Remove an E.164 prefix from the org's inbound caller allowlist."
+---
+
+<Info>
+  Requires an org owner or admin.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="prefix" type="string" required>
+  The E.164 prefix to remove, URL-encoded (for example, `%2B1619` for `+1619`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl --request DELETE \
+  --url https://api.bland.ai/v1/doorman/prefixes/%2B1619 \
+  --header 'authorization: YOUR_BLAND_API_KEY'
+```
+</RequestExample>
+
+### Response
+
+<ResponseField name="data.removed" type="boolean">
+  `true` if the prefix existed and was removed, `false` if it was not present.
+</ResponseField>
+
+<ResponseField name="data.masked_callers" type="string[]">
+  The masked caller variants currently allowed.
+</ResponseField>
+
+<ResponseField name="data.prefixes" type="string[]">
+  The remaining E.164 prefixes.
+</ResponseField>
+
+<ResponseField name="data.available_masked_callers" type="array">
+  The full catalog of masked caller variants.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects.
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

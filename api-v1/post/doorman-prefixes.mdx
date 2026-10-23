@@ -1,0 +1,45 @@
+---
+title: "Add Prefix"
+api: "POST https://api.bland.ai/v1/doorman/prefixes"
+description: "Add an E.164 prefix to the org's inbound caller allowlist."
+---
+
+<Info>
+  Requires an org owner or admin. Allowed prefixes bypass country-based restrictions on inbound calls. They do not bypass your organization's block rules.
+</Info>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="prefix" type="string" required>
+  The E.164 prefix to allow. Must start with `+` followed by 1–15 digits with no leading zero (for example, `+1` or `+1619`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/doorman/prefixes \
+  --header 'authorization: YOUR_BLAND_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{ "prefix": "+1619" }'
+```
+</RequestExample>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated effective policy, including the current `masked_callers`, `prefixes`, and `available_masked_callers`.
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects. Returns a validation error if the prefix is malformed or if you already have the maximum of 100 prefixes stored.
+</ResponseField>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
