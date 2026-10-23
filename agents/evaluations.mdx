@@ -62,7 +62,43 @@ The button reads **Create judge** the first time and **Update** afterwards. Ther
 
 **Generate based on production calls** reads up to 50 real calls and writes one test case per call, which is the faster way to get a suite that resembles what actually happens to you.
 
-Then set a **Title**, a **Prompt** describing who the simulated caller is and what they want, and optionally **Labels**, **Max turns** (20 by default), a **Start node** and **Request data**. **Save** finishes it.
+Then set a **Title**, **Caller instructions** describing who the simulated caller is and what they want, and optionally **Labels**. **Save** finishes it.
+
+### Test configuration
+
+The **Test configuration** section sets the inputs the agent starts with:
+
+| Field | What it sets |
+| --- | --- |
+| **Saved configurations** | Loads inputs you saved earlier, including Send Call configurations from the builder |
+| **Starting pathway** | The node the conversation starts on. **Default** uses the agent's normal start |
+| **Request data** | Variables passed to the agent, one **Variable** and **Value** per row |
+| **Max turns** | How long the conversation can run. 20 by default |
+| **Agent version** | Which version a test from the editor runs. **Latest save** is the default; pick a published version to pin the test to it |
+
+**Save as new** stores the current inputs as a named configuration you can load into other test cases. A Send Call configuration loads as-is but cannot be overwritten from here, so use **Save as new** to keep your changes.
+
+### Tool responses
+
+By default, a new test case does not call your real tools. When the agent calls a tool during the simulation, Bland generates a reply from the conversation and the tool's configuration instead, so no external system is read or changed.
+
+Use **Tool instructions** to steer those replies toward the outcome you want to test, for example "no appointments tomorrow" or "the payment fails". The field is optional and holds up to 4,000 characters.
+
+Turn on **Use live tools** when the test should hit your real endpoints. Live tools can read or change connected systems, so use them only against systems that are safe to touch.
+
+<Warning>
+A failed tool reply stops the test. It never falls back to live tools.
+
+Generated replies cannot stand in for standalone code, code in tool chains, knowledge lookups, SMS, Calendly, authentication, skills or transfers. A test that reaches one of those stops. Turn on **Use live tools** for agents that depend on them.
+</Warning>
+
+A test case can also carry exact saved responses. Those replies are returned word for word and take precedence over generated ones. A tool with no saved response stops the test. **Use as examples** turns the saved responses into references, and Bland then generates a fresh reply for each tool call that is adapted to the conversation.
+
+### Source call
+
+A test case can be based on one production call. Under **Source call**, **Select call** opens a picker of this agent's calls, and **Use call** attaches the one you chose. **Replace** swaps it for another call and **Remove** detaches it.
+
+Changing the source call does not rewrite your **Caller instructions**. Use **Update test case** to fold a new source call into the instructions. Save any pending edits before changing the source call.
 
 ## Run them
 
