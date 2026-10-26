@@ -1,0 +1,68 @@
+---
+title: "Get Outcome"
+api: "GET https://api.bland.ai/v1/dispositions/{id}"
+description: "Get an outcome and its current script."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The outcome ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The outcome. It has the same fields as [Create Outcome](/api-v1/post/dispositions) returns, plus `script`.
+
+  <Expandable title="Additional field">
+    <ResponseField name="script" type="string | null">
+      The JavaScript source for the current `snippet_version`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "23d7feb5-1714-4b8c-8e20-d3dd27d7984b",
+    "org_id": "395cc8d5-8751-4117-8151-55eef13c407d",
+    "name": "appointment_outcome",
+    "metadata": {},
+    "snippet_id": "d6a822c3-85a6-455d-ba67-9a7b2381f72f",
+    "snippet_version": 3,
+    "created_at": "2026-10-20T18:22:05.117Z",
+    "updated_at": "2026-10-24T09:41:30.902Z",
+    "script": "export default {\n  async fetch(request) {\n    const call = await request.json();\n    return Response.json({ minutes: call.call_length });\n  },\n};"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

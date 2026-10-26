@@ -1,0 +1,115 @@
+---
+title: "List Outcome Runs"
+api: "GET https://api.bland.ai/v1/dispositions/{id}/run"
+description: "List the saved runs of an outcome."
+---
+
+Returns the outcome's runs, newest first.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The outcome ID.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  The page to return, starting at 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Runs per page, from 1 to 100.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.runs" type="array">
+  The runs on this page. Each has the same fields as [Get Outcome Run](/api-v1/get/dispositions-id-run-run-id) returns.
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  <Expandable title="Pagination fields">
+    <ResponseField name="page" type="integer">
+      The current page.
+    </ResponseField>
+
+    <ResponseField name="limit" type="integer">
+      Runs per page.
+    </ResponseField>
+
+    <ResponseField name="total" type="integer">
+      Total runs across all pages.
+    </ResponseField>
+
+    <ResponseField name="total_pages" type="integer">
+      Total number of pages.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "runs": [
+      {
+        "id": "80a9cfa5-8af1-46a3-ae4d-64dffb08daf5",
+        "org_id": "9bce53cb-ce8d-4fd1-a2ba-6333ffbcc13e",
+        "disposition_id": "66505ae6-3416-4f0d-af53-bdd322a0aecb",
+        "conversation_id": "fbd83eea-fff1-44a2-b520-9c21e70bdc8d",
+        "reference_type": "CALL",
+        "snippet_version": 3,
+        "status": "COMPLETE",
+        "result": {
+          "booked": true,
+          "minutes": 2.4
+        },
+        "console": null,
+        "error": null,
+        "exec_time": 41,
+        "input": {
+          "call_id": "fbd83eea-fff1-44a2-b520-9c21e70bdc8d",
+          "call_length": 2.4
+        },
+        "created_at": "2026-10-26T15:20:03.512Z",
+        "finished_at": "2026-10-26T15:20:03.561Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 1,
+      "total_pages": 1
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
