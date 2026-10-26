@@ -157,13 +157,13 @@ The webhook depends on where the call ran.
 | --- | --- |
 | On the agent | `agent_dispositions[]`. It has no `citations` and no `dispositions`. The `pathway_id` field still shows the pathway that the request named. |
 | On the pathway | The same shape as today. |
-| On the pathway, with **Also run this agent's dispositions on pathway calls** on | The same shape as today, plus `agent_dispositions[]` while the experiment runs. |
+| On the pathway, with **Also run this agent's dispositions on pathway calls** on | The same shape as today, followed by a separate webhook with `event_type: "dispositions"` that carries `agent_dispositions[]`, while the experiment runs. |
 
 Each entry in `agent_dispositions` has the shape in [Read the results](/agents/dispositions#read-the-results).
 
 Bland doesn't convert an agent call's webhook into the pathway's shape. If your receiver needs one shape, handle both in the receiver.
 
-If a pathway call's webhook is delayed for citations, the agent's dispositions don't arrive in that webhook. They arrive in a separate webhook with `event_type: "dispositions"`. You turn on that delay with the **Delay post call webhook** setting in Citations settings. See [Post-call webhooks](/tutorials/post-call-webhooks). A call that goes to the agent is never delayed for citations, because no citations run.
+For a pathway call, the agent's dispositions never ride the call's own webhook. They always arrive in a separate webhook with `event_type: "dispositions"` after the call's webhook has been sent, whether or not that webhook is delayed for citations. See [Post-call webhooks](/tutorials/post-call-webhooks). A call that goes to the agent is never delayed for citations, because no citations run.
 
 ## Keep the pathway in place
 
