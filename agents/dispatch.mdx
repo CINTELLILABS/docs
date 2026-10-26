@@ -112,13 +112,14 @@ The same Call configuration sections are available inside an agent, from the num
 
 ## Set how the agent behaves
 
-Switch the sidebar selector back to the agent and open Channels, under Dispatch. It has three tabs, and Messages is enterprise only.
+Switch the sidebar selector back to the agent and open Channels, under Dispatch. Messages is enterprise only.
 
 | Tab | What it covers |
 |---|---|
 | **Calls** | How the agent answers the phone: maximum call length, recording, and what to do with voicemail. |
 | **Messages** | SMS, RCS and iMessage behavior, set per number. |
 | **Web chat** | The widget you embed on a site. |
+| **API chat** | Chat with the agent through the API. |
 
 The Numbers list sits above the tabs on Calls and Messages, and holds the agent's fallback number.
 
@@ -161,6 +162,53 @@ Earlier versions of this tab saved reply timeouts that never took effect, and th
 The WhatsApp drawer sets the number's webhook URL, a reply timeout in seconds, and **Request data**. Request data is a set of key-value facts the agent knows during WhatsApp conversations on that number, like a facility ID or its opening hours. The agent sees both the keys and their values. Select **Save** in the drawer to apply your changes.
 
 Messaging and web chat each have a guide of their own: [Messaging](/tutorials/messaging/overview) and the [web chat widget](/tutorials/chat-widget).
+
+### Turn off a channel
+
+You can stop a channel without detaching numbers, deleting widgets, or losing settings. Use this to pause an agent on one channel, for example while you fix a prompt or during an outage, and turn it back on later with the same configuration.
+
+Each channel's page in Channels ends with a section for this.
+
+| Channel | What turning it off does | Applies |
+|---|---|---|
+| **Calls** | Rejects new incoming calls and blocks outgoing calls on the numbers you select. Calls already connected continue. | Immediately, in every environment |
+| **Messages** | Stops automatic replies and outgoing SMS, RCS, iMessage, and WhatsApp messages on the numbers you select. Incoming messages are still stored. Messages already in transit may arrive. | Immediately, in every environment |
+| **Web chat** | Unpublishes one widget, so it stops loading on your sites. Its settings and allowed domains are kept. Open conversations are not ended. | Immediately |
+| **API chat** | Turns API chat off in the agent's draft. Existing conversations are not ended. | After you save and promote the draft |
+
+#### Disable calls or messages on a number
+
+<Steps>
+  <Step title="Open the channel">
+    Inside the agent, open **Channels** and select **Calls** or **Messages**.
+  </Step>
+
+  <Step title="Press Disable">
+    Scroll to the bottom and press **Disable calls** or **Disable messages**.
+  </Step>
+
+  <Step title="Choose the numbers">
+    If the agent has more than one number, the dialog lists them under **Phone numbers to disable**. All are selected by default. Clear the ones you want to keep running. Numbers already disabled are marked **Already disabled**.
+  </Step>
+
+  <Step title="Confirm">
+    Confirm in the dialog. The numbers stay attached to the agent.
+  </Step>
+</Steps>
+
+Calls and Messages are separate. Disabling calls on a number leaves its messages running, and the other way round.
+
+While any number is disabled, the channel shows a warning alert, such as **Calls disabled for 2 numbers**. To turn them back on, press **Enable calls** or **Enable messages** in the same section. It restores every disabled number for that channel.
+
+#### Disable a web chat widget
+
+Open **Web chat** and select the widget. At the bottom of the editor, press **Disable web chat** and confirm. The widget shows as **Draft** and an alert says it will not load on your sites. Press **Enable web chat** to publish it again.
+
+Each widget is controlled on its own. When every widget for the agent is unpublished, the Web chat tab shows **Web chat disabled**.
+
+#### Disable API chat
+
+Open **API chat** and press **Disable API chat**, then confirm. The change goes into the agent's draft. If production runs a published version, [promote](/agents/environments) the change to turn API chat off there. Press **Enable API chat** to turn it back on.
 
 ## Run a batch
 
