@@ -1,0 +1,138 @@
+---
+title: "Get Outcome Run"
+api: "GET https://api.bland.ai/v1/dispositions/{id}/run/{run_id}"
+description: "Get one saved run of an outcome."
+---
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The outcome ID.
+</ParamField>
+
+<ParamField path="run_id" type="string" required>
+  The run ID, from [List Outcome Runs](/api-v1/get/dispositions-id-run).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The run.
+
+  <Expandable title="Run fields">
+    <ResponseField name="id" type="string">
+      The run ID.
+    </ResponseField>
+
+    <ResponseField name="org_id" type="string">
+      The organization that owns the run.
+    </ResponseField>
+
+    <ResponseField name="disposition_id" type="string">
+      The outcome that ran.
+    </ResponseField>
+
+    <ResponseField name="conversation_id" type="string">
+      The call or SMS conversation the outcome ran on.
+    </ResponseField>
+
+    <ResponseField name="reference_type" type="string">
+      `CALL`, `SMS` or `CALL_TEST`.
+    </ResponseField>
+
+    <ResponseField name="snippet_version" type="integer | null">
+      The script version that ran.
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+      `PENDING`, `COMPLETE` or `FAILED`.
+    </ResponseField>
+
+    <ResponseField name="result" type="any">
+      What the script returned. `null` until the run completes, and on a failed run.
+    </ResponseField>
+
+    <ResponseField name="console" type="object | null">
+      What the script logged: `logs` holds the console output and `truncated` says whether it was cut short. `null` when nothing was captured.
+    </ResponseField>
+
+    <ResponseField name="error" type="string | null">
+      Why the run failed. `null` when it succeeded.
+    </ResponseField>
+
+    <ResponseField name="exec_time" type="integer | null">
+      How long the script ran, in milliseconds.
+    </ResponseField>
+
+    <ResponseField name="input" type="object | null">
+      The conversation data the script received.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      When the run started (ISO 8601).
+    </ResponseField>
+
+    <ResponseField name="finished_at" type="string | null">
+      When the run finished (ISO 8601).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "4ded1ecc-78e0-4b90-b3a3-d817615a553a",
+    "org_id": "abde3bdf-89e5-48e2-838a-800121f7bb9c",
+    "disposition_id": "9e419d19-a599-45a9-9d18-7bede9bd11aa",
+    "conversation_id": "58c7606b-0f77-44ea-a35d-ee6e6c93dc85",
+    "reference_type": "CALL",
+    "snippet_version": 3,
+    "status": "COMPLETE",
+    "result": {
+      "booked": true,
+      "minutes": 2.4
+    },
+    "console": {
+      "logs": [],
+      "truncated": false
+    },
+    "error": null,
+    "exec_time": 41,
+    "input": {
+      "call_id": "58c7606b-0f77-44ea-a35d-ee6e6c93dc85",
+      "call_length": 2.4
+    },
+    "created_at": "2026-10-26T15:20:03.512Z",
+    "finished_at": "2026-10-26T15:20:03.561Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition run not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
