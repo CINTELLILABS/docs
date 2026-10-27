@@ -1,0 +1,102 @@
+---
+title: "Run Outcome"
+api: "POST https://api.bland.ai/v1/dispositions/{id}/run"
+description: "Run an outcome on one call or SMS conversation."
+---
+
+Runs the outcome's current script on a single conversation and returns the result. Use it to test a script, or to re-run an outcome on a past call. To run it on more conversations, send one request per conversation.
+
+Each run is saved, so you can read it back later with [List Outcome Runs](/api-v1/get/dispositions-id-run).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The outcome ID.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="conversation_id" type="string" required>
+  The call ID or SMS conversation ID to run the outcome on.
+</ParamField>
+
+<ParamField body="reference_type" type="string" required>
+  One of `CALL`, `CALL_TEST`, `PATHWAY` or `PERSONA`. Use `CALL_TEST` to mark the run as a test. The other values save the run as `CALL`, or as `SMS` for an SMS conversation.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object | null">
+  The run result. `null` when no call or SMS conversation with that ID exists in your organization.
+
+  <Expandable title="Run result fields">
+    <ResponseField name="disposition_id" type="string">
+      The outcome that ran.
+    </ResponseField>
+
+    <ResponseField name="snippet_version" type="integer | null">
+      The script version that ran.
+    </ResponseField>
+
+    <ResponseField name="status" type="string">
+      `COMPLETE` or `FAILED`.
+    </ResponseField>
+
+    <ResponseField name="result" type="any">
+      What the script returned. `null` when the run failed.
+    </ResponseField>
+
+    <ResponseField name="error" type="string | null">
+      Why the run failed. `null` when it succeeded.
+    </ResponseField>
+
+    <ResponseField name="exec_time" type="integer | null">
+      How long the script ran, in milliseconds.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "disposition_id": "b3174d14-49bc-4e10-a12b-7dbe2480e377",
+    "snippet_version": 3,
+    "status": "COMPLETE",
+    "result": {
+      "booked": true,
+      "minutes": 2.4
+    },
+    "error": null,
+    "exec_time": 41
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
