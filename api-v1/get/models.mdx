@@ -1,23 +1,25 @@
 ---
-title: "List TTS Models"
+title: "List Voice Models (v1)"
 api: "GET https://api.bland.ai/v1/models"
-description: "List the available Bland TTS models and their capabilities."
+description: "List the voice model generations used for cloning and the v1 voice catalog."
 ---
 
 ## Overview
 
-Returns the Bland TTS models currently available for synthesis and cloning, with each model's supported sample rates, language list, and clone eligibility.
+Returns the voice model generations (`BTTS_V3`, `BTTS_V2`, `BTTS`) with their clone eligibility and language list. Use it to map a voice's `service` field to its generation, or to check which generations support [Clone Voice](/api-v1/post/clone).
 
-Use this endpoint to render model pickers, pre-validate a request before calling [Speak](/api-v2/post/tts), or check which engines support cloning before calling [Clone Voice](/api-v1/post/clone).
+<Note>
+  Building on `/v2/tts`, `/v2/tts/ws`, or `/v2/audio/speech`? Use [List TTS Models](/api-v2/get/tts-models) instead. It returns the encodings, sample rates, containers, and controls those endpoints accept. The `sample_rates` and `max_characters` fields here describe the legacy v1 speak endpoints, not the v2 request limits.
+</Note>
 
-Results are cached for up to 5 minutes.
+No authentication is required. Results are cached for up to 5 minutes.
 
 ---
 
 ## Headers
 
-<ParamField header="authorization" type="string" required>
-  Your API key for authentication.
+<ParamField header="authorization" type="string">
+  Optional. This endpoint does not require authentication.
 </ParamField>
 
 ---
@@ -38,7 +40,7 @@ Results are cached for up to 5 minutes.
       Short description of the model's positioning.
     </ResponseField>
     <ResponseField name="sample_rates" type="number[]">
-      Supported audio sample rates in Hz. Pass an `output_format` to [Speak](/api-v2/post/tts) that matches one of these.
+      Sample rates the legacy v1 speak endpoints support for this model.
     </ResponseField>
     <ResponseField name="max_characters" type="number">
       Maximum characters per synthesis request supported by the model.
@@ -62,26 +64,26 @@ Results are cached for up to 5 minutes.
     {
       "model_id": "BTTS_V2",
       "display_name": "V2",
-      "description": "Current-generation TTS with multilingual output and instant single-sample cloning.",
+      "description": "Previous-generation TTS with multilingual output and instant single-sample cloning. Prefer V3 where its language support fits.",
       "sample_rates": [8000, 16000, 24000, 44100],
       "max_characters": 1000,
       "can_clone": true,
-      "languages": ["en", "de", "es", "fr", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "tr", "zh", "ar", "id", "sv"],
-      "is_recommended": true
+      "languages": ["en", "de", "es", "fr", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "tr", "zh", "ar", "id", "sv"]
     },
     {
       "model_id": "BTTS_V3",
-      "display_name": "Experimental",
-      "description": "Showcase clones. Newest model, ships ahead of full V2 feature parity.",
+      "display_name": "V3",
+      "description": "Current-generation TTS. Bland's recommended model for new voices and integrations.",
       "sample_rates": [24000, 44100],
       "max_characters": 1000,
       "can_clone": true,
-      "languages": ["en"]
+      "languages": ["en"],
+      "is_recommended": true
     },
     {
       "model_id": "BTTS",
       "display_name": "V1",
-      "description": "Legacy English-only TTS. Retained for backward compatibility, prefer V2 for new integrations.",
+      "description": "Legacy English-only TTS. Retained for backward compatibility. Prefer the recommended model for new integrations.",
       "sample_rates": [8000, 16000, 24000, 44100],
       "max_characters": 1000,
       "can_clone": true,

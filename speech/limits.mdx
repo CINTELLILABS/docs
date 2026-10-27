@@ -29,14 +29,30 @@ Your concurrency limit is the number of speech generations you may have **in fli
 
 A successfully initialized `/v2/tts/ws` connection occupies one slot until the socket closes, including time between turns. Close idle conversation sockets promptly. The endpoint keeps its synthesis connection warm for low latency, so it reserves capacity for the full session.
 
-HTTP speech endpoints respond `429` when no slot is available:
+HTTP speech endpoints respond `429` with a `Retry-After` header when no slot is available. `POST /v2/tts` uses its standard error shape:
 
 ```json
 {
-  "error": "concurrency_limit_reached",
-  "limit": 5,
-  "message": "You're at 5 concurrent generations. Email tts@bland.ai to raise your limit.",
-  "docs": "https://docs.bland.ai/speech/limits"
+  "error": {
+    "code": "concurrency_limit_reached",
+    "message": "Too many concurrent generations. Retry shortly, or email tts@bland.ai to raise your limit."
+  }
+}
+```
+
+The `/v1/speak` family and shared audio links return:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "concurrency_limit_reached",
+      "message": "You're at 5 concurrent generations. Email tts@bland.ai to raise your limit.",
+      "limit": 5,
+      "docs": "https://docs.bland.ai/speech/limits"
+    }
+  ]
 }
 ```
 
