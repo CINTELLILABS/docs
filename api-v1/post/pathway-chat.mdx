@@ -65,6 +65,26 @@ The message to send to the pathway (optional)
       The current state of variables in the pathway execution.
     </ResponseField>
 
+    <ResponseField name="variable_changes" type="object">
+      The agent variables that this turn changed. Use it to see what each message caused without comparing `variables` snapshots yourself.
+
+      Variables set by the runtime on every turn, such as `now` and `call_id`, are left out. So are the keys you passed in `request_data` when you created the chat.
+
+      <Expandable title="variable_changes properties">
+        <ResponseField name="added" type="object">
+          Variables that did not exist before this turn, with their new values.
+        </ResponseField>
+
+        <ResponseField name="modified" type="object">
+          Variables that existed before this turn and now have a different value. Each key maps to its new value.
+        </ResponseField>
+
+        <ResponseField name="removed" type="object">
+          Variables that this turn removed. Each key maps to its value before the turn.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
     <ResponseField name="completed" type="boolean">
       Whether the pathway has completed execution.
     </ResponseField>
@@ -93,7 +113,15 @@ The message to send to the pathway (optional)
     "pathway_version": null,
     "use_candidate_model": false,
     "variables": {
-      "callID": "12345678-1234-1234-1234-123456789012"
+      "callID": "12345678-1234-1234-1234-123456789012",
+      "party_size": 4
+    },
+    "variable_changes": {
+      "added": {
+        "party_size": 4
+      },
+      "modified": {},
+      "removed": {}
     },
     "completed": false
   },
