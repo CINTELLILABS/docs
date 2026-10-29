@@ -205,7 +205,7 @@ The same key can carry a different value in development, staging and production.
 Marking a value **Secret** stores it in your secret vault and keeps only a reference here. It cannot be read back afterwards.
 
 <Warning>
-A key with no value in the environment the call is running in does not fall back to another environment. It fails the call before it starts, with `AGENT_VARIABLE_UNRESOLVED`.
+A key with no value in the environment the call is running in does not fall back to another environment. An outbound call fails before it starts, with `AGENT_VARIABLE_UNRESOLVED`. An inbound call to an attached number still connects, but it runs on the phone number's fallback graph and voice instead of the agent's current version.
 
 So a variable added on development and never set on production would break every production call. To prevent that, promotion refuses a version that references a key with no Production value, and names the missing keys.
 </Warning>
@@ -231,6 +231,10 @@ So a variable added on development and never set on production would break every
 
   <Accordion title="Promotion fails with AGENT_VARIABLE_UNRESOLVED">
     The version references an environment variable that has no Production value. The error message lists the missing keys. Set each one on the Production tab of the Variables page, then promote again. **Force promote** does not bypass this check.
+  </Accordion>
+
+  <Accordion title="An inbound call used a different voice or older behavior">
+    The call couldn't run the agent's current version, so it used the phone number's fallback graph and voice. The call log shows a warning, **This call didn't run the agent's current version**, with the error code. For `AGENT_VARIABLE_UNRESOLVED`, the warning names the environment that needs a value. Set the missing variables in that environment, and the next call runs the current version.
   </Accordion>
 
   <Accordion title="A button does nothing and the error says nothing">
