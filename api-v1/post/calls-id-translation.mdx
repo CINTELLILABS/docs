@@ -1,7 +1,7 @@
 ---
-title: "Get Call Translation"
-api: "GET https://api.bland.ai/v1/calls/{call_id}/translation"
-description: "Get an English translation of every turn of a call, one page at a time."
+title: "Translate Call"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/translation"
+description: "Translate every turn of a call into English, one page at a time."
 ---
 
 ## Overview
@@ -10,7 +10,7 @@ Returns the turns of a call with an English translation of each one, for example
 
 The response is paged. Each request returns up to 50 turns. When the call has more, `next_offset` tells you where the next page starts.
 
-Translations are generated when you first request them and are reused for later requests, so the first request for a long call takes longer than the ones after it.
+A turn is translated the first time you request it, and later requests reuse that translation, so the first request for a long call takes longer than the ones after it.
 
 ---
 
@@ -30,17 +30,19 @@ Translations are generated when you first request them and are reused for later 
 
 ---
 
-## Query Parameters
+## Body Parameters
 
-<ParamField query="language" type="string" default="en">
+All body parameters are optional. Send an empty body or `{}` to get the first page. Unknown fields return a `400` error.
+
+<ParamField body="language" type="string" default="en">
   The language to translate into. `en` is the only supported value.
 </ParamField>
 
-<ParamField query="offset" type="integer" default="0">
+<ParamField body="offset" type="integer" default="0">
   The position of the first turn to return. Use the `next_offset` value from the previous response to get the next page.
 </ParamField>
 
-<ParamField query="limit" type="integer" default="50">
+<ParamField body="limit" type="integer" default="50">
   The maximum number of turns to return, from `1` to `50`.
 </ParamField>
 
@@ -81,15 +83,17 @@ Translations are generated when you first request them and are reused for later 
 <ResponseField name="errors" type="null | array">
   `null` on success. Otherwise one of:
 
-  - `400` with `INVALID_PARAMETER`: `call_id`, `language`, `offset`, or `limit` is not valid.
+  - `400` with `INVALID_PARAMETER`: `call_id`, `language`, `offset`, or `limit` is not valid, or the body has an unknown field.
   - `404` with `CALL_NOT_FOUND`: the call does not exist or belongs to a different organization.
   - `502` with `TRANSLATION_FAILED`: the translation could not be completed. Try the request again.
 </ResponseField>
 
 <RequestExample>
 ```bash cURL
-curl "https://api.bland.ai/v1/calls/{call_id}/translation" \
-  -H "authorization: YOUR_API_KEY"
+curl -X POST "https://api.bland.ai/v1/calls/{call_id}/translation" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"language": "en", "limit": 50}'
 ```
 </RequestExample>
 
