@@ -1,16 +1,16 @@
 ---
-title: "Get Call Transcript"
-api: "GET https://api.bland.ai/v1/calls/{call_id}/transcript"
-description: "Get a call's transcript, one page at a time, optionally translated to English."
+title: "Get Call Translation"
+api: "GET https://api.bland.ai/v1/calls/{call_id}/translation"
+description: "Get an English translation of every turn of a call, one page at a time."
 ---
 
 ## Overview
 
-Returns a call's transcript as a list of turns, in the order they were recorded. Turns with no text are left out. Add `translate=en` to also get an English translation of every turn, for example to review a call that was held in Spanish.
+Returns the turns of a call with an English translation of each one, for example to review a call that was held in Spanish. Turns are listed in the order they were recorded. Turns with no text are left out.
 
-The response is paged. Each request returns up to 50 turns. When the transcript has more, `next_offset` tells you where the next page starts.
+The response is paged. Each request returns up to 50 turns. When the call has more, `next_offset` tells you where the next page starts.
 
-Translations are generated when you first request them and are reused for later requests, so the first translated request for a long call takes longer than the ones after it.
+Translations are generated when you first request them and are reused for later requests, so the first request for a long call takes longer than the ones after it.
 
 ---
 
@@ -32,8 +32,8 @@ Translations are generated when you first request them and are reused for later 
 
 ## Query Parameters
 
-<ParamField query="translate" type="string">
-  Set to `en` to add an English translation to every turn. `en` is the only supported value. Omit it to get the transcript without translations.
+<ParamField query="language" type="string" default="en">
+  The language to translate into. `en` is the only supported value.
 </ParamField>
 
 <ParamField query="offset" type="integer" default="0">
@@ -52,12 +52,12 @@ Translations are generated when you first request them and are reused for later 
   The ID of the call.
 </ResponseField>
 
-<ResponseField name="data.target_language" type="string | null">
-  `en` when you requested a translation, otherwise `null`.
+<ResponseField name="data.language" type="string">
+  The language of the translations. Always `en`.
 </ResponseField>
 
 <ResponseField name="data.total" type="integer">
-  The number of turns in the whole transcript.
+  The number of turns in the whole call.
 </ResponseField>
 
 <ResponseField name="data.offset" type="integer">
@@ -68,27 +68,27 @@ Translations are generated when you first request them and are reused for later 
   The `offset` to request for the next page, or `null` when this page is the last one.
 </ResponseField>
 
-<ResponseField name="data.transcripts" type="array of objects">
+<ResponseField name="data.turns" type="array of objects">
   The turns in this page. Each turn includes:
 
   - `id`: the turn ID. This is the same `id` as in the `transcripts` of [Call Details](/api-v1/get/calls-id).
   - `user`: who spoke (`user`, `assistant`, `robot`, or `agent-action`).
   - `text`: the turn as it was spoken.
+  - `translated`: the English translation of `text`.
   - `created_at`: when the turn was recorded.
-  - `translated`: the English translation of `text`. Present only when you set `translate=en`.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
   `null` on success. Otherwise one of:
 
-  - `400` with `INVALID_PARAMETER`: `call_id`, `translate`, `offset`, or `limit` is not valid.
+  - `400` with `INVALID_PARAMETER`: `call_id`, `language`, `offset`, or `limit` is not valid.
   - `404` with `CALL_NOT_FOUND`: the call does not exist or belongs to a different organization.
   - `502` with `TRANSLATION_FAILED`: the translation could not be completed. Try the request again.
 </ResponseField>
 
 <RequestExample>
 ```bash cURL
-curl "https://api.bland.ai/v1/calls/{call_id}/transcript?translate=en" \
+curl "https://api.bland.ai/v1/calls/{call_id}/translation" \
   -H "authorization: YOUR_API_KEY"
 ```
 </RequestExample>
@@ -98,24 +98,24 @@ curl "https://api.bland.ai/v1/calls/{call_id}/transcript?translate=en" \
 {
   "data": {
     "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1",
-    "target_language": "en",
+    "language": "en",
     "total": 2,
     "offset": 0,
     "next_offset": null,
-    "transcripts": [
+    "turns": [
       {
         "id": 3055975,
         "user": "assistant",
         "text": "Hola, ¿en qué puedo ayudarle hoy?",
-        "created_at": "2026-10-28T18:40:33.362Z",
-        "translated": "Hello, how can I help you today?"
+        "translated": "Hello, how can I help you today?",
+        "created_at": "2026-10-28T18:40:33.362Z"
       },
       {
         "id": 3055999,
         "user": "user",
         "text": "Quiero cambiar mi cita.",
-        "created_at": "2026-10-28T18:40:40.393Z",
-        "translated": "I want to change my appointment."
+        "translated": "I want to change my appointment.",
+        "created_at": "2026-10-28T18:40:40.393Z"
       }
     ]
   },
