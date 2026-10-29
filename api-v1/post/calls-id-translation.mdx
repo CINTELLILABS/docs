@@ -4,6 +4,10 @@ api: "POST https://api.bland.ai/v1/calls/{call_id}/translation"
 description: "Translate every turn of a call into English, one page at a time."
 ---
 
+<Info>
+  **Enterprise Feature** - Call translation is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
 ## Overview
 
 Returns the turns of a call with an English translation of each one, for example to review a call that was held in Spanish. Turns are listed in the order they were recorded. Turns with no text are left out.
@@ -11,6 +15,8 @@ Returns the turns of a call with an English translation of each one, for example
 The response is paged. Each request returns up to 50 turns. When the call has more, `next_offset` tells you where the next page starts.
 
 A turn is translated the first time you request it, and later requests reuse that translation, so the first request for a long call takes longer than the ones after it.
+
+Your organization can send up to 10 requests a minute. Further requests in the same minute return `429`.
 
 ---
 
@@ -84,7 +90,9 @@ All body parameters are optional. Send an empty body or `{}` to get the first pa
   `null` on success. Otherwise one of:
 
   - `400` with `INVALID_PARAMETER`: `call_id`, `language`, `offset`, or `limit` is not valid, or the body has an unknown field.
+  - `403` with `ENTERPRISE_REQUIRED`: your organization is not on an Enterprise plan.
   - `404` with `CALL_NOT_FOUND`: the call does not exist or belongs to a different organization.
+  - `429` with `TOO_MANY_REQUESTS`: your organization sent more than 10 requests in the last minute. Wait a minute and try again.
   - `502` with `TRANSLATION_FAILED`: the translation could not be completed. Try the request again.
 </ResponseField>
 
