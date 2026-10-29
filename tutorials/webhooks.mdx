@@ -1,45 +1,35 @@
 ---
-
 title: "Webhooks"
-description: "Configure outbound API requests inside your pathways using the webhook node."
+description: "Send outbound API requests from a pathway inside your agent using a webhook step."
 ---
 
 ## Introduction
 
-The webhook node enables outbound API requests to external services during a live call. It can be used to retrieve data, trigger workflows, or pass information to third-party systems.
+A webhook step sends an outbound API request to an external service during a live call. Use it to retrieve data, trigger workflows, or pass information to third-party systems.
 
-To add a webhook node:
+Webhook steps live inside a **Pathway**, the kind of pathway you lay out yourself in the agent builder. To add one:
 
-* Open your pathway
-* Click **New Node** in the top left
-* Select the **Webhook** icon
+1. Open your agent and, under Pathways, open an existing Pathway or click **New pathway** and choose **Pathway**.
+2. The graph column becomes the canvas for that pathway.
+3. Add a webhook step to the canvas and connect it to the steps around it.
+
+See [Extend the agent with pathways](/agents/agent-builder#extend-the-agent-with-pathways) for how pathways fit into an agent.
+
+<Note>
+**Webhook step or webhook tool?** A webhook step runs when the conversation reaches it in a pathway, in a fixed order you can point to. A [webhook tool](/agents/tools#build-a-webhook-tool) is tagged into a prompt with `@`, and the agent decides when to call it. Use a step when the request must happen at a guaranteed point in the flow. Use a tool when the agent should call it whenever the conversation needs it.
+</Note>
+
+{/* IMAGE: A webhook step open on a pathway canvas in the agent builder. */}
 
 ---
 
-## Node Configuration
+## Step configuration
 
-Once added to your pathway, the webhook node includes several configuration options:
+### 1. Extract call info into variables
 
-<img 
-  src="../tutorials/tutorials-assets/webhook_node.jpeg" 
-  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Webhook Node"
-/>
+When enabled, the step extracts variables from the conversation so far, based on each variable's name and description, before the request is sent.
 
-### 1. Extract Call Info into Variables
-
-* When enabled, this mirrors the variable extraction behavior found in other default nodes.
-* Based on the conversation up until the point of this node, variables will be extracted based on their name and description.
-
-<img 
-  src="../tutorials/tutorials-assets/webhook_variable_extraction.jpeg" 
-  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Webhook Node Extract"
-/>
-
-In the above example, the variables `user_name` and `user_interested` are being extracted from the conversation. Up until this node, the objective was given to the agent to discuss the user's basic information and their availability. Based on what was discussed, the agent will extract the user's name, along with a True or False value based on whether the user is interested in a follow up meeting.
-
-These variables can then be included in the webhook. Here is an example body:
+For example, a step could extract `user_name` and a True or False `user_interested` from a conversation about the caller's availability. You can then use them in the request body:
 
 ```json
 {
@@ -48,42 +38,41 @@ These variables can then be included in the webhook. Here is an example body:
 }
 ```
 
+### 2. Webhook configuration
 
-### 2. Webhook Configuration
+This section defines how the outbound request is sent.
 
-This section defines how the outbound request is sent:
+#### Request type
 
-#### Request Type
-
-Choose HTTP method (GET, POST, etc.)
+Choose the HTTP method (GET, POST, and so on).
 
 #### URL
 
-The endpoint of the external service.
+The endpoint of the external service. The URL may include query parameters:
 
-The URL may include query parameters. For example:
+```text
+https://api.example.com/users?id=123&type=new
+```
 
-`https://api.example.com/users?id=123&type=new`
+Query parameters can use variables captured earlier in the call:
 
-These query parameters can also be interpolated using variables captured throughout your pathway. For example:
+```text
+https://api.example.com/users?id={{user_id}}&type={{user_type}}
+```
 
-`https://api.example.com/users?id={{user_id}}&type={{user_type}}`
-
-#### Authorization and Headers
+#### Authorization and headers
 
 Authorization can be configured as:
 
-- None: No Authorization header is included.
-- Bearer: Use this option to authenticate with a bearer token. (Only input the raw token — the Bearer prefix is automatically added)
-- Basic: Authenticate with a username and password in base64 format.
+- **None:** no Authorization header is included.
+- **Bearer:** authenticate with a bearer token. Enter only the raw token. The Bearer prefix is added for you.
+- **Basic:** authenticate with a username and password in base64 format.
 
-Headers and auth tokens can reference [Bland Secrets](/tutorials/secrets) for secure credential management.
+Headers and auth tokens can reference [secrets](/tutorials/secrets) so credentials stay out of plaintext.
 
 #### Body
 
-Compose a payload for your requests.
-
-The body can include static values or variables captured throughout your pathway. For example:
+Compose a payload for the request. The body can include static values or variables captured earlier in the call:
 
 ```json
 {
@@ -93,88 +82,73 @@ The body can include static values or variables captured throughout your pathway
 }
 ```
 
-In addition to the custom variables you create throughout your pathway, you also have access to Bland's built-in variables:
+You also have access to Bland's built-in variables:
 
 <AccordionGroup>
-  <Accordion title="Built-in Variables">
-    - `{{phone_number}}` - Always the other party's number
-    - `{{timezone}}` - The timezone of the other party’s `{{phone_number}}` (ex. America/New_York).
-    - `{{country}}` - The country code (ex. US)
-    - `{{state}}` - The state or province's abbreviation (ex. CA for California)
-    - `{{city}}` - The full city name, capitalized
-    - `{{zip}}` - The zip code
-    - `{{call_id}}` - The unique ID of the current call
-    - `{{now}}` - Current time in the call's timezone
-    - `{{now_utc}}` - Current time in UTC format
-    - `{{from}}` - The outbound number in E.164 format
-    - `{{to}}` - The inbound number in E.164 format
-    - `{{short_from}}` - outbound number with country code removed
-    - `{{short_to}}` - inbound number with country code removed
+  <Accordion title="Built-in variables">
+    - `{{phone_number}}`: always the other party's number
+    - `{{timezone}}`: the timezone of the other party's `{{phone_number}}` (for example, America/New_York)
+    - `{{country}}`: the country code (for example, US)
+    - `{{state}}`: the state or province's abbreviation (for example, CA for California)
+    - `{{city}}`: the full city name, capitalized
+    - `{{zip}}`: the zip code
+    - `{{call_id}}`: the unique ID of the current call
+    - `{{now}}`: current time in the call's timezone
+    - `{{now_utc}}`: current time in UTC format
+    - `{{from}}`: the outbound number in E.164 format
+    - `{{to}}`: the inbound number in E.164 format
+    - `{{short_from}}`: the outbound number with the country code removed
+    - `{{short_to}}`: the inbound number with the country code removed
   </Accordion>
 </AccordionGroup>
 
-### 3. Advanced Settings
+### 3. Advanced settings
 
-* **Timeout**: Maximum wait time before considering the request failed
-* **Retries**: Number of retry attempts on failure
-* **Reroute through server**: Rerouting through the server helps prevent CORS issues. Disable only if you're experiencing problems with the rerouted requests.
-* **Test API Request**: Send a live test request and view raw response or errors
+* **Timeout:** maximum wait time before the request is considered failed
+* **Retries:** number of retry attempts on failure
+* **Reroute through server:** helps prevent CORS issues. Disable it only if rerouted requests cause problems.
+* **Test API Request:** sends a live test request and shows the raw response or errors
 
 ---
 
-## Response Data Mapping
+## Response data mapping
 
-If the webhook returns a JSON response, you can extract specific values into variables for use in subsequent nodes:
+If the webhook returns a JSON response, you can extract values into variables for later steps:
 
 * Enable **Response Data**
 * For each value to extract:
-
-  * Define a **Variable Name** (single string, e.g. `user_id`)
-  * Provide the **JSON Path** (e.g. `$.data.id`)
-  * Optionally add a **Description** for additional context
-
----
-
-## Pathway Routing After Response
-
-Define where to route the agent based on the webhook result:
-
-* This allows conditional routing based on status codes or outcomes.
-* Example: route to different nodes if response status is 200 vs. 500.
-
-> Note: Every webhook node requires a route for default API Request Completion before saving for the first time.
-
-> **Important**: Routing based on response HTTP codes can only be done if Response Data is enabled. If response is disabled, the webhook will act asynchronously because no response is expected.
-
-Pathways are evaluated from top to bottom, and each condition can overwrite the previous result:
-
-* If the first pathway to follow points to node "a" and evaluates to true, the next node is set to "a".
-* If the second pathway to follow points to node "b" and also evaluates to true, it will overwrite the previous result — the next node will now be "b".
-
-In the following example, if the variable "logged_status" extracted from the webhook response is "confirmed", the agent will evaluate the first condition to true. It will then evaluate the second condition to true. Since we overwrite and save the last true pathway, the agent will go to the End Call node.
-
-<img 
-  src="../tutorials/tutorials-assets/pathway_after_webhook.jpeg" 
-  style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-  alt="Webhook Pathway Routing"
-/>
-
-
-
-
-After all conditions are evaluated, the last true condition determines which pathway is followed.
-
-> Important: If any pathway uses **API Request Completion (Default)**, and it evaluates to true, it will take precedence and override all other conditions.
+  * Define a **Variable Name** (a single string, like `user_id`)
+  * Provide the **JSON Path** (like `$.data.id`)
+  * Optionally add a **Description** for more context
 
 ---
 
-## Speech During Webhook
+## Routing after the response
 
-Enable the agent to speak while the webhook is processing:
+Set where the conversation goes next based on the webhook result. For example, route to one step if the response status is 200 and another if it is 500.
 
-* Useful for avoiding awkward silences during longer API requests
-* Example speech: *"One moment while I look up your information."*
-* This speech can be static text or AI-generated based on prompting.
+> Every webhook step needs a route for the default **API Request Completion** before you save it for the first time.
+
+> Routing on response HTTP codes only works when **Response Data** is enabled. With it disabled, the step does not wait for a response.
+
+Routes are evaluated from top to bottom, and each true condition overwrites the previous result:
+
+* If the first route points to step "a" and evaluates to true, the next step is set to "a".
+* If the second route points to step "b" and also evaluates to true, the next step becomes "b".
+
+After all conditions are evaluated, the last true condition decides where the conversation goes.
+
+> If a route uses **API Request Completion (Default)** and it evaluates to true, it takes precedence over all other conditions.
+
+---
+
+## Speech during the webhook
+
+You can have the agent speak while the request is processing:
+
+* It avoids awkward silences during longer requests
+* Example: *"One moment while I look up your information."*
+* The speech can be static text or generated from a prompt
 
 ---
 

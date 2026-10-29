@@ -1,0 +1,85 @@
+---
+title: "List Outcomes"
+api: "GET https://api.bland.ai/v1/dispositions"
+description: "List your organization's outcomes."
+---
+
+Returns your outcomes, newest first. Deleted outcomes aren't included.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  The page to return, starting at 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Outcomes per page, from 1 to 100.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.dispositions" type="array">
+  The outcomes on this page. Each has the same fields as [Create Outcome](/api-v1/post/dispositions) returns.
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  <Expandable title="Pagination fields">
+    <ResponseField name="page" type="integer">
+      The current page.
+    </ResponseField>
+
+    <ResponseField name="limit" type="integer">
+      Outcomes per page.
+    </ResponseField>
+
+    <ResponseField name="total" type="integer">
+      Total outcomes across all pages.
+    </ResponseField>
+
+    <ResponseField name="total_pages" type="integer">
+      Total number of pages.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "dispositions": [
+      {
+        "id": "e5773eb4-ddec-46c2-81b4-56ab34095d9f",
+        "org_id": "3a1b45fc-b41e-47f0-9c6c-cbafc9670edf",
+        "name": "appointment_outcome",
+        "metadata": {},
+        "snippet_id": "0f4a6ee9-c5b6-43eb-a9fb-4aa57f741372",
+        "snippet_version": 3,
+        "created_at": "2026-10-20T18:22:05.117Z",
+        "updated_at": "2026-10-24T09:41:30.902Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 1,
+      "total_pages": 1
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

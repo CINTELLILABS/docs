@@ -1,15 +1,19 @@
 ---
 title: "Scenarios"
-description: "Validate your AI pathways and personas with automated test scenarios."
+description: "Run automated test scenarios against your agent with the Agent Testing API."
 ---
 
 ## Introduction
 
-Agent Testing lets you run automated test scenarios against your pathways and personas to catch issues before they reach customers. A simulated test agent calls your pathway, follows a scripted behavior, and evaluates predefined assertions to measure whether your agent handled the conversation correctly.
+The Agent Testing API runs automated test scenarios to catch issues before they reach customers. A simulated caller talks to your agent, follows a scripted behavior, and predefined assertions measure whether your agent handled the conversation correctly.
+
+<Note>
+  Working in the dashboard? In Bland Agents, scenarios are split between test cases and judges under **Validate**, in **Evaluations**. See [Evaluations](/agents/evaluations). To make a passing run a condition of shipping, see [Environments](/agents/environments#the-evaluation-gate).
+</Note>
 
 <CardGroup cols={2}>
   <Card title="Scenario-Based Testing" icon="flask">
-    Define test scenarios with tester personas that simulate real callers — angry customers, voicemail systems, gatekeepers, and more. Customers can also import pre-built scenario templates. 
+    Define test scenarios with tester personas that simulate real callers, such as angry customers, voicemail systems, and gatekeepers. You can also clone pre-built scenario templates.
   </Card>
   <Card title="Assertion Engine" icon="check-double">
     10 assertion types including LLM judges, variable extraction checks, node traversal validation, and regex matching
@@ -17,8 +21,8 @@ Agent Testing lets you run automated test scenarios against your pathways and pe
   <Card title="Batch & Simulation Runs" icon="layer-group">
     Run multiple scenarios at once, or run the same scenario N times to detect flaky behavior
   </Card>
-  <Card title="Fix Thoroughly" icon="tornado">
-    Iterative auto-fix loop that runs tests, analyzes failures, applies fixes, and retests until everything passes
+  <Card title="Norm Analysis" icon="magnifying-glass">
+    AI-generated root cause and fix suggestions for failed runs
   </Card>
 </CardGroup>
 
@@ -28,17 +32,17 @@ Agent Testing lets you run automated test scenarios against your pathways and pe
 
 ### Scenarios
 
-A scenario defines a test case for your pathway. Each scenario contains:
+A scenario defines one test case. Each scenario contains:
 
-- **Tester Persona** — A prompt that tells the simulated caller how to behave (e.g., "You are an angry customer who was charged twice")
-- **Assertions** — Rules that evaluate whether the agent handled the conversation correctly
-- **Configuration** — Max turns, starting node, request data overrides, and more
+- **Tester Persona**: A prompt that tells the simulated caller how to behave (e.g., "You are an angry customer who was charged twice")
+- **Assertions**: Rules that evaluate whether the agent handled the conversation correctly
+- **Configuration**: Max turns, starting node, request data overrides, and more
 
 <Tip>
-  Set `start_node_id` on a scenario to begin the simulated conversation at a specific node instead of the pathway's default start. This is useful for testing a single branch — like an authentication handoff or a post-transfer flow — without rewiring the pathway. Leave it unset (or `null`) to start from the pathway's default entry point. If the configured node no longer exists in the current pathway version, the run fails with an `Invalid start_node_id` error.
+  Set `start_node_id` on a scenario to begin the simulated conversation at a specific node instead of the default start node. This is useful for testing a single branch, like an authentication handoff or a post-transfer flow, without rewiring the flow. Leave it unset (or `null`) to start from the default start node. If the node no longer exists in the version under test, the run fails with an `Invalid start_node_id` error.
 </Tip>
 
-Scenarios are scoped to a pathway (or persona) and persist across versions, so the same tests run against every version you promote.
+Each scenario is bound to the `pathway_id` or `persona_id` you pass when you create it. Scenarios persist across versions, so the same tests can run against every version.
 
 ### Assertions
 
@@ -47,9 +51,9 @@ Assertions are the pass/fail criteria for a test run. Each scenario can have mul
 | Type | What it checks |
 |------|---------------|
 | **LLM_JUDGE** | Custom LLM prompt evaluates the conversation (boolean, score, or categorical) |
-| **BLAND_TONE** | Built-in naturalness scoring — empathy, conciseness, flow, back-channeling |
+| **BLAND_TONE** | Built-in naturalness scoring: empathy, conciseness, flow, back-channeling |
 | **VARIABLE_EXTRACTED** | Whether a specific variable was collected and optionally matches a value |
-| **NODE_REACHED** | Whether the agent visited a specific pathway node |
+| **NODE_REACHED** | Whether the agent visited a specific node |
 | **NODES_VISITED** | Whether the agent visited a set of nodes (all or any) |
 | **WEBHOOK_TRIGGERED** | Whether a webhook was called during the conversation |
 | **REGEX_MATCH** | Regex pattern match against the transcript or extracted variables |
@@ -62,7 +66,7 @@ Assertions are the pass/fail criteria for a test run. Each scenario can have mul
 When you execute a scenario, a **test run** is created. The system:
 
 1. Creates a simulated call
-2. The tester persona converses with your pathway up to a predefined maximum turn depth
+2. The tester persona converses with your agent up to a predefined maximum turn depth
 3. Captures the full chat history, extracted variables, and nodes visited
 4. Evaluates all assertions against the conversation
 5. Computes an overall score (weighted average of assertion scores)
@@ -71,25 +75,25 @@ Run statuses: `PENDING` → `RUNNING` → `PASSED` | `FAILED` | `ERROR` | `CANCE
 
 ### Batches
 
-A **batch** runs multiple scenarios together. This is useful for running your full test suite against a pathway version before promoting it to production.
+A **batch** runs multiple scenarios together. Use it to run your full test suite against a version before you ship it. Pass `version_number` to choose the version. It defaults to the current production version.
 
-Batches can also be triggered automatically during pathway promotion — scenarios marked `is_required_for_promotion` act as a **gate** that must pass before the version goes live.
+Scenarios marked `is_required_for_promotion` act as a **gate** that must pass before a version is promoted. For Bland Agents, gating is configured as checks on the staging environment. See [Environments](/agents/environments#the-evaluation-gate) and [Set Checks](/api-v2/put/agents-id-environments-env-checks).
 
 ---
 
 ## Scenario Categories
 
-Bland provides out-of-box templates for common testing scenarios. You can clone these to your pathway and customize them.
+Bland provides out-of-box templates for common testing scenarios. Clone one to create your own scenario, then customize it.
 
 <AccordionGroup>
   <Accordion title="Voicemail">
-    Tests how your agent handles reaching voicemail — leaving a coherent message, handling a full mailbox, etc.
+    Tests how your agent handles reaching voicemail, such as leaving a coherent message or handling a full mailbox.
   </Accordion>
   <Accordion title="Call Screener">
     Simulates Google Call Screen or a suspicious gatekeeper. Tests whether your agent identifies itself clearly to get through.
   </Accordion>
   <Accordion title="Angry Caller">
-    Progressively escalating frustration. Tests de-escalation skills — empathy, ownership, and professionalism under pressure.
+    Progressively escalating frustration. Tests de-escalation skills: empathy, ownership, and professionalism under pressure.
   </Accordion>
   <Accordion title="Belligerent Caller">
     Abusive language and personal attacks. Tests whether your agent maintains professional boundaries and escalates appropriately.
@@ -98,10 +102,10 @@ Bland provides out-of-box templates for common testing scenarios. You can clone 
     Rambling, off-topic caller who isn't sure what they need. Tests patience, clarification questions, and gentle redirection.
   </Accordion>
   <Accordion title="Happy Path">
-    Cooperative callers following the expected flow — appointment scheduling, information requests, etc. Validates your core conversation logic.
+    Cooperative callers following the expected flow, such as appointment scheduling or information requests. Validates your core conversation logic.
   </Accordion>
   <Accordion title="Edge Case">
-    Unusual situations that test the boundaries of your pathway's handling.
+    Unusual situations that test the boundaries of your agent's handling.
   </Accordion>
   <Accordion title="Custom">
     Your own custom scenarios tailored to your specific use case.
@@ -110,51 +114,20 @@ Bland provides out-of-box templates for common testing scenarios. You can clone 
 
 ---
 
-## Getting Started
+## Get started with the API
 
 <Steps>
-  <Step title="Open the Scenarios Panel">
-    From the pathway editor, click the **Scenarios** button in the top toolbar to open the scenarios panel. This shows your existing scenarios organized by **Gates** (required for promotion) and **Tests** (standard scenarios), along with recent run history.
-
-    <img
-      src="/tutorials/tutorials-assets/scenarios/scenarios-panel-full.png"
-      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-      alt="Pathway editor with the Scenarios panel open showing gates, tests, and recent runs"
-    />
+  <Step title="Create a scenario">
+    Create a scenario with [`POST /v1/agent-testing/scenarios`](/api-v1/post/agent-testing-scenarios). To start from a template instead, list templates with [`GET /v1/agent-testing/templates`](/api-v1/get/agent-testing-templates) and clone one with [`POST /v1/agent-testing/templates/:id/clone`](/api-v1/post/agent-testing-templates-clone). To build one from a real conversation, use [`POST /v1/agent-testing/scenarios/generate-from-call`](/api-v1/post/agent-testing-scenarios-generate).
   </Step>
-
-  <Step title="Create a Scenario">
-    Click **+ New** to open the scenario creation form. You can start from one of the 9 **pre-built scenario templates**, **generate from a call log**, or build one from scratch.
-
-    Fill in the **scenario name**, describe the **test caller persona** (how the simulated caller should behave), toggle **Bland Tone** scoring, and add **assertions** to define your pass/fail criteria.
-
-    <img
-      src="/tutorials/tutorials-assets/scenarios/create-scenario-full.png"
-      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-      alt="Full pathway editor view with the create scenario form open"
-    />
-
-    Each assertion has a **type** (LLM Judge, Variable Check, Node Reached, Regex, etc.), an optional **name**, and a **Required** toggle. Click **Test & Save** to run the scenario immediately, or **Save** to save it for later.
+  <Step title="Run it">
+    Run one scenario with [`POST /v1/agent-testing/scenarios/:id/run`](/api-v1/post/agent-testing-scenarios-run), or several with [`POST /v1/agent-testing/batch-run`](/api-v1/post/agent-testing-batch-run). Both return immediately while the tests run.
   </Step>
-
-  <Step title="Run and Review Results">
-    Run a single scenario with the **Run** button, or click **Run All** to execute your entire test suite. Results appear on the pathway splash page showing pass/fail status, score percentages, assertion breakdowns, tone scores, and AI-generated reasoning.
-
-    <img
-      src="/tutorials/tutorials-assets/scenarios/results-full.png"
-      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-      alt="Full pathway page showing test results with passed scenarios, scores, and gate status"
-    />
+  <Step title="Read the results">
+    Fetch a run with [`GET /v1/agent-testing/runs/:id`](/api-v1/get/agent-testing-runs-id) or a batch with [`GET /v1/agent-testing/batches/:id`](/api-v1/get/agent-testing-batches-id). A run includes the chat history, assertion results, and scores.
   </Step>
-
-  <Step title="Gate Pathway Promotion">
-    Toggle the **Production gate** switch on critical scenarios. When enabled, these scenarios must pass before a pathway version can be promoted to production. The gate count is shown in the summary bar (e.g., "1/1 gates").
-
-    <img
-      src="/tutorials/tutorials-assets/scenarios/scenario-expanded.png"
-      style={{ width: "100%", borderRadius: "0.5rem", marginTop: "1rem", marginBottom: "1rem" }}
-      alt="Expanded scenario showing assertion results, tone score, and production gate toggle"
-    />
+  <Step title="Analyze failures">
+    For a failed run, call [`POST /v1/agent-testing/runs/:id/analyze`](/api-v1/post/agent-testing-runs-analyze) to get a root cause and suggested fixes. See [Norm analysis](#norm-analysis).
   </Step>
 </Steps>
 
@@ -162,39 +135,20 @@ Bland provides out-of-box templates for common testing scenarios. You can clone 
 
 ## Simulation Sets
 
-Simulation sets run the same scenario multiple times to detect **flaky behavior** — cases where your pathway passes sometimes but fails other times.
+Simulation sets run the same scenario multiple times to detect **flaky behavior**: cases where your agent passes sometimes but fails other times.
 
 The results include per-scenario statistics:
 - **Pass rate** across all runs
 - **Score distribution** (mean, median, stddev, min, max)
-- **Flakiness detection** — scenarios flagged as unreliable
-- **Common failure modes** — recurring issues across runs
+- **Flakiness detection**: scenarios flagged as unreliable
+- **Common failure modes**: recurring issues across runs
 - **Confidence level** (low, medium, high) based on sample size
-
----
-
-## Tornado Mode
-
-Tornado mode is an iterative auto-fix loop for your pathway. It:
-
-1. Runs all specified test scenarios
-2. Analyzes any failures using the Norm analyzer
-3. Generates a fix plan (prompt changes, node config updates, flow changes)
-4. Applies the fixes to a forked pathway version
-5. Re-runs the tests
-6. Repeats until all tests pass or max iterations are reached
-
-Tornado statuses: `RUNNING` → `COMPLETED_ALL_PASSED` | `COMPLETED_PARTIAL` | `TIMEOUT` | `STUCK` | `CANCELLED` | `ERROR`
-
-<Warning>
-Only one tornado session can run per pathway at a time. Starting a new session while one is active returns a 409 conflict.
-</Warning>
 
 ---
 
 ## Analytics
 
-Agent testing provides two levels of analytics for your pathway:
+Agent testing provides two levels of analytics. Both endpoints take a `pathwayId`.
 
 ### Basic Analytics
 
@@ -204,23 +158,23 @@ Pass rate, failure rate, average score, and per-run details over a configurable 
 
 Advanced metrics including:
 
-- **Health Score** — Overall pathway testing health
-- **Reliability Score** — Consistency of test results
-- **Trend Analysis** — Weekly direction (improving, declining, stable) with daily pass rates
-- **Node Failure Heatmap** — Which pathway nodes have the highest failure rates
-- **Weakest Link** — The single node most responsible for test failures
-- **Sankey Flow Data** — Visual flow from scenarios through nodes to outcomes (pass/fail)
+- **Health Score**: Overall testing health
+- **Reliability Score**: Consistency of test results
+- **Trend Analysis**: Weekly direction (improving, declining, stable) with daily pass rates
+- **Node Failure Heatmap**: Which nodes have the highest failure rates
+- **Weakest Link**: The single node most responsible for test failures
+- **Sankey Flow Data**: Visual flow from scenarios through nodes to outcomes (pass/fail)
 
 ---
 
 ## Norm Analysis
 
-When a test run fails, you can trigger **Norm analysis** to get AI-powered suggestions for fixing your pathway. The analyzer examines the conversation, identifies the root cause, and suggests specific changes:
+When a test run fails, you can trigger **Norm analysis** to get AI-powered suggestions for fixing your agent. The analyzer examines the conversation, identifies the root cause, and suggests specific changes:
 
-- **prompt_change** — Modify a node's prompt text
-- **node_config** — Change node configuration settings
-- **flow_change** — Restructure pathway routing
-- **tone_improvement** — Adjust conversational style
+- **prompt_change**: Modify a node's prompt text
+- **node_config**: Change node configuration settings
+- **flow_change**: Restructure routing
+- **tone_improvement**: Adjust conversational style
 
 Each suggestion includes a target node, description, suggested change text, and confidence score.
 
@@ -250,10 +204,6 @@ For full endpoint details, see the [Scenarios API Reference](/api-v1/post/agent-
 | `GET /v1/agent-testing/analytics/:pathwayId/enhanced` | Enhanced analytics |
 | `POST /v1/agent-testing/simulation-sets` | Create a simulation set |
 | `GET /v1/agent-testing/simulation-sets/:id` | Get simulation set results |
-| `POST /v1/agent-testing/tornado/start` | Start tornado mode |
-| `GET /v1/agent-testing/tornado/active` | Get active tornado session |
-| `GET /v1/agent-testing/tornado/:id/status` | Get tornado progress |
-| `POST /v1/agent-testing/tornado/:id/cancel` | Cancel tornado session |
 
 ---
 
