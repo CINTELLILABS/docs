@@ -29,7 +29,10 @@ A greyed row you can't click means the organization isn't on an enterprise plan.
 
 ## Where dispositions live
 
-Inside an agent, under Configure. There's no organization-wide view: a disposition belongs to one agent, and you reach it from that agent.
+A disposition belongs to one agent. You can reach it in two places:
+
+- **Dispositions** in the main sidebar lists every disposition across your organization, with the agent each one belongs to.
+- **Dispositions** inside an agent, under Configure, lists only that agent's dispositions.
 
 There's also no environment selector on this page. A published disposition runs in every environment, on every call the agent handles except the ones the platform skips. [Common failures](#common-failures) says which.
 
@@ -50,7 +53,7 @@ There are four sources, and picking the right one is most of the work:
 
 A pathway variable is re-extracted, not read back. Dispositions run their own extraction against the corrected post-call transcript, built from the variable's name, its configured prompt and its output schema. The answer can differ from what you saw during the call, and usually it's better.
 
-The screen calls that a frozen prompt, because the name, the prompt and the schema are copied onto the value when you add it. Editing the variable in [Agent builder](/agents/agent-builder) doesn't change what the disposition reruns, so to pick up a change, remove the value and add it again.
+The screen calls that a frozen prompt, because the name, the prompt and the schema are copied onto the value when you add it. Editing the variable in [Agent builder](/agents/agent-builder) doesn't change what the disposition reruns. To change it, edit the saved value. See [Change a saved value](#change-a-saved-value).
 
 Custom code always runs last, after every other value has finished, and it can take their results as inputs. It can't take another custom code value as an input.
 
@@ -58,7 +61,30 @@ Custom code always runs last, after every other value has finished, and it can t
 
 <Steps>
   <Step title="Create the disposition">
-    Open Dispositions inside your agent. With none there yet, you land straight in an editor over a draft named Untitled disposition. Nothing is saved until your first real edit: renaming it, writing a description, changing a setting, or pressing **Add value**.
+    Open Dispositions and click **Create disposition**. Choose how to start:
+
+    | Option | What it does |
+    | --- | --- |
+    | **Blank** | Opens an empty form so you configure every value yourself |
+    | **Template** | Starts from a common use case, with values already filled in |
+    | **Migrate** | Brings existing citations and outcomes into dispositions. See [Bring your citations across](#bring-your-citations-across) |
+
+    Choosing **Template** opens a list of six templates. Select one to preview its description and values, then click **Start from template**:
+
+    | Template | Use it for |
+    | --- | --- |
+    | Conversation summary | A record of what happened: a summary, the reason for the conversation, resolution status and next steps |
+    | Customer support handoff | Support conversations. Captures the issue, troubleshooting already tried, resolution status and any case reference |
+    | Sales and lead qualification | Prospects. Captures stated needs, interest, purchasing authority, budget, timeframe and the next sales step |
+    | Appointment scheduling | Booking, rescheduling or cancelling. Captures the requested action, booking status, service and timing |
+    | Appointment confirmation | Reminders about an existing appointment. Records attendance, change requests and accommodations |
+    | Survey and feedback | Surveys. Captures completion, stated ratings and their scale, praise, complaints and improvement requests |
+
+    Every template value is editable. Change, remove or add values before you save, just as you would on a blank form.
+
+    When you create from the main sidebar's Dispositions page, the whole form is visible before you pick an agent. Select the owning agent in the selector below the title. You can fill in the configuration first and choose the agent afterwards, but you need an agent before you save. Unsaved setup survives a page reload.
+
+    Click **Save as draft** to save. The disposition stays an unpublished draft until you [publish it](#publish-it).
 
     Rename it by clicking the title. The description field asks "What is this disposition for? Who consumes it?" Whoever inherits this needs to know which downstream system reads the result.
   </Step>
@@ -91,6 +117,12 @@ Custom code always runs last, after every other value has finished, and it can t
     A judge's type comes from its scoring levels: two levels, or none at all, is a boolean, and anything else is an enum. A pathway variable brings its configured schema. Neither the levels nor the schema can be changed from here. You set an extractor's type in the Extractors drawer, under Structured output schema, and custom code declares its own schema further down the value drawer.
   </Step>
 </Steps>
+
+### Change a saved value
+
+Click a value in the Values table. It opens in a read-only preview that shows the value's saved configuration.
+
+To change it, click **Edit value**. A full-page form opens, prefilled with the value's saved settings. The form matches the value's source: pathway variable, extractor, judge or custom code. Save your changes, then [publish](#publish-it) again so they take effect.
 
 ## Decide when and how the answer arrives
 
@@ -202,7 +234,7 @@ Reports have no single successor. Disposition results show up as columns in [Con
 
 ### Bring your citations across
 
-On an agent that already exists, open the caret beside New disposition and choose **Migrate from citations**. Pick the citation schemas and outcomes you want, then choose how to move them.
+Click **Create disposition** and choose **Migrate**. From the main sidebar's Dispositions page, you first choose the agent whose citations you want to migrate. Pick the citation schemas and outcomes you want, then choose how to move them.
 
 **Migrate as is** copies them into dispositions exactly as they work today. Nothing is tested or changed.
 
