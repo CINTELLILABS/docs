@@ -83,6 +83,8 @@ It is the control that puts unevaluated work in front of live callers.
 
 Its confirmation carries the same phone number section and the same reassurance as the first publish: promoting does not change which numbers or pathways reach the agent.
 
+Promotion stops if the version references an environment variable that has no Production value. The error names each missing key, and production keeps serving the version it already had. **Force promote** does not skip this check. Set the missing values on the Production tab under [Variables](#variables), then promote again.
+
 ## Staged release
 
 A staged release is the middle path between publishing to staging and promoting everything at once. It splits production traffic between the new version and the version live now. You choose how much traffic goes to the new version and raise its share step by step.
@@ -205,7 +207,7 @@ Marking a value **Secret** stores it in your secret vault and keeps only a refer
 <Warning>
 A key with no value in the environment the call is running in does not fall back to another environment. It fails the call before it starts, with `AGENT_VARIABLE_UNRESOLVED`.
 
-So a variable added on development and never set on production breaks production the moment something references it.
+So a variable added on development and never set on production would break every production call. To prevent that, promotion refuses a version that references a key with no Production value, and names the missing keys.
 </Warning>
 
 ## Common failures
@@ -225,6 +227,10 @@ So a variable added on development and never set on production breaks production
 
   <Accordion title="Promotion is blocked although the evaluations passed">
     The configuration changed after that run. Promotion compares the run against the whole configuration saved now, which covers the required evaluations and the shared test inputs, so changing the test cases or the conversation count invalidates a pass just as editing an evaluation does. Publish to staging again to run them against the current configuration.
+  </Accordion>
+
+  <Accordion title="Promotion fails with AGENT_VARIABLE_UNRESOLVED">
+    The version references an environment variable that has no Production value. The error message lists the missing keys. Set each one on the Production tab of the Variables page, then promote again. **Force promote** does not bypass this check.
   </Accordion>
 
   <Accordion title="A button does nothing and the error says nothing">

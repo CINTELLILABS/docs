@@ -33,7 +33,7 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when nothing has been published to staging yet.
+  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when nothing has been published to staging yet. Returns `409 AGENT_VARIABLE_UNRESOLVED` when the version references an `{{env.KEY}}` variable with no production value; the message names the missing keys and production stays on its current version.
 </ResponseField>
 
 <ResponseExample>
@@ -70,6 +70,18 @@ Requires an admin, owner, operator, or prompter role.
     {
       "error": "STAGING_UNPINNED",
       "message": "Publish to staging before promoting to production"
+    }
+  ]
+}
+```
+
+```json Variable Unresolved
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_VARIABLE_UNRESOLVED",
+      "message": "Agent variables are unresolved — no \"production\" value for: CRM_BASE_URL"
     }
   ]
 }
