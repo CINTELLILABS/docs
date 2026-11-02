@@ -1,6 +1,6 @@
 ---
 title: "Connect Claude Code to the Bland MCP server"
-description: "Connect Claude Code to your Bland account with one command, or install the Bland plugin for skills, /bland:* commands, and Norm."
+description: "Connect Claude Code to your Bland account with one command, or install the Norm plugin for Bland Agents skills and /norm:* commands."
 hidden: true
 ---
 
@@ -9,11 +9,11 @@ The Bland MCP server is a hosted, streamable-HTTP server. Every client needs the
 - **URL:** `https://api.bland.ai/v1/mcp`
 - **Header:** `Authorization: Bearer YOUR_BLAND_API_KEY`
 
-Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Setting up a different tool? See all [MCP clients](/integrations/mcp/clients).
+Get your key from the [dashboard](https://app.bland.ai/dashboard/settings). Claude Code can also [sign in with Bland](#sign-in-instead-of-using-a-key) instead of using a key. Setting up a different tool? See all [MCP clients](/integrations/mcp/clients).
 
 ## Setup
 
-Prefer the [Bland plugin](/integrations/mcp/norm) here; it does the most in Claude Code. For the server alone, first set your API key in the shell where you run Claude Code. Replace `org_...` with your key:
+For Bland Agents work, install the [Norm plugin](/integrations/mcp/norm) (`norm@bland`). For the server alone, first set your API key in the shell where you run Claude Code. Replace `org_...` with your key:
 
 ```bash
 export BLAND_API_KEY="org_..."
@@ -39,12 +39,28 @@ claude mcp list
 Inside a session, run `/mcp` to see the server's tools, or just ask:
 
 ```text
-> list my pathways and tell me which ones have no published version
+> list my agents and tell me which ones have no version pinned to production
 > pull the transcript of my last call and explain where the agent went off script
-> create a pathway that qualifies inbound leads and books a demo
+> create an agent that qualifies inbound leads and books a demo
 ```
 
 By default `claude mcp add` configures the server for the current project only. Add `--scope user` to make it available in every project.
+
+### Sign in instead of using a key
+
+Add the server without the header:
+
+```bash
+claude mcp add --transport http bland https://api.bland.ai/v1/mcp
+```
+
+Then sign in:
+
+```bash
+claude mcp login bland
+```
+
+Claude Code opens Bland in your browser. Sign in, choose an organization, and approve what Claude Code can do. To make a read-only connection, uncheck **Create and change your agents**. Inside a session, `/mcp` also starts sign-in for a server that needs it. See [Sign in with Bland](/integrations/mcp/oauth) for what the connection can do.
 
 <Frame>
   <img src="/images/mcp/mcp-session.png" alt="A Claude Code session using the Bland MCP to list pathways and report which have a published production version" />

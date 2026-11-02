@@ -1,0 +1,127 @@
+---
+title: "Get Voice Pool"
+api: "GET https://api.bland.ai/v1/inbound/{phone_number}/voice-pool"
+description: "List the voices in an inbound number's voice pool."
+---
+
+## Overview
+
+Returns the voices currently in the pool for one inbound number. When a pool is set, each inbound call picks one of these voices at random. Set the pool with [Set Voice Pool](/api-v1/post/inbound-number-voice-pool).
+
+An empty `voice_pool` array means no pool is configured and the number uses its own voice setting.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="phone_number" type="string" required>
+  The inbound number to read, in E.164 format (for example `+15551234567`). SIP DIDs are matched in the form they are stored, so a numeric DID such as `9994221001` also resolves.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="data fields">
+    <ResponseField name="voice_pool" type="array">
+      One entry per voice in the pool, empty when no pool is set.
+
+      <Expandable title="Pool entry fields">
+        <ResponseField name="id" type="string">
+          The pool entry's own ID. This identifies the membership, not the voice.
+        </ResponseField>
+        <ResponseField name="voice" type="object">
+          The voice itself.
+
+          <Expandable title="Voice fields">
+            <ResponseField name="id" type="string">
+              The voice ID you pass in `voice_ids` when setting a pool.
+            </ResponseField>
+            <ResponseField name="name" type="string">
+              The voice's display name.
+            </ResponseField>
+            <ResponseField name="voice_id" type="string">
+              The provider's own identifier for the voice. Not interchangeable with `id`.
+            </ResponseField>
+            <ResponseField name="service" type="string | null">
+              The speech service behind the voice.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          When the voice was added to the pool, ISO 8601.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "voice_pool": [
+      {
+        "id": "31c0a4ee-2fab-4400-b4c1-4ac6f6abcd6f",
+        "voice": {
+          "id": "a7f58a4e-3fdb-40fd-ad8b-a14cfe136a59",
+          "name": "josh",
+          "voice_id": "TxGEqnHWrfWFTfGW9XjX",
+          "service": "ELEVEN"
+        },
+        "created_at": "2026-10-05T17:53:50.074Z"
+      },
+      {
+        "id": "48608715-a0ba-41c0-ba43-2c1c61255db1",
+        "voice": {
+          "id": "96e2b2d6-d1c2-4676-81d5-e78e9cf3fefc",
+          "name": "martha",
+          "voice_id": "wVZ5qbJFYF3snuC65nb4",
+          "service": "ELEVEN"
+        },
+        "created_at": "2026-10-05T17:53:50.074Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+
+```json No Pool Set
+{
+  "data": {
+    "voice_pool": []
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Inbound number not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

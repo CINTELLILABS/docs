@@ -1,0 +1,223 @@
+---
+title: 'Evaluations'
+description: 'Score an agent before it ships: write a judge, build a test case, read a run, and make a passing run a condition of promotion'
+---
+
+An evaluation is a judge reading a conversation and saying whether the agent did the thing you wanted.
+
+Three objects do the work. A judge scores a conversation. A test case is a simulated caller that produces conversations to score. A run pairs them and gives you a result. A test case carries no judges of its own; you pick both when you start a run.
+
+## Prerequisites
+
+- An agent you have built, from [Agent builder](/agents/agent-builder)
+- An owner, admin, operator or prompter role to make an evaluation a required check
+
+## Where evaluations live
+
+Inside an agent, Evaluations is under Validate, with three tabs: Judges, Test cases and Runs.
+
+<Note>
+Searching for evals? That is this page. The word is still in the URL, which reads `/judges` rather than `/evaluations`.
+</Note>
+
+At All agents there is a shorter version of the same page: Judges only. Test cases and runs belong to an agent, so those two tabs do not exist at organization scope.
+
+{/* IMAGE: the Evaluations surface inside an agent, showing the Judges, Test cases and Runs tabs. */}
+
+## Write a judge
+
+The Judges tab lists every judge in one table. The last row of the table is **Create judge**, and under the table is a **Create a new judge** panel with three tiles:
+
+| Tile | What opens below it |
+| --- | --- |
+| **Blank** | The judge editor, empty |
+| **Templates** | A list of templates to start from |
+| **Generate** | A draft built from a **Prompt**, **Conversation comments** or a **Triage issue** |
+
+Pick a tile and what it needs opens right below. The new judge opens in the editor on the same page, not a separate one. Back out of a judge you never created and it is removed.
+
+The judge's name and description sit at the top of the editor, and you edit them in place. A new judge starts as **Untitled Judge**.
+
+Below the name, the editor has these sections. Only **Task** is required, and it is the one that does the work: it is the question you are asking about the conversation.
+
+| Section | What it sets |
+| --- | --- |
+| **Inputs** | **Mode** and **Context**, side by side. Mode is **Transcript** or **Audio**: transcript reads what was said, audio hears how. Context is the evidence the judge can see when it grades a call |
+| **Task** | The question. Required |
+| **Verdicts** | The answers it may give, and which one you are hoping for. **Pass** and **Fail** sit side by side, with an optional **Inconclusive** |
+| **References** | A table of where this judge is used, with its name and type |
+| **Advanced** | Model and retry behaviour |
+
+Each mode has its own context sources. Choosing a mode swaps the list under **Context**, so pick the mode first.
+
+The button reads **Create judge** the first time and **Update** afterwards. There is no Save.
+
+<Note>
+**Save as draft** keeps your work without making the judge live. A draft is not used by any run, so a judge you drafted and forgot will not quietly start scoring things.
+</Note>
+
+## Tune a judge
+
+Testing a judge is a loop: pick calls, run the judge, correct the verdicts it got wrong, and turn those corrections into the next version. Open it with **Test** in the judge editor, and use **← Back to setup** to return.
+
+**Create new test** opens the population picker:
+
+| Option | What the judge grades |
+| --- | --- |
+| **Recent production calls** | The N most recent production calls for the agent |
+| **Specific production calls** | Calls you filter in a side panel, or a pasted list of conversation IDs |
+| **Simulated** | A number of simulated conversations from a caller description of at least 40 characters. The judge runs at its current draft |
+
+Rows fill in as the judge grades each call.
+
+To correct a verdict, select it, pick the level you believe is right, and add a short rationale. Corrections are saved with the test run, so teammates see them too. Each edit adds a revision rather than replacing the last one.
+
+When you have corrected the verdicts you disagree with, select **Align with AI**. Bland reads your corrections and the transcripts of those calls, then proposes changes to the judge's prompt and verdict descriptions as a diff. It only uses the verdicts the judge already has. An **Advanced** box takes optional instructions to steer the proposal.
+
+- **Apply** writes the proposal into the judge's draft so you can review it in the editor.
+- **Apply and retest** writes it into the draft and re-runs the same calls, so you can see whether the verdicts you corrected changed.
+
+Alignment always lands in the draft. Nothing changes for live runs until you publish the judge.
+
+## Write a test case
+
+**New test case** starts either from scratch or from your own traffic.
+
+**Generate based on production calls** reads up to 50 real calls and writes one test case per call, which is the faster way to get a suite that resembles what actually happens to you. Select calls in a picker that has the same filters as Conversations, then **Generate test cases**. Bland writes the cases one call at a time, so larger batches take longer, and opens the editor on the first one when it finishes. Read each generated caller prompt and correct it before you use it.
+
+If some calls fail, the cases that succeeded are kept and each failed call is listed with its error. Retrying does not duplicate the cases already created.
+
+Then set a **Title**, a **Prompt** describing who the simulated caller is and what they want, and optionally **Labels**, **Max turns** (20 by default), a **Start node** and **Request data**. **Save** finishes it.
+
+## Run them
+
+A run pairs judges with test cases. Pick both, choose how many conversations each test case should produce, and start it.
+
+<Warning>
+A run you start here is stored in your browser, not on Bland.
+
+Your teammates cannot see it, and neither can you from another machine or another browser. Only the runs that happen as part of a publish are kept on the server.
+</Warning>
+
+<Warning>
+The version picker in the new run dialog does not change which version runs.
+
+Every conversation runs the agent's current version. The picker records your choice on the run for reference, and the tooltip says so.
+</Warning>
+
+## Read a run
+
+A conversation passes only if **every** judge passed it. A judge that could not tell counts against it here.
+
+This is worth holding onto, because the promotion gate scores the same run differently: there, each judge is scored on its own, across conversations. So a run can show failed conversations in the results and still clear the gate.
+
+## Make it a required check
+
+An evaluation becomes a gate from the agent's Environments tab rather than from this page. The Evaluations card sits between Development and Staging, and **Add evaluations** opens the picker.
+
+Attach the judges you want, up to five test cases, and choose **1**, **3** or **5** conversations per test case.
+
+<Warning>
+Attaching a judge makes it required by default. Clear **Req'd** on the row to make it advisory instead.
+
+An advisory judge reports its verdict and blocks nothing.
+</Warning>
+
+Only staging has a configuration, and it gates both hops: the publish into staging and the promotion out of it. See [Environments](/agents/environments) for what each of those does when it is blocked.
+
+## How a judge passes
+
+A judge does not pass or fail per conversation. It takes the share of conversations that matched the verdict you were hoping for, and passes when that share is **half or more**.
+
+Conversations where the judge could not reach a verdict are left out of the share entirely, rather than counted against it.
+
+<Note>
+You cannot change the half. It is fixed, so there is no target-rate setting to look for.
+
+What you choose is how many conversations each test case produces, and the options are odd numbers for a reason: with 3 or 5, a tie cannot happen.
+</Note>
+
+## Simulation
+
+**Simulation**, in the builder under Testing, runs one conversation against a test case so you can watch the agent handle it.
+
+It is the same machinery, used for looking rather than scoring. Those conversations are not kept and never appear in Runs.
+
+## Score calls after they end
+
+You can also have judges score real calls automatically. First save the judges you want, with their weights and a pass threshold, as a **workbench setup** through the [Evals API](/api-v1/post/evals-workbench-setups). Then pass `post_call_evals` with the setup's ID when you place a call with [`POST /v1/calls`](/api-v1/post/calls-agent):
+
+```json
+{
+  "phone_number": "+15551234567",
+  "agent_id": "YOUR_AGENT_ID",
+  "post_call_evals": {
+    "workbench_setup_id": "b7c2e1d4-8f3a-4c9e-9a2b-1e5f6d7c8a9b"
+  }
+}
+```
+
+- **Recording is required.** Calls with `post_call_evals` are recorded automatically. A request that sets `record: false` is rejected.
+- **The setup version is pinned when the call is created.** Pass `workbench_setup_version_id` to pin an exact version. Editing the setup mid-call does not change what gets scored.
+- **Scores arrive on their own webhook.** The post-call webhook includes `post_call_evals` with `status: "pending"`. The scores follow on a separate `evals` webhook event when the run finishes. Add `post_call_evals` to your organization's `webhook_excluded_fields` preference to strip it from webhooks.
+- **Auto runs are listed with manual runs.** Filter for them with `triggered_by=auto` on [`GET /v1/evals/runs`](/api-v1/get/evals-runs).
+
+## Use the API
+
+The Evals API is rooted at `/v1/evals`. In the API, a judge is an **eval agent** and a run is an **eval run**.
+
+1. Confirm Evals is enabled for your organization with [`GET /v1/evals/status`](/api-v1/get/evals-status).
+2. Create a judge with [`POST /v1/evals/agents`](/api-v1/post/evals-agents), optionally from a template. Edit its draft with [`PATCH /v1/evals/agents/{id}/versions/{version_id}`](/api-v1/patch/evals-agents-id-versions-id) and publish it with [`POST /v1/evals/agents/{id}/publications`](/api-v1/post/evals-agents-id-publish).
+3. Preview the cost with [`POST /v1/evals/runs/estimates`](/api-v1/post/evals-runs-estimates), then start a run with [`POST /v1/evals/runs`](/api-v1/post/evals-runs). A run takes up to 5,000 call IDs and up to 50 judges.
+4. Poll [`GET /v1/evals/runs/{run_id}`](/api-v1/get/evals-runs-id), then read the [call results](/api-v1/get/evals-runs-id-call-results) and [judge results](/api-v1/get/evals-runs-id-agent-results).
+
+To re-run the same set of judges over time, save it as a [workbench setup](/api-v1/post/evals-workbench-setups) and pass `workbench_setup_id` and `workbench_setup_version_id` when you create a run.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="A run I started yesterday is gone">
+    Manual runs are stored in the browser that started them. A different machine, a different browser, or cleared site data all lose them. Runs attached to a publish are on the server and survive.
+  </Accordion>
+
+  <Accordion title="The results show failures but promotion went through">
+    The two screens score differently. Results fail a conversation if any judge failed it; the gate scores each judge across conversations and passes at half or more. Both numbers are right, and they answer different questions.
+  </Accordion>
+
+  <Accordion title="A judge I wrote is not scoring anything">
+    It is still a draft, or it is not attached. **Save as draft** keeps a judge out of every run, and attaching happens on the Environments tab rather than when you write it.
+  </Accordion>
+
+  <Accordion title="An evaluation failed and nothing was blocked">
+    **Req'd** is cleared on that row, so the judge is advisory. Advisory judges report and never block.
+  </Accordion>
+
+  <Accordion title="Promote looks enabled but does nothing">
+    A required evaluation failed. The button dims rather than disabling, and the reason is on hover.
+  </Accordion>
+
+  <Accordion title="I chose a version in the run dialog and it ran a different one">
+    It ran the current one. The picker records a version on the run and does not select what executes.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Environments" icon="layer-group" href="/agents/environments">
+    Where an evaluation becomes a condition of shipping.
+  </Card>
+  <Card title="Agent builder" icon="pen-to-square" href="/agents/agent-builder">
+    Change the agent the judges keep failing.
+  </Card>
+  <Card title="Conversations" icon="comments" href="/agents/conversations">
+    Read the real calls a test case was generated from.
+  </Card>
+  <Card title="Testbed" icon="flask" href="/agents/testbed">
+    Try an agent by hand before you score it.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

@@ -17,27 +17,30 @@ description: "Submit a number porting request to transfer phone numbers from ano
 </ParamField>
 
 <ParamField body="losing_carrier_information" type="object" required>
-  Information about the current carrier:
-  - `customer_type` (string) — `"business"` or `"personal"`
-  - `business_name` (string) — Business name on the account (if business)
-  - `first_name` (string) — Account holder first name
-  - `last_name` (string) — Account holder last name
-  - `account_number` (string) — Account number with the losing carrier
-  - `authorized_representative_email` (string) — Email for LOA signing
-  - `notification_emails` (array) — Additional emails for status updates
-  - `address` (object) — Service address: `street`, `street2`, `city`, `state`, `zip`, `country`
+  Information about the account with the current carrier. It must match the carrier's records exactly.
+  - `customer_type` (string, required): `"Business"` or `"Individual"`. Values are case-sensitive.
+  - `customer_name` (string, required): Name on the carrier account.
+  - `account_number` (string): Account number with the losing carrier.
+  - `account_telephone_number` (string, required): Billing telephone number on the carrier account.
+  - `authorized_representative` (string, required): Full name of the person authorized to port the numbers.
+  - `authorized_representative_email` (string, required): Email that receives the Letter of Authorization to sign.
+  - `address` (object, required): Service address with `street`, `street_2` (optional), `city`, `state`, `zip`, and `country`.
 </ParamField>
 
-<ParamField body="target_port_date" type="string">
-  Requested port date in ISO 8601 format. Must be at least 7 days from today. If omitted, the earliest possible date is used.
+<ParamField body="target_port_in_date" type="string" required>
+  Requested port date in `YYYY-MM-DD` format. Must be at least 4 days from today.
 </ParamField>
 
-<ParamField body="documents" type="array">
-  Array of document SIDs returned from `POST /v1/sip/port/document`.
+<ParamField body="documents" type="array" required>
+  Array of document SIDs returned from `POST /v1/sip/port/document`. At least one is required.
 </ParamField>
 
-<ParamField body="pin" type="string">
-  Account PIN from the losing carrier (required for some numbers — check via portability endpoint).
+<ParamField body="phone_number_pins" type="object">
+  Map of phone number to its account PIN with the losing carrier, for example `{"+14150000000": "1234"}`. Required for numbers where the portability check returns `pin_required`.
+</ParamField>
+
+<ParamField body="notification_emails" type="array">
+  Emails that receive port status updates. Defaults to `authorized_representative_email`.
 </ParamField>
 
 ### Response
@@ -69,23 +72,23 @@ curl -X POST https://api.bland.ai/v1/sip/port/initiate \
   -d '{
     "phone_numbers": ["+14150000000", "+14150000001"],
     "losing_carrier_information": {
-      "customer_type": "business",
-      "business_name": "Acme Corp",
-      "first_name": "Jane",
-      "last_name": "Doe",
+      "customer_type": "Business",
+      "customer_name": "Acme Corp",
       "account_number": "ACC-12345",
+      "account_telephone_number": "+14150000000",
+      "authorized_representative": "Jane Doe",
       "authorized_representative_email": "jane@acme.com",
-      "notification_emails": ["it@acme.com"],
       "address": {
         "street": "123 Main St",
-        "street2": "Suite 100",
+        "street_2": "Suite 100",
         "city": "San Francisco",
         "state": "CA",
         "zip": "94105",
         "country": "US"
       }
     },
-    "target_port_date": "2026-03-20T00:00:00Z",
+    "target_port_in_date": "2026-03-20",
+    "notification_emails": ["it@acme.com"],
     "documents": ["doc_abc123"]
   }'
 ```

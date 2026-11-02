@@ -61,6 +61,8 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
     `payment_intent` is optional: `"shared_payment_token"` if you will pay with an agent wallet, `"none"` if you won't. With `"none"`, and only when free signup is off, `/start` answers `402 PLAN_REQUIRED` with the browser `fallback` before any text is sent, so the owner isn't asked for a code the flow can't use. Today free signup is on, so `"none"` proceeds like any other start. `owner_phone` must be E.164 (for example `+14155551234`). `owner_email` must be a valid email address.
 
+    `area_code` is optional: the owner's preferred three-digit US area code for the plan's phone number, like `"415"`. Ask the owner before you call `/start`. The number is only ever bought in that area code, and leaving it out means any US number. When you send one, `/start` checks that numbers are available in it before texting the code. If none are, it answers `409 AREA_CODE_UNAVAILABLE` and sends nothing, so ask the owner for another area code, or start without one. The area code is fixed for the session. It's ignored on the free path, which doesn't buy a number.
+
     This call sends a 6-digit verification code to `owner_phone` by text and creates nothing else: no account, no organization, no charge. `headless_session` is valid for `expires_in` seconds (600, or 10 minutes) and is single-use.
   </Step>
 
@@ -246,6 +248,9 @@ Both endpoints:
 | Code | HTTP status | Meaning |
 | --- | --- | --- |
 | `OTP_SEND_FAILED` | 502 | The verification text couldn't be sent. Try again in a moment. |
+| `INVALID_AREA_CODE` | 400 | `area_code` isn't a three-digit US area code (like `415`). No text is sent. |
+| `AREA_CODE_UNAVAILABLE` | 409 | No numbers are available in that area code right now. No text is sent and nothing is charged. Ask the owner for another area code, or start without one. |
+| `AREA_CODE_CHECK_FAILED` | 502 | Availability for that area code couldn't be checked. No text is sent. Try again in a moment. |
 
 `/headless/complete` only:
 
@@ -258,6 +263,8 @@ Both endpoints:
 | `PAYMENT_CREDENTIAL_INVALID` | 402 | The `Authorization: Payment` credential didn't verify: expired, altered, for another method, or missing the token. Plus fallback and a fresh challenge. The session is still usable. |
 | `PLAN_UNAVAILABLE` / `BAD_REQUEST` | 503 / 400 | The plan can't be sold right now. The session is still usable. |
 | `PURCHASE_IN_PROGRESS` | 409 | Another `/complete` call for this phone number is already running. Retry the same session in a moment. |
+| `AREA_CODE_UNAVAILABLE` | 409 | The session's area code ran out of numbers after `/start` checked it. Nothing is charged. A session's area code can't change, so ask the owner for another area code, or none, and start over with a fresh `/start` call. |
+| `AREA_CODE_CHECK_FAILED` | 502 | Availability for the session's area code couldn't be checked. Nothing is charged and the session is still usable; retry it in a moment. |
 | `CARD_DECLINED` | 402 | The payment was declined or refused, the token was rejected or already used, or the payment couldn't be confirmed. Plus fallback. The session is spent; start over with a fresh `/start` call. |
 | `PURCHASE_INTERRUPTED` | 409 | Setup stopped before any payment was taken. The session is spent; start over. |
 | `PAYMENT_FAILED` | 500 | The payment couldn't be completed. The session is spent; start over. |

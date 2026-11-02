@@ -94,6 +94,12 @@ description: "Attach SIP configuration to one or more phone numbers for inbound 
 
 Headers allow you to map SIP headers to Bland pathway variables and vice versa.
 
+On an inbound mapping, set `"external_id": true` on one `custom` entry to store that header's value as the call's `external_id`. The header is still mapped into its variable as usual. You can then find the call with [`GET /v1/calls?external_id=`](/api-v1/get/calls) or [`GET /v1/calls/{external_id}`](/api-v1/get/calls-id). In the dashboard, select **External ID** on the inbound header row.
+
+```json
+{ "type": "custom", "key": "X-Session-Id", "value": "session_id", "external_id": true }
+```
+
 ```json Example Request (Outbound with Headers)
 curl -X POST https://api.bland.ai/v1/sip/attach \
   -H "Authorization: Bearer <token>" \

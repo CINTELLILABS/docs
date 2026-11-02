@@ -20,6 +20,23 @@ description: "Retrieve detailed information, metadata and transcripts for a call
 
 <ParamField path="call_id" type="string" required>
   The unique identifier of the call for which you want to retrieve detailed information.
+
+  You can also pass the call's `external_id` here instead. If several calls share the same `external_id`, Bland returns the most recent one.
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="fields" type="string">
+  A comma-separated list of response fields to return, such as `fields=status,summary,variables`. You can also repeat the parameter: `fields=status&fields=summary`.
+
+  Use this when your integration can only accept a small payload, such as an IVR or contact center action node. Bland always includes `call_id`. Field names that don't exist in the response are omitted. A field name containing characters other than letters, numbers, or underscores returns a `400` error.
+
+  By default, Bland returns all fields.
+
+  ```bash
+  curl "https://api.bland.ai/v1/calls/crm-interaction-48213?fields=status,summary,variables" \
+    -H "authorization: <api-key>"
+  ```
 </ParamField>
 
 ### Response
@@ -157,6 +174,10 @@ description: "Retrieve detailed information, metadata and transcripts for a call
   The URL of the recording of the call. Only available if `record` was set to `true` in the original API request.
 </ResponseField>
 
+<ResponseField name="external_id" type="string">
+  Your own identifier for the call, set with `external_id` when sending the call or from a flagged inbound SIP header. `null` if not set.
+</ResponseField>
+
 <ResponseField name="metadata" type="object">
   Metadata about the call. This can include information about the client, customer, or any other data you want to include.
 
@@ -290,6 +311,7 @@ description: "Retrieve detailed information, metadata and transcripts for a call
     "call_id": "12345678-1234-1234-1234-123456789012",
     "call_length": 0.75,
     "batch_id": null,
+    "external_id": null,
     "to": "+12223334444",
     "from": "+17163511654",
     "request_data": {
