@@ -1,5 +1,5 @@
 /*
-  Repaint the welcome page's colour field on load.
+  Repaint the welcome page's color field on load.
 
   The page ships one good field in its markup, generated at authoring time, so
   it is correct with no JavaScript at all. This makes it a different field each
@@ -7,8 +7,8 @@
 
   1. WEIGHTED, not uniform. Orange and Yellow are 45% of the field between them
      and the four darks 13%, which is the hand-built mix, counted.
-  2. NO TOUCHING TWINS. A colour is rejected if the cell to its left or above
-     already holds it, because two same-coloured neighbours weld into one
+  2. NO TOUCHING TWINS. A color is rejected if the cell to its left or above
+     already holds it, because two same-colored neighbors weld into one
      double-width block and that is what destroys the deck grid.
 
   This lives here rather than in the page because Mintlify's production build
@@ -53,7 +53,7 @@
       });
     }
 
-    // Reading order first: the rejection can only see neighbours already
+    // Reading order first: the rejection can only see neighbors already
     // painted, and the authored list runs the L down before the band across.
     list.sort(function (a, b) { return (a.row - b.row) || (a.col - b.col); });
 
@@ -65,7 +65,7 @@
       var colour = pick(banned);
       placed[c.col + ':' + c.row] = colour;
       c.el.style.backgroundColor = colour;
-      // The breathing cells carry a second colour on a child span.
+      // The breathing cells carry a second color on a child span.
       var breath = c.el.firstElementChild;
       if (breath) breath.style.backgroundColor = pick([colour]);
     }
