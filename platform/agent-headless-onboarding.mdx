@@ -106,9 +106,11 @@ This is a different path to the same result as the [Agent onboarding API](/platf
     }
     ```
 
-    `payment.shared_payment_token` is the single-use token your agent wallet issued for this charge. The other accepted credential is an `Authorization: Payment` header built from the challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Card details, including a Link virtual card, are refused. Either credential settles the first month of the Agent Phone Plan (\$14.99 first month, then \$29.99/month).
+    `payment.shared_payment_token` is the single-use token your agent wallet issued for this charge. The other accepted credential is an `Authorization: Payment` header built from the challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Card details, including a Link virtual card, are refused. Either credential settles the first month of the Agent Phone Plan (\$9.99 first month, then \$19.99/month), or the first year with `billing_interval: "year"` (\$150/year).
 
     The session lasts 10 minutes from `/start`. The first successful code check, whether from a `request_challenge` call or a paying call, restarts that window once. A re-issued challenge doesn't restart it again, so the wallet approval has to complete inside it. If the session expires, start over with a new `/start` call and a new code.
+
+    `billing_interval` is optional: `"month"`, the default, or `"year"` to pay \$150 for the first year. Send the same value when you ask for the challenge and when you pay: the challenge names that interval's price, and a payment approved for the other interval's price is refused with nothing charged. Yearly billing isn't offered on every account. Where it isn't, `/complete` answers `400 BILLING_INTERVAL_UNAVAILABLE` and charges nothing.
 
     `next_steps` is a short list of things your agent should know before its first call. It's optional on the wire: treat a missing field the same as an empty list.
   </Step>
@@ -120,12 +122,12 @@ This is a different path to the same result as the [Agent onboarding API](/platf
 
 ## Paying with an agent wallet
 
-The Agent Phone Plan is \$14.99 for your first month (50% off), then \$29.99/month. The token you present must be scoped to the seller and the amount named in the payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Read them from the challenge rather than from this page: the price comes from the plan catalog and can change. At the time of writing the challenge names:
+The Agent Phone Plan is \$9.99 for your first month (50% off), then \$19.99/month, or \$150/year. The token you present must be scoped to the seller and the amount named in the payment challenge (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). Read them from the challenge rather than from this page: the price comes from the plan catalog and can change. At the time of writing the challenge names:
 
 | Field | Value |
 | --- | --- |
 | Seller (Stripe business profile, the wallet's `network_id`) | `profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8` |
-| Amount | `1499` (cents, `usd`). The amount comes from the payment challenge and changes when the offer does. |
+| Amount | `999` (cents, `usd`) for the first month, or `15000` for a year. The amount comes from the payment challenge and changes when the offer does. |
 | Credential type | `shared_payment_token`, single use |
 
 A token is spent by one settled charge. If the payment fails, request a new token rather than retrying the same one.
@@ -146,8 +148,8 @@ Then create a spend request with those values and wait for the owner to approve 
 npx @stripe/link-cli spend-request create \
   --credential-type shared_payment_token \
   --network-id profile_61VOTHaCdbmfq6PD5A6VOTHa3XSQ3zOF0yDybvQ6S1k8 \
-  --amount 1499 \
-  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed at 14.99 USD for the first month, then 29.99 USD monthly." \
+  --amount 999 \
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed at 9.99 USD for the first month, then 19.99 USD monthly." \
   --request-approval
 ```
 
@@ -169,7 +171,7 @@ npx @stripe/link-cli mpp pay https://api.bland.ai/v1/agent/onboarding/headless/c
   -X POST \
   -d '{"headless_session": "Xk9pQ2mZ...", "otp_code": "482913", "payment": {"request_challenge": true}}' \
   --header "Content-Type: application/json" \
-  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed at 14.99 USD for the first month, then 29.99 USD monthly."
+  --context "First month of the Bland Agent Phone Plan for <owner>: a dedicated US phone number the agent calls and texts from, billed at 9.99 USD for the first month, then 19.99 USD monthly."
 ```
 
 The first call verifies the code, so the retry with the credential skips it. The `200` carries a `Payment-Receipt` header naming the settled payment. A credential that doesn't verify (expired, or not issued by this server) answers `402 PAYMENT_CREDENTIAL_INVALID` with a fresh challenge; repeat the request with `request_challenge` and no credential to get a new one. A body `shared_payment_token` wins over a credential; sending `shared_payment_token` and `request_challenge` together is a `400`.
@@ -180,7 +182,7 @@ A token whose card requires 3D Secure can't complete headlessly. `/complete` ans
 
 ### Renewals
 
-The token settles the first month only. The plan renews one month later against the card on file. If there is none, the plan goes past due and degrades to pay-as-you-go: the number is kept, and the owner adds a card at **Billing & Plans** in the [dashboard](https://app.bland.ai/dashboard/pay?tab=plan), which their verified phone lets them sign in to.
+The token settles the first month only, or the first year on yearly billing. The plan renews one month or one year later against the card on file. If there is none, the plan goes past due and degrades to pay-as-you-go: the number is kept, and the owner adds a card at **Billing & Plans** in the [dashboard](https://app.bland.ai/dashboard/pay?tab=plan), which their verified phone lets them sign in to.
 
 ### Existing accounts
 
@@ -258,6 +260,8 @@ Both endpoints:
 | --- | --- | --- |
 | `INVALID_SESSION` | 404 | The session is unknown, expired, or already used. Start over with a fresh `/start` call. |
 | `OTP_INVALID` | 400 | The code is wrong or expired. The session is still usable; ask the owner for the code again. |
+| `INVALID_BILLING_INTERVAL` | 400 | `billing_interval` isn't `"month"` or `"year"`. Nothing is charged. |
+| `BILLING_INTERVAL_UNAVAILABLE` | 400 | Yearly billing isn't offered for this account. Nothing is charged. Pay monthly instead. |
 | `PAYMENT_METHOD_UNSUPPORTED` | 400 | The body carried `payment.stripe_payment_method`. Card details, including a Link virtual card, can't pass through this endpoint. Send `payment.shared_payment_token` or answer the payment challenge instead. |
 | `PLAN_REQUIRED` | 402 | The code verified but no accepted payment arrived: `payment.request_challenge` was sent, or no `payment` while free signup is off. The message names the two ways to pay: `payment.shared_payment_token` (`spt_`), or the `WWW-Authenticate: Payment` challenge on this response answered with `link-cli mpp pay` (see [Or let the 402 drive the payment](#or-let-the-402-drive-the-payment)). A Link virtual card is not accepted. Plus fallback, for the owner's own browser. The session is still usable. On `/start`, only with `payment_intent: "none"` while free signup is off; plus fallback, and no text is sent. |
 | `PAYMENT_CREDENTIAL_INVALID` | 402 | The `Authorization: Payment` credential didn't verify: expired, altered, for another method, or missing the token. Plus fallback and a fresh challenge. The session is still usable. |
