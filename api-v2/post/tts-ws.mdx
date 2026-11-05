@@ -110,6 +110,19 @@ Send `init` once as the first message. Wait for `ready` before sending text.
   </Expandable>
 </ParamField>
 
+<ParamField body="auto_formatting" type="boolean" default="false">
+  Reads phone numbers and Social Security numbers digit by digit, with a short beat between each group. Applies to every turn on the connection. A non-boolean value closes the connection with `invalid_request`.
+
+  - Phone numbers: spelled-out 10-digit numbers, or 11 digits starting with "one", are read in groups like `732`, `741`, `2065`.
+  - SSNs: spelled-out 9-digit numbers are read in groups like `123`, `45`, `6789`. A leading "oh" counts as zero.
+  - Bare 10-, 11-, and 9-digit runs are grouped the same way. Other 9-digit numbers, such as order IDs, are also grouped like an SSN.
+  - Dashed phone numbers and SSNs, such as `732-741-2065`, `1-800-555-2112`, and `123-45-6789`, are grouped the same way.
+
+  Numbers split across `speak` messages are still formatted. The server holds back a trailing number or partial word until the next `speak` message or the end of the turn completes it. Shorter numbers, such as 7-digit runs, and decimals are left unchanged. Other dashed numbers, such as dates (`2026-10-05`), `555-1234`, and ZIP+4 codes, are also left unchanged.
+
+  You're charged only for the digits of a formatted number. The spacing between groups isn't billed.
+</ParamField>
+
 ### `speak`
 
 Append a text delta to a turn. Send each LLM token or any larger fragment as soon as it is available. Do not resend the full accumulated response.
@@ -273,6 +286,7 @@ The session has settled and is about to close normally.
 - Each turn is settled separately and has the current minimum charge of $0.001 when it delivers billable audio.
 - A synthesized text chunk becomes billable when the server accepts its first audio frame for delivery. Preemption or cancellation does not charge text that remained buffered or produced no audio.
 - Character attribution is estimated at synthesized-chunk granularity. Bland cannot map individual audio frames back to exact source characters.
+- Pause markers (`<|N|>`) are not billed.
 - Public creator voices may add their published per-character creator fee.
 
 See [Realtime TTS concepts](/tts/realtime-concepts#billing-on-interrupted-turns), [Speech Limits](/speech/limits), and [Synthesize Speech (HTTP)](/api-v2/post/tts#pricing) for more detail.
