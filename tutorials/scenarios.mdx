@@ -42,7 +42,7 @@ A scenario defines one test case. Each scenario contains:
   Set `start_node_id` on a scenario to begin the simulated conversation at a specific node instead of the default start node. This is useful for testing a single branch, like an authentication handoff or a post-transfer flow, without rewiring the flow. Leave it unset (or `null`) to start from the default start node. If the node no longer exists in the version under test, the run fails with an `Invalid start_node_id` error.
 </Tip>
 
-Each scenario is bound to the `pathway_id` or `persona_id` you pass when you create it. Scenarios persist across versions, so the same tests can run against every version.
+Each scenario is bound to the one `pathway_id`, `persona_id`, or `agent_id` you pass when you create it. Scenarios persist across versions, so the same tests can run against every version.
 
 ### Assertions
 
@@ -72,6 +72,20 @@ When you execute a scenario, a **test run** is created. The system:
 5. Computes an overall score (weighted average of assertion scores)
 
 Run statuses: `PENDING` → `RUNNING` → `PASSED` | `FAILED` | `ERROR` | `CANCELLED`
+
+### How a test run ends
+
+A simulated conversation ends in only three ways:
+
+- The agent's conversation reports that it is complete.
+- The agent reaches a terminal step: End call, or a transfer.
+- The run reaches `max_turns`.
+
+<Warning>
+  Give the flow under test an End call step where the conversation should finish. Without one, the simulated caller keeps producing turns until `max_turns`. The transcript fills with repeated goodbyes or silence, and your assertions score those turns too.
+</Warning>
+
+Tool calls in a test run are not recorded in [Tool Execution Logs](/api-v2/get/tools-logs). Read `tool_status` and `tool_error` in the run's `variables_extracted` instead. See [Get Test Run](/api-v1/get/agent-testing-runs-id).
 
 ### Batches
 
