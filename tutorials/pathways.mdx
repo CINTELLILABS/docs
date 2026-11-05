@@ -339,6 +339,22 @@ The following variables are available at every node without any configuration:
 - `{{call_id}}` — The unique identifier for the call.
 - `{{voice_id}}` — The ID of the voice active on the call. This is most useful with voice pools, where the voice is selected at call time: pathway logic can branch on which voice is active (for example, to use voice-dependent names or prompts). The value is the same voice ID you added to the voice pool, so you can match against it directly. If you pass your own `voice_id` request variable, that value takes precedence.
 
+## Channel Variables
+
+Every conversation also sets three variables that say where it is happening. You see all three in a conversation's variables, for example in `variables_extracted` on a test run.
+
+| Variable | Values | Use it for |
+| --- | --- | --- |
+| `{{conversation_channel}}` | `voice` (phone call), `web_voice`, `sms`, `imessage`, `rcs`, `whatsapp`, `web_chat` (the hosted widget and the builder's test chat), `api_chat` (your own chat surface) | The exact surface |
+| `{{channel_group}}` | `voice`, `messaging`, `chat` | The kind of surface, when the exact one does not matter |
+| `{{channel}}` | `voice`, `sms`, `chat` | The older, coarse value. Kept for existing pathways |
+
+Use `conversation_channel` or `channel_group` for new pathways, prompts, and routing. Bland always sets them, and values for them in request data are ignored.
+
+<Warning>
+`channel` does not always match the other two. It keeps the value it has always had so that existing pathways that branch on it do not change behavior. On some chat surfaces, including test runs, `channel` reports `voice`. A test run can show `{"channel": "voice", "channel_group": "chat", "conversation_channel": "web_chat"}`, and all three values are correct. On calls, a `channel` key that you send in request data also replaces Bland's value.
+</Warning>
+
 ## Extracting Variables from the Conversation
 
 At each node, you can extract variables from the conversation so far using the **Extract Variables from Call Info** section. For each variable, specify:
