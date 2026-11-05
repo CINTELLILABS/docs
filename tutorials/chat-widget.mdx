@@ -267,6 +267,12 @@ By default, a conversation times out after **24 hours** of user inactivity. You 
 
 ### Webhook Payload
 
+Bland sends this webhook when a conversation ends in any of these ways:
+
+- The pathway reaches an End Call node.
+- The conversation times out after user inactivity.
+- A live agent ends the conversation with [`END_CONVERSATION`](/api-v1/post/widget-thread-webhook).
+
 When a conversation ends, Bland sends a POST request to your configured webhook URL with the following payload:
 
 ```json
@@ -307,7 +313,7 @@ When a conversation ends, Bland sends a POST request to your configured webhook 
 | `thread_ended_at` | ISO timestamp when the conversation ended. |
 | `live_agent_handoff_at` | ISO timestamp when the conversation was handed off to a live agent, or `null` if no handoff occurred. |
 | `conversation_history` | Array of all messages in the conversation. If messages have been translated after a live agent handoff, the `original_content` field will be populated. |
-| `end_reason` | The reason the conversation ended, which usually is either a timeout, or the pathway hit a terminal node. |
+| `end_reason` | The reason the conversation ended: a timeout, the pathway reaching a terminal node, or `Live agent ended conversation`. If a live agent ends the conversation while a timeout is in progress, `end_reason` reports the live agent's end. |
 
 
 ---
