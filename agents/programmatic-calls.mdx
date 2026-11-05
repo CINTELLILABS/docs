@@ -22,6 +22,10 @@ For most outbound integrations, the request change is small: replace your existi
 
 Your agent owner provides the agent ID, confirms the production release, and validates any required dispositions. Update your integration's call requests and, if needed, its result processing.
 
+<Note>
+A `POST /v1/calls` integration that sends a `pathway_id` can also be moved to an agent without changing its request. Those calls still run the agent's dispositions instead of V1 citations and dispositions, so update your result parser either way.
+</Note>
+
 ## Update the call request
 
 Replace `pathway_id` or `persona_id` with `agent_id`. Remove the old selector and any `pathway_version`. Keep the same endpoint, `POST https://api.bland.ai/v1/calls`, and the existing organization API key for that account.
@@ -229,7 +233,7 @@ Confirm the delivery behavior with your agent owner:
 
 -   **Hold original webhook:** results travel in one combined call webhook, adding up to 30 minutes. This requires **Immediately on conversation end**.
 
--   **Existing citations:** an existing citation hold can cause disposition delivery to fall back to a follow-up event.
+-   **Existing citations:** V1 citations and dispositions never run on agent calls. The agent's dispositions replace them. If V1 citation schemas are still attached, a `citations` event can still arrive with an empty `citations` array, and a citation hold can cause disposition delivery to fall back to a follow-up event.
 
 -   **Queued results:** delivery can take up to 24 hours.
 
