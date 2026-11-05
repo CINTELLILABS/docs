@@ -65,6 +65,28 @@ The message to send to the pathway (optional)
       The current state of variables in the pathway execution.
     </ResponseField>
 
+    <ResponseField name="variable_changes" type="object | null">
+      The variables the agent changed while processing this message. Use it to see what the agent extracted or updated on each turn without comparing `variables` yourself.
+
+      Variables you set with `request_data` when you created the chat are not reported as agent changes. This includes `request_data` sent as a single `data` field.
+
+      Returns `null` when Bland cannot tell your request data apart from the agent's changes.
+
+      <Expandable title="variable_changes properties">
+        <ResponseField name="added" type="object">
+          Variables the agent set for the first time on this turn, with their new values.
+        </ResponseField>
+
+        <ResponseField name="modified" type="object">
+          Variables the agent changed on this turn, with their new values.
+        </ResponseField>
+
+        <ResponseField name="removed" type="object">
+          Variables removed on this turn, with their previous values.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
     <ResponseField name="completed" type="boolean">
       Whether the pathway has completed execution.
     </ResponseField>
@@ -94,6 +116,11 @@ The message to send to the pathway (optional)
     "use_candidate_model": false,
     "variables": {
       "callID": "12345678-1234-1234-1234-123456789012"
+    },
+    "variable_changes": {
+      "added": {},
+      "modified": {},
+      "removed": {}
     },
     "completed": false
   },
