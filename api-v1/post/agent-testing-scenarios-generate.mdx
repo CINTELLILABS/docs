@@ -29,7 +29,7 @@ description: "Generate a test scenario from a historical call transcript using A
 The response contains the generated scenario data. This data is **not yet saved** -- it is returned so you can review and use it to create a scenario.
 
 <Note>
-  Sensitive data such as phone numbers, webhook URLs, and API keys is automatically stripped from the generated `request_data`.
+  Sensitive data such as phone numbers, webhook URLs, and API keys is automatically stripped from the generated `request_data`, including when those fields are nested inside objects or arrays.
 </Note>
 
 <ResponseField name="name" type="string">
@@ -61,7 +61,13 @@ The response contains the generated scenario data. This data is **not yet saved*
 </ResponseField>
 
 <ResponseField name="request_data" type="object">
-  Request data extracted from the call with sensitive fields automatically removed.
+  Request data extracted from the call with sensitive fields automatically removed. Values stored in encoded form or nested inside objects and lists are preserved so the generated scenario reproduces the original call's inputs faithfully.
+</ResponseField>
+
+<ResponseField name="start_node_id" type="string">
+  Returned when `pathway_id` is provided and the call ran through (or was transferred into) that pathway. Identifies the node where the pathway actually began on the original call, so the simulated scenario replays just the relevant segment instead of the whole call.
+
+  If the call never entered the specified pathway, this field is omitted and the scenario falls back to the full call transcript.
 </ResponseField>
 
 <ResponseExample>
@@ -74,6 +80,7 @@ The response contains the generated scenario data. This data is **not yet saved*
     "tester_persona_name": "Sarah Chen",
     "pathway_id": "pw_abc123",
     "persona_id": null,
+    "start_node_id": "node_booking_intro",
     "request_data": {
         "customer_name": "Sarah Chen",
         "account_id": "cust_92841",
