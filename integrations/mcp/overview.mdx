@@ -69,6 +69,71 @@ See the full [tool reference](/integrations/mcp/tools).
 
 Over an API key connection, the server also ships MCP **prompts** for legacy pathways: `bland_pathways`, `build_pathway`, and `edit_pathway`. They appear as slash commands in clients that support them (like Claude Code). For Bland Agents, use the [Norm plugin](/integrations/mcp/norm) instead.
 
+## Call completion events
+
+Clients that support MCP events on protocol version `2026-07-28`, such as ChatGPT, can subscribe to `call.completed`. Bland then sends a signed webhook to the client each time a phone call in your account finishes. Your agent can react to a finished call without polling. Clients that support events usually manage the subscription for you.
+
+The event covers inbound and outbound phone calls. Web calls and simulations aren't included. Any authenticated connection can subscribe: [sign-in](/integrations/mcp/oauth) or a full-access API key. You don't need a plan or a dedicated number.
+
+### Subscribe
+
+Send the event name, optional filters, and a webhook destination. Leave `arguments` empty (`{}`) to receive every phone call completion in the organization.
+
+```json
+{
+  "name": "call.completed",
+  "arguments": {
+    "phone_number": "+14155550100",
+    "direction": "inbound",
+    "agent_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "delivery": {
+    "mode": "webhook",
+    "url": "https://receiver.example/mcp-events",
+    "secret": "whsec_<base64-encoded-key>"
+  },
+  "cursor": null
+}
+```
+
+| Filter | Description |
+| --- | --- |
+| `phone_number` | Your number on the call, in E.164 format. That's the `to` number for inbound calls and the `from` number for outbound calls. |
+| `direction` | `inbound` or `outbound`. |
+| `agent_id` | A Bland Agent in your organization. |
+
+- Bland sends a signed verification challenge to the webhook URL before the subscription activates.
+- Subscriptions expire after 24 hours. To renew, send the same request before the `refreshBefore` time in the response.
+- Each connection can hold up to 100 active subscriptions.
+- To unsubscribe, send the same name, arguments, and webhook URL without a secret.
+- `cursor` must be `null`. Bland doesn't replay past events.
+
+### Event payload
+
+```json
+{
+  "eventId": "call_completed_00000000-0000-4000-8000-000000000002",
+  "name": "call.completed",
+  "timestamp": "2026-10-21T18:00:00.000Z",
+  "data": {
+    "call_id": "00000000-0000-4000-8000-000000000002",
+    "phone_number": "+14155550100",
+    "direction": "inbound",
+    "agent_id": null
+  },
+  "cursor": null
+}
+```
+
+The payload has no transcript, recording, summary, or status, because those may still be processing when the event fires. Call `get_call_log` with the `call_id` to fetch them. `phone_number` is `null` when the call record has no number for your side of the call.
+
+### Delivery
+
+- Deliveries are signed with HMAC-SHA256 following [Standard Webhooks](https://www.standardwebhooks.com). Verify the `webhook-id`, `webhook-timestamp`, and `webhook-signature` headers with your secret. The `X-MCP-Subscription-Id` header identifies the subscription.
+- Any `2xx` response acknowledges the event. A `410` or `413` stops delivery of that event. Bland retries other responses and network failures with backoff for up to 24 hours.
+- Delivery is at least once, so the same event can arrive more than once. Deduplicate on `eventId`.
+- Webhook URLs must use HTTPS on a public address. Bland doesn't follow redirects. Respond within eight seconds.
+
 ## One endpoint, three MCP surfaces
 
 Bland has three MCP-related surfaces. If you're unsure, use the first one.
