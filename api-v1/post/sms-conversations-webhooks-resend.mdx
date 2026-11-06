@@ -1,0 +1,145 @@
+---
+title: "Resend Post Conversation Webhook"
+api: "POST https://api.bland.ai/v1/sms/conversations/webhooks/resend"
+description: "Resend post conversation status webhooks for one or more SMS conversations."
+---
+
+<Info>
+  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+## Overview
+
+Resend post conversation status webhooks for one or more SMS conversations. Use this endpoint to manually re-deliver a webhook that was originally sent when a conversation ended — for example, when a downstream system missed the original delivery or stored incorrect data and needs the payload replayed.
+
+Webhooks are re-sent to the same URL with the same payload and signature as the original delivery. Each resend appends a new entry to the conversation's webhook delivery log with `send_type` set to `"resend"`.
+
+This endpoint mirrors [Resend Post Call Webhook](/api-v1/post/postcall-webhooks-resend) for SMS conversations.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+---
+
+## Body Parameters
+
+<ParamField body="conversation_ids" type="string[]" required>
+  Array of conversation IDs to resend webhooks for. Must contain at least one ID, and each ID must be unique within the array.
+  <Expandable title="Array Item Properties">
+    <ResponseField name="conversation_id" type="string">
+      The unique identifier of an SMS conversation to resend the webhook for.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of webhook log objects for each resent webhook.
+  <Expandable title="Array Item Properties">
+    <ResponseField name="conversation_id" type="string">
+      The unique identifier of the conversation this webhook is for.
+    </ResponseField>
+    <ResponseField name="payload" type="object">
+      The webhook payload data that was resent.
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      The URL the webhook was resent to.
+    </ResponseField>
+    <ResponseField name="user_id" type="string">
+      The ID of the user or organization that owns this webhook.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Timestamp of when the webhook log was originally created.
+    </ResponseField>
+    <ResponseField name="metadata" type="array">
+      Array of metadata objects describing each delivery attempt, including the original send and any resends.
+      <Expandable title="Array Item Properties">
+        <ResponseField name="sent_at" type="string">
+          Timestamp of when this delivery attempt was sent.
+        </ResponseField>
+        <ResponseField name="response_code" type="integer">
+          HTTP response code returned by your webhook endpoint, or `null` if the request failed.
+        </ResponseField>
+        <ResponseField name="response_time" type="string">
+          Time taken to receive a response from your webhook endpoint.
+        </ResponseField>
+        <ResponseField name="send_type" type="string">
+          How this webhook was triggered. `"resend"` for entries created by this endpoint.
+        </ResponseField>
+        <ResponseField name="error_message" type="string">
+          Error details if the delivery attempt failed.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null|array">
+  `null` on success, or a list of error objects if a failure occurred. Possible error codes:
+  - `INVALID_PARAMETER` — the request body was malformed, empty, or contained duplicate conversation IDs.
+  - `WEBHOOK_NOT_FOUND` — no webhook log exists for one or more of the supplied conversation IDs. No webhooks are resent when this error is returned.
+  - `INTERNAL_SERVER_ERROR` — an unexpected server error occurred.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://api.bland.ai/v1/sms/conversations/webhooks/resend \
+  --header 'authorization: YOUR_API_KEY' \
+  --header 'content-type: application/json' \
+  --data '{
+    "conversation_ids": ["convo_abc123"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "conversation_id": "convo_abc123",
+      "url": "https://example.com/sms-webhook",
+      "payload": {
+        "type": "status",
+        "conversation_id": "convo_abc123",
+        "status": "ended",
+        "phone_number": "+15550001111",
+        "agent_number": "+15550002222",
+        "channel": "sms",
+        "message_count": 5
+      },
+      "user_id": "user_abc123",
+      "created_at": "2026-04-13T20:50:59.233Z",
+      "metadata": [
+        {
+          "sent_at": "2026-04-13T20:50:59.000Z",
+          "response_code": 200,
+          "response_time": "142ms",
+          "send_type": "spawn"
+        },
+        {
+          "sent_at": "2026-06-25T18:02:11.000Z",
+          "response_code": 200,
+          "response_time": "118ms",
+          "send_type": "resend"
+        }
+      ]
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
