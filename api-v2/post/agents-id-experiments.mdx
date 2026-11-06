@@ -6,9 +6,9 @@ description: "Start an A/B experiment on a variant version."
 
 ### Overview
 
-Starts an A/B experiment that sends `traffic_percentage` percent of the agent's eligible calls to `variant_version_id`, with the rest running the version pinned to `baseline_env`. Only calls that do not explicitly select a version or environment are eligible. An agent has at most one active experiment: stop it with [Stop Experiment](/api-v2/post/agents-id-experiments-experiment-id-stop) before creating another, or adjust it in place with [Update Experiment](/api-v2/patch/agents-id-experiments-experiment-id). Returns `409 CONFLICT` while one is active.
+Starts an A/B experiment that sends `traffic_percentage` percent of the agent's eligible calls to `variant_version_id`, with the rest running the version pinned to `baseline_env`. Only calls that do not explicitly select a version or environment are eligible. New messaging conversations (SMS, RCS, WhatsApp and iMessage) on the agent's numbers are split the same way. Each conversation stays on the version it was assigned for every reply. An agent has at most one active experiment: stop it with [Stop Experiment](/api-v2/post/agents-id-experiments-experiment-id-stop) before creating another, or adjust it in place with [Update Experiment](/api-v2/patch/agents-id-experiments-experiment-id). Returns `409 CONFLICT` while one is active.
 
-An experiment completes on its own when `ends_at` passes, when `variant_call_quota` connected variant calls have been routed, or when the baseline environment is repointed to another version (for example by a publish or promote). Completion is permanent, and all eligible traffic returns to the baseline pin.
+An experiment completes on its own when `ends_at` passes, when `variant_call_quota` conversations have been routed to the variant, or when the baseline environment is repointed to another version (for example by a publish or promote). Completion is permanent, and all eligible traffic returns to the baseline pin.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -70,7 +70,7 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="variant_call_quota" type="integer | null" default="null">
-  Maximum connected variant calls, `1` to `1000000`. The experiment completes with `completed_reason: "quota_reached"` when the count is reached. Only calls that connect count, so unanswered outbound calls never consume quota. `null` means no cap.
+  Maximum conversations routed to the variant, `1` to `1000000`. Each connected call and each new messaging conversation counts as one. The experiment completes with `completed_reason: "quota_reached"` when the count is reached. Only calls that connect count, so unanswered outbound calls never consume quota. `null` means no cap.
 </ParamField>
 
 ### Response
@@ -113,10 +113,10 @@ Requires an admin, owner, operator, or prompter role.
       When the experiment completes on its own, or `null` for no end date.
     </ResponseField>
     <ResponseField name="variant_call_quota" type="integer | null">
-      Maximum connected variant calls, or `null` for no cap.
+      Maximum variant conversations (connected calls plus new messaging conversations), or `null` for no cap.
     </ResponseField>
     <ResponseField name="variant_calls_routed" type="integer">
-      Connected calls routed to the variant so far. Always `0` on creation; live while active, frozen at completion.
+      Connected calls and new messaging conversations routed to the variant so far. Always `0` on creation; live while active, frozen at completion.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
       ID of the user who created the experiment, or `null` when created with an org-level key.
