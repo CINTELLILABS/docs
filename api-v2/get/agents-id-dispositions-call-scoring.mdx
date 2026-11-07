@@ -1,0 +1,98 @@
+---
+title: "Get Call Scoring Availability"
+api: "GET https://api.bland.ai/v2/agents/{agent_id}/dispositions/call-scoring"
+description: "Check whether Bland call scoring is available for an agent and get the ID of its read-only call scoring disposition."
+---
+
+### Overview
+
+<Note>
+Dispositions are enabled per organization. If your organization does not have access, these endpoints return `404`.
+</Note>
+
+Tells you whether [Bland call scoring](/agents/dispositions#bland-call-scoring) is available for the agent. When it is, the response includes the ID of the agent's call scoring disposition. That disposition also appears in [List Dispositions](/api-v2/get/agents-id-dispositions) with `dispositionType` set to `call_scoring`.
+
+Use the ID to read the disposition's details, runs, and versions with the other disposition endpoints. Bland manages this disposition, so you can't disable or delete it.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The agent's unique identifier. Must be a UUID; otherwise returns `400` with the message `agentId must be a valid UUID`. Returns `404 Agent not found` if the agent is not in your organization.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.available" type="boolean">
+  `true` when Bland call scoring is available for this agent. `false` otherwise.
+</ResponseField>
+
+<ResponseField name="data.dispositionId" type="string | null">
+  The ID of the agent's call scoring disposition, or `null` when `available` is `false`.
+</ResponseField>
+
+<ResponseField name="data.capabilities" type="object">
+  What you can do with the call scoring disposition.
+
+  <Expandable title="capabilities object">
+    <ResponseField name="read" type="boolean">
+      `true` when you can read the disposition and its results. Matches `available`.
+    </ResponseField>
+    <ResponseField name="configure" type="boolean">
+      Always `false`. The call scoring disposition is read-only.
+    </ResponseField>
+    <ResponseField name="customValues" type="boolean">
+      Always `false`. You can't add your own values to it.
+    </ResponseField>
+    <ResponseField name="webhook" type="boolean">
+      Always `false`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Available
+{
+  "data": {
+    "available": true,
+    "dispositionId": "5d8f2a61-0c3e-4b7a-9f14-2e6b8c0d3a97",
+    "capabilities": {
+      "read": true,
+      "configure": false,
+      "customValues": false,
+      "webhook": false
+    }
+  },
+  "errors": null
+}
+```
+
+```json Not available
+{
+  "data": {
+    "available": false,
+    "dispositionId": null,
+    "capabilities": {
+      "read": false,
+      "configure": false,
+      "customValues": false,
+      "webhook": false
+    }
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
