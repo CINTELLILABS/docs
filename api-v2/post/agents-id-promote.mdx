@@ -6,7 +6,7 @@ description: "Pin production to the version currently in staging."
 
 ### Overview
 
-Moves the agent's `production` pointer to whatever `staging` is pinned to and records a deployment carrying that version's original semver; promoting never mints a new number. Phone numbers attached to the agent begin answering with the promoted version. No request body. The server does not run checks here: start one with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) beforehand and gate on its result yourself.
+Moves the agent's `production` pointer to whatever `staging` is pinned to and records a deployment carrying that version's original semver; promoting never mints a new number. Phone numbers attached to the agent begin answering with the promoted version. The request body is optional. The server does not start a check run here: start one with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) beforehand and gate on its result yourself. Returns `409 CHECKS_BLOCKED` when the evaluations required on staging have not passed, unless you send `force`.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -22,6 +22,30 @@ Requires an admin, owner, operator, or prompter role.
   The agent's unique identifier.
 </ParamField>
 
+### Body Parameters
+
+<ParamField body="force" type="boolean" default="false">
+  Set to `true` to skip the required staging evaluations for this one promotion. The audit log records the bypass. Returns `400 INVALID_FORCE` if it is not a boolean.
+
+  While a [pathway experiment](/agents/environments#force-promote-during-a-pathway-experiment) compares a pathway with this agent, a promotion without `force` returns `409 ROLLOUT_IN_PROGRESS`. With `force`, production moves to the new version and becomes the experiment's new variant. The traffic split does not change, but comparisons with the control may no longer be reliable.
+</ParamField>
+
+<ParamField body="expected_staging_version_id" type="string">
+  The staging version you reviewed. If staging points at a different version when the promotion runs, the request returns `409 STAGING_CHANGED` and nothing moves. Returns `400 INVALID_EXPECTED_STAGING_VERSION` if it is an empty string.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.bland.ai/v2/agents/{agent_id}/promote \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "force": true,
+    "expected_staging_version_id": "46201abd-c8e6-4095-a65f-d5135a673627"
+  }'
+```
+</RequestExample>
+
 ### Response
 
 <ResponseField name="data.semver" type="string">
@@ -33,7 +57,7 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when nothing has been published to staging yet.
+  `null` on success, or a list of error objects if the request failed. Returns `400 STAGING_UNPINNED` when nothing has been published to staging yet, `409 ROLLOUT_IN_PROGRESS` when a pathway experiment uses this agent and `force` is not set, and `409 STAGING_CHANGED` when staging no longer matches `expected_staging_version_id`.
 </ResponseField>
 
 <ResponseExample>
