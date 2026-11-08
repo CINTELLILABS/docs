@@ -6,9 +6,11 @@ description: "Transfer an in-progress call to a different phone number."
 
 ## Overview
 
-Transfers an active call to a different phone number while the call is in progress. The current call leg is replaced with a `<Dial>` to the new number, no announcement is played to either party.
+Transfers an active call to a different phone number while the call is in progress. No announcement is played to either party.
 
-Only calls in `queue_status: "started"` are eligible. Once transferred, the call record's `transferred_to` field is updated so the new number appears in call details.
+Calls on Bland's carrier network transfer the same way an agent's own transfer does. Where the carrier supports it, the transfer target sees the caller's number. For these calls, the response confirms that the transfer was initiated.
+
+Only calls in `queue_status: "started"` are eligible. A call that has already ended returns `400` with a `NOT_FOUND` error. Once the transfer succeeds, the call record's `transferred_to` field is updated so the new number appears in call details.
 
 ---
 
@@ -35,7 +37,7 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 ## Response
 
 <ResponseField name="data.message" type="string">
-  Confirmation message including the `call_id` and the destination number.
+  Confirmation message including the `call_id` and the destination number. For calls on Bland's carrier network, the message states that the transfer was initiated.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
@@ -47,6 +49,15 @@ Only calls in `queue_status: "started"` are eligible. Once transferred, the call
 {
   "data": {
     "message": "Call 29f01d00-5197-4b83-bc0f-161e14533a78 transferred to +12223334444 successfully"
+  },
+  "errors": null
+}
+```
+
+```json Response (Bland carrier network)
+{
+  "data": {
+    "message": "Call 29f01d00-5197-4b83-bc0f-161e14533a78 transfer to +12223334444 initiated"
   },
   "errors": null
 }
