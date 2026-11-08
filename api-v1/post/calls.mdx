@@ -10,6 +10,8 @@ Send an AI phone call with a custom objective and actions. This endpoint can be 
 
 <Note>
 International calls need a completed purchase: buy at least $5 of credits in the [dashboard](https://app.bland.ai/dashboard/pay) under Billing, or turn on auto-recharge. Numbers on the [Agent Phone Plan](/platform/agent-phone-plan) call the US and Canada only, regardless of your credit balance.
+
+If a destination country isn't enabled or is blocked for your account, the request returns a 400 with `CALL_GEO_BLOCK` or `CALL_GEO_SPECIFIC_DENY` in `errors[0].error`. The message names the country and the next step.
 </Note>
 
 ## Choose what runs your call
@@ -1959,6 +1961,40 @@ curl --request POST https://api.bland.ai/v1/calls \
   </ResponseField>
   ### Business Logic Errors
 
+  <ResponseField name="400 - Destination Country Not Enabled" type="object">
+    Calls to the destination country aren't enabled for your account. Buying credits doesn't enable the country. To call it, [connect your own Twilio account](/tutorials/custom-twilio) with calling to that country enabled, or email hello@bland.ai to request access.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Calls to Thailand (+66) aren't enabled for your account, and buying credits won't enable them. To call this country, connect your own Twilio account with calling to it enabled (https://docs.bland.ai/tutorials/custom-twilio), or email hello@bland.ai to request access.",
+      "errors": [
+        {
+          "error": "CALL_GEO_BLOCK",
+          "message": "Calls to Thailand (+66) aren't enabled for your account, and buying credits won't enable them. To call this country, connect your own Twilio account with calling to it enabled (https://docs.bland.ai/tutorials/custom-twilio), or email hello@bland.ai to request access."
+        }
+      ]
+    }
+    ```
+
+    If Bland can't identify the destination country, the response also uses `CALL_GEO_BLOCK`. In that case, the message asks you to check that the number is correct and includes the country code.
+  </ResponseField>
+  <ResponseField name="400 - Destination Country Blocked" type="object">
+    Calls to the destination country are blocked for your account. If you think this is a mistake, contact support at hello@bland.ai.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Calls to Israel (+972) are blocked for your account. If you think this is a mistake, contact support at hello@bland.ai.",
+      "errors": [
+        {
+          "error": "CALL_GEO_SPECIFIC_DENY",
+          "message": "Calls to Israel (+972) are blocked for your account. If you think this is a mistake, contact support at hello@bland.ai."
+        }
+      ]
+    }
+    ```
+  </ResponseField>
   <ResponseField name="402 - No Billing Record" type="object">
     No billing record found for your account.
 
