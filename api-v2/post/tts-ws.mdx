@@ -228,7 +228,7 @@ Exactly one terminal message is sent for each started turn.
 }
 ```
 
-`context_id` is present when the error belongs to one turn. Some message errors leave the session open. Session-level protocol, idle, and slow-consumer errors close it.
+`context_id` is present when the error belongs to one turn. Some message errors leave the session open. Session-level protocol, idle, and slow-consumer errors close it. An `insufficient_credits` error also closes the session, even though it names the refused turn's `context_id`.
 
 ### `done`
 
@@ -260,7 +260,7 @@ The session has settled and is about to close normally.
 | `unsupported_encoding` | Session | The requested encoding is not supported. |
 | `unsupported_sample_rate` | Session | The sample rate is invalid for the encoding. |
 | `context_overflow` | Turn | One turn exceeded 4,000 characters. |
-| `insufficient_credits` | Turn | The current turn was refused because the account is out of credits. |
+| `insufficient_credits` | Turn and session | The account is out of credits. Bland refuses the turn, sends no audio for it, and closes the WebSocket. |
 | `rate_limited` | Session | The organization has no available speech concurrency slot. |
 | `idle_timeout` | Session | No client message arrived for 60 seconds. |
 | `slow_consumer` | Session | The client did not read audio fast enough. |
@@ -269,7 +269,8 @@ The session has settled and is about to close normally.
 ## Billing and concurrency
 
 - The connection occupies one speech concurrency slot from successful `init` until it closes, including gaps between turns.
-- The wallet is checked again before every turn.
+- The wallet is checked again for every turn. Synthesis starts while the check runs, but Bland holds the turn's `utterance_start` and audio until the check passes.
+- If a turn's wallet check fails, Bland sends an `insufficient_credits` error for that turn and closes the WebSocket. No audio from the refused turn is sent or charged. Add credits, then open a new connection.
 - Each turn is settled separately and has the current minimum charge of $0.001 when it delivers billable audio.
 - A synthesized text chunk becomes billable when the server accepts its first audio frame for delivery. Preemption or cancellation does not charge text that remained buffered or produced no audio.
 - Character attribution is estimated at synthesized-chunk granularity. Bland cannot map individual audio frames back to exact source characters.
