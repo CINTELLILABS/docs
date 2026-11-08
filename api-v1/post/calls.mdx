@@ -467,6 +467,99 @@ curl --request POST https://api.bland.ai/v1/calls \
   ```
 </ParamField>
 
+<ParamField body="warm_transfer_fields" type="object">
+  Turns the agent's transfers into [warm transfers](/tutorials/warm-transfer). Instead of connecting the caller directly, Bland first calls the transfer destination, briefs the person who answers, and then merges the calls.
+
+  Applies to transfers to `transfer_phone_number` and to any `transfer_list` label without its own entry in `transfer_list_warm`.
+
+  <Expandable title="properties">
+    <ParamField body="isEnabled" type="boolean" required>
+      Set to `true` to use warm transfer. Set to `false` to force a cold transfer, even when a persona enables warm transfer.
+    </ParamField>
+    <ParamField body="agentPrompt" type="string" required>
+      What the AI tells the human agent during the briefing call. Supports variables such as `{{call_summary}}`.
+    </ParamField>
+    <ParamField body="isAgentPromptStatic" type="boolean" default="false">
+      When `true`, the AI says `agentPrompt` word for word. When `false`, the AI treats it as instructions.
+    </ParamField>
+    <ParamField body="mergeCallPrompt" type="string" required>
+      What the AI says to both parties when the calls merge.
+    </ParamField>
+    <ParamField body="isMergeCallPromptStatic" type="boolean" default="false">
+      When `true`, the AI says `mergeCallPrompt` word for word. When `false`, the AI treats it as instructions.
+    </ParamField>
+    <ParamField body="useCustomHoldMusic" type="boolean" default="true">
+      Plays hold music to the caller while the AI briefs the human agent.
+    </ParamField>
+    <ParamField body="holdMusicUrl" type="string">
+      Public URL of the hold music file. Leave empty to play Bland's default hold music.
+    </ParamField>
+    <ParamField body="fromNumber" type="string">
+      Caller ID for the briefing call, in E.164 format. Defaults to one of your outbound numbers.
+    </ParamField>
+    <ParamField body="dtmfSequence" type="string">
+      Digits to dial after the briefing call connects. Use `w` for a half-second pause, for example `w54`.
+    </ParamField>
+    <ParamField body="allowMergeControl" type="boolean" default="false">
+      Lets the human agent decide when to merge the calls instead of merging right after the briefing.
+    </ParamField>
+    <ParamField body="optimizeForIVR" type="boolean">
+      Makes the briefing call wait through phone menus, hold queues, and voicemail greetings.
+    </ParamField>
+    <ParamField body="useTimeout" type="boolean">
+      Set to `true` to apply `timeout`.
+    </ParamField>
+    <ParamField body="timeout" type="number">
+      Seconds to wait for a human agent before giving up on the transfer, from 30 to 3600. Requires `useTimeout`.
+    </ParamField>
+    <ParamField body="useVoicemailMessage" type="boolean" default="true">
+      Plays `voicemailMessage` to the caller when no human agent is reached.
+    </ParamField>
+    <ParamField body="voicemailMessage" type="string">
+      Message the AI says to the caller when no human agent is reached.
+    </ParamField>
+  </Expandable>
+
+  Example:
+
+  ```json
+  {
+    "transfer_phone_number": "+12223334444",
+    "warm_transfer_fields": {
+      "isEnabled": true,
+      "agentPrompt": "Introduce yourself and summarize the call in one or two sentences: {{call_summary}}",
+      "mergeCallPrompt": "Let the caller know a specialist is joining who has been briefed on their situation."
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="transfer_list_warm" type="object">
+  Warm transfer settings for individual `transfer_list` labels. Each key must match a label in `transfer_list`. Each value takes the same properties as `warm_transfer_fields`.
+
+  Labels without an entry here use `warm_transfer_fields`, or a cold transfer if that is not set.
+
+  ```json
+  {
+    "transfer_list": {
+      "sales": "+12223334444",
+      "support": "+12225556666"
+    },
+    "transfer_list_warm": {
+      "support": {
+        "isEnabled": true,
+        "agentPrompt": "Brief the support agent on the caller's issue: {{call_summary}}",
+        "mergeCallPrompt": "Introduce the support agent to the caller.",
+        "timeout": 60,
+        "useTimeout": true
+      }
+    }
+  }
+  ```
+
+  Invalid warm transfer settings return a `400` error with `INVALID_WARM_TRANSFER` and the name of the field that failed.
+</ParamField>
+
 <ParamField body="max_duration" default="30" type="integer">
   When the call starts, a timer is set for the `max_duration` minutes. At the end of that timer, if the call is still active it will be automatically ended.
 
