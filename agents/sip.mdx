@@ -42,7 +42,7 @@ Each trunk has its own page with call volume, answer rate, and three tabs: **Ove
 
 **[2] Create a trunk**
 
-Click **"Add trunk"** to launch the SIP Setup Wizard. The wizard walks you through your provider, endpoint, firewall, and authentication, then leaves you with a live trunk.
+Click **"Create trunk"** to launch the SIP Setup Wizard. The wizard walks you through your provider, endpoint, firewall, and authentication, then leaves you with a live trunk.
 
 **[3] Attach numbers and DIDs**
 
@@ -65,7 +65,7 @@ curl -X POST https://api.bland.ai/v1/calls \
 
 ## SIP Setup Wizard
 
-The SIP Setup Wizard provides a guided, step-by-step experience for standing up a trunk. Access it by clicking **"Add trunk"** on the SIP tab.
+The SIP Setup Wizard provides a guided, step-by-step experience for standing up a trunk. Access it by clicking **"Create trunk"** on the SIP tab.
 
 Every step can also be done programmatically. See the expandable **API** sections under each step, or jump to the full [API Reference](#api-reference).
 
@@ -76,7 +76,7 @@ The API is unchanged and still takes both, so a trunk created with `POST /v1/sip
 </Note>
 
 <Warning>
-The trunk is created at the **Authentication** step, not at the end. The button there reads **Save trunk**, and pressing it writes the trunk before you have picked a single number.
+The trunk is created at the **Authentication** step, not at the end. The button there reads **Create trunk**, and pressing it writes the trunk before you have picked a single number.
 
 Leaving after that point leaves a real trunk behind with nothing attached to it.
 </Warning>
@@ -85,6 +85,7 @@ Leaving after that point leaves a real trunk behind with nothing attached to it.
 
 Enter your SIP provider's endpoint address. The wizard includes a **provider catalog** with guided instructions for popular platforms:
 
+- **Twilio**: Elastic SIP Trunking termination URI
 - **Vonage**: SIP endpoint
 - **Asterisk / FreePBX**: Public IP or hostname
 - **3CX**: SIP trunk FQDN
@@ -92,6 +93,8 @@ Enter your SIP provider's endpoint address. The wizard includes a **provider cat
 - **RingCentral**: SIP endpoint
 - **Microsoft Teams**: Requires a certified SBC (direct connection not supported)
 - **Other**: Any standard SIP endpoint
+
+For Bandwidth, Five9, and NICE CXone, follow the step-by-step [SIP integrations](/agents/sip-integrations/overview) guides.
 
 {/* IMAGE: the wizard Provider step, showing the provider catalog and the SIP server address input. Step 1 of 6 now, not 2. */}
 
@@ -245,13 +248,11 @@ The trace shows the INVITE / 100 Trying / 180 Ringing / 200 OK / ACK flow with f
 
 ### Advanced configuration
 
-From a number's configuration you can also manage:
+[`PATCH /v1/sip/config`](/api-v1/patch/sip-config) saves failover servers, codec preferences, and alert thresholds for a number. Bland stores these settings but does not apply them to calls yet, and there is no dashboard control for them:
 
-- **Failover**: primary, secondary, and tertiary SIP servers with automatic failover triggers (unreachable, auth failure, timeout) and failback mode (auto/manual).
-- **Codecs**: reorder and enable/disable codecs (PCMU, PCMA, Opus, G.722, G.729) with optional transcoding.
-- **Alerts**: thresholds for unreachable duration, failure rate, and response time, with email, SMS, and webhook channels.
-
-Set these with [`PATCH /v1/sip/config`](/api-v1/patch/sip-config).
+- Calls use the single endpoint on the trunk. There is no automatic failover to a secondary server.
+- Calls use Bland's standard codec list (see [Requirements and Security](#requirements-and-security)), whatever order you save.
+- No SIP-specific alerts are sent.
 
 ## Transferring Calls over SIP
 
@@ -281,7 +282,11 @@ You choose how the transfer is delivered:
 
 ### Custom headers on transfers
 
-Headers on a transfer come from the trunk's **outbound** header mapping, set on the trunk's **Headers** tab or with the `headers` object in [`POST /v1/sip/attach`](/api-v1/post/sip-attach). Each entry maps a call variable to a SIP header name. If the trunk has no outbound header mapping, no custom headers are sent on any transfer method.
+Headers on a transfer come from the trunk's **outbound** header mapping, set in the **Headers** section of the trunk's **Configure** tab or with the `headers` object in [`POST /v1/sip/attach`](/api-v1/post/sip-attach). Each entry maps a call variable to a SIP header name. If the trunk has no outbound header mapping, no custom headers are sent on any transfer method.
+
+- **Header names get an `X-` prefix.** A name that does not start with `X-` is sent as `X-<name>`, and a leading `x_` becomes `X-`. `User-to-User`, `Remote-Party-ID`, `P-Preferred-Identity`, and `P-Called-Party-ID` are sent as written.
+- **Up to 15 headers** per direction.
+- **Numbers inherit the trunk's headers.** Saving the trunk's header mapping updates every number bound to it.
 
 ### Troubleshooting transfers
 
@@ -428,7 +433,7 @@ For your region:
 - Allow **UDP 16384 to 32768** to and from the media IPs, or audio will not flow.
 - Allow inbound SIP over TLS from **all six IPs**, signaling and media, to your SBC's SIP TLS port, and configure all six as trusted SIP peers on the SBC. A firewall rule alone is not enough: an SBC that accepts the connection but does not recognize the source as a peer rejects the `INVITE` with `403 Forbidden`.
 
-You can also copy the list from the **Firewall & Ports** panel on the trunk page, or fetch it with [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips).
+You can also copy the list from the **Firewall** section of the trunk's **Configure** tab, or fetch it with [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips).
 
 <Note>
   Whitelisting is mutual: Bland allow-lists your source ranges, and you allow-list Bland's signaling and media IPs.
@@ -452,8 +457,8 @@ You can also copy the list from the **Firewall & Ports** panel on the trunk page
 
 **Codecs**
 
-- PCMU (G.711 μ-law), PCMA (G.711 A-law), Opus, G.722
-- G.729 available via advanced configuration
+- Opus, G.722, PCMU (G.711 μ-law), PCMA (G.711 A-law)
+- G.729 is not supported
 
 **Signaling details**
 
@@ -534,6 +539,9 @@ Docs for agents: [llms.txt](/llms.txt)
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="SIP integrations" icon="plug" href="/agents/sip-integrations/overview">
+    Step-by-step guides for Bandwidth, Five9, and NICE CXone.
+  </Card>
   <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
     Phone numbers, channels, and batches.
   </Card>

@@ -1,0 +1,104 @@
+---
+title: 'Five9'
+description: 'Send Five9 calls to a Bland agent over SIP and transfer callers back to your Five9 agents'
+---
+
+Put a Bland agent in front of, or alongside, your Five9 contact center. Five9 routes calls to Bland over a SIP trunk, the Bland agent handles the conversation, and when a person is needed Bland transfers the caller back into Five9.
+
+<Info>
+**Five9 AI Agent Connect partner.** Bland is an accredited Five9 AI Agent Connect partner. The SIP connection between Five9 and Bland is built and tested in Five9's partner environment and reused for each customer, so a new deployment does not need a new trunk design.
+</Info>
+
+## What you'll need
+
+- A Five9 contact center (VCC) account, and your Five9 account team.
+- A Bland account with SIP trunking enabled. If you don't see a **SIP** tab under **Phone numbers**, contact Bland support to turn it on.
+- A Bland agent ready to answer the calls. Build it before testing so the interop test exercises the real conversation.
+
+## Supported calling features
+
+| Feature | Supported |
+|---|---|
+| Calls from Five9 to your Bland agent | Yes |
+| Transfers from your Bland agent back to Five9 | Yes |
+| Passing call data to Five9 in SIP headers | Yes |
+| DTMF (RFC 2833) | Yes |
+
+## How the connection works
+
+```text
+Caller ──> Five9 ──SIP/TLS──> Bland agent ──transfer──> Five9 skill or agent
+```
+
+- **Five9 to Bland:** your Five9 IVR script sends the call to a number that routes over the SIP trunk to Bland. Bland answers it with the agent assigned to that number.
+- **Bland back to Five9:** a Transfer Call node sends the caller to a Five9 number. Bland places a new `INVITE` to Five9 over the same trunk and bridges the audio.
+- **Security:** signaling uses TLS on port 5061 and media uses SRTP. Five9 recommends TLS, and Bland accepts TLS only.
+
+## Order AI Agent Connect from Five9
+
+1. Contact your **Five9 account team** and ask for a quote for **AI Agent Connect** with Bland as the AI agent partner. If you are not a Five9 customer yet, your Bland account team can register the opportunity with Five9.
+2. Once ordered, Five9 opens a project. Five9 Professional Services works with you on the IVR script that sends calls to Bland and receives them back.
+3. Tell your Bland account team that the Five9 project has started, and which Bland organization the numbers belong to. Bland coordinates the SIP side with Five9 directly.
+
+<Note>
+Some existing deployments use a dedicated SIP trunk ordered through Five9 Professional Services ("bring your own SIP"), configured with the Five9 SIP Workbook. That path still works, but Five9 has noted that it does not include a transfer module. If you are starting fresh, use AI Agent Connect.
+</Note>
+
+## Configure Five9
+
+Five9 Professional Services and your Five9 administrator do this part. Give them these Bland values:
+
+| Setting | Value |
+|---|---|
+| Bland SIP endpoint | Your region's endpoint, for example `us2.sip.bland.ai`. See [Connection Endpoints](/agents/sip#connection-endpoints) |
+| Transport and port | TLS 1.2 or higher, TCP port `5061` |
+| Media | SRTP (`AES_CM_128_HMAC_SHA1_80`), UDP `16384` to `32768` |
+| Bland IPs to trust | All six IPs for your region, signaling and media, as SIP peers |
+| Bland certificate | Let's Encrypt. The ISRG Root X1 CA must be trusted on the Five9 side |
+| Number format | E.164 (`+15551234567`) or 10-digit. Bland accepts both |
+
+Then, in Five9:
+
+1. Label the numbers that should reach Bland so they route over the Bland SIP trunk, not over the PSTN.
+2. In your IVR script, send calls to those numbers at the point where the Bland agent should take over.
+3. Give Bland the Five9 numbers (or skills) your agent should transfer callers back to.
+
+## Configure Bland
+
+1. Send your Bland account team the numbers Five9 will route to Bland. Bland attaches them to your organization on the Five9 SIP connection, and allow-lists Five9's SIP addresses.
+2. Assign an agent to each number. At **All agents**, go to **Dispatch**, then **Phone numbers**, find the number, click **Configure**, and under **Assignment** select the agent.
+3. In the agent, add a **Transfer Call** node that sends the caller to the Five9 number from step 3 above. For how transfers behave on SIP calls, see [Transferring Calls over SIP](/agents/sip#transferring-calls-over-sip).
+4. To pass data to the Five9 agent (for example an account number or the reason for the call), map call variables to SIP headers on the trunk's outbound header mapping. See [Custom headers on transfers](/agents/sip#custom-headers-on-transfers).
+
+## Test before go-live
+
+Five9 requires a successful interop test before it allows go-live. Plan for:
+
+- **Real test numbers.** Use numbers labeled for the Bland SIP trunk on your Five9 domain. Five9 does not accept Twilio numbers or Five9-owned numbers as test numbers.
+- **Every call path.** When Five9 assigns a primary and a secondary SBC, test calls through both, so failover is proven before you need it.
+- **The whole call.** Check two-way audio, DTMF, hold, and a transfer back to a live Five9 agent.
+- **A Five9 user logged in as an agent** during the test, so transfers back to Five9 have someone to land on.
+
+Open each test call's [SIP trace](/agents/sip#inspect-a-call-sip-trace) on the trunk's **Overview** tab in Bland to compare with Five9's logs.
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to check |
+|---|---|---|
+| Five9's SIP OPTIONS ping to Bland times out | Five9's SBC is not allow-listed at Bland, or is pinging over UDP or port 5060 | Confirm Bland has the current Five9 SBC IPs, and that Five9 sends TLS to port `5061` |
+| Call rejected with `603 Decline` | The number is not attached to your Bland organization | Send the number to your Bland account team to attach it |
+| Call goes to Five9 voicemail or stays inside Five9 | The number is still an internal Five9 inbound number | Re-label the number in Five9 so it routes out the Bland SIP trunk |
+| Test calls go over the public phone network instead of the trunk | The test number is not routed over the trunk on both sides | Label the number for the Bland trunk in Five9, and confirm it is attached in Bland |
+| `481 Call/Transaction Does Not Exist` mid-call | Five9 has the same Bland IPs on more than one trunk | Ask Five9 to keep the Bland IPs on a single trunk |
+| Call connects but there's no audio | SRTP not enabled, or Bland's media IPs not trusted | Enable SRTP toward Bland, and trust all six Bland IPs for your region |
+| Transfer back to Five9 fails or lands in the wrong queue | The transfer number is not routed to a skill in the Five9 script | Check the Five9 IVR script for the transfer number, and confirm a Five9 agent with that skill is logged in |
+
+<Note>
+Five9 moved its edge SBC certificates to the DigiCert X9 Financial PKI root on October 28, 2026. Bland does not need any change for this. If your own SBC sits between Five9 and Bland, make sure it trusts the new root.
+</Note>
+
+## Resources
+
+- Five9 AI Agent Connect: ask your Five9 account team
+- [SIP](/agents/sip): Bland's full SIP reference, including regions, IPs, and security requirements
+- [Transferring Calls over SIP](/agents/sip#transferring-calls-over-sip)
