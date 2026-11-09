@@ -1,0 +1,73 @@
+---
+title: 'Network and security'
+description: "Bland's regional SIP endpoints and IPs, what to allow-list on your firewall, and the TLS, SRTP, and codec requirements"
+---
+
+## Connection endpoints
+
+Bland operates regional SIP edges. Connect to the endpoint closest to your infrastructure, and allow-list **both** its signaling and media IPs in your firewall. These IPs are static and do not change.
+
+Bland separates **signaling** from **media**, and they use different IP addresses:
+
+- **Signaling (calls you send to Bland):** SIP runs **exclusively over TLS on TCP port 5061**. There is no plaintext UDP/5060 listener. Each region has **two signaling IPs** (one per availability zone) behind its FQDN for high availability. Send SIP to the FQDN and it balances across both.
+- **Media (RTP):** Audio is carried over **SRTP** on a **separate set of media IPs** per region, over UDP ports **16384 to 32768**.
+- **Calls Bland places to you:** When Bland's SIP infrastructure originates an `INVITE` toward your SBC, for example a [transfer](/agents/sip-transfers) or a warm transfer consult call, the TLS connection comes from one of the region's **media IPs**, not from a signaling IP.
+
+| Region | Endpoint (TLS 5061) | Signaling IPs (SIP you send to Bland) | Media IPs (RTP, and SIP over TLS that Bland sends to you) |
+|--------|---------------------|---------------|-----------------|
+| United States | `us2.sip.bland.ai` | `35.82.60.77`, `52.27.163.2` | `52.13.231.129`, `35.160.144.213`, `44.234.13.26`, `54.218.96.252` |
+| Canada | `ca2.sip.bland.ai` | `15.156.129.66`, `15.157.196.128` | `3.96.68.79`, `35.183.80.246`, `52.60.169.171`, `16.54.43.127` |
+| Asia-Pacific | `asia2.sip.bland.ai` | `32.236.162.210`, `3.104.20.26` | `3.104.151.70`, `15.134.58.75`, `52.62.109.3`, `54.79.10.189` |
+| Europe | `eu2.sip.bland.ai` | `52.17.235.44`, `34.250.51.24` | `3.248.61.228`, `54.194.194.135`, `52.215.80.226`, `108.132.103.51` |
+
+Connect using the full SIP URI for your region. For example `us2.sip.bland.ai:5061;transport=tls`.
+
+## Firewall allow-list
+
+For your region:
+
+- Allow outbound **TLS 5061** from your SBC to the signaling IPs.
+- Allow **UDP 16384 to 32768** to and from the media IPs, or audio will not flow.
+- Allow inbound SIP over TLS from **all six IPs**, signaling and media, to your SBC's SIP TLS port, and configure all six as trusted SIP peers on the SBC. A firewall rule alone is not enough: an SBC that accepts the connection but does not recognize the source as a peer rejects the `INVITE` with `403 Forbidden`.
+
+You can also copy the list from the **Firewall** section of the trunk's **Configure** tab, or fetch it with [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips).
+
+<Note>
+  Whitelisting is mutual: Bland allow-lists your source ranges, and you allow-list Bland's signaling and media IPs.
+</Note>
+
+<Warning>
+  Match Bland by **source IP**, not by the `Via` or `Contact` header. On an `INVITE` that Bland originates, those headers carry a signaling IP while the connection itself comes from a media IP.
+</Warning>
+
+## Requirements and security
+
+**Transport**
+
+- SIP signaling: **TLS 1.2 or higher**, TCP port **5061** only. UDP and plaintext 5060 are not accepted.
+- Ensure the [Let's Encrypt](https://letsencrypt.org/certificates/) ISRG Root X1 CA is installed, [downloadable here](https://letsencrypt.org/certs/isrgrootx1.pem).
+
+**Media**
+
+- **SRTP** using `AES_CM_128_HMAC_SHA1_80`.
+- RTP over UDP ports **16384 to 32768**; RTCP uses RTP port + 1.
+
+**Codecs**
+
+- Opus, G.722, PCMU (G.711 μ-law), PCMA (G.711 A-law)
+- G.729 is not supported
+
+**Signaling details**
+
+- Methods: `INVITE`, `ACK`, `BYE`, `CANCEL`, `OPTIONS`, `REFER`
+- DTMF: RFC 2833 (out-of-band via RTP telephone-event)
+- Number format: E.164 for PSTN; DIDs and extensions supported on trunk-bound numbers
+- Authentication: IP-based (default) or SIP REGISTER digest auth. On calls Bland places to you, Bland answers a `401` or `407` digest challenge with the trunk's outbound call credentials
+
+## Limits
+
+- Up to **100 numbers** per attach request.
+- Each number has one inbound and one outbound configuration.
+- Test calls are limited to **10 per 15 minutes** per organization.
+- One endpoint discovery runs per organization at a time.
+- Health checks probe outbound endpoints with SIP OPTIONS. An inbound-only configuration shows as "unchecked" because there is no outbound endpoint to probe.

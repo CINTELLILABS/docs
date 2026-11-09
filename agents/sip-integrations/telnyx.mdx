@@ -1,0 +1,111 @@
+---
+title: 'Telnyx'
+description: 'Connect your Telnyx numbers to a Bland agent over SIP with an FQDN connection, TLS, and SRTP'
+---
+
+Use your Telnyx phone numbers with a Bland agent. Telnyx sends inbound calls to Bland over a SIP connection, and Bland places outbound calls through Telnyx with your SIP credentials. Both directions use TLS signaling and SRTP media.
+
+<Note>
+This guide uses the Telnyx Mission Control Portal settings documented by Telnyx. Telnyx has not published a Bland-specific guide. Menu labels in the portal can change, so match by field name if a label differs.
+</Note>
+
+## What you'll need
+
+- A Telnyx account with the numbers you want to use, and an outbound voice profile for outbound calls
+- A Bland account with SIP trunking enabled. If you don't see a **SIP** tab under **Phone numbers**, contact Bland support to turn it on.
+
+## Supported calling features
+
+| Feature | Supported |
+|---|---|
+| Inbound calls to your agent | Yes |
+| Outbound calls from your agent | Yes |
+| Transfers from your agent | Yes, as a new call through Telnyx |
+
+## Configure Telnyx
+
+### Create an FQDN connection
+
+Use an **FQDN** connection. Telnyx only sends inbound calls over TLS on IP, FQDN, and Microsoft Teams connections.
+
+1. In the Mission Control Portal, go to **Voice**, then **SIP Trunking**, and add a SIP connection of type **FQDN**.
+2. Under **Authentication and routing**, click **Add FQDN** and enter:
+
+   | Field | Value |
+   |---|---|
+   | DNS record type | `A` |
+   | FQDN | Your Bland region, for example `us2.sip.bland.ai` |
+   | Port | `5061` |
+
+   The other Bland regions are under [Connection endpoints](/agents/sip-network#connection-endpoints).
+3. Under **Inbound calls routing**, select the Bland FQDN you added.
+
+### Set inbound options
+
+On the connection's **Inbound** tab:
+
+| Field | Value | Why |
+|---|---|---|
+| SIP transport protocol | **TLS** | Bland accepts TLS on port 5061 only |
+| Encrypted media | **SRTP** | Bland requires SRTP. Telnyx turns encryption off by default |
+| Number format (DNIS) | **+E.164** | Bland matches the called number in full E.164, with the `+` |
+| Number format (ANI) | **+E.164** | Your agent sees the caller in full E.164 |
+| SIP region | The region nearest your Bland endpoint | For example **Europe** for `eu2.sip.bland.ai` |
+| SIP subdomain | Leave empty | Telnyx does not allow TLS on subdomain calls |
+
+### Create outbound credentials
+
+Skip this section if you only need inbound calls.
+
+1. Under **Authentication and routing**, then **Outbound calls authentication**, set the method to **Credentials** and enter a username and password. You enter the same values in Bland.
+2. On the connection's **Outbound** tab, select an **Outbound Voice Profile** that allows the destinations you will call. Set **Localization country** if you dial outside the US.
+
+### Assign your numbers
+
+Go to **Numbers**, then **My Numbers**, and set each number's connection to the FQDN connection you created.
+
+## Configure Bland
+
+1. At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab, and click **Create trunk**.
+2. Complete the [setup wizard](/agents/sip-setup):
+   - **Provider**: choose **Other**, and enter the Telnyx SIP host for your region with port `5061`:
+
+     | Region | Telnyx host |
+     |---|---|
+     | US | `sip.telnyx.com:5061` |
+     | Canada | `sip.telnyx.ca:5061` |
+     | Europe | `sip.telnyx.eu:5061` |
+     | Australia | `sip.telnyx.com.au:5061` |
+
+   - **Firewall**: Telnyx reaches Bland over the public internet with no firewall of yours in between. Check the box and continue.
+   - **Authentication**: choose **IP-based**, and leave **Outbound routing** on **Via Bland's carrier**. Under **Outbound call credentials**, enter the Telnyx outbound username and password. Then click **Create trunk**.
+   - **Numbers**: add each Telnyx number in E.164 format with a leading `+`, for example `+13125550100`.
+3. Assign an agent to each number under **Phone numbers**, then **Configure**, then **Assignment**.
+
+To place an outbound call from the API, use the number as `from` in [`POST /v1/calls`](/api-v1/post/calls).
+
+## Caller ID on outbound calls
+
+Telnyx validates the caller ID on every outbound call. It rejects an invalid caller ID with `403 Caller Origination Number is Invalid`, and requires E.164 for calls that cross borders. Call from a number on your Telnyx account, in E.164 format.
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to check |
+|---|---|---|
+| Inbound calls never reach Bland | Transport is UDP, or the number isn't on the connection | Set SIP transport protocol to **TLS** with port `5061`, and assign the number to the FQDN connection |
+| Call rejected with `488` or fails right after answer | SRTP not enabled on one side | Set **Encrypted media** to **SRTP** on the Telnyx connection |
+| Inbound call challenged with `407 Proxy Authentication Required` | Telnyx sent the call from an IP Bland doesn't trust for your trunk | Confirm the trunk endpoint in Bland matches your Telnyx region, then contact Bland support with the call's SIP trace |
+| Call rejected with `603 Decline` | The number isn't attached in Bland, or arrives without the `+` | Attach the number in Bland, and set DNIS number format to **+E.164** in Telnyx |
+| Outbound calls rejected with `401` or `403` | Credential mismatch, or the destination isn't allowed | Check the username and password in Bland match Telnyx, and that your outbound voice profile allows the destination |
+| `403 Caller Origination Number is Invalid` | Caller ID failed Telnyx validation | Call from a Telnyx number in E.164 format |
+| `404` on outbound calls outside the US | Localization country isn't set | Set **Localization country** on the connection's Outbound tab |
+| TLS handshake fails | Certificate trust | Trust Let's Encrypt ISRG Root X1 for Bland's certificate |
+
+For anything else, open the call's [SIP trace](/agents/sip-setup#inspect-a-call-sip-trace) on the trunk's **Overview** tab.
+
+## Resources
+
+- [TLS and SRTP](https://support.telnyx.com/en/articles/4404575-tls-and-srtp) from Telnyx support
+- [SIP connection inbound and outbound settings](https://support.telnyx.com/en/articles/4404448-sip-connection-inbound-outbound-settings) from Telnyx support
+- [Outbound voice profiles](https://developers.telnyx.com/docs/voice/sip-trunking/configuration/outbound-voice-profiles) on the Telnyx developer site
+- [Network and security](/agents/sip-network): Bland's regions, IPs, and TLS and SRTP requirements

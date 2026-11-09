@@ -1,0 +1,111 @@
+---
+title: 'Number porting'
+description: 'Port numbers you own from another carrier to Bland with the porting wizard or API, and track each request'
+---
+
+Move phone numbers you own from another carrier to Bland. This lets you use your existing business numbers directly with Bland's SIP infrastructure without maintaining a separate SIP provider.
+
+## How porting works
+
+Number porting is a regulated process coordinated between carriers. It typically takes **7 to 14 business days** depending on the losing carrier and number type. The process follows these stages:
+
+| Status | Description |
+|--------|-------------|
+| `waiting_for_signature` | Port request created. A Letter of Authorization (LOA) needs to be signed. |
+| `submitted` | LOA signed and submitted to the losing carrier. |
+| `in_progress` | The losing carrier is processing the port. |
+| `completed` | Numbers have been ported successfully and are active on Bland. |
+| `canceled` | The port request was canceled. |
+| `failed` | The port request failed (for example, incorrect account information). |
+
+You can track port requests from the **Port a number** wizard, whose first step lists the ones currently in flight, or via the [API](/api-v1/get/sip-port-requests).
+
+<Note>
+There is no completed or historical view in the dashboard. The list inside the wizard shows active requests only, so a port that has finished, failed or been canceled disappears from it. The API returns the full set.
+</Note>
+
+## Port numbers from the dashboard
+
+Click **"Port a number"** on the SIP tab to launch the porting wizard.
+
+### Step 1: Enter numbers
+
+Enter the phone numbers you want to port and click **"Check portability"** to verify they can be transferred.
+
+{/* IMAGE: the porting wizard step 1, showing number entry, Check portability, and the in-flight requests list. */}
+
+The portability check verifies each number against the carrier database and returns whether the number is portable, the number type (mobile, landline, toll-free), and whether a PIN is required from the losing carrier.
+
+<Accordion title="API">
+  Check portability with [`GET /v1/sip/port/check`](/api-v1/get/sip-port-check):
+
+  ```bash
+  curl -X GET 'https://api.bland.ai/v1/sip/port/check?phone_numbers[]=%2B14150000000' \
+    -H "Authorization: Bearer <token>"
+  ```
+
+  Returns `portable` (boolean), `number_type`, and `pin_required` for each number.
+</Accordion>
+
+### Step 2: LOA information
+
+Provide the details needed for the Letter of Authorization:
+
+{/* IMAGE: the porting wizard LOA form, showing carrier details, service address, target port date and the proof upload. */}
+
+- **Authorized representative**: Name and email of the person authorized to port the numbers
+- **Service address**: The address on file with the losing carrier (must match their records)
+- **Target port date**: Earliest date for the port. The picker will not accept anything sooner than 4 days out.
+- **Proof of ownership**: Upload a utility bill or carrier invoice (PDF or image, max 10MB) showing the account name and service address
+
+<Accordion title="API">
+  Upload your proof of ownership document with [`POST /v1/sip/port/document`](/api-v1/post/sip-port-document):
+
+  ```bash
+  curl -X POST https://api.bland.ai/v1/sip/port/document \
+    -H "Authorization: Bearer <token>" \
+    -F "file=@/path/to/utility-bill.pdf"
+  ```
+
+  Returns a `document_sid` to reference when initiating the port.
+</Accordion>
+
+### Step 3: Confirm and submit
+
+Review all details and submit. You'll receive an email with the LOA for electronic signature. Once signed, the port request is submitted to the losing carrier.
+
+The signing link is good for 30 days. A request whose LOA goes unsigned past that has to be started again.
+
+After the port completes, your numbers are automatically registered as inbound numbers on Bland and ready to use.
+
+<Accordion title="API">
+  Submit the port request with [`POST /v1/sip/port/initiate`](/api-v1/post/sip-port-initiate):
+
+  ```bash
+  curl -X POST https://api.bland.ai/v1/sip/port/initiate \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "phone_numbers": ["+14150000000"],
+      "losing_carrier_information": {
+        "customer_type": "Business",
+        "customer_name": "Acme Corp",
+        "account_number": "ACC-12345",
+        "account_telephone_number": "+14150000000",
+        "authorized_representative": "Jane Doe",
+        "authorized_representative_email": "jane@acme.com",
+        "address": {
+          "street": "123 Main St",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94105",
+          "country": "US"
+        }
+      },
+      "target_port_in_date": "2026-03-20",
+      "documents": ["doc_abc123"]
+    }'
+  ```
+
+  Track progress with [`GET /v1/sip/port`](/api-v1/get/sip-port-requests) or cancel with [`DELETE /v1/sip/port/:id`](/api-v1/delete/sip-port-cancel).
+</Accordion>
