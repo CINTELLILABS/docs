@@ -4,34 +4,53 @@ sidebarTitle: 'Overview'
 description: 'Connect your own carrier, PBX, or contact center to Bland over SIP for inbound calls, outbound calls, and transfers'
 ---
 
-Bring your own carrier to Bland. Point calls from your carrier, PBX, or contact center at Bland to be answered by an agent, or have Bland place calls out through your SIP provider.
+SIP lets you bring your own carrier. Calls from your carrier, PBX, or contact center reach a Bland agent, and the agent places calls out through your SIP provider.
+
+You create a trunk, attach your numbers to it, and assign each number an agent.
 
 <Note>
-**SIP is organization scope only.** Find it at **All agents**, under **Dispatch**, then **Phone numbers**, then the **SIP** tab. Inside a single agent there is no Phone numbers item, so switch to **All agents** in the scope selector first.
+**SIP is organization scope only.** Inside a single agent there is no Phone numbers item. Switch the selector at the top of the sidebar to **All agents** first.
 </Note>
+
+## Where SIP lives
+
+At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab. It lists your trunks, and **Create trunk** and **Port a number** sit at the top right.
+
+Each trunk has its own page with three tabs:
+
+- **Overview**: call volume, answer rate, and the call log with each call's SIP trace
+- **Numbers**: the numbers and DIDs attached to the trunk
+- **Configure**: the trunk's endpoint, authentication, headers, and firewall details
 
 ## How it works
 
-```text
-Inbound:   Caller ──> your carrier or PBX ──SIP/TLS──> Bland agent
-Outbound:  Bland agent ──SIP/TLS──> your carrier or PBX ──> Callee
-```
+- A **trunk** holds the connection to your SIP infrastructure: the endpoint, transport, and authentication. You set it up once.
+- **Numbers and DIDs** attach to a trunk and inherit its settings. Each one can route inbound, outbound, or both. E.164 numbers, DIDs, and extensions are all supported.
+- **Signaling runs over TLS on port 5061, and audio over SRTP.** Bland does not accept plain UDP or port 5060.
 
-- **Trunks** hold the connection to your SIP infrastructure: the endpoint, transport, and authentication. You set them up once.
-- **Numbers and DIDs** attach to a trunk and inherit its settings. Each number can route inbound, outbound, or both. E.164 numbers, DIDs, and extensions are all supported.
-- **Security is required.** Signaling runs over TLS on port 5061 and audio over SRTP. Bland does not accept plain UDP or port 5060.
+## Prerequisites
 
-## Quick start
+- A carrier, PBX, or SBC that supports TLS signaling and SRTP media
+- The numbers you will route, on your own carrier. Numbers bought from Bland can't be attached to a trunk
+- Access to your firewall, to allow-list Bland's [signaling and media IPs](/agents/sip-network#connection-endpoints)
+
+## Connect your carrier
 
 <Steps>
   <Step title="Create a trunk">
-    On the **SIP** tab, click **Create trunk** and follow the [setup wizard](/agents/sip-setup). It asks for your provider's endpoint, checks it, and shows the IPs to allow-list.
+    On the **SIP** tab, press **Create trunk** and follow the [setup wizard](/agents/sip-setup). For Bandwidth, Twilio, Telnyx, 3CX, Five9, or NICE CXone, follow that provider's guide under **SIP integrations** in the sidebar instead.
   </Step>
-  <Step title="Attach numbers">
-    Add the numbers or DIDs that should route through the trunk, then assign an agent to each one under **Phone numbers**.
+
+  <Step title="Attach your numbers">
+    Add the numbers or DIDs that route through the trunk, on the wizard's last step or the trunk's **Numbers** tab.
   </Step>
-  <Step title="Place or receive a call">
-    Inbound calls to an attached number reach its agent. For outbound, use a trunk number as `from`:
+
+  <Step title="Assign an agent">
+    Under **Phone numbers**, press **Configure** on the number and pick the agent under **Assignment**.
+  </Step>
+
+  <Step title="Place a test call">
+    Call the number from a phone to test inbound. For outbound, use the number as `from`:
 
     ```bash
     curl -X POST https://api.bland.ai/v1/calls \
@@ -46,35 +65,7 @@ Outbound:  Bland agent ──SIP/TLS──> your carrier or PBX ──> Callee
   </Step>
 </Steps>
 
-## Guides
-
-<CardGroup cols={2}>
-  <Card title="Set up a trunk" icon="plug" href="/agents/sip-setup">
-    The setup wizard, attaching numbers and DIDs, and the SIP trace.
-  </Card>
-  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
-    SIP REFER, new INVITE, and warm transfers, with custom headers.
-  </Card>
-  <Card title="Number porting" icon="right-left" href="/agents/sip-porting">
-    Move numbers you own from another carrier to Bland.
-  </Card>
-  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
-    Regions, IPs to allow-list, and TLS, SRTP, and codec requirements.
-  </Card>
-</CardGroup>
-
-## Provider guides
-
-Step-by-step setup for specific carriers and contact centers. See all of them in [SIP integrations](/agents/sip-integrations/overview).
-
-<CardGroup cols={3}>
-  <Card title="Bandwidth" href="/agents/sip-integrations/bandwidth" />
-  <Card title="Twilio" href="/agents/sip-integrations/twilio" />
-  <Card title="Telnyx" href="/agents/sip-integrations/telnyx" />
-  <Card title="3CX" href="/agents/sip-integrations/3cx" />
-  <Card title="Five9" href="/agents/sip-integrations/five9" />
-  <Card title="NICE CXone" href="/agents/sip-integrations/nice-cxone" />
-</CardGroup>
+You know it worked when the call shows up on the trunk's **Overview** tab.
 
 ## API
 
@@ -91,6 +82,7 @@ Every SIP endpoint is under `/v1/sip` and authenticates with your API key. Param
     | `DELETE` | `/v1/sip/trunks/:id` | Delete a trunk |
     | `POST` | `/v1/sip/trunks/:id/test-connection` | Send a SIP OPTIONS reachability ping |
   </Accordion>
+
   <Accordion title="Numbers and configuration">
     | Method | Endpoint | Description |
     |---|---|---|
@@ -102,6 +94,7 @@ Every SIP endpoint is under `/v1/sip` and authenticates with your API key. Param
     | `GET` | [`/v1/sip/generate-password`](/api-v1/get/sip-generate-password) | Generate a strong SIP password |
     | `PATCH` | [`/v1/sip/config`](/api-v1/patch/sip-config) | Save advanced settings (not yet applied to calls) |
   </Accordion>
+
   <Accordion title="Discovery and testing">
     | Method | Endpoint | Description |
     |---|---|---|
@@ -111,6 +104,7 @@ Every SIP endpoint is under `/v1/sip` and authenticates with your API key. Param
     | `POST` | [`/v1/sip/test-call`](/api-v1/post/sip-test-call) | Send a test call to your endpoint |
     | `GET` | [`/v1/sip/test-call/status`](/api-v1/get/sip-test-call-status) | Get test call status and trace |
   </Accordion>
+
   <Accordion title="Monitoring">
     | Method | Endpoint | Description |
     |---|---|---|
@@ -119,6 +113,7 @@ Every SIP endpoint is under `/v1/sip` and authenticates with your API key. Param
     | `GET` | [`/v1/sip/status`](/api-v1/get/sip-status) | Get trunk health |
     | `GET` | [`/v1/sip/calls`](/api-v1/get/sip-calls) | Get SIP call logs |
   </Accordion>
+
   <Accordion title="Number porting">
     | Method | Endpoint | Description |
     |---|---|---|
@@ -129,5 +124,24 @@ Every SIP endpoint is under `/v1/sip` and authenticates with your API key. Param
     | `DELETE` | [`/v1/sip/port/:id`](/api-v1/delete/sip-port-cancel) | Cancel a port request |
   </Accordion>
 </AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Set up a trunk" icon="plug" href="/agents/sip-setup">
+    Walk through the setup wizard step by step.
+  </Card>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    Send callers to a DID, extension, or SIP URI.
+  </Card>
+  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
+    Regions, IPs to allow-list, and TLS and SRTP.
+  </Card>
+  <Card title="Number porting" icon="right-left" href="/agents/sip-porting">
+    Move numbers you own to Bland.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
 
 Docs for agents: [llms.txt](/llms.txt)

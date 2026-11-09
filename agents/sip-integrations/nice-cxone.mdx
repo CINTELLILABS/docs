@@ -3,104 +3,121 @@ title: 'NICE CXone'
 description: 'Connect your NICE CXone Business Unit to Bland through the NICE DEVone partner SIP trunk'
 ---
 
-Route calls from your NICE CXone contact center to a Bland agent. NICE and Bland already run a partner SIP trunk between CXone and Bland. To use it, you connect your CXone **Business Unit (BU)** to that trunk, then point numbers in your CXone routing at Bland.
+Route calls from your NICE CXone contact center to a Bland agent. NICE and Bland already run a partner SIP trunk between CXone and Bland. You connect your CXone Business Unit (BU) to that trunk, then point numbers in your CXone routing at Bland.
 
-<Info>
-**NICE DEVone partner.** Bland is a NICE DEVone technology partner. NICE built and tested the Bland trunk once, over TLS with SRTP, and adds each customer Business Unit to it. A new customer does not need a new trunk or a repeat of the end-to-end trunk testing.
-</Info>
+<Note>
+**NICE DEVone partner.** Bland is a NICE DEVone technology partner. NICE built and tested the Bland trunk once, over TLS with SRTP, and adds each customer Business Unit to it. A new customer doesn't need a new trunk or a repeat of the trunk testing.
+</Note>
 
-## What you'll need
+## What works
 
-- A NICE CXone account, with your **Business Unit number** and your **NICE Account Manager**.
-- Access to CXone Studio (or a NICE technical account manager who has it) to edit your routing script.
-- A Bland account with SIP trunking enabled. If you don't see a **SIP** tab under **Phone numbers**, contact Bland support to turn it on.
-- A Bland agent ready to answer the calls.
+- Calls from CXone to your agent
+- US and EU connections, through `us2.sip.bland.ai` and `eu2.sip.bland.ai`
+- Returning the caller to CXone, arranged per deployment. See [Return calls to CXone](#return-calls-to-cxone)
 
-## Supported calling features
+## Prerequisites
 
-| Feature | Supported |
-|---|---|
-| Calls from CXone to your Bland agent | Yes |
-| US and EU connections | Yes (`us2.sip.bland.ai` and `eu2.sip.bland.ai`) |
-| Returning the caller to CXone | Arranged per deployment. See [Return calls to CXone](#return-calls-to-cxone) |
+- A NICE CXone account, your **Business Unit number**, and your **NICE Account Manager**
+- Access to CXone Studio, or a NICE technical account manager who has it
+- A Bland account with SIP trunking enabled. If there is no **SIP** tab under **Phone numbers**, contact Bland support
 
-## How the connection works
+## How the call flows
 
 ```text
 Caller ──> CXone (your BU) ──> NICE DEVone trunk ──SIP/TLS──> Bland agent
 ```
 
-- The DEVone trunk is **multi-tenant**. Bland's partner connection is the parent, and your Business Unit is added to it as a child.
-- The trunk carries calls **from CXone to Bland**. NICE assigns your Business Unit a block of routing numbers, and calls that your Studio script sends to those numbers arrive at Bland.
-- Signaling uses TLS 1.2 on port 5061 and media uses SRTP. Bland accepts TLS only.
-- **Billing for the SIP sessions stays between you and NICE.** NICE bills your Business Unit for the number of SIP sessions configured for it.
+The DEVone trunk is multi-tenant. Bland's partner connection is the parent, and your Business Unit is added as a child. NICE assigns your BU a block of routing numbers, and calls your Studio script sends to those numbers arrive at Bland.
+
+Billing for the SIP sessions stays between you and NICE. NICE bills your Business Unit for the sessions configured for it.
 
 ## Connect your Business Unit
 
-### 1. Order the SIP sessions from NICE
+<Steps>
+  <Step title="Order SIP sessions from NICE">
+    Ask your NICE Account Manager for a contract or addendum that adds SIP sessions for the **Bland DEVone partner connection** to your Business Unit. Include your BU number, how many concurrent calls you want to send to Bland, and the region: US, EU, or both.
 
-Contact your **NICE Account Manager** and ask for a contract or addendum that adds SIP sessions (ports) for the **Bland DEVone partner connection** to your Business Unit. Include:
+    This is usually the longest step, so start it first.
+  </Step>
 
-- Your Business Unit number
-- The number of concurrent calls you want to send to Bland
-- The region: US, EU, or both
+  <Step title="NICE adds your Business Unit to the trunk">
+    Once the addendum is signed, the NICE Connectivity team adds your BU to Bland's partner trunk with the sessions you ordered. It assigns your BU a block of routing numbers for Bland, usually virtual numbers in the `999` range such as `+1999xxxxxxx`.
 
-This is usually the longest step. Start it first.
+    Ask NICE to send the number range to you and to your Bland account team.
+  </Step>
 
-### 2. NICE connects your Business Unit to the Bland trunk
+  <Step title="Bland attaches the numbers">
+    Send your Bland account team the routing numbers and the Bland organization they belong to. Bland attaches them to your organization.
 
-Once the addendum is signed, the NICE Connectivity team:
+    Then assign an agent to each one. Go to **All agents**, then **Dispatch**, then **Phone numbers**, press **Configure** on the number, and pick the agent under **Assignment**.
+  </Step>
 
-1. Adds your Business Unit to Bland's partner trunk with the number of sessions you ordered.
-2. Assigns your Business Unit a block of routing numbers for Bland. These are usually virtual numbers in the `999` range (for example `+1999xxxxxxx`), not public phone numbers.
+  <Step title="Route calls in CXone">
+    In CXone Studio, update the script for the point of contact that should reach Bland, so it sends the call to one of your Bland routing numbers. NICE has no template for this. Your CXone administrator or NICE technical account manager edits the script in your BU.
+  </Step>
 
-Ask your NICE contact to send the number range to you and to your Bland account team. Bland's point of contact at NICE can help if the request stalls.
+  <Step title="Test">
+    From CXone MAX, dial a Bland routing number as a test user with the right skill, or call a point of contact linked to the updated script. The agent should answer.
+  </Step>
+</Steps>
 
-### 3. Configure Bland
-
-1. Send your Bland account team the routing numbers from NICE and the Bland organization they belong to. Bland attaches them to your organization on the NICE connection.
-2. Assign an agent to each number. At **All agents**, go to **Dispatch**, then **Phone numbers**, find the number, click **Configure**, and under **Assignment** select the agent.
-
-### 4. Route calls in CXone
-
-In CXone Studio, update the script for the point of contact that should reach Bland, so it sends the call to one of your Bland routing numbers. NICE does not provide a template for this. Your CXone administrator or NICE technical account manager edits the script in your Business Unit.
-
-### 5. Test
-
-From CXone MAX, dial a Bland routing number as a test user that has the right skill, or call a point of contact linked to the updated script. The Bland agent should answer. NICE estimates one to two weeks from a signed addendum to working calls.
-
-Open the call's [SIP trace](/agents/sip-setup#inspect-a-call-sip-trace) on the trunk's **Overview** tab in Bland to see exactly what arrived.
+You know it worked when the call shows up on the trunk's **Overview** tab in Bland. NICE estimates one to two weeks from a signed addendum to working calls.
 
 ## Return calls to CXone
 
-The DEVone trunk only carries calls from CXone to Bland. If the caller needs to come back to a CXone agent after the Bland agent finishes, the return path is set up for your deployment, for example through the CXone APIs and your Studio script. Talk to your Bland account team before you build the script so both sides agree on the hand-back.
+The DEVone trunk only carries calls from CXone to Bland. If the caller needs to come back to a CXone agent, the return path is set up for your deployment, for example through the CXone APIs and your Studio script. Talk to your Bland account team before you build the script, so both sides agree on the hand-back.
 
 ## Connection details
 
-These are already configured on the Bland partner trunk. They are listed so your network and security teams can review them.
+These are already configured on the partner trunk. They are listed for your network and security teams.
 
-| Setting | Value |
-|---|---|
-| Bland SIP endpoints | `us2.sip.bland.ai` (US), `eu2.sip.bland.ai` (EU) |
-| Transport and port | TLS 1.2 or higher, TCP port `5061` |
-| Media | SRTP, UDP `16384` to `32768` |
-| Bland certificate | Let's Encrypt. The ISRG Root X1 CA must be trusted |
-| Number format | E.164 |
+- **Endpoints**: `us2.sip.bland.ai` (US) and `eu2.sip.bland.ai` (EU)
+- **Transport**: TLS 1.2 or higher, port 5061
+- **Media**: SRTP, UDP 16384 to 32768
+- **Certificate**: Let's Encrypt. The ISRG Root X1 CA must be trusted
+- **Number format**: E.164
 
-Bland's signaling and media IPs for each region are listed under [Connection Endpoints](/agents/sip-network#connection-endpoints).
+Bland's IPs for each region are under [Connection endpoints](/agents/sip-network#connection-endpoints).
 
-## Troubleshooting
+## Common failures
 
-| Symptom | Likely cause | What to check |
-|---|---|---|
-| "No Routes Found" or a bad-number error in MAX | The call never left your Business Unit | Ask NICE to confirm routing for your BU to the Bland trunk is set up on the cluster your BU runs on |
-| Calls time out with `504` | NICE is sending to port 5060 or without TLS | Bland accepts TLS on port `5061` only. Ask NICE to check the trunk profile is still TLS |
-| Call rejected with `603 Decline` | The routing number is not attached to your Bland organization | Send the number range to your Bland account team |
-| Call rejected with `407` | The number is pointed at a Bland hostname other than the production endpoints | Ask NICE to route to `us2.sip.bland.ai` or `eu2.sip.bland.ai` |
-| Call connects but there's no audio | Media blocked or not encrypted | Confirm SRTP is on and Bland's media IPs are allowed |
-| The order seems stuck | The addendum is not yet signed | Follow up with your NICE Account Manager. NICE cannot provision sessions until the addendum is in place |
+<AccordionGroup>
+  <Accordion title="MAX shows No Routes Found or a bad-number error">
+    The call never left your Business Unit. Ask NICE to confirm routing from your BU to the Bland trunk is set up on the cluster your BU runs on.
+  </Accordion>
 
-## Resources
+  <Accordion title="Calls time out with 504">
+    NICE is sending to port 5060 or without TLS. Bland accepts TLS on port 5061 only. Ask NICE to check the trunk profile is still TLS.
+  </Accordion>
 
-- Your NICE Account Manager, for the addendum and Connectivity project
-- [SIP](/agents/sip): Bland's full SIP reference, including regions, IPs, and security requirements
+  <Accordion title="Calls are rejected with 603 Decline">
+    The routing number isn't attached to your Bland organization. Send the number range to your Bland account team.
+  </Accordion>
+
+  <Accordion title="Calls are rejected with 407">
+    The number points at a Bland hostname other than the production endpoints. Ask NICE to route to `us2.sip.bland.ai` or `eu2.sip.bland.ai`.
+  </Accordion>
+
+  <Accordion title="The call connects with no audio">
+    Media is blocked or not encrypted. Confirm SRTP is on and Bland's media IPs are allowed.
+  </Accordion>
+
+  <Accordion title="The order seems stuck">
+    The addendum isn't signed yet. NICE can't provision sessions until it is, so follow up with your NICE Account Manager.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
+    Bland's regions, IPs, and TLS and SRTP.
+  </Card>
+  <Card title="Dispatch" icon="tower-broadcast" href="/agents/dispatch">
+    Assign agents to your routing numbers.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

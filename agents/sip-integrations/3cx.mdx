@@ -5,96 +5,147 @@ description: 'Connect a 3CX phone system to a Bland agent over SIP, and transfer
 
 Send calls from your 3CX phone system to a Bland agent, and let the agent transfer callers back to your 3CX extensions, queues, and ring groups. 3CX connects to Bland as a SIP trunk over TLS, with SRTP media.
 
-## What you'll need
+## What works
+
+- Calls from 3CX to your agent
+- Outbound calls from your agent through 3CX
+- Transfers back to 3CX extensions, with SIP REFER
+- The original caller ID, passed to the agent in SIP headers
+
+## Prerequisites
 
 - 3CX version 20, reachable from the internet on a fully qualified domain name (FQDN), for example `yourcompany.3cx.com`
 - Admin access to the 3CX Management Console
-- A Bland account with SIP trunking enabled. If you don't see a **SIP** tab under **Phone numbers**, contact Bland support to turn it on.
-
-## Supported calling features
-
-| Feature | Supported |
-|---|---|
-| Calls from 3CX to your Bland agent | Yes |
-| Outbound calls from your agent through 3CX | Yes |
-| Transfers back to 3CX extensions with SIP REFER | Yes |
-| Original caller ID passed to the agent | Yes, in SIP headers |
+- A Bland account with SIP trunking enabled. If there is no **SIP** tab under **Phone numbers**, contact Bland support
 
 ## Configure 3CX
 
-### Add a SIP trunk for Bland
+<Steps>
+  <Step title="Add a SIP trunk for Bland">
+    In the 3CX Management Console, go to **Voice & Chat** and add a SIP trunk. Set the server to your Bland region, for example `us2.sip.bland.ai`, port `5061`, transport TLS. The other regions are under [Connection endpoints](/agents/sip-network#connection-endpoints).
 
-1. In the 3CX Management Console, go to **Voice & Chat** and add a new SIP trunk.
-2. Set the trunk's server to your Bland region, for example `us2.sip.bland.ai`, port `5061`, transport **TLS**. The other regions are under [Connection endpoints](/agents/sip-network#connection-endpoints).
-3. Use **IP-based** authentication, with no registration. Bland trusts your 3CX by its source IP.
-4. If 3CX asks for a main trunk number, enter one of the numbers you will route to Bland.
-5. Set call encryption (SRTP) to **Mandatory**. Bland requires SRTP and rejects calls offered with plain RTP.
-6. Put G.711 first in the codec list: **PCMA** (A-law) outside North America, **PCMU** (μ-law) in North America.
-7. Leave direct media (media bypass) off, so audio flows through 3CX.
+    Use IP-based authentication, with no registration. If 3CX asks for a main trunk number, enter one of the numbers you will route to Bland.
+  </Step>
 
-### Check the public IP
+  <Step title="Set encryption and codecs">
+    Set call encryption (SRTP) to **Mandatory**. Bland rejects calls offered with plain RTP.
 
-In 3CX's network settings, make sure 3CX advertises its real public IP. If automatic detection picks the wrong address, set the public IP manually. A wrong public IP is the most common cause of one-way or silent calls.
+    Put G.711 first in the codec list: PCMA (A-law) outside North America, PCMU (μ-law) in North America. Leave direct media off, so audio flows through 3CX.
+  </Step>
 
-### Allow Bland on your firewall
+  <Step title="Check the public IP">
+    In 3CX's network settings, make sure 3CX advertises its real public IP. If automatic detection picks the wrong one, set it by hand. A wrong public IP is the most common cause of one-way or silent calls.
+  </Step>
 
-Allow TLS on port 5061 and SRTP on UDP `16384` to `32768` from all six of Bland's signaling and media IPs for your region. The list is under [Connection endpoints](/agents/sip-network#connection-endpoints).
+  <Step title="Allow Bland on your firewall">
+    Allow TLS on port 5061 and SRTP on UDP 16384 to 32768 from all six of Bland's IPs for your region.
+  </Step>
 
-### Route calls to Bland
-
-Send the calls you want the agent to answer to the Bland trunk. For example, forward a DID, an IVR option, or a queue overflow to a number on the Bland trunk, using an outbound rule that selects the Bland trunk for that number.
+  <Step title="Route calls to Bland">
+    Send the calls the agent should answer to the Bland trunk. For example, forward a DID, an IVR option, or a queue overflow to a number on the Bland trunk, with an outbound rule that picks the Bland trunk for that number.
+  </Step>
+</Steps>
 
 ## Configure Bland
 
-1. At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab, and click **Create trunk**.
-2. Complete the [setup wizard](/agents/sip-setup):
-   - **Provider**: choose **3CX**, and enter your 3CX FQDN, for example `yourcompany.3cx.com`. Add a port only if 3CX listens for TLS on a port other than `5061`.
-   - **Firewall**: confirm you allow-listed Bland's IPs, and continue.
-   - **Authentication**: choose **IP-based**, then click **Create trunk**.
-   - **Numbers**: add the numbers 3CX sends to Bland, in E.164 format, for example `+61370000000`.
-3. Assign an agent to each number under **Phone numbers**, then **Configure**, then **Assignment**.
+<Steps>
+  <Step title="Open the setup wizard">
+    At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab, and press **Create trunk**.
+  </Step>
+
+  <Step title="Provider">
+    Pick **3CX** and enter your 3CX FQDN, for example `yourcompany.3cx.com`. Add a port only if 3CX listens for TLS on a port other than 5061.
+  </Step>
+
+  <Step title="Firewall">
+    Confirm you allow-listed Bland's IPs, and continue.
+  </Step>
+
+  <Step title="Authentication">
+    Pick **IP-based** and press **Create trunk**.
+  </Step>
+
+  <Step title="Numbers">
+    Add the numbers 3CX sends to Bland, in E.164 format, for example `+61370000000`.
+  </Step>
+
+  <Step title="Assign an agent">
+    Under **Phone numbers**, press **Configure** on the number and pick the agent under **Assignment**.
+  </Step>
+</Steps>
+
+You know it worked when a call forwarded from 3CX reaches the agent and shows up on the trunk's **Overview** tab.
 
 ## Transfer callers back to 3CX
 
-Use SIP REFER to send a caller to a 3CX extension. 3CX resolves the extension and Bland leaves the call.
+Use SIP REFER. 3CX resolves the extension, rings it, and Bland leaves the call.
 
-1. In the agent's **Transfer Call** node, turn on **Allow SIP/DID targets** and **Hand off via SIP REFER**.
-2. Enter the target as a SIP URI on your 3CX, using the extension number: `sip:1018@yourcompany.3cx.com`.
+In the agent's **Transfer Call** node, turn on **Allow SIP/DID targets** and **Hand off via SIP REFER**. Enter the target as a SIP URI with the extension number:
 
-3CX answers the REFER with `202 Accepted` and rings the extension. Use the extension, queue, or ring group number 3CX knows internally, not an E.164 phone number: 3CX's dial plan does not map an E.164 target back to an extension.
+```text
+sip:1018@yourcompany.3cx.com
+```
+
+Use the extension, queue, or ring group number 3CX knows internally, not a phone number. 3CX's dial plan doesn't map an E.164 target back to an extension.
 
 <Note>
-Prefer REFER over a new INVITE with 3CX. 3CX identifies a trunk by the IP address the call comes from, and drops a new INVITE from an address it does not recognize as the Bland trunk, without responding. With REFER, the transfer happens inside the call 3CX already accepted. For how each transfer method works, see [Transfers](/agents/sip-transfers).
+Use REFER rather than a new INVITE with 3CX. 3CX identifies a trunk by the IP a call comes from, and silently drops a new INVITE from an address it doesn't map to the Bland trunk. A REFER travels inside the call 3CX already accepted. See [Transfers](/agents/sip-transfers) for every transfer method.
 </Note>
 
 ## Caller ID
 
-When 3CX forwards a call to Bland, it sends the original caller in the `P-Asserted-Identity`, `Remote-Party-ID`, and `Diversion` headers. Map those headers to call variables to use the original caller ID in your agent. If they show `anonymous`, the caller withheld their number.
+When 3CX forwards a call to Bland, it sends the original caller in the `P-Asserted-Identity`, `Remote-Party-ID`, and `Diversion` headers. Map those headers to call variables to use the caller ID in your agent. A value of `anonymous` means the caller withheld their number.
 
-To keep the original caller ID in the `From` header when 3CX forwards a call, set the Bland trunk's outbound parameters in 3CX:
+To keep the original caller in the `From` header too, set these outbound parameters on the Bland trunk in 3CX:
 
-| Parameter | Value |
-|---|---|
-| From: User Part | `OriginatorCallerID` |
-| From: Display Name | `OriginatorCallerDisplayName` |
+- **From: User Part**: `OriginatorCallerID`
+- **From: Display Name**: `OriginatorCallerDisplayName`
 
-This does not apply to calls forwarded through a ring group, because the ring group places a new call.
+This doesn't apply to calls forwarded through a ring group, because the ring group places a new call.
 
-## Troubleshooting
+## Common failures
 
-| Symptom | Likely cause | What to check |
-|---|---|---|
-| Calls connect with one-way or no audio | 3CX advertises the wrong public IP, or the RTP range is blocked | Set the public IP manually in 3CX, and allow UDP `16384` to `32768` to and from Bland's media IPs |
-| Calls rejected with `488 Not Acceptable Here` | SRTP not enabled | Set call encryption to **Mandatory** on the Bland trunk in 3CX |
-| Calls rejected with `407 Proxy Authentication Required` | Bland doesn't recognize your 3CX's IP | Confirm the trunk in Bland uses **IP-based** authentication and that 3CX's public IP matches the one Bland sees. Contact Bland support if your IP changed |
-| TLS connection to Bland fails | Port, transport, or certificate trust | Use port `5061` with TLS, and make sure 3CX trusts the Let's Encrypt ISRG Root X1 CA |
-| A transfer rings nothing, with no response from 3CX | The transfer used a new INVITE from an IP 3CX doesn't map to the trunk | Turn on **Hand off via SIP REFER** on the transfer node |
-| A REFER to a phone number fails | 3CX can't route an E.164 Refer-To target to an internal extension | Use the extension number in the SIP URI, for example `sip:1018@yourcompany.3cx.com` |
-| The call ended on the phone but stays live in Bland | The `BYE` did not reach Bland | Check that nothing between 3CX and Bland closes the TLS connection early, and share the [SIP trace](/agents/sip-setup#inspect-a-call-sip-trace) with Bland support |
+<AccordionGroup>
+  <Accordion title="Calls connect with one-way or no audio">
+    3CX advertises the wrong public IP, or the RTP range is blocked. Set the public IP by hand, and allow UDP 16384 to 32768 to and from Bland's media IPs.
+  </Accordion>
 
-To capture traffic on the 3CX side, use 3CX's packet capture and compare it with the call's [SIP trace](/agents/sip-setup#inspect-a-call-sip-trace) in Bland.
+  <Accordion title="Calls are rejected with 488 Not Acceptable Here">
+    SRTP isn't on. Set call encryption to **Mandatory** on the Bland trunk in 3CX.
+  </Accordion>
 
-## Resources
+  <Accordion title="Calls are challenged with 407 Proxy Authentication Required">
+    Bland doesn't recognize your 3CX's IP. Check the trunk in Bland uses **IP-based** authentication, and contact Bland support if your public IP changed.
+  </Accordion>
 
-- [Transfers](/agents/sip-transfers): REFER, new INVITE, and warm transfers, and custom headers
-- [Network and security](/agents/sip-network): regions, IPs, and TLS and SRTP requirements
+  <Accordion title="The TLS connection to Bland fails">
+    Use port 5061 with TLS, and make sure 3CX trusts the Let's Encrypt ISRG Root X1 CA.
+  </Accordion>
+
+  <Accordion title="A transfer rings nothing, and 3CX never responds">
+    The transfer used a new INVITE from an IP 3CX doesn't map to the trunk. Turn on **Hand off via SIP REFER**.
+  </Accordion>
+
+  <Accordion title="A REFER to a phone number fails">
+    3CX can't route an E.164 target to an internal extension. Use the extension in the SIP URI, for example `sip:1018@yourcompany.3cx.com`.
+  </Accordion>
+
+  <Accordion title="The call ended on the phone but stays live in Bland">
+    The `BYE` didn't reach Bland. Check nothing between 3CX and Bland closes the TLS connection early, and share the call's SIP trace with Bland support. 3CX's own packet capture helps compare both sides.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    REFER, new INVITE, and warm transfers.
+  </Card>
+  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
+    Bland's regions, IPs, and TLS and SRTP.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
