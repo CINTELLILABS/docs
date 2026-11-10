@@ -14,6 +14,8 @@ Retires a disposition. It is disabled and marked deleted, so it stops running on
 
 The call is idempotent: deleting a disposition that is already deleted succeeds and returns the same body, so a retry after a dropped connection is safe.
 
+You can't delete the [Bland call scoring](/agents/dispositions#bland-call-scoring) disposition. Bland manages it, so this endpoint returns `403 FORBIDDEN` with the message `This disposition is managed by Bland`.
+
 Requires an admin, owner, operator, or prompter role.
 
 ### Headers
@@ -59,6 +61,18 @@ Requires an admin, owner, operator, or prompter role.
     {
       "error": "NOT_FOUND",
       "message": "Disposition not found"
+    }
+  ]
+}
+```
+
+```json Forbidden
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "FORBIDDEN",
+      "message": "This disposition is managed by Bland"
     }
   ]
 }

@@ -16,6 +16,8 @@ Only production runs are returned. Test runs are listed with [Get Test Run Rows]
 
 Results carry values only. Rationale and evidence are omitted.
 
+When [Bland call scoring](/agents/dispositions#bland-call-scoring) is available for your organization, the response also includes the agent's call scoring runs. Add `include=scores` to get each call scoring run's per-value scores and outcome probabilities. Check availability with [Get Call Scoring Availability](/api-v2/get/agents-id-dispositions-call-scoring).
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -32,6 +34,10 @@ Results carry values only. Rationale and evidence are omitted.
 
 <ParamField query="callIds" type="string" required>
   Comma-separated call IDs, up to 100. Duplicates are ignored. Returns `400` with `callIds is required` when empty, `callIds accepts at most 100 ids` when over the limit, or `callIds must be valid UUIDs` when any ID is not a UUID. Calls that belong to another agent, or that have no disposition runs, are left out of the response.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Set to `scores` to add `scores` and `outcomeProbabilities` to each call scoring run. Any other value is ignored. Has no effect when Bland call scoring isn't available for your organization.
 </ParamField>
 
 ### Response
@@ -77,7 +83,7 @@ Results carry values only. Rationale and evidence are omitted.
       The value's label, or its key when it has none.
     </ResponseField>
     <ResponseField name="values[].kind" type="string">
-      The value's source: `variable_extraction`, `structured_extraction`, `judge`, or `custom_code`.
+      The value's source: `variable_extraction`, `structured_extraction`, `judge`, `custom_code`, or `call_scoring`.
     </ResponseField>
     <ResponseField name="values[].reasoningEffort" type="string | null">
       The reasoning effort the value ran at: `auto`, `low`, `medium`, or `high`. `null` for `custom_code`, which runs no model.
@@ -109,6 +115,12 @@ Results carry values only. Rationale and evidence are omitted.
     <ResponseField name="completedAt" type="string | null">
       When the run finished, or `null` while it is in progress.
     </ResponseField>
+    <ResponseField name="scores" type="object | null">
+      Only with `include=scores`, and only on call scoring runs. Maps each value's `id` to its score, a number from `0` to `1`. `null` when the run has no stored scores.
+    </ResponseField>
+    <ResponseField name="outcomeProbabilities" type="object | null">
+      Only with `include=scores`, and only on call scoring runs. The probability of each call outcome, a number from `0` to `1`, keyed by `accomplished`, `no_human`, `stuck_in_menu`, `declined`, `no_request`, `out_of_scope`, `caller_abandoned`, `caller_ineligible`, `agent_failure`, and `system_failure`. `null` when the run has no stored scores.
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
@@ -121,6 +133,12 @@ Results carry values only. Rationale and evidence are omitted.
 curl -G "https://api.bland.ai/v2/agents/3c1d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f/dispositions/call-runs" \
   -H "authorization: YOUR_API_KEY" \
   --data-urlencode "callIds=e1739a2c-9137-4e85-925d-1efbb6925bc4,2f5e1dc9-f0ac-408a-b9b4-ba3adc971170"
+```
+```bash cURL with scores
+curl -G "https://api.bland.ai/v2/agents/3c1d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f/dispositions/call-runs" \
+  -H "authorization: YOUR_API_KEY" \
+  --data-urlencode "callIds=e1739a2c-9137-4e85-925d-1efbb6925bc4" \
+  --data-urlencode "include=scores"
 ```
 </RequestExample>
 

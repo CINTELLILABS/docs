@@ -12,6 +12,8 @@ Dispositions are enabled per organization. If your organization does not have ac
 
 Sets `state` to `disabled` so the disposition no longer runs on new completed calls. The request takes no body. The draft, version history, and `publishedVersionId` are left untouched, and test runs still work. There is no separate enable call: to turn it back on, [publish](/api-v2/post/agents-id-dispositions-disposition-id-publish) the draft again, which creates a new version and sets `state` to `enabled`.
 
+You can't disable the [Bland call scoring](/agents/dispositions#bland-call-scoring) disposition. Bland manages it, so this endpoint returns `403 FORBIDDEN` with the message `This disposition is managed by Bland`.
+
 Requires an admin, owner, operator, or prompter role.
 
 ### Headers
@@ -111,6 +113,18 @@ Requires an admin, owner, operator, or prompter role.
     {
       "error": "NOT_FOUND",
       "message": "Disposition not found"
+    }
+  ]
+}
+```
+
+```json Forbidden
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "FORBIDDEN",
+      "message": "This disposition is managed by Bland"
     }
   ]
 }
