@@ -1,0 +1,122 @@
+---
+title: "Create Outcome"
+api: "POST https://api.bland.ai/v1/dispositions"
+description: "Create an outcome script for your organization."
+---
+
+An outcome is a JavaScript script that reads a finished call or SMS conversation and returns structured data. The API calls outcomes dispositions. Pass outcome IDs in `disposition_ids` on [Send Call](/api-v1/post/calls) or [Send SMS](/api-v1/post/sms-send), and they run when the conversation ends. See [Outcomes](/tutorials/outcomes) for how they work.
+
+Outcomes are available on enterprise plans. Creating, updating, deleting and running an outcome requires the Owner, Admin or Operator role. Dispositions on V2 agents are a separate feature with their own [endpoints](/api-v2/get/agents-id-dispositions).
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string" required>
+  A name for the outcome. 1 to 100 characters, letters and underscores only (for example, `appointment_outcome`).
+</ParamField>
+
+<ParamField body="script" type="string" required>
+  The JavaScript source, up to 200,000 characters. The script exports a `fetch` handler, reads the call from the request body and returns a JSON response:
+
+  ```js
+  export default {
+    async fetch(request) {
+      const call = await request.json();
+      return Response.json({
+        booked: call.summary?.includes("booked") ?? false,
+        minutes: call.call_length,
+      });
+    },
+  };
+  ```
+
+  The request body is the same JSON that [Call Details](/api-v1/get/calls-id) returns for that call. Scripts can't make network calls: a script that uses `fetch()`, `XMLHttpRequest` or `WebSocket` is rejected with a 400.
+</ParamField>
+
+<ParamField body="metadata" type="object" default="{}">
+  Any key-value data you want stored with the outcome.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The new outcome.
+
+  <Expandable title="Outcome fields">
+    <ResponseField name="id" type="string">
+      The outcome ID.
+    </ResponseField>
+
+    <ResponseField name="org_id" type="string">
+      The organization that owns the outcome.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      The outcome name.
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      The metadata you stored with the outcome.
+    </ResponseField>
+
+    <ResponseField name="snippet_id" type="string">
+      The ID of the stored script.
+    </ResponseField>
+
+    <ResponseField name="snippet_version" type="integer">
+      The script version. Starts at `1` and goes up each time you update the script.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      When the outcome was created (ISO 8601).
+    </ResponseField>
+
+    <ResponseField name="updated_at" type="string">
+      When the outcome was last updated (ISO 8601).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "51b2f9ae-4162-4880-9920-10308352c55f",
+    "org_id": "9b51b0fc-4127-446a-9ffb-21b1f006e6b5",
+    "name": "appointment_outcome",
+    "metadata": {},
+    "snippet_id": "44468cc3-d31f-47cd-8cff-94476b904a28",
+    "snippet_version": 1,
+    "created_at": "2026-10-26T15:04:12.381Z",
+    "updated_at": "2026-10-26T15:04:12.381Z"
+  },
+  "errors": null
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Invalid request body",
+      "ext": "{\"errors\":[\"/name: Expected string to match '^[a-zA-Z_]+$'\"]}"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

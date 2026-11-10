@@ -5,228 +5,143 @@ description: "Create tools that call your own backend, internal services, or any
 
 ## Introduction
 
-The API integration lets you connect your AI agent to any HTTP endpoint. Use it when:
+To call your own API during a conversation, build a **webhook tool**. Use one when:
 
 - You have your own backend API you want to call during calls
 - You're integrating with a third-party service that isn't in the built-in list
 - You need custom request formatting, headers, or authentication
 
-This tutorial walks through creating a tool that saves call summaries to Bland's Prompts API. By the end, you'll understand how to:
+This tutorial builds a tool that saves a call summary with Bland's [Create Prompt](/api-v1/post/prompts) endpoint. By the end, you'll know how to:
 
-- Create an API connection with a base URL and authentication
-- Store API keys securely in the Secrets vault
-- Configure request bodies with dynamic fields
-- Capture and use response data
+- Store an API key as a secret and reference it
+- Write a request with variables the agent fills in
+- Capture data from the response
+- Tag the tool into an agent's prompt and use what it returns
 
-For shared concepts (parameter modes, response variables, response routing), see the [Tools overview](/tutorials/tools/overview).
+For the full builder reference, see [Build a webhook tool](/agents/tools#build-a-webhook-tool).
 
----
+## Prerequisites
 
-## Step 1: Create an API Connection
-
-Before creating a tool, you need to set up a connection. This stores your base URL and authentication credentials, and can be reused across multiple tools.
-
-1. Go to the [Tools Hub](https://app.bland.ai/dashboard/tools)
-2. Click the **Integrations** tab
-3. Find and click **API**
-4. Click **Add Connection**
-
-### Connection Details
-
-**Connection Name:** Give it a descriptive name. For this tutorial, use "Bland API".
-
-![Bland Connection Setup](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/BlandConnectionSetup.png)
-
-**Base URL:** The root URL for your API. For Bland's API, enter `https://api.bland.ai`. When you create tools, you'll add the specific path (like `/v1/prompts`).
-
-**Description** (optional): Add notes about what this connection is for.
-
-![API Integration Config Settings](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integration_config_settings.png)
-
-### Authentication
-
-Choose how your API authenticates requests:
-
-**Bearer Token:** For Bland's API, select this option. Your API key goes in the Authorization header as `Authorization: Bearer your-key`.
-
-**API Key:** For APIs that expect a key in a custom header (e.g., `X-API-Key: your-key`).
-
-**Basic Auth:** For APIs using username/password authentication.
-
-**No Authentication:** For public APIs or when you'll handle auth in custom headers.
-
-![API Integration Authentication](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integrtaion_config_step_3.png)
-
-### Setting Up Your Secret
-
-1. Click **Select Secret** next to the auth type
-2. Choose an existing secret from your [Secrets vault](/tutorials/secrets), or click **Create New**
-3. For Bland's API, paste your API key from your [dashboard](https://app.bland.ai/dashboard)
-
-Click **Connect** to save the connection.
-
-![API Integration Secret Setup](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integrtaion_step4.png)
+- An agent to tag the tool into, from [Agent builder](/agents/agent-builder)
+- Your Bland API key
 
 ---
 
-## Step 2: Create the Tool
+## Step 1: Store your API key as a secret
 
-In the Actions panel, click **POST** (or **GET**, **PUT**, **PATCH**, or **DELETE** depending on your API) to open the Tool Builder. You can also change the method later from the request editor.
+Do not paste an API key into a tool. Set the sidebar selector to **All agents**, open **Tools**, and on the **Secrets** tab click **Add Secret**. Name it something like `bland_api_key` and paste your key as a Static secret.
 
-![Actions Panel](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/actions_pannel_API_integration.png)
-
----
-
-## Step 3: Configure Prompting
-
-The Prompting section tells your AI agent about this tool: what it does and when to use it.
-
-### Tool Name
-
-This is what your AI agent sees when deciding which tool to use. Make it descriptive and action-oriented.
-
-**Good examples:**
-- "Save Call Summary"
-- "Check Order Status"
-- "Submit Support Ticket"
-
-**Bad examples:**
-- "API Call"
-- "POST Request"
-- "Prompts Tool"
+See [Secrets](/tutorials/secrets) for details.
 
 ---
 
-## Step 4: Configure Action Parameters
+## Step 2: Create the tool
 
-This section defines the HTTP request your tool will make.
+From inside your agent, open **Tools**, click **Create tool**, and choose **Webhook**.
 
-![Action Parameters Configuration](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/sample_API_integration_tool_config_action_params.jpeg)
+If you already have a working `curl` command, choose **Import from cURL** instead. It opens the builder with the request filled in.
 
-### URL Path
+---
 
-Enter the path for your API endpoint. This is appended to your connection's base URL.
+## Step 3: Name and describe it
 
-For our prompts tool, enter: `/v1/prompts`
+**Name.** The name is what you type after `@` in a prompt. Make it the thing the tool does: "Save call summary" reads better than "POST request".
 
-This combines with our base URL to make the full endpoint: `https://api.bland.ai/v1/prompts`
+**Description.** The agent reads this to decide when to call the tool. Write the trigger:
 
-### Body (for POST, PUT, and PATCH requests)
+```text
+Save a summary of the call. Use this once the caller has finished
+describing their request and before you wrap up.
+```
 
-Configure the request body by adding variables. Each variable becomes a field in your API request. The Body tab is only shown for methods that support a request body (POST, PUT, and PATCH). It's hidden for GET and DELETE.
+**Agent speech.** What the agent says while the tool runs, like "One moment while I save that." It keeps the caller from hearing dead air.
 
-Click **Add Variable** to create a new field. For each variable, you provide:
+---
 
-- **Name:** The field name in your request body (e.g., `userName`, `prompt`)
-- **Description:** Tell the AI what to extract from the conversation
-- **Type:** String, Number, or Boolean
-- **Required:** Whether the field must have a value
+## Step 4: Configure the request
 
-![Adding a Custom Variable](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/custom_variable_addition.png)
+**Method and URL.** Choose **POST** and enter `https://api.bland.ai/v1/prompts`.
 
-**Writing good descriptions:**
-- "The caller's email address"
-- "A summary of the key points discussed in this call"
-- "The product or service they're interested in"
-- "Their preferred contact time"
+<Warning>
+Webhook tools run **GET** and **POST** only. The method list shows other verbs, but a tool using one of them fails to save with `Failed to create tool`.
+</Warning>
 
-**Tips:**
-- Be specific about what to extract
-- Mention the format if it matters ("email address in standard format")
-- The AI only has access to what was said in the conversation
+**Authorization.** On the **Authorization** tab, choose **API Key**. Set **Header name** to `authorization`, which is the header the Bland API expects, and pick your `bland_api_key` secret.
 
-How these variables get filled differs between Personas and Pathways. See [Parameter Modes in Personas](/tutorials/tools/overview#parameter-modes-in-personas) and [Parameter Mapping in Pathways](/tutorials/tools/overview#parameter-mapping-in-pathways) for details.
-
-**Referencing variables in the body:**
-
-Variables are referenced using `{{input.variableName}}` syntax:
+**Body.** Write the request body. Anywhere a value should change per call, write a variable:
 
 ```json
 {
-  "name": "{{input.userName}}",
-  "prompt": "{{input.prompt}}"
+  "name": "{{caller_name}}",
+  "prompt": "{{call_summary}}"
 }
 ```
 
----
-
-## Step 5: Configure Response Variables
-
-When your API responds, you can capture data from the response to use later in your pathway. See [Response Modes](/tutorials/tools/overview#response-modes) in the overview for when to use Capture Response vs Fire and Forget.
-
-### Default Response Fields
-
-Unlike built-in integrations, API tools return raw HTTP response fields. For a POST request, every response includes:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `ok` | boolean | `true` if status code is 2xx (top-level) |
-| `rest_api_post_status` | number | HTTP status (200, 400, 500, etc.) |
-| `rest_api_post_status_text` | string | "OK", "Bad Request", "Internal Server Error" |
-| `rest_api_post_data` | object | The full response body from your API |
-
-GET, PUT, PATCH, and DELETE follow the same pattern with `rest_api_get_*`, `rest_api_put_*`, etc.
+Add any other headers your API needs on the **Headers** tab.
 
 ---
 
-## Step 6: Using Tool Output in Pathways
+## Step 5: Say which variables the agent fills in
 
-After saving your tool, you can use it in pathways and make decisions based on the response.
+The variables you wrote are listed under **Detected variables**. For each one, click **Add input variable** so the agent fills it from the conversation. Then give it instructions, a type, and whether it is required:
 
-### Adding the Tool to a Pathway
+| Variable | Instructions |
+|----------|--------------|
+| `caller_name` | The caller's full name. |
+| `call_summary` | A short summary of the key points discussed in this call. |
 
-1. Open your pathway in the editor
-2. Add a **Custom Tool** node
-3. Select your tool from the dropdown
-4. Connect it to your conversation flow
+Write instructions for a person. Be specific about the format when it matters.
 
-### Passing Pathway Variables to the Tool
+A variable you leave alone resolves from [variables already on the call](/agents/agent-builder#extract-variables) instead, and the agent never fills it.
 
-![Passing Pathway Variables](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/pathway_fields_with_variable_filled_in.png)
+---
 
-### Response Pathways (Routing Based on Output)
+## Step 6: Declare what comes back
 
-Route to different nodes based on what the API returned. For the full list of available conditions, see [Response Routing](/tutorials/tools/overview#response-routing).
+**Output fields** name the parts of the response the agent can use. They start with `ok`, `message`, and `data`, with `ok` and `message` checked. Keep `ok` checked: a failed call returns only `ok` and `message`.
 
-Common patterns for API tools:
+For a POST tool, the response fields under `data` are named `rest_api_post_*`:
 
-| Variable | Condition | Value | Then Go To |
-|----------|-----------|-------|------------|
-| `ok` | equals | `true` | Success Node |
-| `ok` | equals | `false` | Error Node |
-| `rest_api_post_status` | equals | `401` | Auth Error Node |
-| `prompt_id` | is not null | - | Confirmation Node |
+| Field | What it holds |
+|-------|---------------|
+| `rest_api_post_status` | The HTTP status |
+| `rest_api_post_status_text` | The status text |
+| `rest_api_post_data` | The response body from your endpoint |
 
-### Using Response Data in Dialogue
+The builder lists these as `rest_api_get_*` until the tool is saved. Save it, reopen it, and check the `rest_api_post_*` rows then.
 
-Reference captured variables in subsequent nodes:
+To pull one value out of the response body, add a row with a name and a JSONPath. For the prompt ID, add a row named `prompt_id` with the path `$.data.rest_api_post_data.prompt.id`.
 
-In a dialogue node after the tool:
-```
-I've saved a summary of our conversation. The reference ID is {{prompt_id}}.
+<Warning>
+Checking at least one output field is what makes the tool wait for a response. Check nothing and the tool fires and moves on.
+</Warning>
+
+Run the tool with sample values and check the response before you attach it to anything.
+
+---
+
+## Step 7: Tag the tool into a prompt
+
+Building the tool does not give it to the agent. In the agent's **Prompt**, type `@` and pick **Save call summary**. The tool then appears under **Tool references**.
+
+Use the tool's outputs in the same prompt by their bare names:
+
+```text
+When the caller is done, use @Save call summary. If {{ok}} is true,
+tell the caller their reference ID is {{prompt_id}}. If not, apologize
+and let them know a teammate will follow up.
 ```
 
+If the step that needs the tool lives in its own pathway, tag the tool in that pathway's prompt too. Tools do not follow the agent into pathways. See [Tag a tool into a prompt](/agents/tools#tag-a-tool-into-a-prompt).
+
 ---
 
-## Additional Configuration Options
+## Additional settings
 
-These options aren't used in the tutorial above, but are available when your API requires them.
+These sit below the output fields:
 
-### Path Parameters
-
-For dynamic endpoints where part of the URL changes per request, use angle brackets to define parameters in the URL path (e.g., `/v1/prompts/<prompt_id>`). Then add path params as key/value pairs below.
-
-![Path Parameters](/tutorials/tutorials-assets/v2-tools/Custom_API_Tutorial/api_integration_path_params.jpeg)
-
-**Input modes:** Manual or Linked. Agent Mode is not available for path parameters: extract the value as a pathway variable first, then link it here.
-
-### Custom Headers
-
-Add any headers your API needs beyond authentication. Click **Add Header** to add custom headers.
-
-Example:
-- `Content-Type`: `application/json`
-- `X-Request-Source`: `bland-ai`
+- **Timeout:** how long to wait before giving up, from 1,000 to 60,000 milliseconds.
+- **Cooldown:** the minimum gap between calls, from 1 to 30 seconds.
 
 ---
 

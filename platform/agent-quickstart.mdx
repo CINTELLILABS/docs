@@ -19,6 +19,12 @@ Send your key as `Authorization: Bearer YOUR_API_KEY`. A bare `Authorization: YO
 - A phone number to call, in [E.164](https://en.wikipedia.org/wiki/E.164) format (`+15551234567`).
 - Optionally, a URL Bland can reach, if you want the outcome pushed to you instead of polling for it.
 
+## Choose what runs the call
+
+Before placing a call, [choose a dashboard agent, persona, or pathway](/api-v1/post/calls#choose-what-runs-your-call) and verify its exact ID and environment or version. If the user has already selected the resource type and target, keep that choice. Otherwise, ask which should run the call. Use `agent_id` when the conversation should belong to a Bland Agent, and ask before substituting another route.
+
+The lifecycle below uses an ad hoc `task` prompt. Use it when the user wants a one-off prompt; it does not select an existing dashboard agent. For an established agent, persona, or pathway choice, use the corresponding [request example](/api-v1/post/calls#request-examples) for both the initial call and the webhook variant. Do not send an additional call just to add a webhook.
+
 ## The lifecycle
 
 <Steps>
@@ -108,6 +114,8 @@ Send your key as `Authorization: Bearer YOUR_API_KEY`. A bare `Authorization: YO
     - `transcripts` is the same content as an array of turns, each with `text`, `user` (`user`, `assistant`, `robot`, or `agent-action`), and `created_at`. Use it when you need turn boundaries or timing.
     - `summary` is a short model-written recap generated when the call ends.
     - `recording_url` is present only if you passed `record: true`.
+
+    Also verify the source and destination numbers and the recorded resource/version association. For agent dispatch, check the intended agent's Conversations view. Report call success and an attribution problem separately; do not place a duplicate call to repair visibility.
 
     Post-call fields can take up to a minute after hangup to settle while the audio is processed, so a transcript that looks short immediately after `completed` flips may still be filling in.
   </Step>

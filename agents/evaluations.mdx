@@ -56,11 +56,36 @@ The button reads **Create judge** the first time and **Update** afterwards. Ther
 **Save as draft** keeps your work without making the judge live. A draft is not used by any run, so a judge you drafted and forgot will not quietly start scoring things.
 </Note>
 
+## Tune a judge
+
+Testing a judge is a loop: pick calls, run the judge, correct the verdicts it got wrong, and turn those corrections into the next version. Open it with **Test** in the judge editor, and use **← Back to setup** to return.
+
+**Create new test** opens the population picker:
+
+| Option | What the judge grades |
+| --- | --- |
+| **Recent production calls** | The N most recent production calls for the agent |
+| **Specific production calls** | Calls you filter in a side panel, or a pasted list of conversation IDs |
+| **Simulated** | A number of simulated conversations from a caller description of at least 40 characters. The judge runs at its current draft |
+
+Rows fill in as the judge grades each call.
+
+To correct a verdict, select it, pick the level you believe is right, and add a short rationale. Corrections are saved with the test run, so teammates see them too. Each edit adds a revision rather than replacing the last one.
+
+When you have corrected the verdicts you disagree with, select **Align with AI**. Bland reads your corrections and the transcripts of those calls, then proposes changes to the judge's prompt and verdict descriptions as a diff. It only uses the verdicts the judge already has. An **Advanced** box takes optional instructions to steer the proposal.
+
+- **Apply** writes the proposal into the judge's draft so you can review it in the editor.
+- **Apply and retest** writes it into the draft and re-runs the same calls, so you can see whether the verdicts you corrected changed.
+
+Alignment always lands in the draft. Nothing changes for live runs until you publish the judge.
+
 ## Write a test case
 
 **New test case** starts either from scratch or from your own traffic.
 
-**Generate based on production calls** reads up to 50 real calls and writes one test case per call, which is the faster way to get a suite that resembles what actually happens to you.
+**Generate based on production calls** reads up to 50 real calls and writes one test case per call, which is the faster way to get a suite that resembles what actually happens to you. Select calls in a picker that has the same filters as Conversations, then **Generate test cases**. Bland writes the cases one call at a time, so larger batches take longer, and opens the editor on the first one when it finishes. Read each generated caller prompt and correct it before you use it.
+
+If some calls fail, the cases that succeeded are kept and each failed call is listed with its error. Retrying does not duplicate the cases already created.
 
 Then set a **Title**, a **Prompt** describing who the simulated caller is and what they want, and optionally **Labels**, **Max turns** (20 by default), a **Start node** and **Request data**. **Save** finishes it.
 
@@ -117,6 +142,36 @@ What you choose is how many conversations each test case produces, and the optio
 **Simulation**, in the builder under Testing, runs one conversation against a test case so you can watch the agent handle it.
 
 It is the same machinery, used for looking rather than scoring. Those conversations are not kept and never appear in Runs.
+
+## Score calls after they end
+
+You can also have judges score real calls automatically. First save the judges you want, with their weights and a pass threshold, as a **workbench setup** through the [Evals API](/api-v1/post/evals-workbench-setups). Then pass `post_call_evals` with the setup's ID when you place a call with [`POST /v1/calls`](/api-v1/post/calls-agent):
+
+```json
+{
+  "phone_number": "+15551234567",
+  "agent_id": "YOUR_AGENT_ID",
+  "post_call_evals": {
+    "workbench_setup_id": "b7c2e1d4-8f3a-4c9e-9a2b-1e5f6d7c8a9b"
+  }
+}
+```
+
+- **Recording is required.** Calls with `post_call_evals` are recorded automatically. A request that sets `record: false` is rejected.
+- **The setup version is pinned when the call is created.** Pass `workbench_setup_version_id` to pin an exact version. Editing the setup mid-call does not change what gets scored.
+- **Scores arrive on their own webhook.** The post-call webhook includes `post_call_evals` with `status: "pending"`. The scores follow on a separate `evals` webhook event when the run finishes. Add `post_call_evals` to your organization's `webhook_excluded_fields` preference to strip it from webhooks.
+- **Auto runs are listed with manual runs.** Filter for them with `triggered_by=auto` on [`GET /v1/evals/runs`](/api-v1/get/evals-runs).
+
+## Use the API
+
+The Evals API is rooted at `/v1/evals`. In the API, a judge is an **eval agent** and a run is an **eval run**.
+
+1. Confirm Evals is enabled for your organization with [`GET /v1/evals/status`](/api-v1/get/evals-status).
+2. Create a judge with [`POST /v1/evals/agents`](/api-v1/post/evals-agents), optionally from a template. Edit its draft with [`PATCH /v1/evals/agents/{id}/versions/{version_id}`](/api-v1/patch/evals-agents-id-versions-id) and publish it with [`POST /v1/evals/agents/{id}/publications`](/api-v1/post/evals-agents-id-publish).
+3. Preview the cost with [`POST /v1/evals/runs/estimates`](/api-v1/post/evals-runs-estimates), then start a run with [`POST /v1/evals/runs`](/api-v1/post/evals-runs). A run takes up to 5,000 call IDs and up to 50 judges.
+4. Poll [`GET /v1/evals/runs/{run_id}`](/api-v1/get/evals-runs-id), then read the [call results](/api-v1/get/evals-runs-id-call-results) and [judge results](/api-v1/get/evals-runs-id-agent-results).
+
+To re-run the same set of judges over time, save it as a [workbench setup](/api-v1/post/evals-workbench-setups) and pass `workbench_setup_id` and `workbench_setup_version_id` when you create a run.
 
 ## Common failures
 

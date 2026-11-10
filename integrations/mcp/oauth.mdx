@@ -44,11 +44,14 @@ Clients that only register dynamically (RFC 7591), including Cursor and MCP Insp
 | Consent screen | Scope | What it grants |
 | --- | --- | --- |
 | Read your Bland workspace: agents, pathways, calls, and settings | `mcp:read` | Every Read tool. |
-| Create and change your agents: versions, branches, variables, and deployments | `mcp:write` | Write and Destructive tools. Optional: uncheck it for a read-only connection. |
+| Create and change your agents: versions, branches, variables, and deployments | `mcp:write` | Write and Destructive tools that need no narrower scope. Optional: uncheck it for a read-only connection. |
+| Place phone calls (billed to this org) | `calls:create` | `create_call`, `send_call`, and `create_batch`. |
+| End calls in progress | `calls:stop` | `stop_call` and `stop_batch`. |
+| Run evaluations on your agents (uses org credits) | `evals:run` | Runs that spend credits, such as `create_eval_run`, `start_agent_check_run`, and agent test runs. |
 | Your name and email | `openid`, `email` | Your identity, so the client can show who's signed in. |
 | Stay connected without signing in again | `offline_access` | A refresh token. The client renews its access token without sending you back to the browser. |
 
-Tools declare what they need: Read tools need `mcp:read`, Write and Destructive tools need `mcp:write`. The [tool reference](/integrations/mcp/tools) shows each tool's access level.
+Tools declare what they need: Read tools need `mcp:read`, and Write and Destructive tools need `mcp:write`, except tools that place or stop calls (`calls:create`, `calls:stop`) or run billed evaluations (`evals:run`). Discovery advertises only `mcp:read` and `mcp:write`, so when a tool needs one of the others, the server answers with a [step-up](#step-up-consent) challenge. The [tool reference](/integrations/mcp/tools) shows each tool's access level and scope.
 
 ### Step-up consent
 
@@ -61,7 +64,14 @@ If a tool needs a scope the connection wasn't granted, for example a write tool 
 - To disconnect, remove or disconnect the Bland app in your client. The client revokes its tokens at `https://api.bland.ai/authorization/oauth2/revoke`.
 - A connected-apps page in the dashboard, for reviewing and revoking connections, is planned.
 
-Over a sign-in connection, the purchase tools (`buy_credits`, `buy_phone_plan`) aren't offered. Buy credits and phone plans in the dashboard, or over an API key connection. Every other tool behaves as it does with an API key, scoped to the organization you chose and the permissions of your role in it.
+Over a sign-in connection, some tools aren't offered:
+
+- The purchase tools (`buy_credits`, `buy_phone_plan`). Buy credits and phone plans in the dashboard, or over an API key connection.
+- The generic API passthrough (`bland_api_get`, `call_bland_api`).
+- API Reference tools whose endpoints move money, mint keys or sessions, manage members, control live calls, or fall outside the everyday resources. The [tool reference](/integrations/mcp/tools) marks each one **Not offered**.
+- The legacy pathway [prompts](/integrations/mcp/tools#prompts-legacy-pathways).
+
+Every other tool behaves as it does with an API key, scoped to the organization you chose and the permissions of your role in it.
 
 ## Client support
 
@@ -97,7 +107,7 @@ What your client must do:
 - **Use PKCE with `S256`.** It's required on every authorization request.
 - **Identify itself with a client ID metadata document.** Your `client_id` is an HTTPS URL that serves your client's metadata JSON. The server metadata advertises this with `client_id_metadata_document_supported: true`. Dynamic client registration (RFC 7591) isn't available yet.
 - **Send `resource=https://api.bland.ai/v1/mcp`** (RFC 8707) in authorization and token requests. The token is only valid on `/v1/mcp`, not on the REST API.
-- **Request the scopes it needs.** `mcp:read` for read tools, `mcp:write` for write tools, plus `openid`, `email`, and `offline_access` as needed.
+- **Request the scopes it needs.** `mcp:read` for read tools, `mcp:write` for write tools, `calls:create`, `calls:stop`, or `evals:run` for the tools that declare them, plus `openid`, `email`, and `offline_access` as needed.
 
 How the server responds:
 

@@ -1,0 +1,77 @@
+---
+title: "Update Outcome"
+api: "PATCH https://api.bland.ai/v1/dispositions/{id}"
+description: "Rename an outcome, replace its script or change its metadata."
+---
+
+Send only the fields you want to change. Updating `script` saves a new version and increases `snippet_version` by 1. Runs after that use the new version.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The outcome ID.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  A new name. 1 to 100 characters, letters and underscores only.
+</ParamField>
+
+<ParamField body="script" type="string">
+  The new JavaScript source, up to 200,000 characters. It follows the same rules as [Create Outcome](/api-v1/post/dispositions).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Replaces the stored metadata.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The updated outcome, with the same fields as [Create Outcome](/api-v1/post/dispositions) returns.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, otherwise an array of error objects.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "id": "59627e31-6ec8-4d03-9bfc-11c2e6c8910c",
+    "org_id": "5c96ed8c-6bba-4c56-93f6-08a04e08ca47",
+    "name": "appointment_outcome",
+    "metadata": {},
+    "snippet_id": "85352170-a09d-4557-9112-643bb8425577",
+    "snippet_version": 4,
+    "created_at": "2026-10-20T18:22:05.117Z",
+    "updated_at": "2026-10-26T15:12:48.250Z"
+  },
+  "errors": null
+}
+```
+
+```json Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Disposition not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
