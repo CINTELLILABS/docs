@@ -1,23 +1,23 @@
 ---
 title: "Speech Limits"
-description: "Concurrency, voice clone, and professional clone limits for Bland Speech: what they are, how the $5 unlock works, and how to raise them."
+description: "Concurrency, voice clone, and professional clone limits for Bland Speech: what they are and how to raise them."
 ---
 
-Bland Speech is pay-as-you-go: generation is billed per character against your wallet balance, and there are no subscription tiers. Limits are per organization and are unlocked by funding your wallet.
+Bland Speech generation is billed per character against your wallet balance. Limits are per organization, and you can request a raise for each of them.
 
 ## Default limits
 
-| Limit | Before your first top-up | After a one-time \$5 top-up |
-| --- | --- | --- |
-| Concurrent generations | 1 | 5 |
-| Instant voice clones | 1 | 10 |
-| Live professional clones | 0 | 1 |
+| Limit | Default |
+| --- | --- |
+| Concurrent generations | 1 |
+| Instant voice clones | 1 |
+| Live professional clones | 0 |
 
-The unlock is **cumulative**: once your total wallet deposits reach \$5, the higher limits apply. They are not tied to your current balance, so spending your wallet down doesn't lower them. The starting credit new accounts receive does not count toward the \$5.
+Topping up your wallet does not change these limits. To go higher, see [Raising your limits](#raising-your-limits).
 
 ## Instant voice clones
 
-Every organization can create **one** instant clone before its first top-up, so you can try cloning before funding your wallet; the one-time \$5 top-up raises the limit to 10.
+Every organization can create **one** instant clone by default, so you can try cloning right away.
 
 Instant clone limits are counted per organization against your **current-generation (V3) voices**. Voice clones created with earlier model generations don't count against the limit. If your limit is 10, that's 10 active V3 clones, and deleting one frees the slot.
 
@@ -29,14 +29,30 @@ Your concurrency limit is the number of speech generations you may have **in fli
 
 A successfully initialized `/v2/tts/ws` connection occupies one slot until the socket closes, including time between turns. Close idle conversation sockets promptly. The endpoint keeps its synthesis connection warm for low latency, so it reserves capacity for the full session.
 
-HTTP speech endpoints respond `429` when no slot is available:
+HTTP speech endpoints respond `429` with a `Retry-After` header when no slot is available. `POST /v2/tts` uses its standard error shape:
 
 ```json
 {
-  "error": "concurrency_limit_reached",
-  "limit": 5,
-  "message": "You're at 5 concurrent generations. Email tts@bland.ai to raise your limit.",
-  "docs": "https://docs.bland.ai/speech/limits"
+  "error": {
+    "code": "concurrency_limit_reached",
+    "message": "Too many concurrent generations. Retry shortly, or email tts@bland.ai to raise your limit."
+  }
+}
+```
+
+The `/v1/speak` family and shared audio links return:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "concurrency_limit_reached",
+      "message": "You're at 5 concurrent generations. Email tts@bland.ai to raise your limit.",
+      "limit": 5,
+      "docs": "https://docs.bland.ai/speech/limits"
+    }
+  ]
 }
 ```
 
@@ -55,14 +71,12 @@ Avoid tight retry loops. They cannot make a slot free faster, and the wait is ty
 Professional (studio-trained) voices follow a **draft / live** model:
 
 - You may hold **unlimited drafts**. Drafts can be trained and previewed in the studio, but cannot be downloaded, used through the API, or used in calls.
-- You may promote up to your live limit (default **1** after the \$5 unlock). Only live voices are usable everywhere.
-- Training a professional voice requires a funded organization (the \$5 unlock) and passing Bland's **consent and rights review** for the voice being cloned.
+- You may promote up to your live limit. The default live limit is **0**, so request a raise before you promote your first professional voice. Only live voices are usable everywhere.
+- Training a professional voice requires passing Bland's **consent and rights review** for the voice being cloned.
 
 ## Raising your limits
 
-If you haven't made your first top-up yet, the \$5 unlock *is* the raise. It takes you to 10 instant clones, 1 live professional clone, and 5 concurrent generations.
-
-To go beyond the unlocked limits: for **instant clones** and **live professional clones**, use the **Request a raise** option in the studio (on the billing page when you're at your limit, or in the clone dialog); requests are reviewed by hand and answered by email. For **concurrency**, email [tts@bland.ai](mailto:tts@bland.ai) with your organization ID and expected volume, and those are sized case by case. Raises are applied directly to your organization, no plan change required.
+For **instant clones** and **live professional clones**, use the **Request a raise** option in the studio (on the billing page when you're at your limit, or in the clone dialog); requests are reviewed by hand and answered by email. For **concurrency**, email [tts@bland.ai](mailto:tts@bland.ai) with your organization ID and expected volume, and those are sized case by case. Raises are applied directly to your organization, no plan change required.
 
 ---
 
