@@ -1,12 +1,12 @@
 ---
 title: "Cancel Agent Phone Plan"
 api: "POST https://api.bland.ai/billing/cancel_agent_phone"
-description: "Cancel your organization's Agent Phone Plan immediately, with an optional offboarding survey."
+description: "Cancel your organization's Agent Phone Plan at the end of its billing period, with an optional offboarding survey."
 ---
 
 ### Overview
 
-Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan) right away. The \$29.99/month charge stops, there's no refund for the current month, and your included phone number stays on your account.
+Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan) at the end of the current billing period. The plan doesn't renew, it stays active until the month or year you've paid for ends, and there's no refund for the rest of that period. Your included phone number stays on your account.
 
 You can answer a short, optional offboarding survey in the same request with `feedback`. If you leave it out, the response includes `cancellation_survey`, which lists the questions and their allowed answers. You can send your answers afterwards with [Submit Cancellation Feedback](/api-v1/post/agent-phone-plan-cancel-feedback). The survey never affects the cancel.
 
@@ -51,7 +51,7 @@ If you're an agent canceling for a person, ask them the survey questions and pas
 ### Response
 
 <ResponseField name="data" type="object">
-  Your plan after the cancel. `status` is `canceled` and `phone_number` is the number you keep.
+  Your plan after the cancel. `status` stays `active` until the period ends, at `current_period_end`, and then becomes `canceled`. `phone_number` is the number you keep.
 </ResponseField>
 
 <ResponseField name="data.cancellation_survey" type="object">
@@ -89,8 +89,9 @@ curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
   "data": {
     "name": "agent_phone_basic",
     "display_name": "Agent Phone Plan",
-    "status": "canceled",
+    "status": "active",
     "phone_number": "+15551234567",
+    "current_period_end": "2026-12-01T00:00:00.000Z",
     "cancellation_survey": {
       "submit": { "method": "POST", "path": "/billing/cancel_agent_phone/feedback" },
       "questions": [

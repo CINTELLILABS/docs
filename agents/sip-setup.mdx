@@ -1,0 +1,210 @@
+---
+title: 'Set up a trunk'
+description: 'Create a SIP trunk with the setup wizard or API, attach numbers and DIDs, and inspect calls with the SIP trace'
+---
+
+A trunk is a reusable connection to your SIP infrastructure. It holds your provider's endpoint, the transport, and authentication. You create it once and attach numbers and DIDs to it.
+
+<Note>
+Using 3CX, Bandwidth, Five9, NICE CXone, Telnyx, or Twilio? Follow that provider's guide under **SIP integrations** in the sidebar. It covers the provider side and the exact values to enter here.
+</Note>
+
+## Prerequisites
+
+- An endpoint on your carrier, PBX, or SBC that Bland can reach over TLS on port 5061, with SRTP enabled
+- Firewall access to allow-list Bland's [signaling and media IPs](/agents/sip-network#connection-endpoints)
+- The numbers you will route, on your own carrier. Numbers bought from Bland can't be attached to a trunk
+
+## Create a trunk
+
+On the **SIP** tab, press **Create trunk**. The wizard names the trunk from the provider and endpoint, and every trunk it builds carries both directions. Rename it later on the trunk's **Configure** tab.
+
+<Warning>
+The trunk is created at the **Authentication** step, not at the end. Pressing **Create trunk** there writes the trunk before you pick a single number. Leaving after that point leaves a real trunk behind with nothing attached.
+</Warning>
+
+<Steps>
+  <Step title="Provider">
+    Pick your provider and enter its SIP endpoint. The field accepts a hostname, an IP, a full SIP URI such as `sip:user@host:5061;transport=tls`, or shorthand such as `tls://host`. The wizard parses the host, port, and transport.
+
+    The catalog has instructions for Twilio, Vonage, Asterisk / FreePBX, 3CX, Cisco UCM / CUBE, and RingCentral. For anything else, including Bandwidth and Telnyx, pick **Other**.
+
+    Microsoft Teams can't connect directly. Put a certified SBC between Teams and Bland, and enter the SBC's address.
+  </Step>
+
+  <Step title="Discovery">
+    Bland probes your endpoint. It resolves DNS (A, AAAA, and SRV records), sends SIP OPTIONS to common ports over UDP, TCP, and TLS, and detects your system, codecs, and methods.
+
+    It then shows the recommended port and transport. You can skip discovery and enter settings yourself.
+  </Step>
+
+  <Step title="Firewall">
+    The wizard lists the Bland IPs and ports to allow-list. The full reference is in [Connection endpoints](/agents/sip-network#connection-endpoints). Tick the confirmation box to continue.
+
+    Cloud providers such as Twilio, Vonage, and RingCentral skip this step, because there is no firewall of yours to change.
+  </Step>
+
+  <Step title="Authentication">
+    Choose how Bland and your server trust each other:
+
+    - **IP-based** (recommended): your server trusts Bland's IPs as SIP peers, and Bland trusts your endpoint by its source IP. No credentials to manage.
+    - **Registration-based**: Bland registers with your server using a username and password. **Generate password** creates a strong one.
+
+    Then choose how outbound calls leave Bland:
+
+    - **Via Bland's carrier** (default): Bland's carrier places the call to your SIP endpoint. Nothing else to set up.
+    - **Direct to your carrier (BYOC)**: Bland sends the call straight to your carrier, so termination runs on your own carrier contract. Your carrier must support TLS, and the caller IDs you dial from must be authorized on that account.
+
+    Under **Outbound call credentials**, enter the SIP username and password your carrier gave you. Bland uses them to answer a `401` or `407` challenge. They are optional with Bland's carrier and required with direct routing.
+
+    Press **Create trunk**.
+  </Step>
+
+  <Step title="Numbers">
+    Add the numbers to route through the trunk, or skip and add them later from the trunk's **Numbers** tab.
+  </Step>
+
+  <Step title="Complete">
+    The trunk is live. **Test connection** at the top of the trunk page sends a SIP OPTIONS ping to your endpoint over TLS.
+  </Step>
+</Steps>
+
+## Attach numbers and DIDs
+
+Numbers inherit the trunk's endpoint, transport, and authentication, so you don't repeat them per number.
+
+- **Phone numbers** are stored in E.164, for example `+14155550100`.
+- **DIDs and extensions**, such as `2001`, are stored as written when the number is attached to a trunk.
+- Each number has its own **inbound** and **outbound** configuration.
+
+Attach numbers from the trunk's **Numbers** tab, or up to 100 at a time with [`POST /v1/sip/attach`](/api-v1/post/sip-attach):
+
+```bash
+curl -X POST https://api.bland.ai/v1/sip/attach \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_numbers": ["+14155550100", "2001"],
+    "directions": [{ "type": "inbound" }, { "type": "outbound" }],
+    "service": "sip",
+    "trunk_id": "<trunk-id>"
+  }'
+```
+
+The response lists `configured` numbers, and `failed` numbers with a reason for each.
+
+Then assign an agent to each number. Under **Phone numbers**, press **Configure** on the number and pick the agent under **Assignment**.
+
+## Inspect a call
+
+Open a trunk's **Overview** tab and select a call to see its SIP trace: every message on every leg, as a sortable table or a ladder diagram, with full headers and SDP. Copy or export it to share with your carrier.
+
+The call log beside it shows each call's direction, status, SIP response code, and duration.
+
+## Advanced configuration
+
+[`PATCH /v1/sip/config`](/api-v1/patch/sip-config) saves failover servers, codec preferences, and alert thresholds for a number. Bland stores these settings but does not apply them to calls yet, and there is no dashboard control for them:
+
+- Calls use the single endpoint on the trunk. There is no automatic failover.
+- Calls use Bland's standard [codec list](/agents/sip-network#requirements-and-security), whatever order you save.
+- No SIP-specific alerts are sent.
+
+## Do it with the API
+
+<AccordionGroup>
+  <Accordion title="Validate an endpoint">
+    [`POST /v1/sip/parse-destination`](/api-v1/post/sip-parse-destination) parses a destination into its host, port, user, and transport:
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/sip/parse-destination \
+      -H "Authorization: Bearer <token>" \
+      -H "Content-Type: application/json" \
+      -d '{ "input": "sip:your.provider.com:5061;transport=tls" }'
+    ```
+  </Accordion>
+
+  <Accordion title="Run discovery">
+    [`POST /v1/sip/discover`](/api-v1/post/sip-discover) runs the full probe. The `recommended` object in the response has the `port`, `transport`, and `detected_system`. One discovery runs per organization at a time. Poll a long one with [`GET /v1/sip/discover/status`](/api-v1/get/sip-discover-status).
+
+    ```bash
+    curl -X POST https://api.bland.ai/v1/sip/discover \
+      -H "Authorization: Bearer <token>" \
+      -H "Content-Type: application/json" \
+      -d '{ "host": "sip.example.com" }'
+    ```
+  </Accordion>
+
+  <Accordion title="Get the IPs to allow-list">
+    [`GET /v1/sip/firewall-ips`](/api-v1/get/sip-firewall-ips) returns your region's IPs and ports.
+
+    ```bash
+    curl https://api.bland.ai/v1/sip/firewall-ips \
+      -H "Authorization: Bearer <token>"
+    ```
+  </Accordion>
+
+  <Accordion title="Use registration authentication">
+    Set `auth_mode` in the inbound direction of [`POST /v1/sip/attach`](/api-v1/post/sip-attach):
+
+    ```json
+    {
+      "type": "inbound",
+      "auth_mode": "register",
+      "register_auth": {
+        "username": "my-trunk",
+        "password": "a-strong-password"
+      }
+    }
+    ```
+
+    The response includes `register_password_for_pbx`, a one-time derived password to configure in your PBX. [`GET /v1/sip/generate-password`](/api-v1/get/sip-generate-password) returns a strong, PBX-safe password between 8 and 256 characters.
+  </Accordion>
+
+  <Accordion title="Create a named or one-direction trunk">
+    The wizard always builds a two-way trunk with a generated name. `POST /v1/sip/trunks` takes a name and a single direction.
+  </Accordion>
+
+  <Accordion title="Check a number's health">
+    [`GET /v1/sip/status`](/api-v1/get/sip-status) returns the health of a number's SIP configuration.
+
+    ```bash
+    curl 'https://api.bland.ai/v1/sip/status?phone_number=%2B14155550100' \
+      -H "Authorization: Bearer <token>"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Attaching a number fails">
+    Numbers bought from Bland can't be attached to a trunk. Attach numbers that live on your own carrier.
+  </Accordion>
+
+  <Accordion title="Test connection fails but calls work">
+    Test connection sends SIP OPTIONS over TLS. Some carriers don't answer OPTIONS from Bland. Place a test call to be sure.
+  </Accordion>
+
+  <Accordion title="Inbound calls are rejected with 603 Decline">
+    The number your carrier sends isn't attached to a trunk in your organization. Attach it in E.164 format, with the `+`.
+  </Accordion>
+
+  <Accordion title="Inbound calls are challenged with 407">
+    Bland doesn't trust the IP the call came from. Check that the trunk endpoint matches the server that sends your calls. If your server's public IP changed, contact Bland support.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    Send callers to a DID, extension, or SIP URI.
+  </Card>
+  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
+    Regions, IPs to allow-list, and TLS and SRTP.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
