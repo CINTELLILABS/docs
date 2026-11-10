@@ -7,20 +7,16 @@ Guard rails continuously analyze every AI and user response during production ca
 
 ## Why Guard Rails Matter
 
-When running thousands of AI calls, edge cases aren't a question of *if* but *when*. Manual review doesn't scale - if you're running 50,000 calls a week, you can't have humans listening to every conversation in real time.
+When running thousands of AI calls, edge cases aren't a question of *if* but *when*. Manual review doesn't scale. If you're running 50,000 calls a week, you can't have humans listening to every conversation in real time.
 
 **Legal exposure adds up fast:**
 - A single discriminatory statement during a hiring call can trigger an EEOC complaint
-- TCPA violations carry statutory damages of \$500-\$1,500 per call
+- TCPA violations carry statutory damages of \$500 to \$1,500 per call
 - Class action lawyers actively monitor for these violations
 
 **Brand damage is hard to recover from:**
 - A call where your AI mishandles someone in distress can go viral
 - These failures often happen in edge cases your testing didn't cover
-
-**Centralized compliance saves time:**
-- Update a compliance rule once and it applies everywhere instantly
-- No need to modify 30 pathways individually when regulations change
 
 Guard rails also help with stakeholder management. Your legal team gets confidence that even in scenarios nobody anticipated during testing, there's still a safety net catching dangerous outputs.
 
@@ -35,7 +31,7 @@ Guard rails also help with stakeholder management. Your legal team gets confiden
     - **Self introduction** - Must identify who is calling
     - **Recording disclosure** - Must disclose the call is being recorded
 
-    Default time window is 30 seconds (configurable via API).
+    The default time window is 30 seconds. You can change it per guard rail.
   </Accordion>
 
   <Accordion title="Forbid Guard Rails (Continuous)">
@@ -50,37 +46,34 @@ Guard rails also help with stakeholder management. Your legal team gets confiden
 
 ## Apply guard rails
 
-You can apply guard rails to:
-1. **Personas** - under "General" -> "Policy & Compliance"
-2. **Pathways** - under "Policy & Compliance" in the pathway splash page
-3. **Inbound numbers** - under "Advanced" -> "Guard Rails"
-4. **Any outbound call via API** - including the `guard_rails` field in the POST `/v1/calls` [API](/api-v1/post/calls#param-guard-rails)
+You can apply guard rails in two places:
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/guard-rails/apply-guard-rails.jpeg" />
+1. **An agent**: open the agent and select **Guardrails**, the second tab at the top of the builder, beside **Agent**. See [Agent builder](/agents/agent-builder#guardrails). To set them through the API, include `settings.guardrails` when you [create an agent version](/api-v2/post/agents-id-versions).
+2. **Any outbound call via API**: include the `guard_rails` field in the POST `/v1/calls` [API](/api-v1/post/calls#param-guard-rails).
+
+On an agent, four built-in guard rails cover the standard TCPA disclosures: AI disclosure, recording disclosure, self introduction, and opt out. Each is a switch, and a new agent starts with all four off. Built-in guard rails are available on every plan.
+
+Guard rails are part of the agent's configuration, so a change reaches live calls once you publish and promote the agent. See [Environments](/agents/environments).
 
 ## Actions When Guard Rails Fire
 
-When a violation is detected, set actions will execute automatically:
+You can attach an action to run when a guard rail is tripped:
 
-- **End call** - Immediately terminate the conversation
-- **Transfer to human** - Route to a live agent
-- **Move to node** - Jump to a specific node in your pathway (e.g., apology node, handoff node)
+- **End call**: Immediately terminate the conversation
+- **Transfer**: Route the call to a phone number, such as a live agent
+- **Move to a step**: Jump to a specific step in your agent, such as an apology or handoff step
 
-## Enterprise Custom Guard Rails
+An action is optional. With no action attached, the violation is recorded and the call continues.
 
-Enterprise customers can create up to 5 custom guard rails for industry-specific concerns/company policies. These are configured in the [Enterprise Dashboard Compliance Settings](https://app.bland.ai/dashboard/compliance).
+## Custom Guard Rails
 
-<img style={{ borderRadius: "0.5rem", border: "1px solid #ccc" }} src="/tutorials/tutorials-assets/guard-rails/custom-guard-rails.png" />
+Custom guard rails cover industry-specific concerns or company policies. They require an enterprise plan, and each agent can have up to 5. You write them on the agent's **Guardrails** tab.
 
-When creating a custom guardrail, ensure the prompt is clear, specific, and well-defined. Ambiguous prompts can cause false positives, flagging calls that shouldn't be triggered.
+When you write a custom guard rail, make the prompt clear, specific, and well-defined. Ambiguous prompts can cause false positives, flagging calls that shouldn't be triggered.
 
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/guard-rails/guard-rail-form.jpeg" />
-
-Once you've written your prompt, you can backtest it across multiple calls to verify it triggers, or doesn't trigger correctly. Each run shows the reasoning behind the result, making it easy to spot issues and refine the prompt.
-
-<img style={{ borderRadius: "0.5rem" }} src="/tutorials/tutorials-assets/guard-rails/guard-rail-run-test.jpeg" />
-
-Once satisfied, you can save the guard rail and apply it to any persona, pathway or inbound number.
+<Note>
+  Guard rails are monitoring. They do not guarantee regulatory compliance, and they are not a substitute for your own legal review of how you use the product.
+</Note>
 
 ---
 

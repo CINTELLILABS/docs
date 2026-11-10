@@ -3,53 +3,65 @@ title: "Integration Tools"
 description: "Connect to Cal.com, Salesforce, Slack, and other services."
 ---
 
-This tutorial walks through creating a Cal.com booking tool. The same patterns apply to all built-in integrations.
+This tutorial walks through creating a Cal.com booking tool. The same pattern applies to every built-in integration: connect an account once, build a tool on it, and tag the tool into a prompt.
 
-For shared concepts (parameter modes, response variables, response routing), see the [Tools overview](/tutorials/tools/overview).
+For shared concepts, see the [Tools overview](/tutorials/tools/overview). For the full builder reference, see [Tools](/agents/tools).
+
+## Prerequisites
+
+- An agent to tag the tool into, from [Agent builder](/agents/agent-builder)
+- A Cal.com account and its API key
 
 ---
 
 ## Step 1: Connect Cal.com
 
-1. Go to **Integrations** tab
-2. Click **Cal.com**
-3. Click **Add Connection**
-4. Name it (e.g., "Sales Team Calendar")
-5. Click **Connect**
-6. Enter your Cal.com API key in the popup
-7. Click **Save**
+1. Set the sidebar selector to **All agents** and open **Tools** under Resources.
+2. Open the **Connections** tab.
+3. Click **Add connection** and choose **Cal.com**.
+4. Give the connection a name, like "Sales Team Calendar", and enter your Cal.com API key.
 
-![Cal.com Connection](/tutorials/tutorials-assets/v2-tools/calCom_connection.gif)
+You only do this once. One connection can power as many tools as you need.
 
----
+You can also start from the tool builder: **New connection** at the top of its connection list opens the same flow.
 
-## Step 2: Create a Booking Tool
-
-In the Actions panel, click **Create Booking** to open the Tool Builder.
-
-![Actions Panel](/tutorials/tutorials-assets/v2-tools/integration_tools_tutorial/calcom_Action_pannel.png)
+{/* IMAGE: The Connections tab with a Cal.com connection added. */}
 
 ---
 
-## Step 3: Configure the Tool
+## Step 2: Create the tool
 
-**Action Parameters:**
+1. From inside your agent, open **Tools** and click **Create tool**.
+2. Choose **Integration**.
+3. Pick your Cal.com connection, then the booking action.
 
-![Action Parameters Configuration](/tutorials/tutorials-assets/v2-tools/integration_tools_tutorial/calcom_Action_params_config.jpeg)
-
-Each field uses one of three input modes (Manual, Agent, or Linked). See [Parameter Modes in Personas](/tutorials/tools/overview#parameter-modes-in-personas) for how each mode works and when to use it.
-
-**Response Variables:**
-
-![Response Variables Configuration](/tutorials/tutorials-assets/v2-tools/integration_tools_tutorial/calcom_response_vars.jpeg)
-
-Click **Create Tool**.
+The fields the tool needs come from Cal.com, so you do not define them yourself.
 
 ---
 
-## Cal.com Response Fields
+## Step 3: Configure the tool
 
-In addition to the default `ok`, `message`, and `data` fields returned by every integration (see [Response Variables](/tutorials/tools/overview#response-variables)), the Cal.com Schedule Meeting action returns:
+**Describe when to use it.** The agent reads the description to decide when to call the tool. Write the trigger: "Book a meeting once the caller has agreed to a specific time."
+
+**Fill in each field.** Give each field a fixed value, have the agent fill it from the conversation, or use a variable already on the call. A calendar or event type is usually fixed. The attendee's name and email usually come from the caller.
+
+**Choose the output fields.** Check the fields the agent should be able to use, and keep `ok` checked so the agent can tell when a booking failed.
+
+{/* IMAGE: The integration tool builder with the Cal.com booking action selected. */}
+
+Save the tool.
+
+---
+
+## Step 4: Tag it into a prompt
+
+In the agent's **Prompt**, type `@` and pick the tool. It then appears under **Tool references**. A tool that is not tagged is never called. See [Tag a tool into a prompt](/agents/tools#tag-a-tool-into-a-prompt).
+
+---
+
+## Cal.com response fields
+
+In addition to the default `ok`, `message`, and `data` fields, the Cal.com booking action returns:
 
 | Field | Description |
 |-------|-------------|
@@ -63,7 +75,11 @@ In addition to the default `ok`, `message`, and `data` fields returned by every 
 | `attendee_name` | The attendee's name |
 | `attendee_timezone` | The attendee's timezone |
 
-Reference these in subsequent pathway nodes with `{{variable_name}}` syntax, or use them in [response routing](/tutorials/tools/overview#response-routing) to branch on success or failure.
+To use a field in the prompt, check it under **Output fields** and write its bare name, for example:
+
+```text
+Confirm the booking and read the start time back to the caller: {{start_time}}.
+```
 
 ---
 

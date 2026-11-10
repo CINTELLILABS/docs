@@ -248,7 +248,7 @@ curl --request POST https://api.bland.ai/v1/calls \
 
 ### Model Parameters
 
-<ParamField body="language" default="babel-en" type="string">
+<ParamField body="language" default="en" type="string">
   Select a supported language of your choice. Optimizes every part of our API for that language - transcription, speech, and other inner workings.
 
   <Accordion title="Expand to view language options">
@@ -604,6 +604,10 @@ curl --request POST https://api.bland.ai/v1/calls \
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
 </ParamField>
 
+<ParamField body="disposition_ids" type="string[]">
+  Outcome IDs to run after the call ends. Create outcomes with [Create Outcome](/api-v1/post/dispositions). Results appear in the `dispositions` field of [Call Details](/api-v1/get/calls-id). See [Outcomes](/tutorials/outcomes) for details.
+</ParamField>
+
 <ParamField body="stream_post_transfer_transcript" type="boolean" default="false">
   When `true` and the call is transferred to a human, Bland transcribes the conversation after the transfer live and streams it over the [Post-Transfer Transcript Stream](/api-v1/post/calls-id-transcript-stream) WebSocket while the transferred conversation is happening. Works for both cold and warm transfers.
 
@@ -615,7 +619,7 @@ curl --request POST https://api.bland.ai/v1/calls \
 </ParamField>
 
 <ParamField body="post_call_evals" type="object">
-  Attach an [evals workbench](/tutorials/evals) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call — no separate eval-run submission needed.
+  Attach an [evals workbench](/agents/evaluations#score-calls-after-they-end) to this call. When the call completes, Bland automatically runs the workbench's eval configuration against the call — no separate eval-run submission needed.
 
   Provide at least one of:
 
@@ -779,7 +783,7 @@ curl --request POST https://api.bland.ai/v1/calls \
   - `tool`
   - `dynamic_data`
   - `citations` (Required for any citation webhooks)
-  - `evals` (Eval scores from an attached [evals workbench](/tutorials/evals), sent as a separate webhook when the run completes)
+  - `evals` (Eval scores from an attached [evals workbench](/agents/evaluations#score-calls-after-they-end), sent as a separate webhook when the run completes)
   - `post_transfer_transcript` (Adds the post-transfer conversation to the post-call webhook when the call is transferred to a human; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). Requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside this subscription returns a 400. In limited rollout: if not enabled for your organization, the subscription has no effect.)
 
   Example payloads:

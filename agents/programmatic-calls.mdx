@@ -1,0 +1,260 @@
+---
+title: "Updating programmatic call use with your new Agent"
+description: "Update your outbound call requests to use your new Agent, keep existing call settings, and read post-call results."
+---
+
+## One simple change to start calling with your new Agent
+
+**Before you begin:** Your agent owner should have built, tested, and published your new Agent to production.
+
+For most outbound integrations, the request change is small: replace your existing pathway or persona ID with your new agent ID. If your integration reads outcomes or citations, update its result parser too.
+
+### What changes
+
+| Area                        | What to do                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| Endpoint and authentication | Keep `POST /v1/calls` and the organization API key.                                         |
+| Agent selection             | Replace `pathway_id` or `persona_id` with `agent_id`; remove `pathway_version`.             |
+| Call settings               | Keep existing per-call overrides, or omit them to use saved agent settings.                 |
+| Call data                   | Keep the fields the conversation needs in `request_data` and tracking fields in `metadata`. |
+| Post-call outcomes          | Update the parser if it reads dispositions or migrated citations.                           |
+| Cutover                     | Validate one complete request, call, and webhook flow with your agent owner.                |
+
+Your agent owner provides the agent ID, confirms the production release, and validates any required dispositions. Update your integration's call requests and, if needed, its result processing.
+
+## Update the call request
+
+Replace `pathway_id` or `persona_id` with `agent_id`. Remove the old selector and any `pathway_version`. Keep the same endpoint, `POST https://api.bland.ai/v1/calls`, and the existing organization API key for that account.
+
+Keep the existing dialing pool, timezone, scheduling, `request_data`, `metadata`, webhook URL, and webhook event settings. Send the complete data objects the call needs; request objects replace the agent's defaults.
+
+### Before and after
+
+Illustrative requests with placeholder IDs. The example keeps the existing per-call settings.
+
+#### Before
+
+```json
+{
+	"phone_number": "+14155550100",
+	"pathway_id": "<OLD_PATHWAY_ID>",
+	"pathway_version": 74,
+	"voice": "<VOICE_ID>",
+	"record": true,
+	"max_duration": 30,
+	"request_data": { "order_id": "123" },
+	"webhook": "https://customer.example/post-call"
+}
+```
+
+#### After
+
+```json
+{
+	"phone_number": "+14155550100",
+	"agent_id": "<NEW_AGENT_ID>",
+	"voice": "<VOICE_ID>",
+	"record": true,
+	"max_duration": 30,
+	"request_data": { "order_id": "123" },
+	"webhook": "https://customer.example/post-call"
+}
+```
+
+**Request settings take priority.** Keeping `voice`, `record`, or `max_duration` overrides the agent's saved settings for that call. Omit those fields to use the agent's settings. For example, the request above uses the specified voice, records the call, and sets a 30-minute limit, even if the agent's saved settings differ.
+
+### Minimal production request
+
+Use this when the agent already has the right call settings and your organization has a default webhook configured. Otherwise, include your existing `webhook` URL in the request. An omitted webhook uses the organization's default, not the agent's saved settings. Replace the placeholders with the organization key and agent ID. The destination number is illustrative.
+
+```bash
+curl --request POST 'https://api.bland.ai/v1/calls' \
+  --header 'Authorization: Bearer <ORG_API_KEY>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "phone_number": "+14155550100",
+    "agent_id": "<NEW_AGENT_ID>"
+  }'
+```
+
+Add per-call data when needed. A `webhook` sent in the request overrides your organization's default. Save the returned `call_id` so the request can be matched to its later webhook.
+
+### Updating requests that use a persona or call preset
+
+Make the same selector change for a request using `persona_id`.
+
+#### Before with a persona
+
+```json
+{
+	"phone_number": "+14155550100",
+	"persona_id": "<OLD_PERSONA_ID>",
+	"request_data": { "customer_name": "Alex" },
+	"metadata": { "customer_id": "cust_123" }
+}
+```
+
+#### After with an agent
+
+```json
+{
+	"phone_number": "+14155550100",
+	"agent_id": "<NEW_AGENT_ID>",
+	"request_data": { "customer_name": "Alex" },
+	"metadata": { "customer_id": "cust_123" }
+}
+```
+
+Send only one selector. Combining `agent_id` with `pathway_id` or `persona_id` produces `AGENT_PARAM_CONFLICT`.
+
+### Production and staging versions
+
+Omit `agent_version` for normal production traffic. Calls follow the production release and remain eligible for experiments. Any explicit selector, including `"production"`, bypasses experiment assignment.
+
+| Request                         | Version used                                             |
+| ------------------------------- | -------------------------------------------------------- |
+| Omit `agent_version`            | Production, with experiment assignment where configured. |
+| `"agent_version": "production"` | Production, with experiments bypassed.                   |
+| `"agent_version": "staging"`    | The release pinned to staging.                           |
+| `"agent_version": "1.2.0"`      | That exact saved version, using dev environment values.  |
+
+For staging, use a test number and test webhook:
+
+```json
+{
+	"phone_number": "+14155550100",
+	"agent_id": "<NEW_AGENT_ID>",
+	"agent_version": "staging",
+	"request_data": { "order_id": "test_123" },
+	"metadata": { "test_run": true },
+	"webhook": "https://customer.example/test-post-call"
+}
+```
+
+Your agent owner must publish a release to the selected environment first. An environment with no pinned release returns `AGENT_ENV_UNPINNED`. A version selector is a string; the old numeric `pathway_version` does not carry over.
+
+If present, remove call-level `tools` and omit `task`; the ready agent supplies both its tools and conversation instructions.
+
+### Send complete data objects
+
+`request_data` and `metadata` replace the corresponding saved objects in full. Their individual keys do not merge.
+
+For example, suppose the agent's saved `request_data` contains:
+
+```json
+{
+	"company_name": "Acme",
+	"support_number": "+14155550199"
+}
+```
+
+If the call also needs an order ID, send all three required fields:
+
+```json
+{
+	"phone_number": "+14155550100",
+	"agent_id": "<NEW_AGENT_ID>",
+	"request_data": {
+		"company_name": "Acme",
+		"support_number": "+14155550199",
+		"order_id": "123"
+	},
+	"metadata": {
+		"customer_id": "cust_123",
+		"campaign_id": "renewals"
+	}
+}
+```
+
+Sending only `{"order_id": "123"}` replaces the saved object with that single key. Confirm the conversation receives every variable it expects.
+
+## Update result parsing if used
+
+If your integration uses post-call outcomes, update where it reads the result:
+
+| Before                  | After                          |
+| ----------------------- | ------------------------------ |
+| `dispositions[].result` | `agent_dispositions[].payload` |
+
+### Before and after outcome examples
+
+These are shortened, illustrative webhook fragments. Your agent owner must configure and publish your Agent's disposition to produce the field names and types your integration expects.
+
+#### Before with an existing disposition
+
+```json
+{
+	"call_id": "<CALL_ID>",
+	"dispositions": [
+		{
+			"result": {
+				"appointment_booked": true,
+				"order_id": "123"
+			}
+		}
+	]
+}
+```
+
+#### After with an agent disposition
+
+```json
+{
+	"call_id": "<CALL_ID>",
+	"agent_dispositions": [
+		{
+			"disposition_id": "<DISPOSITION_ID>",
+			"disposition_key": "booking_outcome",
+			"status": "complete",
+			"payload": {
+				"appointment_booked": true,
+				"order_id": "123"
+			}
+		}
+	]
+}
+```
+
+The business fields can stay the same when the disposition is configured to preserve them. Match `disposition_key` or `disposition_id`, then read `payload`. Array position can change.
+
+Confirm the expected fields with your agent owner. Select the entry by its disposition key or ID, check `status`, and route failed or missing outcomes to review before taking an automated action.
+
+If reading migrated citations, use `values[]` by key and check `state`: `produced`, `no_value`, or `error`.
+
+### Webhook delivery and retries
+
+Confirm the delivery behavior with your agent owner:
+
+-   **Follow-up event:** the normal call webhook arrives first. A later event with `event_type: "dispositions"` carries `call_id` and `agent_dispositions`. The receiver must process both events.
+
+-   **Hold original webhook:** results travel in one combined call webhook, adding up to 30 minutes. This requires **Immediately on conversation end**.
+
+-   **Existing citations:** an existing citation hold can cause disposition delivery to fall back to a follow-up event.
+
+-   **Queued results:** delivery can take up to 24 hours.
+
+Correlate events by `call_id` and make updates safe to retry. If a held disposition misses its deadline, expect `status: "failed"` and an `error`, with no `payload` or `values`. Send failed or missing results to review.
+
+If downstream code needs the agent's identity, validate the actual webhook fields during testing. The stable `agent_id` and the executed `agent_version_id` identify different things. You can also retain the requested `agent_id` alongside the returned `call_id` in your own system.
+
+## Confirm before cutover
+
+-   Get the new `agent_id` and confirm the production release is ready.
+
+-   Confirm required outcomes are published and obtain a representative webhook sample.
+
+-   Update the selector, remove `pathway_version`, and decide which per-call settings to keep.
+
+-   Place a representative test call. Check the conversation, caller ID, voice, and variables.
+
+-   Confirm webhook delivery, field names, types, and the downstream action.
+
+-   Test missing or failed outcomes and repeated webhook delivery.
+
+-   Switch the production request to the new `agent_id`, then monitor the first calls and their results.
+
+The selector change starts calls with the ready agent. Outcome configuration and downstream parsing must also be validated for integrations that act on post-call results.
+
+## References
+
+[Send Call with an Agent](/api-v1/post/calls-agent) · [Dispositions and webhook delivery](/agents/dispositions)
