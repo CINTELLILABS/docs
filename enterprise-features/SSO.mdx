@@ -260,7 +260,7 @@ Before configuring SSO, ensure you have:
     3. Select: `email`, `family_name`, `given_name`, `preferred_username`
     4. For role mapping, click **Add groups claim**:
        - Select **Security groups**
-       - Under **ID**, select **Group ID**
+       - Under **ID**, choose a name format such as **sAMAccountName** or **Cloud-only group display names**, not **Group ID**. Bland maps roles from group names, so a group ID matches no role.
   </Accordion>
   
   <Accordion title="Step 5: Configure in Bland">
@@ -629,7 +629,7 @@ Supports both protocols:
     - For OIDC: Ensure the `groups` scope is requested
     - For Okta: Ensure groups are assigned to the application, not just users
     - Use browser DevTools or SAML tracer to inspect the actual groups being sent
-    - Users without matching groups default to the `viewer` role
+    - New users without a matching group get the organization's default member role. Existing users keep their role.
   </Accordion>
 </AccordionGroup>
 
@@ -726,7 +726,7 @@ Supports both protocols:
 
 ## Role Mapping & Group Inheritance
 
-Bland automatically maps IdP groups and roles to organization permissions, enabling seamless role inheritance from your existing identity provider.
+Bland automatically maps IdP groups and roles to organization permissions, enabling seamless role inheritance from your existing identity provider. For what each role can do, see [Roles and permissions](/platform/roles-and-permissions).
 
 ### How It Works
 
@@ -739,28 +739,35 @@ Groups are mapped based on their names. The following patterns are recognized:
 **Admin Role:**
 - `Bland AI - Static - Admin`
 - `bland-admin`
-- Groups containing: `admin`, `administrator`, `owner`, `manager`, `super`
-- Example: `IT-Admin`, `Super-Users`, `Organization-Administrators`
+- `IT-Admin`
+- Groups containing: `admin` or `owner`
+- Example: `Organization-Administrators`
 
 **Operator Role:**
 - `Bland AI - Static - Operator`
 - `bland-operator`
-- Groups containing: `operator`, `support`
-- Example: `Support-Team`, `Call-Operators`
+- `Support-Team`
+- Groups containing: `operator`, `support` or `agent`
+- Example: `Call-Operators`
 
 **Prompter Role:**
 - `Bland AI - Static - Prompter`
 - `bland-prompter`
-- Groups containing: `prompt`, `editor`
+- Groups containing: `prompt` or `editor`
 - Example: `Content-Editors`, `Prompt-Engineers`
 
-**Viewer Role (Read-Only):**
+**Viewer Role:**
 - `Bland AI - Static - Viewer`
 - `bland-viewer`
-- Groups containing: `viewer`, `read-only`, `readonly`
+- `Read-Only`
+- Groups containing: `viewer`, `read-only`, `readonly` or `guest`
 - Example: `Read-Only-Users`, `Audit-Viewers`
 
-**Default:** Users without matching groups receive the `viewer` role.
+Exact names are checked first. Otherwise Bland uses the first of the user's groups that matches a pattern, checking admin, then viewer, then operator, then prompter. Patterns ignore case; exact names must match exactly.
+
+**Default:** If none of a user's groups matches, a new member gets the organization's default member role, which is `viewer` unless an owner or admin changes it. An existing member keeps their current role.
+
+Roles are checked at every sign-in. When a user's groups map to a role, that role replaces any role set in the dashboard or through the API.
 
 ### IdP-Specific Configuration
 
@@ -861,15 +868,13 @@ Contact support@bland.ai for custom role mapping configuration.
    - Confirm `groups` claim contains expected values
 
 2. **Check Role Assignment:**
-   - After login, verify user role in Organization Settings → Members
-   - Admin users see full settings access and can manage members
-   - Operators have standard access to make and manage calls
-   - Viewers have read-only access to view calls and analytics
+   - After login, check the user's role in **Settings > Users**
+   - See [Roles and permissions](/platform/roles-and-permissions) for what each role can do
 
 3. **Test Different Scenarios:**
    - User with single group membership
-   - User with multiple groups (highest privilege wins)
-   - User with no groups (defaults to operator)
+   - User with multiple groups (the first matching group wins)
+   - User with no groups (new members get the default member role; existing members keep theirs)
    - Group name changes in IdP
 
 ### Troubleshooting Group Inheritance
@@ -906,7 +911,7 @@ Contact support@bland.ai for custom role mapping configuration.
 
 <Note>
 - Users signing in via SSO still need to verify their phone number during first-time setup (unless "Skip phone verification" is enabled)
-- SSO users are automatically added to your organization with the `viewer` role by default (role can be upgraded via group mapping)
+- SSO users are automatically added to your organization with the organization's default member role, `viewer` unless changed (group mapping can set a different role)
 - Each email domain can only be configured for one organization
 - Existing users are automatically converted to SSO on first SSO login
 </Note>
