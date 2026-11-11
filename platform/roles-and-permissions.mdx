@@ -1,0 +1,72 @@
+---
+title: "Roles and permissions"
+description: "What each organization role can do, and how roles apply to API keys and SSO."
+---
+
+A member's role decides what they can do in the dashboard, and what a full-access API key they create can do.
+
+## Roles
+
+| Role     | What it's for                                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Owner    | Usually the person who created the organization. Can do everything an admin can, and is the only one who can delete the organization. |
+| Admin    | Runs the organization: members, billing, API keys and settings, plus everything an operator can do.                            |
+| Operator | Builds and ships agents, and manages secrets, analytics dashboards, exports and credits.                                        |
+| Prompter | Builds and ships agents. Can't manage secrets, analytics dashboards, exports or credits.                                        |
+| Viewer   | Sees agents and conversations. Can't create, edit or ship agents.                                                              |
+
+## What each role can do
+
+| Action                                                  | Owner | Admin | Operator | Prompter | Viewer |
+| ------------------------------------------------------- | :---: | :---: | :------: | :------: | :----: |
+| See agents and conversations                            |  Yes  |  Yes  |   Yes    |   Yes    |  Yes   |
+| Create, edit and delete agents and their pathways       |  Yes  |  Yes  |   Yes    |   Yes    |   No   |
+| Publish, promote and roll back agents                   |  Yes  |  Yes  |   Yes    |   Yes    |   No   |
+| Create and edit dispositions                            |  Yes  |  Yes  |   Yes    |   Yes    |   No   |
+| Manage secrets in **Tools > Secrets**                   |  Yes  |  Yes  |   Yes    |    No    |   No   |
+| Add charts to analytics dashboards                      |  Yes  |  Yes  |   Yes    |    No    |   No   |
+| Export conversations                                    |  Yes  |  Yes  |   Yes    |    No    |   No   |
+| Buy credits                                             |  Yes  |  Yes  |   Yes    |    No    |   No   |
+| Manage members, roles and organization settings         |  Yes  |  Yes  |    No    |    No    |   No   |
+| Manage API keys                                         |  Yes  |  Yes  |    No    |    No    |   No   |
+| Change plans                                            |  Yes  |  Yes  |    No    |    No    |   No   |
+| Delete the organization                                 |  Yes  |  No   |    No    |    No    |   No   |
+
+In **Settings**, only owners and admins see the organization pages, such as **Users**, **Billing** and **API keys**. Other roles see their own account settings.
+
+Roles don't limit every area yet, so don't rely on the Viewer role to make a member read-only.
+
+## Assign roles
+
+Owners and admins add members and change their roles in **Settings > Users**. Through the API, use [Update Organization Members](/api-v1/patch/org_members) to add or remove a member, and [Update Organization Member Permissions](/api-v1/patch/org_member_permissions) to change a role.
+
+- **Default role.** New members start with the organization's default member role unless you pick one when you add them. It's Viewer until an owner or admin changes it under **Settings**, or sets `preferences.default_member_role` with [Update Organization Properties](/api-v1/patch/org_properties). That call replaces the whole `preferences` object, so include the preferences you want to keep. It can be any role except owner.
+- **More than one role.** The dashboard gives each member one role. Through the API, a member can hold several, and can do anything any of their roles allows.
+- **SSO members.** If you use SSO, a member's groups can replace the role you set. See [Roles and SSO](#roles-and-sso).
+
+### The owner
+
+Each organization has one owner, usually the person who created it. The owner can't be changed or removed in the dashboard or through the API, and can't leave the organization. To transfer ownership, contact support. The previous owner becomes an admin.
+
+## Roles and API keys
+
+A full-access API key acts as the member who created it. Most endpoints that are limited by role check that member's current role. Only owners and admins can create keys, so a full-access key usually has admin access.
+
+- If the member's role changes, their full-access keys change with it.
+- If the member is removed from the organization, their full-access keys are deleted.
+- A few role limits apply only in the dashboard, so a full-access key isn't held to them. For example, a full-access key can send calls whatever its creator's role.
+
+[Restricted keys](/api-v1/post/keys-create#restricted-keys) and [OAuth clients](/api-v1/oauth-client-credentials) don't use roles. Their permissions decide what they can reach, and they keep working when the member who created them changes role or leaves.
+
+## Roles and SSO
+
+With [SSO](/enterprise-features/SSO), Bland can set each member's role from their groups in your identity provider. Groups can map to admin, operator, prompter or viewer, never owner.
+
+Bland checks a member's groups each time they sign in with SSO:
+
+- If one of their groups maps to a role, Bland sets that role, replacing any role set in the dashboard or through the API.
+- If none of their groups maps to a role, an existing member keeps their role, and a new member gets the default member role.
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
