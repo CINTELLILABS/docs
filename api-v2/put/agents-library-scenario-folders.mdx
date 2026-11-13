@@ -1,0 +1,110 @@
+---
+title: "File Scenario in Folder"
+api: "PUT https://api.bland.ai/v2/agents/library/scenario-folders"
+description: "Move one of your agents' scenarios into a folder, or take it out."
+---
+
+### Overview
+
+Files one scenario in a folder. If the scenario is already in a folder, it moves to the new one. Set `folder_id` to `null` to take it out of its folder. Taking out a scenario that isn't filed still succeeds.
+
+Create the folder first with [Create Folder](/api-v1/post/create_pathway_folder). For how folders work, see [List Scenario Folders](/api-v2/get/agents-library-scenario-folders).
+
+Requires an admin, owner, operator, or prompter role. Restricted API keys can't call this endpoint. Use a full-access key.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="agent_id" type="string" required>
+  The agent the scenario belongs to. Returns `404 NOT_FOUND` if the agent isn't in your organization or has been deleted.
+</ParamField>
+
+<ParamField body="node_id" type="string" required>
+  The scenario's node ID: the `id` of a scenario from [List Library Scenarios](/api-v2/get/agents-library-scenarios). 1 to 200 characters. Bland doesn't check that the agent has a node with this ID, so check it before you send it.
+</ParamField>
+
+<ParamField body="folder_id" type="string | null" required>
+  The folder to file the scenario in, or `null` to take it out of its folder. Returns `404 NOT_FOUND` if the folder isn't in your organization.
+</ParamField>
+
+A missing field, an `agent_id` or `folder_id` that isn't a UUID, or a `node_id` outside 1 to 200 characters returns `400 BAD_REQUEST`.
+
+### Response
+
+<ResponseField name="data" type="object">
+  The saved filing.
+
+  <Expandable title="properties">
+    <ResponseField name="agent_id" type="string">
+      The agent the scenario belongs to.
+    </ResponseField>
+    <ResponseField name="node_id" type="string">
+      The scenario's node ID.
+    </ResponseField>
+    <ResponseField name="folder_id" type="string | null">
+      The folder the scenario is now in, or `null` if it was taken out.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<RequestExample>
+```bash File a scenario
+curl -X PUT https://api.bland.ai/v2/agents/library/scenario-folders \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "b5154820-6f11-4886-8523-d896934528ae",
+    "node_id": "00fa3bcf-56f5-45b9-8996-427d57b091b7",
+    "folder_id": "6f0e2a6c-1d3b-4f6e-9a57-2c8d1e4b7a90"
+  }'
+```
+
+```bash Take it out of its folder
+curl -X PUT https://api.bland.ai/v2/agents/library/scenario-folders \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "b5154820-6f11-4886-8523-d896934528ae",
+    "node_id": "00fa3bcf-56f5-45b9-8996-427d57b091b7",
+    "folder_id": null
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent_id": "b5154820-6f11-4886-8523-d896934528ae",
+    "node_id": "00fa3bcf-56f5-45b9-8996-427d57b091b7",
+    "folder_id": "6f0e2a6c-1d3b-4f6e-9a57-2c8d1e4b7a90"
+  },
+  "errors": null
+}
+```
+
+```json Folder Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Folder not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
