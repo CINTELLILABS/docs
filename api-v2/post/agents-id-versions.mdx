@@ -33,6 +33,12 @@ Requires an admin, owner, operator, or prompter role.
     Each node needs a string `id` that is unique within its flow, a `position` of `{ "x": number, "y": number }`, and a `data` object. `type` names the node kind (for example `start`, `scenario`, `complex-scenario`, `auth`). Container nodes carry a nested `data.flow` with the same `{ nodes, edges }` shape, validated recursively; flows may nest at most 10 levels deep.
 
     Each edge needs string `id`, `source`, and `target` values, and `source` and `target` must reference nodes in the same flow.
+
+    <ParamField body="behavior.nodes[].data.loopWhile" type="string">
+      The condition that must be true before the agent **leaves** this step. It is not a condition for staying: while it is false, the agent keeps working the step, and once it is true, the conversation moves on. In the agent builder this is the **Move forward when** field, with the tooltip "Describe what must be true before the agent leaves this pathway."
+
+      Write the exit condition, for example `The caller has confirmed a date and time for the appointment`. Do not write the condition for staying, such as `The caller has not confirmed a time yet`: the agent would move on as soon as that is true. An empty string means the step runs once and then moves on.
+    </ParamField>
   </Accordion>
 
   <Accordion title="settings (required)">

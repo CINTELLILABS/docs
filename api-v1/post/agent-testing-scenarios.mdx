@@ -1,7 +1,7 @@
 ---
 title: "Create Test Scenario"
 api: "POST https://api.bland.ai/v1/agent-testing/scenarios"
-description: "Create a new test scenario with assertions for a pathway or persona."
+description: "Create a new test scenario with assertions for a pathway, persona, or agent."
 ---
 
 ### Headers
@@ -13,15 +13,19 @@ description: "Create a new test scenario with assertions for a pathway or person
 ### Body Parameters
 
 <ParamField body="pathway_id" type="string">
-  The pathway to test. Either `pathway_id` or `persona_id` is required.
+  The pathway to test. Exactly one of `pathway_id`, `persona_id`, or `agent_id` is required.
 </ParamField>
 
 <ParamField body="persona_id" type="string">
-  The persona to test. Either `pathway_id` or `persona_id` is required.
+  The persona to test. Exactly one of `pathway_id`, `persona_id`, or `agent_id` is required.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+  The agent to test. Exactly one of `pathway_id`, `persona_id`, or `agent_id` is required. Sending none returns `400` with `One of pathway_id, persona_id, or agent_id is required`. Sending more than one returns `400`.
 </ParamField>
 
 <ParamField body="name" type="string" required>
-  Name of the scenario. Must be unique within the pathway/persona.
+  Name of the scenario. Must be unique within the pathway, persona, or agent.
 </ParamField>
 
 <ParamField body="description" type="string">
@@ -45,7 +49,7 @@ description: "Create a new test scenario with assertions for a pathway or person
 </ParamField>
 
 <ParamField body="max_turns" type="integer" default="20">
-  Max conversation turns before the test ends. Maximum value is 50.
+  Max conversation turns before the test ends. Maximum value is 50. A run ends before this limit only when the conversation completes or reaches a terminal step, such as End call. See [How a test run ends](/tutorials/scenarios#how-a-test-run-ends).
 </ParamField>
 
 <ParamField body="request_data" type="object">
@@ -112,11 +116,15 @@ description: "Create a new test scenario with assertions for a pathway or person
 </ResponseField>
 
 <ResponseField name="pathway_id" type="string">
-  The pathway ID being tested (null if testing a persona).
+  The pathway ID being tested (null if testing a persona or agent).
 </ResponseField>
 
 <ResponseField name="persona_id" type="string">
-  The persona ID being tested (null if testing a pathway).
+  The persona ID being tested (null if testing a pathway or agent).
+</ResponseField>
+
+<ResponseField name="agent_id" type="string">
+  The agent ID being tested (null if testing a pathway or persona).
 </ResponseField>
 
 <ResponseField name="name" type="string">
