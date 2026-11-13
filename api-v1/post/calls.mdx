@@ -93,7 +93,7 @@ Each example sends one call. Replace the example destination and resource ID wit
 
 - `agent_id` cannot be combined with `persona_id` or `pathway_id`; the API rejects the combination. `agent_version` requires `agent_id`. The agent graph drives the call, so omit `task` on agent requests.
 - Agent call settings supply defaults. Explicit call settings such as `voice`, `record`, and `max_duration` override their agent defaults. Explicit `request_data` and `metadata` replace their respective default objects, including when you pass `{}`. `interruptibility` and `block_interruptions` count as one setting, as do the voicemail `action`, `message`, and `sms`: sending any one of them replaces the agent's whole setting.
-- On agent requests, the call-level `tools` parameter is rejected. `citation_schema_ids` and `disposition_ids` are dropped without an error, because V1 citation schemas and outcomes don't run on agent calls. Configure [Dispositions](/agents/dispositions#coming-from-citations-and-outcomes) on the agent instead.
+- On agent requests, the call-level `tools` parameter is rejected. `citation_schema_ids`, `disposition_ids`, and `analysis_preset` are dropped without an error, because V1 citation schemas, outcomes, and analysis presets don't run on agent calls. Configure [Dispositions](/agents/dispositions#coming-from-citations-and-outcomes) on the agent instead.
 - A persona can be combined with `pathway_id` and `pathway_version` to override its pathway routing. An explicit `persona_settings` object takes precedence over those pathway overrides. For versioned personas, stored call configuration is applied over matching top-level request fields. Legacy persona presets apply the request over the preset instead. Inspect the persona configuration rather than assuming all request fields win.
 - A direct pathway request does not need `task`; its graph controls the conversation. `request_data` supplies call variables.
 
@@ -165,7 +165,7 @@ curl --request POST https://api.bland.ai/v1/calls \
 <ParamField body="agent_id" type="string">
   The UUID of a Bland Agent in the current organization. Requires an organization API key; other keys are rejected with `AGENT_ORG_REQUIRED`. Runs the agent's saved graph and records the agent/version association on the call.
 
-  If no agent in your organization has this ID, or the agent's calls are turned off, the request returns `403` with `CHANNEL_DISABLED`. See the [agent error codes](/api-v1/post/calls-agent#error-codes-reference).
+  If no agent in your organization has this ID, the request returns `400` with `AGENT_NOT_FOUND`. If the agent's calls are turned off, it returns `403` with `CHANNEL_DISABLED`. See the [agent error codes](/api-v1/post/calls-agent#error-codes-reference).
 
   Use this when the conversation should belong to a dashboard agent. Do not combine it with `persona_id` or `pathway_id`. Omit `task` because the agent graph supplies the instructions. See [Choose what runs your call](#choose-what-runs-your-call).
 </ParamField>

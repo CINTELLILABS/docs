@@ -64,7 +64,7 @@ The agent to call, as a UUID from [List Agents](/api-v2/get/agents). The agent's
 
 Requires an organization API key. A key that is not an organization key is rejected with `AGENT_ORG_REQUIRED`.
 
-Cannot be combined with `pathway_id` or `persona_id`. Sending more than one is rejected with `AGENT_PARAM_CONFLICT`, and a value that is not a UUID with `AGENT_ID_INVALID`. If no agent in your organization has this ID, or the agent's calls are turned off, the request returns `403` with `CHANNEL_DISABLED`.
+Cannot be combined with `pathway_id` or `persona_id`. Sending more than one is rejected with `AGENT_PARAM_CONFLICT`, and a value that is not a UUID with `AGENT_ID_INVALID`. If no agent in your organization has this ID, the request returns `400` with `AGENT_NOT_FOUND`. If the agent's calls are turned off, it returns `403` with `CHANNEL_DISABLED`.
 </ParamField>
 
 <ParamField body="agent_version" type="string" default="production">
@@ -1022,8 +1022,20 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
     ```
   </ResponseField>
 
+  <ResponseField name="400 - Agent Not Found" type="object">
+    No agent in your organization has this `agent_id`.
+
+    ```json
+    {
+      "status": "error",
+      "code": "AGENT_NOT_FOUND",
+      "message": "Agent not found"
+    }
+    ```
+  </ResponseField>
+
   <ResponseField name="403 - Calls Turned Off" type="object">
-    No agent in your organization has this `agent_id`, the agent's calls are turned off, or calls are turned off for the caller ID number.
+    The agent's calls are turned off, or calls are turned off for the caller ID number.
 
     ```json
     {
