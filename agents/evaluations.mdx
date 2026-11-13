@@ -1,11 +1,11 @@
 ---
 title: 'Evaluations'
-description: 'Score an agent before it ships: write a judge, build a test case, read a run, and make a passing run a condition of promotion'
+description: 'Score an agent before it ships: write a judge, build a simulation, read a run, and make a passing run a condition of promotion'
 ---
 
 An evaluation is a judge reading a conversation and saying whether the agent did the thing you wanted.
 
-Three objects do the work. A judge scores a conversation. A test case is a simulated caller that produces conversations to score. A run pairs them and gives you a result. A test case carries no judges of its own; you pick both when you start a run.
+Three objects do the work. A judge scores a conversation. A simulation is a simulated caller that produces conversations to score. A run pairs them and gives you a result. A simulation carries no judges of its own; you pick both when you start a run.
 
 ## Prerequisites
 
@@ -14,15 +14,15 @@ Three objects do the work. A judge scores a conversation. A test case is a simul
 
 ## Where evaluations live
 
-Inside an agent, Evaluations is under Validate, with three tabs: Judges, Test cases and Runs.
+Inside an agent, Evaluations is under Validate, with three tabs: Judges, Simulations and Runs.
 
 <Note>
 Searching for evals? That is this page. The word is still in the URL, which reads `/judges` rather than `/evaluations`.
 </Note>
 
-At All agents there is a shorter version of the same page: Judges only. Test cases and runs belong to an agent, so those two tabs do not exist at organization scope.
+At All agents there is a shorter version of the same page: Judges only. Simulations and runs belong to an agent, so those two tabs do not exist at organization scope.
 
-{/* IMAGE: the Evaluations surface inside an agent, showing the Judges, Test cases and Runs tabs. */}
+{/* IMAGE: the Evaluations surface inside an agent, showing the Judges, Simulations and Runs tabs. */}
 
 ## Write a judge
 
@@ -79,19 +79,26 @@ When you have corrected the verdicts you disagree with, select **Align with AI**
 
 Alignment always lands in the draft. Nothing changes for live runs until you publish the judge.
 
-## Write a test case
+## Create a simulation
 
-**New test case** starts either from scratch or from your own traffic.
+On the Simulations tab, **Create simulation** asks what kind of simulation you want:
 
-**Generate based on production calls** reads up to 50 real calls and writes one test case per call, which is the faster way to get a suite that resembles what actually happens to you. Select calls in a picker that has the same filters as Conversations, then **Generate test cases**. Bland writes the cases one call at a time, so larger batches take longer, and opens the editor on the first one when it finishes. Read each generated caller prompt and correct it before you use it.
+- **Text-based** runs fast, high-volume tests of your agent's logic and responses without generating audio.
+- **Voice**, in beta, tests your agent in realistic spoken conversations.
 
-If some calls fail, the cases that succeeded are kept and each failed call is listed with its error. Retrying does not duplicate the cases already created.
+Then set a **Simulation name**, an optional **Description**, and the instructions for the simulated user. A text-based simulation calls them **User instructions** and a voice simulation calls them **Caller instructions**. Either way, describe the user's behavior, their goal and what they know. A voice simulation also has an **Interruptions** setting and, under **Advanced**, an optional **Voice reference**. **Save** finishes it.
 
-Then set a **Title**, a **Prompt** describing who the simulated caller is and what they want, and optionally **Labels**, **Max turns** (20 by default), a **Start node** and **Request data**. **Save** finishes it.
+To start from your own traffic, use **Generate from call** on a new simulation. Pick a conversation, or paste its ID, and Bland drafts the caller instructions from it. Review and edit the draft before you save.
+
+When you generate simulations from several conversations at once, Bland drafts one simulation per call, up to 50 calls, one call at a time. Each draft gets a short name that describes what happened on the call. Names are unique, so you can save every draft without renaming it. If some calls fail, Bland keeps the drafts that succeeded and lists each failed call with its error.
+
+**Run** on a saved simulation opens the testing panel, where you watch the conversation and read its grading results. The panel keeps the conversation you selected, and a cancelled run says so beneath **Conversation ended**.
 
 ## Run them
 
-A run pairs judges with test cases. Pick both, choose how many conversations each test case should produce, and start it.
+A run pairs judges with simulations. Pick both, choose how many conversations each simulation should produce, and start it.
+
+The new run dialog lists text-based simulations only. Start a voice simulation with **Run** on the simulation itself.
 
 <Warning>
 A run you start here is stored in your browser, not on Bland.
@@ -115,7 +122,7 @@ This is worth holding onto, because the promotion gate scores the same run diffe
 
 An evaluation becomes a gate from the agent's Environments tab rather than from this page. The Evaluations card sits between Development and Staging, and **Add evaluations** opens the picker.
 
-Attach the judges you want, up to five test cases, and choose **1**, **3** or **5** conversations per test case.
+Attach the judges you want, up to five simulations, and choose **1**, **3** or **5** conversations per simulation.
 
 <Warning>
 Attaching a judge makes it required by default. Clear **Req'd** on the row to make it advisory instead.
@@ -134,12 +141,12 @@ Conversations where the judge could not reach a verdict are left out of the shar
 <Note>
 You cannot change the half. It is fixed, so there is no target-rate setting to look for.
 
-What you choose is how many conversations each test case produces, and the options are odd numbers for a reason: with 3 or 5, a tie cannot happen.
+What you choose is how many conversations each simulation produces, and the options are odd numbers for a reason: with 3 or 5, a tie cannot happen.
 </Note>
 
 ## Simulation
 
-**Simulation**, in the builder under Testing, runs one conversation against a test case so you can watch the agent handle it.
+**Simulation**, in the builder under Testing, runs one conversation against a simulation so you can watch the agent handle it.
 
 It is the same machinery, used for looking rather than scoring. Those conversations are not kept and never appear in Runs.
 
@@ -211,7 +218,7 @@ To re-run the same set of judges over time, save it as a [workbench setup](/api-
     Change the agent the judges keep failing.
   </Card>
   <Card title="Conversations" icon="comments" href="/agents/conversations">
-    Read the real calls a test case was generated from.
+    Read the real calls a simulation was generated from.
   </Card>
   <Card title="Testbed" icon="flask" href="/agents/testbed">
     Try an agent by hand before you score it.
