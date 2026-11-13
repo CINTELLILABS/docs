@@ -11,6 +11,8 @@ Use it when your system calls [`POST /v1/calls`](/api-v1/post/calls) with a `pat
 
 A migration split is the rule on a pathway that sends a share of its calls to an agent. For each request that names the pathway, the split decides whether the call goes to the agent or stays on the pathway. A call that stays on the pathway runs as it does today. A call that goes to the agent runs the agent's production version.
 
+The split applies to a `POST /v1/calls` request made with an organization API key that sends `pathway_id` and no `persona_id` or `agent_id`. Any other request runs as it does today. The split also routes inbound calls to numbers bound to the pathway, and texts sent with `POST /v1/sms/send` that run the pathway. A text that sends `pathway_version` or `start_node_id` stays on the pathway unless **Agent owns call settings** is on. A text also stays on the pathway when the request or the number has a persona, or when the agent's Messages channel is off. Batch texts, [`POST /v1/sms/create`](/api-v1/post/sms-create), and conversations that a customer starts by texting first aren't split. A conversation that is already active keeps running where it started.
+
 The **Agent owns call settings** setting decides which values win on a call that goes to the agent:
 
 - **Off (the default):** The request's values win, exactly as today. The agent fills in only the settings that the request leaves out. A request that includes `pathway_version` stays on the pathway.
@@ -32,16 +34,17 @@ The **Agent owns call settings** setting decides which values win on a call that
 | Interruption and backchannel | `interruption_threshold`, `interruptibility`, `block_interruptions`, `agent_backchannel_level`, `agent_backchannel_config` | Agent |
 | Voicemail and answering-machine detection | `voicemail`, `voicemail_action`, `voicemail_message`, `voicemail_sms`, `sensitive_voicemail_detection`, `amd`, `ivr_mode` | Agent |
 | Keywords | `keywords` | Agent |
+| Pronunciation guide | `pronunciation_guide` | Agent |
 | Noise cancellation | `noise_cancellation` | Agent |
 | Background track | `background_track` | Agent |
 | Greeting and button press | `wait_for_greeting`, `ignore_button_press` | Agent |
 | Pathway version and start node | `pathway_version`, `start_node_id` | Agent |
 
-The "Controlled by" column applies when **Agent owns call settings** is on. The request controls every row when it is off.
+The "Controlled by" column applies when **Agent owns call settings** is on. The request controls every row when it is off, with one exception: on a call that goes to the agent, Bland always ignores `start_node_id`, because it names a node in the pathway rather than in the agent.
 
 `citation_schema_ids` and `disposition_ids` never run on a call that goes to the agent, whether **Agent owns call settings** is on or off. The agent's [dispositions](/agents/dispositions) replace them. The request still succeeds, and Bland ignores `citation_schema_id`, `citation_schema_ids`, and `disposition_ids` on that call. This applies to every call that runs an agent, not only calls routed from a pathway. To move your citation schemas and outcomes, see [Coming from citations and outcomes](/agents/dispositions#coming-from-citations-and-outcomes).
 
-If Bland can't start the agent for a call that the split sent to it, the call runs on the pathway instead. With **Agent owns call settings** on, Bland has already dropped the agent-owned fields from that request, so the pathway runs with its own defaults.
+If Bland can't start the agent for a call that the split sent to it, the call runs on the pathway instead. It runs with every field the request sent, including the ones that **Agent owns call settings** would have replaced.
 
 ## Set up in the dashboard
 
@@ -50,7 +53,7 @@ Before you start, check these items:
 
 - The agent has a published production version. Without one, Bland rejects the split. See [Environments](/agents/environments).
 - If you want to use outcomes, the agent has a published disposition. See [Dispositions](/agents/dispositions).
-- Your organization is on an enterprise plan. Experiments are available on enterprise plans.
+- Your organization is on an enterprise plan. The dashboard runs the migration as an experiment, and experiments are available on enterprise plans. The [migration split API](#set-it-from-the-api) doesn't require one.
 </Note>
 
 <Steps>
@@ -89,6 +92,8 @@ You can change **Agent owns call settings** while the experiment runs. The chang
 
 You can also set the split with the API. Pass your API key in the `Authorization` header, as you do for [Send Call](/api-v1/post/calls). The examples read the key from `BLAND_API_KEY`. Replace the pathway ID in each URL and the agent ID in each body with your own.
 
+`PUT`, `PATCH`, and `DELETE` on `migration_split` need permission to publish pathways: the owner, admin, or operator role. The reference pages are [Get](/api-v1/get/convo-pathway-id-migration-split), [Set](/api-v1/put/convo-pathway-id-migration-split), [Update the policy](/api-v1/patch/convo-pathway-id-migration-split), and [Delete](/api-v1/delete/convo-pathway-id-migration-split).
+
 ### Send all calls to the agent
 
 This request sets the split to 100% and turns on **Agent owns call settings**.
@@ -107,7 +112,7 @@ curl --request PUT https://api.bland.ai/v1/convo_pathway/00000000-0000-4000-8000
 | Field | Description |
 | --- | --- |
 | `agent_id` | The agent that answers the calls. |
-| `v2_percentage` | The percentage of calls that go to the agent. |
+| `v2_percentage` | The percentage of calls that go to the agent, as a whole number from 0 to 100. |
 | `request_policy` | `honor` (the default) or `agent_owned`. `agent_owned` is **Agent owns call settings** turned on. If you omit this field when you update an existing split, the policy stays as it is. |
 
 ### Change the policy without changing traffic
@@ -123,7 +128,7 @@ curl --request PATCH https://api.bland.ai/v1/convo_pathway/00000000-0000-4000-80
   }'
 ```
 
-This request needs permission to publish pathways. It returns a 404 if the pathway has no split.
+It returns a 404 if the pathway has no split.
 
 ### Roll back
 
@@ -143,11 +148,14 @@ This request is allowed while an experiment runs. The experiment then ends as ro
 
 ### Errors
 
-| Error | Meaning |
-| --- | --- |
-| `agent_unpreparable` | The agent has no production version. Publish one, then retry. |
-| `FLEET_NOT_ELIGIBLE` | Your organization can't run agents yet. Contact your Bland partner. |
-| `ROLLOUT_IN_PROGRESS` | An experiment is running, and a `PUT` that adds or moves traffic is refused. Use `PATCH` to change only the policy, or `PUT` with `v2_percentage` set to 0 to roll back. |
+| Error | Status | Meaning |
+| --- | --- | --- |
+| `BAD_REQUEST` | 400 | The body is invalid, or the agent can't serve calls yet. When the agent has no production version, the message starts with `Agent cannot serve calls yet`. Publish one, then retry. |
+| `FLEET_NOT_ELIGIBLE` | 409 | Your organization can't run agents yet. Contact your Bland partner. |
+| `ROLLOUT_IN_PROGRESS` | 409 | An experiment is running, and a `PUT` that adds or moves traffic is refused. Use `PATCH` to change only the policy, or `PUT` with `v2_percentage` set to 0 to roll back. |
+| `CONFLICT` | 409 | Another change to this agent's traffic is in progress. Nothing was written. Retry. |
+| `SOURCE_CHANGED` | 409 | The pathway's phone numbers changed while the split was being saved. Nothing was written. Retry. |
+| `NOT_FOUND` | 404 | The agent doesn't exist in your organization. `PATCH` also returns it when the pathway has no split. |
 
 ## What changes in the webhook
 
@@ -155,7 +163,7 @@ The webhook depends on where the call ran.
 
 | Where the call ran | What the webhook reports |
 | --- | --- |
-| On the agent | `agent_dispositions[]`. It has no `citations` and no `dispositions`. The `pathway_id` field still shows the pathway that the request named. |
+| On the agent | `agent_dispositions[]`, with the dispositions set to **Hold original webhook**. A disposition set to **Follow-up event** arrives in a separate webhook with `event_type: "dispositions"`. The call's webhook has no `citations` and no `dispositions`. The `pathway_id` field still shows the pathway that the request named. |
 | On the pathway | The same shape as today. |
 | On the pathway, with **Also run this agent's dispositions on pathway calls** on | The same shape as today, followed by a separate webhook with `event_type: "dispositions"` that carries `agent_dispositions[]`, while the experiment runs. |
 
@@ -168,11 +176,11 @@ For a pathway call, the agent's dispositions never ride the call's own webhook. 
 ## Keep the pathway in place
 
 <Warning>
-Don't delete the pathway after you migrate. Your integration keeps sending its `pathway_id`, and the routing rule lives on the pathway. Deleting the pathway deletes the split. Deleting the agent deletes it too.
+Don't delete the pathway after you migrate. Your integration keeps sending its `pathway_id`, and the routing rule lives on the pathway. Deleting the pathway deletes the split, and requests that name the pathway then fail. Deleting the agent sends every call that names the pathway back to the pathway.
 
 Keep the pathway and leave the split at 100%.
 </Warning>
 
 ## Experiments after migration
 
-When the split is at 100% and no migration experiment is running, agent version experiments apply to these calls as they do to any agent call. While the migration experiment is still running, these calls stay out of agent version experiments, even at 100%. See [Staged release](/agents/environments#staged-release).
+When the split is at 100% and no migration experiment is running, agent version experiments apply to `POST /v1/calls` requests that the split sends to the agent, as they do to any agent call. Inbound calls that the split routes never enter an agent version experiment. While the migration experiment is still running, these calls stay out of agent version experiments, even at 100%. See [Staged release](/agents/environments#staged-release).

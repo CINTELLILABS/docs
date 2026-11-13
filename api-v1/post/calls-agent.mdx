@@ -12,7 +12,16 @@ Send an AI phone call with one of your agents. The agent's published version sup
 International calls need a completed purchase: buy at least $5 of credits in the [dashboard](https://app.bland.ai/dashboard/pay) under Billing, or turn on auto-recharge. Numbers on the [Agent Phone Plan](/platform/agent-phone-plan) call the US and Canada only, regardless of your credit balance.
 </Note>
 
-Every setting below is optional and falls back to the agent's own configuration. A value you send always wins over the agent's.
+Every setting below is optional. If you omit a setting the agent configures, the call uses the agent's value. An agent can configure `voice`, `language`, `keywords`, `pronunciation_guide`, `wait_for_greeting`, `max_duration`, `noise_cancellation`, `ignore_button_press`, `record`, `background_track`, `request_data`, `metadata`, interruptions, voicemail, and the caller ID. Any other setting you omit uses the default listed below.
+
+A value you send wins over the agent's, with these rules:
+
+- `interruptibility` and `block_interruptions` are one setting. Sending either one replaces the agent's interruption setting.
+- The voicemail `action`, `message`, and `sms` are one setting. Sending any of them replaces the agent's whole voicemail setting.
+- Sending `from` or `dialing_strategy` replaces the agent's caller ID.
+- `request_data` and `metadata` replace the agent's objects in full, including when you send `{}`. Their keys don't merge.
+
+Some V1 fields don't apply to agent calls. The call-level `tools` parameter is rejected, and `task` is ignored. `citation_schema_ids` and `disposition_ids` are dropped without an error, because V1 citation schemas and outcomes don't run on agent calls. Use the agent's [Dispositions](/agents/dispositions#coming-from-citations-and-outcomes) instead.
 
 ---
 
@@ -41,7 +50,7 @@ Every setting below is optional and falls back to the agent's own configuration.
 </ParamField>
 
 <ParamField body="voice" type="string" default="Karen">
-  The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets. If you omit it, the call uses Karen.
+  The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets. If you omit it, the call uses the agent's voice, or Karen when the agent has none.
 
   Default voices can be referenced directly by their name instead of an id.
 
@@ -53,7 +62,9 @@ Every setting below is optional and falls back to the agent's own configuration.
 <ParamField body="agent_id" type="string" required>
 The agent to call, as a UUID from [List Agents](/api-v2/get/agents). The agent's published version supplies the prompt, scenarios, nodes and tools that run the conversation.
 
-Cannot be combined with `pathway_id` or `persona_id`. Sending more than one is rejected with `AGENT_PARAM_CONFLICT`, a value that is not a UUID with `AGENT_ID_INVALID`, and an agent your organization does not own with `AGENT_NOT_FOUND`.
+Requires an organization API key. A key that is not an organization key is rejected with `AGENT_ORG_REQUIRED`.
+
+Cannot be combined with `pathway_id` or `persona_id`. Sending more than one is rejected with `AGENT_PARAM_CONFLICT`, and a value that is not a UUID with `AGENT_ID_INVALID`. If no agent in your organization has this ID, or the agent's calls are turned off, the request returns `403` with `CHANNEL_DISABLED`.
 </ParamField>
 
 <ParamField body="agent_version" type="string" default="production">
@@ -64,7 +75,7 @@ Which version of the agent runs the call. Omit it and the call runs the version 
 | --- | --- |
 | `"production"` | The version pinned to production. The default. |
 | `"staging"` | The version pinned to staging. |
-| `"dev"` or `"latest"` | The newest saved version, published or not. |
+| `"dev"` or `"latest"` | The newest saved version on the main line (not a branch), published or not. |
 | `"1.2.0"` | That exact version, by semver. |
 | `"branch:my-branch"` | The head of an open branch. The name is 1 to 64 characters of letters, digits, underscore, dot or hyphen. |
 
@@ -196,6 +207,7 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
   - `1`: Difficult. Harder to interrupt.
   - `2`: Balanced (default).
   - `3`: Easy. The AI stops quickly when the caller begins speaking.
+  - `4`: Always interrupt. Any caller speech stops the AI, including brief acknowledgments like "uh-huh".
 </ParamField>
 
 ### Dispatch Parameters
@@ -513,19 +525,14 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
 </ParamField>
 
 <ParamField body="webhook" type="string">
-  When the call ends, call information is sent to this webhook URL.
+  When the call ends, call information is sent to this webhook URL. If you omit it, the call reports to your organization's default webhook, when one is set.
 </ParamField>
 
 <ParamField body="webhook_events" type="array">
   Specify which events you want to stream to the webhook, during the call.
 
   <Info>
-    **Citation Webhook Requirements:**
-
-    - Include `citations` for any citation webhooks (sent separately after call completion)
-    - For delayed post-call webhooks with citations, you need `citations` + dashboard delay toggle enabled
-
-    See the [Citations documentation](/enterprise-features/citations#webhook-integration-options) for complete setup instructions.
+    V1 citation schemas don't run on agent calls, so an agent call sends no `citations` webhook. Use the agent's [Dispositions](/agents/dispositions) for post-call results.
   </Info>
   Options:
 
@@ -535,7 +542,7 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
   - `webhook`
   - `tool`
   - `dynamic_data`
-  - `citations` (Required for any citation webhooks)
+  - `citations` (V1 citation webhooks. Agent calls don't send them.)
   - `evals` (Eval scores from an attached [evals workbench](/agents/evaluations#score-calls-after-they-end), sent as a separate webhook when the run completes)
   - `post_transfer_transcript` (Adds the post-transfer conversation to the post-call webhook when the call is transferred to a human; see [Post-transfer transcript](/tutorials/post-call-webhooks#post-transfer-transcript). Requires call recording: `record` is enabled automatically when unset, and passing `record: false` alongside this subscription returns a 400. In limited rollout: if not enabled for your organization, the subscription has no effect.)
 
@@ -968,25 +975,61 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
   </ResponseField>
 
   <ResponseField name="400 - Agent Environment Unpinned" type="object">
-    The environment named by `agent_version` has no version pinned to it.
+    The environment named by `agent_version` has no version pinned to it. An omitted `agent_version` selects production.
 
     ```json
     {
       "status": "error",
       "code": "AGENT_ENV_UNPINNED",
-      "message": "Environment has no pinned version"
+      "message": "Agent has no version deployed to \"production\"; deploy one or pass agent_version"
     }
     ```
   </ResponseField>
 
-  <ResponseField name="400 - Agent Not Found" type="object">
-    No agent in your organization matches `agent_id`. A malformed id returns `AGENT_ID_INVALID` instead, and a missing version or branch returns `AGENT_VERSION_NOT_FOUND` or `AGENT_BRANCH_NOT_FOUND`.
+  <ResponseField name="400 - Agent Version Not Found" type="object">
+    The semver or branch named by `agent_version` does not exist, or `"dev"` or `"latest"` was requested before the agent had a saved version. A missing branch returns `AGENT_BRANCH_NOT_FOUND`, and a branch with no versions returns `AGENT_VERSION_NOT_FOUND`.
 
     ```json
     {
       "status": "error",
-      "code": "AGENT_NOT_FOUND",
-      "message": "Agent not found"
+      "code": "AGENT_VERSION_NOT_FOUND",
+      "message": "Agent version 1.2.0 not found"
+    }
+    ```
+  </ResponseField>
+
+  <ResponseField name="400 - Agent Organization Key Required" type="object">
+    `agent_id` was sent with an API key that is not an organization key.
+
+    ```json
+    {
+      "status": "error",
+      "code": "AGENT_ORG_REQUIRED",
+      "message": "agent_id requires an organization API key"
+    }
+    ```
+  </ResponseField>
+
+  <ResponseField name="400 - Agent ID Invalid" type="object">
+    `agent_id` is not a UUID.
+
+    ```json
+    {
+      "status": "error",
+      "code": "AGENT_ID_INVALID",
+      "message": "Invalid agent_id format. Expected a valid UUID, got: {agent_id}"
+    }
+    ```
+  </ResponseField>
+
+  <ResponseField name="403 - Calls Turned Off" type="object">
+    No agent in your organization has this `agent_id`, the agent's calls are turned off, or calls are turned off for the caller ID number.
+
+    ```json
+    {
+      "status": "error",
+      "code": "CHANNEL_DISABLED",
+      "message": "Calls are turned off for this agent."
     }
     ```
   </ResponseField>

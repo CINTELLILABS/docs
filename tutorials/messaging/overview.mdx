@@ -19,7 +19,7 @@ Bland Messaging lets you run conversational agents over SMS, RCS, and iMessage f
     A contact reached over SMS, iMessage, or voice keeps one shared history. Facts, summaries, and open items carry across channels.
   </Card>
   <Card title="Outcomes and citations" icon="chart-bar">
-    The same outcomes, citation schemas, and summary prompts you use on voice run on every messaging conversation.
+    The same outcomes, citation schemas, and summary prompts you use on voice run on messaging conversations. A conversation that runs a V2 agent runs the agent's Dispositions instead.
   </Card>
   <Card title="One API surface" icon="code">
     Send and receive across all three channels with the same `/v1/sms/*` endpoints. Channel is configured per number or selected per request.
@@ -49,6 +49,17 @@ If your number is provisioned for RCS or iMessage, Bland uses the richest channe
 Pathways and personas attach to messaging numbers the same way they attach to phone numbers for calls. From the [Messaging dashboard](https://app.bland.ai/dashboard/sms), pick a number and configure it with a [pathway](/tutorials/pathways) or a [persona](/tutorials/personas). The number then handles inbound messages using the same logic, tools, and memory you use on voice.
 
 If you already have a voice pathway, you can clone it for messaging and use the **Sync** action to keep both in sync as you iterate.
+
+## Running a V2 agent
+
+To run a V2 agent on a messaging number, attach the number to the agent in the dashboard ([Put an agent on a phone number](/agents/dispatch#put-an-agent-on-a-phone-number)) or with [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach). Texts your customers send to the number, and conversations you start from it with the `/v1/sms/*` endpoints, then run the agent. These endpoints take no `agent_id`: the number decides which agent replies.
+
+Keep these behaviors in mind when you move an integration from a pathway or persona:
+
+- Don't pass `persona_id` on [Send SMS](/api-v1/post/sms-send) from an attached number. The send reassigns the number to that persona, for texts and calls, and the number stops running the agent.
+- If your integration sends with a `pathway_id` you can't change yet, a [migration split](/platform/migrate-api-integrations) on that pathway can route new conversations started from Send SMS to the agent. See [V2 agents](/api-v1/post/sms-send#v2-agents) for when a split applies.
+- Bland records the agent on a conversation when the conversation is created. A conversation that was already active when you attached the number keeps the V1 analysis and webhook shape.
+- When the agent's Messages channel is turned off, for the agent or for a number, inbound texts to the number are stored but get no reply. Send SMS, Create SMS Conversation, and Send SMS Batch requests from the number fail with `403` and error code `CHANNEL_DISABLED`.
 
 ## Memory across conversations
 
@@ -85,6 +96,12 @@ When a conversation ends, the status webhook includes the full conversation cont
 - `dispositions` (outcome run results, when outcomes are configured)
 
 Message webhooks also include `variables`, `metadata`, `pathway_tags`, and `created_at` for parity with voice call webhooks.
+
+### On a V2 agent conversation
+
+A conversation that runs a V2 agent doesn't run outcomes or citation schemas, whether they're set on the number or passed on the request. Bland drops them without an error. The agent's [Dispositions](/agents/dispositions) run instead. A summary prompt on the number still runs.
+
+The status webhook sent when an agent conversation ends carries `agent_id`, `agent_version_id`, and `agent_dispositions` in place of `citations` and `dispositions`. `agent_dispositions` can be an empty array. Dispositions set to **Hold original webhook** arrive in it. Other dispositions arrive later in a separate webhook to the same URL, with `event_type` set to `dispositions`, the `conversation_id`, and `agent_dispositions`. Message webhooks don't include the agent fields.
 
 ## API
 

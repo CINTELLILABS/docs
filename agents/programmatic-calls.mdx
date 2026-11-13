@@ -24,7 +24,7 @@ Your agent owner provides the agent ID, confirms the production release, and val
 
 ## Update the call request
 
-Replace `pathway_id` or `persona_id` with `agent_id`. Remove the old selector and any `pathway_version`. Keep the same endpoint, `POST https://api.bland.ai/v1/calls`, and the existing organization API key for that account.
+Replace `pathway_id` or `persona_id` with `agent_id`. Remove the old selector and any `pathway_version`. Keep the same endpoint, `POST https://api.bland.ai/v1/calls`, and the existing organization API key for that account. A key that is not an organization key is rejected with `AGENT_ORG_REQUIRED`.
 
 Keep the existing dialing pool, timezone, scheduling, `request_data`, `metadata`, webhook URL, and webhook event settings. Send the complete data objects the call needs; request objects replace the agent's defaults.
 
@@ -105,7 +105,9 @@ Make the same selector change for a request using `persona_id`.
 }
 ```
 
-Send only one selector. Combining `agent_id` with `pathway_id` or `persona_id` produces `AGENT_PARAM_CONFLICT`.
+A versioned persona's saved configuration overrode matching request fields. With an agent, request fields win over the agent's settings, so remove any field the persona used to override.
+
+Send only one selector. Combining `agent_id` with `pathway_id` or `persona_id` produces `AGENT_PARAM_CONFLICT`. If no agent in your organization has the ID, or the agent's calls are turned off, the request returns `403` with `CHANNEL_DISABLED`.
 
 ### Production and staging versions
 
@@ -116,7 +118,7 @@ Omit `agent_version` for normal production traffic. Calls follow the production 
 | Omit `agent_version`            | Production, with experiment assignment where configured. |
 | `"agent_version": "production"` | Production, with experiments bypassed.                   |
 | `"agent_version": "staging"`    | The release pinned to staging.                           |
-| `"agent_version": "1.2.0"`      | That exact saved version, using dev environment values.  |
+| `"agent_version": "1.2.0"`      | That exact published version, using dev environment values. |
 
 For staging, use a test number and test webhook:
 
@@ -134,6 +136,8 @@ For staging, use a test number and test webhook:
 Your agent owner must publish a release to the selected environment first. An environment with no pinned release returns `AGENT_ENV_UNPINNED`. A version selector is a string; the old numeric `pathway_version` does not carry over.
 
 If present, remove call-level `tools` and omit `task`; the ready agent supplies both its tools and conversation instructions.
+
+Remove `citation_schema_ids` and `disposition_ids` too. V1 citation schemas and outcomes don't run on agent calls, and the API drops these fields without an error. Your agent owner can move them to the agent's [Dispositions](/agents/dispositions#coming-from-citations-and-outcomes).
 
 ### Send complete data objects
 
@@ -225,17 +229,17 @@ If reading migrated citations, use `values[]` by key and check `state`: `produce
 
 Confirm the delivery behavior with your agent owner:
 
--   **Follow-up event:** the normal call webhook arrives first. A later event with `event_type: "dispositions"` carries `call_id` and `agent_dispositions`. The receiver must process both events.
+-   **Follow-up event:** the normal call webhook arrives first. A later event with `event_type: "dispositions"` carries `call_id` and `agent_dispositions`. The receiver must process both events. Each disposition sends its own event. If your endpoint rejects the normal call webhook, the follow-up events for that call aren't sent. Deduplicate on the `X-Webhook-Idempotency-Key` header.
 
 -   **Hold original webhook:** results travel in one combined call webhook, adding up to 30 minutes. This requires **Immediately on conversation end**.
 
--   **Existing citations:** an existing citation hold can cause disposition delivery to fall back to a follow-up event.
+-   **Delayed call webhook:** if your organization turned on the legacy "Delay post call webhook" toggle and the call subscribes to `post_transfer_transcript`, Hold original webhook falls back to a follow-up event, which can arrive before the call webhook.
 
 -   **Queued results:** delivery can take up to 24 hours.
 
 Correlate events by `call_id` and make updates safe to retry. If a held disposition misses its deadline, expect `status: "failed"` and an `error`, with no `payload` or `values`. Send failed or missing results to review.
 
-If downstream code needs the agent's identity, validate the actual webhook fields during testing. The stable `agent_id` and the executed `agent_version_id` identify different things. You can also retain the requested `agent_id` alongside the returned `call_id` in your own system.
+If downstream code needs the agent's identity, keep the `agent_id` you sent alongside the returned `call_id`. The call webhook carries `agent_version_id`, the agent version that ran the call, but not `agent_id`. A call that an experiment routed also carries `agent_experiment_id`.
 
 ## Confirm before cutover
 

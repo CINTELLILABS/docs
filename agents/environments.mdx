@@ -139,10 +139,10 @@ On enterprise plans, you can point a phone number at staging instead of producti
 Every number on the Channels page shows which environment it answers on, **Production** or **Staging**.
 
 <Warning>
-Only calls follow staging. Texts to a staging number still run the production version.
+Only calls follow staging. Texts to a staging number run the same version as texts to the agent's other numbers.
 </Warning>
 
-A staging number runs staging's variable values, so every variable the agent references needs a staging value before you can attach. Numbers can't be attached to staging on dedicated infrastructure. To move a number back to production, detach it and attach it again with **Production** selected.
+A staging number runs staging's variable values, so every variable the agent references needs a staging value before you can attach. Numbers can't be attached to staging on dedicated infrastructure. To move a number back to production, detach it and attach it again with **Production** selected. With the API, call [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) with `environment: "production"`; you don't need to detach first.
 
 ## Roll back
 
@@ -192,6 +192,10 @@ Nothing is undone and nothing is lost. Fix what failed and publish again.
 
 A blocked promotion is stopped twice. The dashboard dims **Promote**, explains why on hover, and does nothing if you press it. The server enforces the same rule again on the wire, which is what catches an API caller. Either way production keeps serving the version it already had.
 
+<Note>
+Over the API, [Publish Agent to Staging](/api-v2/post/agents-id-publish) does not run evaluations and is never blocked by them. Only [Promote Agent to Production](/api-v2/post/agents-id-promote) checks them, and an API caller can skip that check for one promotion with `force: true`. The audit log records the bypass.
+</Note>
+
 A judge scores a rate, not a verdict per conversation. It passes when half or more of the scored conversations match the target, so a single bad conversation does not necessarily fail the run. Test cases default to an odd number of conversations, which keeps ties rare.
 
 ## Variables
@@ -205,7 +209,7 @@ Marking a value **Secret** stores it in your secret vault and keeps only a refer
 <Warning>
 A key with no value in the environment the call is running in does not fall back to another environment. It fails the call before it starts, with `AGENT_VARIABLE_UNRESOLVED`.
 
-So a variable added on development and never set on production breaks production the moment something references it.
+Promotion checks for this: promoting a version that references a key with no production value is refused with the same code, even when the promotion is forced. A rollback is not checked, and neither is deleting a value from production, so either can still leave production calls failing.
 </Warning>
 
 ## Common failures
