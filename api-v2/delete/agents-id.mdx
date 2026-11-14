@@ -8,6 +8,10 @@ description: "Soft-delete an agent. Versions and history are kept."
 
 Marks the agent deleted. It disappears from [List Agents](/api-v2/get/agents) and returns `404` from [Get Agent](/api-v2/get/agents-id), but its versions, deployments, and history are retained. Alerts scoped to the agent are deleted with it.
 
+Phone numbers attached to the agent are detached in the same step, even when the agent is live in production. The numbers stay in your account with no agent assigned.
+
+The delete is refused with `409` while a web widget runs the agent (`AGENT_HAS_BOUND_WIDGETS`) or while a GitHub repository is connected to it (`CONFLICT`). Switch the widget to a prompt or pathway, or disconnect the repository, then delete again.
+
 Requires an admin, owner, operator, or prompter role.
 
 You can also delete an agent from the dashboard. See [Delete an agent](/agents/agent-builder#delete-an-agent).
@@ -56,6 +60,18 @@ You can also delete an agent from the dashboard. See [Delete an agent](/agents/a
     {
       "error": "NOT_FOUND",
       "message": "Agent not found"
+    }
+  ]
+}
+```
+
+```json Widget Bound
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "AGENT_HAS_BOUND_WIDGETS",
+      "message": "This agent runs a web chat widget. Switch the widget to a prompt or pathway, then delete the agent."
     }
   ]
 }

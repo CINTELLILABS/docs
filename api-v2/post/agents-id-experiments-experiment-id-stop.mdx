@@ -8,7 +8,7 @@ description: "End an active experiment and return traffic to baseline."
 
 Completes an active experiment with `completed_reason: "manual"`. Eligible calls immediately return to the baseline pin, and the final `variant_calls_routed` count is frozen on the record. Completion is permanent: a stopped experiment cannot be resumed, so use [Create Experiment](/api-v2/post/agents-id-experiments) to test again. Returns `409 CONFLICT` if the experiment is already completed for any reason.
 
-Requires an admin, owner, operator, or prompter role. This endpoint takes no body.
+Experiments are available on enterprise plans. Other organizations get `403 ENTERPRISE_REQUIRED`. This endpoint also requires an admin, owner, operator, or prompter role, and takes no body.
 
 ### Headers
 
@@ -69,10 +69,10 @@ Requires an admin, owner, operator, or prompter role. This endpoint takes no bod
       The configured cap, or `null`.
     </ResponseField>
     <ResponseField name="variant_calls_routed" type="integer">
-      Final count of connected calls routed to the variant.
+      Final count of connected calls and new text conversations routed to the variant.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
-      ID of the user who created the experiment, or `null` when created with an org-level key.
+      ID of the user who created the experiment, or `null` when no user is recorded. For a request made with an API key, this is the user who created the key.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp of creation.

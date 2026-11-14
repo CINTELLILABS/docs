@@ -6,7 +6,13 @@ description: "Route inbound calls on your phone numbers to an agent."
 
 ### Overview
 
-Points one or more of your phone numbers at the agent so inbound calls run it. Any existing pathway or persona assignment on those numbers is replaced. Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach after saving to refresh it. Enterprise plans can pass `environment: "staging"` so calls run the version pinned to staging instead. The agent must have at least one saved version. Use [Detach Numbers from Agent](/api-v2/post/agents-id-inbound-detach) to undo.
+Points one or more of your phone numbers at the agent so inbound calls and texts run it. Any existing pathway or persona assignment on those numbers is replaced. [Detach Numbers from Agent](/api-v2/post/agents-id-inbound-detach) removes the agent but does not restore the previous assignment.
+
+Attaching also sets each Twilio number up for texting: Bland points its SMS webhook at Bland and adds it to a Messaging Service. This applies to numbers on your own Twilio account too, so an SMS webhook you set there is replaced. The step runs after the attach and doesn't fail it.
+
+Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach without `environment` after saving to refresh it. Texts run the version the binding was last compiled from: the version in `compiled_from_version` from the last attach that compiled one, or the `production` version after a later promote. Enterprise plans can pass `environment: "staging"` so calls run the version pinned to staging instead. The agent must have at least one saved version.
+
+A number bound to a V1 pathway that has a [migration split](/api-v1/get/convo-pathway-id-migration-split) can't be attached while the split exists, even at 0%. The request returns `409 MIGRATION_EXPERIMENT_NUMBER` and attaches nothing. [Delete the split](/api-v1/delete/convo-pathway-id-migration-split) first.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -31,12 +37,20 @@ Requires an admin, owner, operator, or prompter role.
 <ParamField body="environment" type="string">
   Which environment calls to these numbers run: `production` or `staging`. When you omit it, a number already attached to this agent on staging stays on staging, and every other number answers on production. Pass `production` to move a staging number back. Any other value returns `400 INVALID_BODY`.
 
-  `staging` is enterprise only and applies to calls. Texts to a staging number still run the production version. Every check below runs before anything is written:
+  `staging` is enterprise only and applies to calls. Texts to a staging number run the same version as texts to the agent's other numbers, not the staging version. Every check below runs before anything is written:
 
   - `403 ENTERPRISE_REQUIRED` if your organization is not on an enterprise plan.
   - `409 STAGING_NUMBER_UNSUPPORTED` if your account or any of the numbers runs on dedicated infrastructure.
   - `409 AGENT_ENV_UNPINNED` if nothing is published to staging.
   - `409 AGENT_VARIABLE_UNRESOLVED` if a variable the staging version references has no staging value, or `409 AGENT_SNAPSHOT_INVALID` if the staging version can't run.
+</ParamField>
+
+<ParamField body="only_if_unassigned" type="boolean" default="false">
+  When `true`, attaches only numbers that have no persona and no pathway assigned. If any number in `inbound_numbers` is already assigned, the request returns `409 NUMBER_ALREADY_ASSIGNED` and attaches nothing. Any value other than a boolean returns `400 INVALID_BODY`.
+</ParamField>
+
+<ParamField body="only_if_bound" type="boolean" default="false">
+  When `true`, writes only numbers that are still attached to this agent. Use it with `environment` to move a number between `production` and `staging` without taking back a number that another request moved. If any number is no longer attached to this agent, the request returns `409 NUMBER_NOT_BOUND` and changes nothing. Any value other than a boolean returns `400 INVALID_BODY`.
 </ParamField>
 
 ### Response
@@ -50,11 +64,13 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="data.pathway_id" type="string">
-  ID of the pathway compiled from the agent's version for this binding. Regenerated on every attach.
+  ID of the pathway compiled from the agent for this binding. The ID stays the same across attaches. An attach that compiles a version (see `compiled_from_version`) replaces this pathway's graph.
 </ResponseField>
 
-<ResponseField name="data.compiled_from_version" type="string">
-  ID of the agent version the binding was compiled from: the newest version on the dev timeline. Versions saved on branches are ignored.
+<ResponseField name="data.compiled_from_version" type="string | null">
+  ID of the agent version this attach compiled the binding from: the newest version on the dev timeline. Versions saved on branches are ignored.
+
+  `null` when the attach kept the existing binding as it was. That happens on a `staging` attach, and when you pass `environment` and every number is already attached to this agent. If such an attach finds no binding to keep, it builds one from the `production` version (or from the newest version when nothing is promoted) and returns that version's ID.
 </ResponseField>
 
 <ResponseField name="data.attached" type="string[]">
@@ -62,7 +78,7 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, and `422 COMPILE_FAILED` when the newest version cannot be compiled.
+  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, `422 COMPILE_FAILED` when the version to compile cannot be compiled, and `409 MIGRATION_EXPERIMENT_NUMBER` when a number's pathway has a migration split. With `only_if_unassigned` or `only_if_bound`, it can also return `409 NUMBER_ALREADY_ASSIGNED` or `409 NUMBER_NOT_BOUND`.
 </ResponseField>
 
 <ResponseExample>

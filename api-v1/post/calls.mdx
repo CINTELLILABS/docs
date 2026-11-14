@@ -92,7 +92,8 @@ Each example sends one call. Replace the example destination and resource ID wit
 ### Selector combinations and precedence
 
 - `agent_id` cannot be combined with `persona_id` or `pathway_id`; the API rejects the combination. `agent_version` requires `agent_id`. The agent graph drives the call, so omit `task` on agent requests.
-- Agent call settings supply defaults. Explicit call settings such as `voice`, `record`, and `max_duration` override their agent defaults. Explicit `request_data` and `metadata` replace their respective default objects, including when you pass `{}`.
+- Agent call settings supply defaults. Explicit call settings such as `voice`, `record`, and `max_duration` override their agent defaults. Explicit `request_data` and `metadata` replace their respective default objects, including when you pass `{}`. `interruptibility` and `block_interruptions` count as one setting, as do the voicemail `action`, `message`, and `sms`: sending any one of them replaces the agent's whole setting.
+- On agent requests, the call-level `tools` parameter is rejected. `citation_schema_ids`, `disposition_ids`, and `analysis_preset` are dropped without an error, because V1 citation schemas, outcomes, and analysis presets don't run on agent calls. Configure [Dispositions](/agents/dispositions#coming-from-citations-and-outcomes) on the agent instead.
 - A persona can be combined with `pathway_id` and `pathway_version` to override its pathway routing. An explicit `persona_settings` object takes precedence over those pathway overrides. For versioned personas, stored call configuration is applied over matching top-level request fields. Legacy persona presets apply the request over the preset instead. Inspect the persona configuration rather than assuming all request fields win.
 - A direct pathway request does not need `task`; its graph controls the conversation. `request_data` supplies call variables.
 
@@ -162,13 +163,15 @@ curl --request POST https://api.bland.ai/v1/calls \
 </ParamField>
 
 <ParamField body="agent_id" type="string">
-  The UUID of a Bland Agent in the current organization. Requires an organization API key. Runs the agent's saved graph and records the agent/version association on the call.
+  The UUID of a Bland Agent in the current organization. Requires an organization API key; other keys are rejected with `AGENT_ORG_REQUIRED`. Runs the agent's saved graph and records the agent/version association on the call.
+
+  If no agent in your organization has this ID, the request returns `400` with `AGENT_NOT_FOUND`. If the agent's calls are turned off, it returns `403` with `CHANNEL_DISABLED`. See the [agent error codes](/api-v1/post/calls-agent#error-codes-reference).
 
   Use this when the conversation should belong to a dashboard agent. Do not combine it with `persona_id` or `pathway_id`. Omit `task` because the agent graph supplies the instructions. See [Choose what runs your call](#choose-what-runs-your-call).
 </ParamField>
 
 <ParamField body="agent_version" type="string">
-  Selects the agent version and environment. Requires `agent_id`.
+  Selects the agent version and environment. Requires `agent_id`. Send it as a string; a number is rejected.
 
   | Value | Version selected | Environment variables |
   | --- | --- | --- |
@@ -185,7 +188,7 @@ curl --request POST https://api.bland.ai/v1/calls \
 </ParamField>
 
 <ParamField body="voice" type="string" default="Karen">
-  The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets. If you omit it, the call uses Karen.
+  The voice of the AI agent to use. Accepts any form of voice ID, including custom voice clones and voice presets. If you omit it, the call uses Karen. On an agent call (`agent_id`), an omitted voice uses the agent's voice, or Karen when the agent has none.
 
   Default voices can be referenced directly by their name instead of an id.
 
@@ -198,6 +201,8 @@ curl --request POST https://api.bland.ai/v1/calls \
   This is the pathway ID for the pathway you have created on our dev portal. You can access the ID of your pathways by clicking the 'Copy ID' button of your pathway [here](https://app.bland.ai/home?page=convo-pathways)
 
   Note: Certain parameters do not apply when using pathways.
+
+  If the pathway has a migration split, the call may run on the linked agent; see [Migrate an API integration](/platform/migrate-api-integrations).
 
   Example Simple Request body:
 
@@ -484,6 +489,8 @@ curl --request POST https://api.bland.ai/v1/calls \
   ```
 
   Read more about custom tools [here](https://docs.bland.ai/tutorials/custom-tools#custom-tools)
+
+  Rejected on agent calls (`agent_id`). The agent's own tools drive the call.
 </ParamField>
 
 ### Audio Parameters
@@ -596,10 +603,14 @@ curl --request POST https://api.bland.ai/v1/calls \
   ```
 
   > Note: Citation schemas are very powerful and accurate, but also are more resource intensive to run. As such, for the time being, they are an enterprise-only feature.
+
+  Not applied on agent calls (`agent_id`): the API drops these IDs without an error.
 </ParamField>
 
 <ParamField body="disposition_ids" type="string[]">
   Outcome IDs to run after the call ends. Create outcomes with [Create Outcome](/api-v1/post/dispositions). Results appear in the `dispositions` field of [Call Details](/api-v1/get/calls-id). See [Outcomes](/tutorials/outcomes) for details.
+
+  Not applied on agent calls (`agent_id`): the API drops these IDs without an error.
 </ParamField>
 
 <ParamField body="stream_post_transfer_transcript" type="boolean" default="false">
@@ -754,7 +765,7 @@ curl --request POST https://api.bland.ai/v1/calls \
 </ParamField>
 
 <ParamField body="webhook" type="string">
-  When the call ends, call information is sent to this webhook URL.
+  When the call ends, call information is sent to this webhook URL. If you omit it, the call reports to your organization's default webhook, when one is set.
 </ParamField>
 
 <ParamField body="webhook_events" type="array">
@@ -764,7 +775,7 @@ curl --request POST https://api.bland.ai/v1/calls \
     **Citation Webhook Requirements:**
 
     - Include `citations` for any citation webhooks (sent separately after call completion)
-    - For delayed post-call webhooks with citations, you need `citations` + dashboard delay toggle enabled
+    - For a delayed post-call webhook with citations, the call needs a citation schema and the dashboard delay toggle enabled
 
     See the [Citations documentation](/enterprise-features/citations#webhook-integration-options) for complete setup instructions.
   </Info>

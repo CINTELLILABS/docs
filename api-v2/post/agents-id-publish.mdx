@@ -6,7 +6,9 @@ description: "Publish a version to the staging environment."
 
 ### Overview
 
-Moves the agent's `staging` pointer. The body picks one of three modes: send `snapshot` to save a new version and publish it, send `version_id` to publish an existing dev-timeline version, or send neither to publish the newest saved dev version. A version published for the first time is given a semver using `bump`; republishing a version that already has one re-records its original number. Move it on to production with [Promote Agent to Production](/api-v2/post/agents-id-promote).
+Moves the agent's `staging` pointer. The body picks one of three modes: send `snapshot` to save a new version on the dev timeline and publish it, send `version_id` to publish an existing version from the dev timeline or an open branch, or send neither to publish the newest saved dev version. A version published for the first time is given a semver using `bump`; republishing a version that already has one re-records its original number. Move it on to production with [Promote Agent to Production](/api-v2/post/agents-id-promote).
+
+Publishing does not run or wait for evaluations, and production does not move. Required evaluations are enforced when you promote. To check a version before it reaches staging, start a run with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) and gate on its result yourself.
 
 Requires an admin, owner, operator, or prompter role.
 
@@ -29,7 +31,11 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="version_id" type="string">
-  ID of an existing version on the agent's dev timeline to publish without saving anything new. Versions saved on a branch are not accepted; merge the branch first. Returns `404 VERSION_NOT_FOUND` if the ID is not on the dev timeline. Ignored when `snapshot` is present.
+  ID of an existing version of this agent to publish without saving anything new. It can be on the dev timeline or on an open branch; a branch version publishes without merging the branch, and the branch stays open. Returns `404 VERSION_NOT_FOUND` if the ID is not one of this agent's versions, and `409 BRANCH_CLOSED` if its branch was merged or archived. Ignored when `snapshot` is present.
+</ParamField>
+
+<ParamField body="branch_id" type="string">
+  The branch you are publishing from. Optional. When set, `version_id` must be a version saved on that branch, or the request returns `404 VERSION_NOT_FOUND`. Sending `branch_id` without `version_id` returns `400 INVALID_BRANCH`. Ignored when `snapshot` is present.
 </ParamField>
 
 <ParamField body="bump" type="string" default="patch">
@@ -38,7 +44,7 @@ Requires an admin, owner, operator, or prompter role.
 
 ### Response
 
-Returns `201` on success. Returns `200` instead when `version_id` names the version already pinned to staging; nothing changes and the current number is returned.
+Returns `201` on success. Returns `200` instead when the version to publish (named by `version_id`, or the newest dev version when the body has neither field) is already pinned to staging; nothing changes and the current number is returned.
 
 <ResponseField name="data.version" type="object">
   The published version, including its full `snapshot`.
@@ -53,8 +59,8 @@ Returns `201` on success. Returns `200` instead when `version_id` names the vers
     <ResponseField name="agent_id" type="string">
       The agent the version belongs to.
     </ResponseField>
-    <ResponseField name="branch_id" type="null">
-      Always `null`; only dev-timeline versions can be published.
+    <ResponseField name="branch_id" type="string | null">
+      The branch the version was saved on, or `null` for a dev-timeline version. Always `null` in `snapshot` mode.
     </ResponseField>
     <ResponseField name="snapshot" type="object">
       The agent configuration stored in this version.
@@ -69,7 +75,7 @@ Returns `201` on success. Returns `200` instead when `version_id` names the vers
       Rewrite counter for autosaved versions. `0` for a version created by this call.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
-      ID of the user who saved the version, or `null` when saved with an org-level key.
+      ID of the user who saved the version. With an API key, this is the user the key belongs to. `null` when no user was recorded.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp the version was saved.
@@ -94,7 +100,7 @@ Returns `201` on success. Returns `200` instead when `version_id` names the vers
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the body has neither `snapshot` nor `version_id` and the agent has no saved versions, and `409 PUBLISH_IN_PROGRESS` when another publish for the same agent is still running; retry after a moment.
+  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the body has neither `snapshot` nor `version_id` and the agent has no saved dev versions, and `409 PUBLISH_IN_PROGRESS` when another publish for the same agent is still running; retry after a moment. Publishing an existing version of an agent connected to a GitHub repository returns `409 REPOSITORY_RELEASE_REQUIRED`.
 </ResponseField>
 
 <ResponseExample>

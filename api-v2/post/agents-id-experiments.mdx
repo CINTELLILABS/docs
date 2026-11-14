@@ -6,11 +6,19 @@ description: "Start an A/B experiment on a variant version."
 
 ### Overview
 
-Starts an A/B experiment that sends `traffic_percentage` percent of the agent's eligible calls to `variant_version_id`, with the rest running the version pinned to `baseline_env`. Only calls that do not explicitly select a version or environment are eligible. An agent has at most one active experiment: stop it with [Stop Experiment](/api-v2/post/agents-id-experiments-experiment-id-stop) before creating another, or adjust it in place with [Update Experiment](/api-v2/patch/agents-id-experiments-experiment-id). Returns `409 CONFLICT` while one is active.
+Starts an A/B experiment that sends `traffic_percentage` percent of the agent's eligible traffic to `variant_version_id`, with the rest running the version pinned to `baseline_env`. Eligible traffic is:
+
+- [Send Call](/api-v1/post/calls) requests with `agent_id` and no `agent_version`. Any explicit `agent_version`, including `production`, keeps the call out of the experiment.
+- Inbound calls to numbers attached to the agent on `production`, when the number runs on Bland's shared infrastructure. Numbers attached on `staging` never enter an experiment.
+- New text conversations on numbers attached on `production`. A conversation keeps the version it was assigned for its whole life.
+
+Send Call requests that a [migration split](/api-v1/get/convo-pathway-id-migration-split) routes to the agent are eligible only while the split is at 100% and no rollout drives it. Inbound calls that a migration split routes to the agent never are.
+
+An agent has at most one active experiment: stop it with [Stop Experiment](/api-v2/post/agents-id-experiments-experiment-id-stop) before creating another, or adjust it in place with [Update Experiment](/api-v2/patch/agents-id-experiments-experiment-id). Returns `409 CONFLICT` while one is active.
 
 An experiment completes on its own when `ends_at` passes, when `variant_call_quota` connected variant calls have been routed, or when the baseline environment is repointed to another version (for example by a publish or promote). Completion is permanent, and all eligible traffic returns to the baseline pin.
 
-Requires an admin, owner, operator, or prompter role.
+Experiments are available on enterprise plans. Every experiment endpoint returns `403 ENTERPRISE_REQUIRED` for other organizations. This endpoint also requires an admin, owner, operator, or prompter role.
 
 ### Headers
 
@@ -70,7 +78,7 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="variant_call_quota" type="integer | null" default="null">
-  Maximum connected variant calls, `1` to `1000000`. The experiment completes with `completed_reason: "quota_reached"` when the count is reached. Only calls that connect count, so unanswered outbound calls never consume quota. `null` means no cap.
+  Maximum connected variant calls, `1` to `1000000`. The experiment completes with `completed_reason: "quota_reached"` when the count is reached. Only calls that connect count, so unanswered outbound calls never consume quota. An outbound call answered by voicemail or an answering machine counts. Each new text conversation assigned to the variant also counts as one. `null` means no cap.
 </ParamField>
 
 ### Response
@@ -116,10 +124,10 @@ Requires an admin, owner, operator, or prompter role.
       Maximum connected variant calls, or `null` for no cap.
     </ResponseField>
     <ResponseField name="variant_calls_routed" type="integer">
-      Connected calls routed to the variant so far. Always `0` on creation; live while active, frozen at completion.
+      Connected calls and new text conversations routed to the variant so far. Always `0` on creation; live while active, frozen at completion.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
-      ID of the user who created the experiment, or `null` when created with an org-level key.
+      ID of the user who created the experiment, or `null` when no user is recorded. For a request made with an API key, this is the user who created the key.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp of creation.
@@ -213,6 +221,18 @@ Requires an admin, owner, operator, or prompter role.
     {
       "error": "NOT_FOUND",
       "message": "Agent not found"
+    }
+  ]
+}
+```
+
+```json Enterprise Required
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "This feature is only available for enterprise users",
+      "error": "ENTERPRISE_REQUIRED"
     }
   ]
 }

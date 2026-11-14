@@ -10,16 +10,18 @@ In September 2026, Bland made big, exciting updates to its agent builder. All pr
 Agents are the successor to conversational pathways: the same powerful conversation engine, with a new architecture that places more emphasis on the agent, but still offers the control of pathways, versioned snapshots, environments, and first-class testing. Every path below hands you an agent to review before it takes traffic, so run the simulation suite, test-chat the agent in the dashboard, and verify the lanes that depend on your live data.
 
 <Note>
-**Migration is additive.** The migration will only create new agents; your existing assets will not be disrupted. Your pathways, their phone numbers, tools, snippets, and live traffic are never modified. You switch traffic to the new agent only when you decide to by promoting your agent to production, which needs to be done by November 15. 
+**Migration is additive.** The migration will only create new agents; your existing assets will not be disrupted. Your pathways, their phone numbers, tools, snippets, and live traffic are never modified. Traffic moves to the new agent only when you move it: attach a phone number to the agent, send `agent_id` in your API requests, or route a pathway's calls to the agent with a migration split. By default, each of those runs the agent's production version, so publish one first. See [Moving traffic over](#moving-traffic-over).
 </Note>
 
 ## Migration TLDR 
 
 **Migrate your pathways and personas to agents by November 15, 2026.**
 
-Nothing is lost if you do not. After that date, pathways still handling traffic are migrated for you, and the rest are brought across into an archive.
+Nothing is lost if you do not. In the days before November 15, Bland migrates your busiest pathways and personas for you where it can, and publishes each new agent's production version. Calls still go to the pathway or persona until you move them. The rest stay in Bland Agents on the **Pathways** and **Personas** pages, where you can view them and migrate any that have no agent yet. You can't edit them there.
 
-Until then you have both dashboards. If your account was created after 18 September 2026 you are on Bland Agents only and no action is required of you.
+November 15 changes the dashboard only. Your phone numbers, API requests that send `pathway_id` or `persona_id`, triggers, SMS and running migration experiments keep working as they do today.
+
+Until then you have both dashboards. A workspace with an extension keeps the prior dashboard until its extension ends, and Bland migrates nothing for it. If your account was created after 18 September 2026 you are on Bland Agents only and no action is required of you.
 
 Self-serve users have three migration paths they can choose from: 
 
@@ -72,7 +74,7 @@ A conversational pathway becomes an agent, or a pathway within one, and its node
 | Triage | **Issues** | **Monitor** |
 | Alerts | **Alerts** | **Monitor** |
 | Analytics | **Analytics** | **Monitor**, organization scope |
-| Citations and outcomes | **Dispositions** | Agent, **Configure** |
+| Citations and outcomes | **Dispositions**, on enterprise plans | Agent, **Configure** |
 
 Conversations absorbed three separate log pages. See [Conversations](/agents/conversations).
 
@@ -105,7 +107,7 @@ Environments, versions and promotion have no equivalent in the prior dashboard. 
 
 You need an owner, admin, operator or prompter role, and a conversational pathway or persona to move.
 
-Every migration starts the same way: in the dashboard, open the agent dropdown in the upper left corner, choose **New agent**, then **Migrate**. From there you select the pathway or persona you want to migrate, and choose one of three options. Everything below on this page is downstream of that selection.
+Every migration starts the same way: in the dashboard, open the agent dropdown in the upper left corner, choose **New agent**, then **Migrate**. From there you select the pathway or persona you want to migrate, and choose one of three options. **Migrate as is** is under **Legacy**, below the other two. Everything below on this page is downstream of that selection.
 
 <CardGroup cols={3}>
   <Card title="Migrate on your own" icon="terminal">
@@ -124,9 +126,9 @@ Every migration starts the same way: in the dashboard, open the agent dropdown i
 Copies your conversational pathway into a new agent as a pathway, one agent per conversational pathway. No rewriting, no simulation. It is the fastest route and the most predictable.
 
 <Warning>
-**Migrate as is** keeps your End Call nodes hanging up, but only when every exit from the pathway is an End Call. If some exits end the call and others fall out of a component, the two cannot be told apart at the exit, so the whole flow returns to the agent instead of hanging up.
+**Migrate as is** keeps your End Call nodes hanging up, as they did in the pathway. When you migrate a persona, a component exit that had no next step in its pathway returns to the agent instead of ending the call.
 
-The import says so when it happens. Add an End call node at the agent level if the call should end there.
+The import says so when it happens. Add an End call node in the flow if the call should end there.
 </Warning>
 
 It also carries a few call-level settings from the number bound to your pathway, such as voice, language and max duration. Anything with no home in agent settings is reported rather than dropped silently, and the number itself is not attached to the agent.
@@ -284,15 +286,17 @@ Expect a complex pathway to take a while. The session is mostly hands-off after 
 - **Read the report**, especially the "needs verification with your data" list. Lanes gated on your CRM records or live integrations that simulations couldn't exercise safely.
 - **Test-chat the agent** in the dashboard against your real scenarios.
 - **Update programmatic calls.** If your integration places outbound calls, follow [Updating programmatic call use with your new Agent](/agents/programmatic-calls) to update your requests and post-call result handling.
+- **Check your post-call webhook handling.** Agent calls send a different post-call webhook, and citations and V1 dispositions don't run on them. See [What changes in the webhook](/platform/migrate-api-integrations#what-changes-in-the-webhook).
 - **Move traffic when ready.** The migration never touches routing, so your existing pathway keeps answering until you decide otherwise.
 
 ### Moving traffic over
 
-Promoting the agent to production is what moves traffic onto it. Until you do, the migration has changed nothing about how calls are answered: your phone numbers and API integrations still point where they pointed before, and your pathway still answers them.
+The migration has changed nothing about how calls are answered. Your phone numbers and API integrations still point where they pointed before, and your pathway still answers them. Moving traffic takes two steps, in this order:
 
-Production is the only environment a real call can reach. An agent you have built, tested and saved but not promoted will not take a call from anyone, which is the single most common reason a new agent appears not to answer. See [Environments](/agents/environments) for what promoting does and how to undo it.
+1. **Publish the agent's production version.** A call that doesn't ask for a specific version runs production. An agent you have built, tested and saved but never published to production can't take those calls, which is the single most common reason a new agent appears not to answer. See [Environments](/agents/environments) for what publishing and promoting do and how to undo them.
+2. **Point traffic at the agent.** Attach a phone number to it (see [Dispatch](/agents/dispatch)), send `agent_id` instead of `pathway_id` in your API requests, or route a pathway's calls to the agent with a migration split.
 
-Treat it as a switch rather than a dial. Traffic moves to the agent at once, so do the verification above first, on an agent nobody is calling yet.
+Attaching a number or changing a request moves that traffic at once, so do the verification above first, on an agent nobody is calling yet. A migration split can move a pathway's calls in steps instead. An API integration that sends `pathway_id` can use one without changing its request. See [Migrate an API integration without changing its request](/platform/migrate-api-integrations).
 
 ## Common failures
 
@@ -312,7 +316,7 @@ Treat it as a switch rather than a dial. Traffic moves to the agent at once, so 
   </Accordion>
 
   <Accordion title="My conversational pathway disappeared">
-    It did not. The migration never writes to the prior version of the dashboard, and the pathways and personas pages are still there. Check you are not looking at the agent in the new dashboard list expecting to see it.
+    It did not. The migration never changes or deletes a pathway. In Bland Agents, legacy pathways are on the **Pathways** page and legacy personas are on the **Personas** page. You can view them there but not edit them. Check you are not looking at the agent list expecting to see it.
   </Accordion>
 </AccordionGroup>
 

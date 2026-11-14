@@ -6,9 +6,9 @@ description: "Adjust an active experiment's split or conditions."
 
 ### Overview
 
-Changes an active experiment's traffic split, schedule, dates, or quota. The variant and baseline are fixed for the experiment's life; to test a different version, [stop it](/api-v2/post/agents-id-experiments-experiment-id-stop) and [create a new one](/api-v2/post/agents-id-experiments). Only the fields below are accepted: any other key returns `400 BAD_REQUEST`, and so does an empty body. Completed experiments cannot be edited and return `409 CONFLICT`, as does a second update that arrives while one is still being applied (retry it).
+Changes an active experiment's traffic split, schedule, dates, or quota. The variant and baseline are fixed for the experiment's life; to test a different version, [stop it](/api-v2/post/agents-id-experiments-experiment-id-stop) and [create a new one](/api-v2/post/agents-id-experiments). Only the fields below are accepted: any other key returns `400 BAD_REQUEST`, and so does an empty body. Completed experiments cannot be edited and return `409 CONFLICT`, as does a second update that arrives while one is still being applied (retry it). While a rollout that has not ended drives the experiment (see `rollout_id` on [Get Experiment](/api-v2/get/agents-id-experiments-experiment-id)), a request that includes `traffic_percentage` returns `409 ROLLOUT_IN_PROGRESS`; change the share from the rollout instead.
 
-Requires an admin, owner, operator, or prompter role.
+Experiments are available on enterprise plans. Other organizations get `403 ENTERPRISE_REQUIRED`. This endpoint also requires an admin, owner, operator, or prompter role.
 
 ### Headers
 
@@ -93,10 +93,10 @@ Send at least one field. Fields you omit keep their current value.
       The current cap on connected variant calls, or `null` for no cap.
     </ResponseField>
     <ResponseField name="variant_calls_routed" type="integer">
-      Connected calls routed to the variant so far.
+      Connected calls and new text conversations routed to the variant so far.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
-      ID of the user who created the experiment, or `null` when created with an org-level key.
+      ID of the user who created the experiment, or `null` when no user is recorded. For a request made with an API key, this is the user who created the key.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp of creation.

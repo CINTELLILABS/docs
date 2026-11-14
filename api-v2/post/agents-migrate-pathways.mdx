@@ -45,6 +45,10 @@ Limited to 60 imports per hour per organization. Requires an admin, owner, opera
   When `false`, no agent is created; the response carries the converted scenario nodes instead, ready to add to an existing agent's `behavior.nodes` with [Create Agent Version](/api-v2/post/agents-id-versions).
 </ParamField>
 
+<ParamField body="parity" type="boolean" default="false">
+  When `true`, runs the same import as **Migrate as is** in the dashboard: the new agent runs the pathway as it ran before, its End Call nodes still hang up, and it takes the call settings of the phone numbers bound to the pathway. Without it, each End Call node becomes a step that returns to the agent instead of hanging up, and a warning says so. Requires exactly one `pathways` entry and `create` not set to `false`; otherwise returns `400 INVALID_PATHWAYS`.
+</ParamField>
+
 ### Response
 
 Returns `201` when an agent was created and `200` in convert-only mode. Returns `422` with `INVALID_MIGRATED_SNAPSHOT` or `MIGRATION_LINT_FAILED` when the converted result does not validate.
