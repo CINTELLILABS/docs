@@ -33,6 +33,8 @@ Requires an admin, owner, operator, or prompter role.
     Each node needs a string `id` that is unique within its flow, a `position` of `{ "x": number, "y": number }`, and a `data` object. `type` names the node kind (for example `start`, `scenario`, `complex-scenario`, `auth`). Container nodes carry a nested `data.flow` with the same `{ nodes, edges }` shape, validated recursively; flows may nest at most 10 levels deep.
 
     Each edge needs string `id`, `source`, and `target` values, and `source` and `target` must reference nodes in the same flow.
+
+    Route step conditions must use an operator a call can match: `equals`, `equals exact`, `not equals`, `not equals exact`, `greater than`, `less than`, `contains`, `does not contain`, or `is`. An `is` condition's value must be one of `null`, `not null`, `true`, `false`, `empty`, `not empty`, `undefined`, or `defined`. A save that adds a condition outside these returns `400 INVALID_SNAPSHOT`, and the message names the Route step, rule, and condition to fix. Such conditions already saved on the agent still save, and come back in `warnings` because calls skip that rule and take the fallback.
   </Accordion>
 
   <Accordion title="settings (required)">
