@@ -98,6 +98,18 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
   The first successful outcome result tag. Provides a quick classification of the conversation outcome without needing to inspect the full `disposition_logs`.
 </ResponseField>
 
+<ResponseField name="data.agent_id" type="string|null">
+  The V2 agent the conversation ran, or `null` for a pathway or persona conversation. Bland records it when the conversation is created. On an agent conversation, `citation_variables`, `disposition_tag`, and `disposition_logs` stay empty, because V1 citations and outcomes don't run. `curr_pathway_id` can be an ID that Bland manages for the agent rather than a pathway you created.
+</ResponseField>
+
+<ResponseField name="data.agent_version_id" type="string|null">
+  The agent version the conversation ran, when Bland can tell which one. `null` otherwise.
+</ResponseField>
+
+<ResponseField name="data.agent_dispositions" type="array">
+  The agent's [Dispositions](/agents/dispositions#read-the-results) results for the conversation. Present only on an agent conversation, and only when your organization has Dispositions enabled.
+</ResponseField>
+
 <ResponseField name="data.messages" type="array">
   An array of message objects in the conversation, sorted chronologically.
 </ResponseField>
@@ -188,6 +200,8 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
     "summary": null,
     "citation_variables": null,
     "disposition_tag": null,
+    "agent_id": null,
+    "agent_version_id": null,
     "messages": [
       {
         "created_at": "2025-05-13T20:50:59.708Z",
@@ -195,7 +209,7 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
         "from": "+15550002222",
         "to": "+15550001111",
         "sender": "USER",
-        "id": 100001,
+        "id": "100001",
         "status": null,
         "error_code": null
       },
@@ -205,7 +219,7 @@ description: "Retrieve a single SMS conversation and its messages by its ID"
         "from": "+15550002222",
         "to": "+15550001111",
         "sender": "AGENT",
-        "id": 100002,
+        "id": "100002",
         "status": "delivered",
         "error_code": null
       }
