@@ -40,6 +40,14 @@ description: "Send an SMS message from an agent to a user. This creates or resum
   An objective that is not a string, is empty, or is longer than 20,000 characters is rejected with a `400` and error code `INVALID_OBJECTIVE`.
 </ParamField>
 
+<ParamField body="agent_id" type="string" required={false}>
+  ID of a V2 agent to run this conversation, in place of the agent attached to `agent_number`. Use it to text from one number as different agents: for example, a pre-call text as your outbound agent from a number whose inbound calls run a different agent. See [V2 agents](#v2-agents).
+
+  The send always starts a new conversation, as if `new_conversation` were `true`. The first message and every reply in that conversation run this agent until the conversation ends or times out. The number stays attached to its own agent, so its calls and any conversation your customer starts by texting it still run that agent.
+
+  The agent must belong to your organization and must have been attached to a phone number at least once. Otherwise the request fails with `404` and error code `AGENT_NOT_FOUND`. It can't be combined with `persona_id`, `persona_version`, `persona_settings`, `pathway_id`, `pathway_version`, or `start_node_id`: the request fails with `400` and error code `INVALID_AGENT_OVERRIDE`. Nothing is sent when a request fails.
+</ParamField>
+
 <ParamField body="request_data" type="object" required={false}>
   Optional metadata to associate with the conversation or message. Used for custom routing or analytics.
 </ParamField>
@@ -54,7 +62,7 @@ Allows you to create a new conversation, archiving the existing conversation and
   Cannot be used as a substitute for `agent_number`. The agent number must still belong to your account. The persona_id controls *how* the conversation is handled, not *which number* sends it.
 
   <Warning>
-    The send also assigns `agent_number` to this persona, and the assignment stays after the send. Later texts and calls to the number run the persona. If the number was attached to a V2 agent, it no longer runs that agent. To text from an agent, attach the number to the agent and omit `persona_id`. See [V2 agents](#v2-agents).
+    The send also assigns `agent_number` to this persona, and the assignment stays after the send. Later texts and calls to the number run the persona. If the number was attached to a V2 agent, it no longer runs that agent. To text from an agent, pass `agent_id`, or attach the number to the agent and omit `persona_id`. See [V2 agents](#v2-agents).
   </Warning>
 </ParamField>
 
@@ -153,14 +161,15 @@ This overrides the webhook for the conversation, instead of using the webhook at
 
 ### V2 agents
 
-This endpoint has no `agent_id` parameter, and it ignores one if you pass it. A conversation runs a V2 agent in these cases:
+A conversation runs a V2 agent in these cases:
 
+- **The request names the agent.** Pass `agent_id`, and the new conversation runs that agent on any number that belongs to your account, whatever the number is attached to.
 - **The number is attached to the agent.** Attach `agent_number` with [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) or in the dashboard ([Put an agent on a phone number](/agents/dispatch#put-an-agent-on-a-phone-number)). Replies on the number then run the agent, even when the request includes a `pathway_id`.
 - **A migration split routes the pathway.** If the pathway the send would run has a [migration split](/platform/migrate-api-integrations), a new conversation can run on the split's agent, at its production version, with no change to your request. That pathway is `pathway_id`. When you omit it, it's the pathway in the number's config for the channel, or else the number's voice pathway. The split doesn't apply when the request has a `persona_id`, when the number has an agent or persona attached, or when the key isn't an organization API key. Under the split's default `honor` policy, a request that sets `pathway_version` or `start_node_id` stays on the pathway. A conversation that was already active keeps the pathway it started on, and a split never routes to an agent whose Messages channel is off. Splits apply to this endpoint only. They don't apply to [Send SMS Batch](/api-v1/post/sms-batch), [Create SMS Conversation](/api-v1/post/sms-create), or a conversation that your customer starts by texting the number.
 
 A conversation is recorded as an agent conversation when it's created. On that conversation, `disposition_ids` and `citation_schema_ids` don't run, and the status webhook sent when it ends carries `agent_id`, `agent_version_id`, and `agent_dispositions` instead of `citations` and `dispositions`. See [On a V2 agent conversation](/tutorials/messaging/overview#on-a-v2-agent-conversation). A conversation that was already active when you attached the number isn't recorded as an agent conversation, so its analysis and webhook shape stay V1. Set `new_conversation` to `true` to start a new one.
 
-If the number is attached to an agent whose Messages channel is turned off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`.
+If the number is attached to an agent whose Messages channel is turned off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`. The same applies to the agent you name in `agent_id`.
 
 ### Response
 
@@ -198,6 +207,18 @@ If the number is attached to an agent whose Messages channel is turned off, for 
     "message_id": "0c9d8e7f-6a5b-4c3d-9e8f-7a6b5c4d3e2f"
   },
   "errors": null
+}
+```
+
+```json 404 AGENT_NOT_FOUND
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Agent not found. The agent must belong to your organization and have a phone number attached before it can send texts.",
+      "error": "AGENT_NOT_FOUND"
+    }
+  ]
 }
 ```
 
