@@ -45,7 +45,9 @@ description: "Send an SMS message from an agent to a user. This creates or resum
 
   The send always starts a new conversation, as if `new_conversation` were `true`. The first message and every reply in that conversation run this agent until the conversation ends or times out. The number stays attached to its own agent, so its calls and any conversation your customer starts by texting it still run that agent.
 
-  The agent must belong to your organization and must have been attached to a phone number at least once. Otherwise the request fails with `404` and error code `AGENT_NOT_FOUND`. It can't be combined with `persona_id`, `persona_version`, `persona_settings`, `pathway_id`, `pathway_version`, or `start_node_id`: the request fails with `400` and error code `INVALID_AGENT_OVERRIDE`. Nothing is sent when a request fails.
+  The agent's Messages channel decides whether the text goes out and whether replies are sent, not the Messages channel of the agent attached to the number. If the agent's Messages channel is off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`.
+
+  The agent must belong to your organization and must have been attached to a phone number at least once. Otherwise the request fails with `404` and error code `AGENT_NOT_FOUND`. It can't be combined with `persona_id`, `persona_version`, `persona_settings`, `pathway_id`, `pathway_version`, or `start_node_id`: the request fails with `400` and error code `INVALID_AGENT_OVERRIDE`. It isn't supported on iMessage numbers: the request fails with `400` and error code `AGENT_OVERRIDE_CHANNEL_UNSUPPORTED`. Nothing is sent when a request fails.
 </ParamField>
 
 <ParamField body="request_data" type="object" required={false}>
@@ -169,7 +171,7 @@ A conversation runs a V2 agent in these cases:
 
 A conversation is recorded as an agent conversation when it's created. On that conversation, `disposition_ids` and `citation_schema_ids` don't run, and the status webhook sent when it ends carries `agent_id`, `agent_version_id`, and `agent_dispositions` instead of `citations` and `dispositions`. See [On a V2 agent conversation](/tutorials/messaging/overview#on-a-v2-agent-conversation). A conversation that was already active when you attached the number isn't recorded as an agent conversation, so its analysis and webhook shape stay V1. Set `new_conversation` to `true` to start a new one.
 
-If the number is attached to an agent whose Messages channel is turned off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`. The same applies to the agent you name in `agent_id`.
+If the number is attached to an agent whose Messages channel is turned off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`. When you pass `agent_id`, the named agent's Messages channel decides instead.
 
 ### Response
 
