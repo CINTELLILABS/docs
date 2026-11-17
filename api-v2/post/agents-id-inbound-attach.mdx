@@ -46,7 +46,7 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="only_if_unassigned" type="boolean" default="false">
-  When `true`, attaches only numbers that have no persona and no pathway assigned. If any number in `inbound_numbers` is already assigned, the request returns `409 NUMBER_ALREADY_ASSIGNED` and attaches nothing. Any value other than a boolean returns `400 INVALID_BODY`.
+  When `true`, attaches only numbers that have no persona and no pathway assigned and that don't answer calls with a prompt of their own. A number still on the default prompt Bland sets when you buy it counts as unassigned. If any number in `inbound_numbers` answers with its own prompt, the request returns `409 NUMBER_HAS_PROMPT` and attaches nothing. If any number is already assigned, the request returns `409 NUMBER_ALREADY_ASSIGNED` and attaches nothing. To replace a number's own prompt with the agent, attach it without `only_if_unassigned`. Any value other than a boolean returns `400 INVALID_BODY`.
 </ParamField>
 
 <ParamField body="only_if_bound" type="boolean" default="false">
@@ -78,7 +78,7 @@ Requires an admin, owner, operator, or prompter role.
 </ResponseField>
 
 <ResponseField name="errors" type="null | array">
-  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, `422 COMPILE_FAILED` when the version to compile cannot be compiled, and `409 MIGRATION_EXPERIMENT_NUMBER` when a number's pathway has a migration split. With `only_if_unassigned` or `only_if_bound`, it can also return `409 NUMBER_ALREADY_ASSIGNED` or `409 NUMBER_NOT_BOUND`.
+  `null` on success, or a list of error objects if the request failed. Returns `404 NOT_FOUND` for an unknown agent, `400 NO_VERSIONS` when the agent has no saved versions, `422 COMPILE_FAILED` when the version to compile cannot be compiled, and `409 MIGRATION_EXPERIMENT_NUMBER` when a number's pathway has a migration split. With `only_if_unassigned` or `only_if_bound`, it can also return `409 NUMBER_ALREADY_ASSIGNED`, `409 NUMBER_HAS_PROMPT`, or `409 NUMBER_NOT_BOUND`.
 </ResponseField>
 
 <ResponseExample>
