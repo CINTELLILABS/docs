@@ -6,7 +6,9 @@ description: "List an environment's deployment history, newest first."
 
 ### Overview
 
-Every publish, promote, and rollback appends a deployment to the target environment's history. This endpoint returns that history for one environment, newest first, with the latest check run recorded for each deployed version. Use `is_rollback_eligible` to find valid targets for [Roll Back Agent](/api-v2/post/agents-id-rollback).
+Every publish, promote, and rollback appends a deployment to the target environment's history. A promote with `version_id` that moves `staging` also appends a `staging` row. This endpoint returns that history for one environment, newest first, with the latest check run recorded for each deployed version. Use `is_rollback_eligible` to find valid targets for [Roll Back Agent](/api-v2/post/agents-id-rollback). Nothing is ever deployed to `dev`, so `env=dev` returns an empty array.
+
+This endpoint does not accept restricted API keys; they receive `403 INSUFFICIENT_SCOPE`.
 
 ### Headers
 
@@ -42,6 +44,9 @@ Every publish, promote, and rollback appends a deployment to the target environm
     <ResponseField name="env_type" type="string">
       The environment this deployment was made to. Matches the `env` query parameter.
     </ResponseField>
+    <ResponseField name="kind" type="string | null">
+      The action that recorded the deployment: `publish`, `promote`, or `rollback`. `null` on deployments recorded before this field existed.
+    </ResponseField>
     <ResponseField name="agent_version_id" type="string">
       ID of the version that was deployed.
     </ResponseField>
@@ -49,10 +54,10 @@ Every publish, promote, and rollback appends a deployment to the target environm
       The version's saved name, or `null` if it was never named.
     </ResponseField>
     <ResponseField name="semver" type="string">
-      The version number recorded on this deployment. Promotes and rollbacks re-record the version's original number rather than minting a new one.
+      The version number recorded on this deployment. A version keeps the number minted the first time it was published or promoted; later deployments of it re-record that number.
     </ResponseField>
     <ResponseField name="deployed_by" type="string | null">
-      ID of the user who made the deployment, or `null` when made with an org-level key.
+      ID of the user who made the deployment. With an API key, this is the user the key belongs to. `null` when no user was recorded.
     </ResponseField>
     <ResponseField name="deployed_at" type="string">
       ISO 8601 timestamp of the deployment.
@@ -94,8 +99,14 @@ Every publish, promote, and rollback appends a deployment to the target environm
     <ResponseField name="judge_names" type="string[]">
       Display names of the judges configured when the run started.
     </ResponseField>
+    <ResponseField name="scenario_ids" type="string[]">
+      IDs of the test scenarios in the run.
+    </ResponseField>
     <ResponseField name="scenario_count" type="integer">
       Number of test scenarios in the run.
+    </ResponseField>
+    <ResponseField name="config_evals" type="array">
+      The evaluations configured when the run started. Each has `eval_agent_id`, `eval_agent_version_id`, `name` (omitted when unknown), `target_level_keys`, and `required`.
     </ResponseField>
     <ResponseField name="simulations_count" type="integer">
       Conversations generated per scenario.
@@ -141,6 +152,7 @@ Every publish, promote, and rollback appends a deployment to the target environm
     {
       "id": "e787c15f-abe6-409d-a685-1b007aad977d",
       "env_type": "production",
+      "kind": "promote",
       "agent_version_id": "6cd4ce35-a4d2-4d13-a708-2a05f86ed3d8",
       "version_name": "Holiday hours",
       "semver": "1.3.2",
@@ -157,7 +169,21 @@ Every publish, promote, and rollback appends a deployment to the target environm
         "judge_names": [
           "Greeting quality"
         ],
+        "scenario_ids": [
+          "3b1f4c2e-8a0d-4f6b-9c5e-1d2a7e9f0b34",
+          "5c8e2a17-6d4b-4e93-a1f0-7b3c9d2e5f68",
+          "9e4d7b03-2c6f-48a1-b5d9-0f1e3a6c8b27"
+        ],
         "scenario_count": 3,
+        "config_evals": [
+          {
+            "eval_agent_id": "de2d68ac-cfc6-4c40-8b1a-d6e541133f3c",
+            "eval_agent_version_id": "e112f640-71be-46ca-8269-746abec3bcde",
+            "name": "Greeting quality",
+            "target_level_keys": [],
+            "required": true
+          }
+        ],
         "simulations_count": 2,
         "overall_passed": true,
         "verdicts": [
@@ -185,6 +211,7 @@ Every publish, promote, and rollback appends a deployment to the target environm
     {
       "id": "579eca61-40fa-433b-8066-809927758313",
       "env_type": "production",
+      "kind": "promote",
       "agent_version_id": "0f5adeb8-94a2-4cc3-8e6e-015178f994b7",
       "version_name": null,
       "semver": "1.3.1",
