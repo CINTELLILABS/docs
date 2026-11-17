@@ -6,7 +6,9 @@ description: "List an agent's environments with their pinned versions."
 
 ### Overview
 
-Returns the agent's `dev`, `staging`, and `production` environments, each with the name and semver of the version it is pinned to. `dev` is never pinned: it always runs the newest saved version. Move the `staging` pointer with [Publish Agent to Staging](/api-v2/post/agents-id-publish) and the `production` pointer with [Promote Agent to Production](/api-v2/post/agents-id-promote) or [Roll Back Agent](/api-v2/post/agents-id-rollback).
+Returns the agent's `dev`, `staging`, and `production` environments, each with the name and semver of the version it is pinned to. `dev` is never pinned: it always runs the newest saved version. Move the `staging` pointer with [Publish Agent to Staging](/api-v2/post/agents-id-publish) and the `production` pointer with [Promote Agent to Production](/api-v2/post/agents-id-promote) or [Roll Back Agent](/api-v2/post/agents-id-rollback). A promote with `version_id` moves `staging` too.
+
+This endpoint does not accept restricted API keys; they receive `403 INSUFFICIENT_SCOPE`. [Get Agent](/api-v2/get/agents-id) returns the same pointers without version names or semvers and accepts the `agents:read` scope.
 
 ### Headers
 
@@ -38,6 +40,9 @@ Returns the agent's `dev`, `staging`, and `production` environments, each with t
     <ResponseField name="current_version" type="object | null">
       Details of the pinned version, or `null` when unpinned. Contains `name` (the version's saved name, or `null` if it was never named) and `semver` (the version number minted when it was first published, or `null` if it has never been published).
     </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last change to the environment row.
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
@@ -53,7 +58,8 @@ Returns the agent's `dev`, `staging`, and `production` environments, each with t
       "id": "3f16480d-528f-4861-9e23-c2f40ceaf895",
       "env_type": "dev",
       "current_version_id": null,
-      "current_version": null
+      "current_version": null,
+      "updated_at": "2026-09-08T09:30:44.005Z"
     },
     {
       "id": "2d2740be-28ce-4a2b-bcfc-9ad947bb9faa",
@@ -62,7 +68,8 @@ Returns the agent's `dev`, `staging`, and `production` environments, each with t
       "current_version": {
         "name": "Holiday hours",
         "semver": "1.4.0"
-      }
+      },
+      "updated_at": "2026-09-10T18:40:27.882Z"
     },
     {
       "id": "bf884f61-5034-48b4-9a2e-2f38fd0af537",
@@ -71,7 +78,8 @@ Returns the agent's `dev`, `staging`, and `production` environments, each with t
       "current_version": {
         "name": null,
         "semver": "1.3.2"
-      }
+      },
+      "updated_at": "2026-09-10T18:42:11.904Z"
     }
   ],
   "errors": null
