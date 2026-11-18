@@ -1,0 +1,130 @@
+---
+title: 'Bandwidth'
+description: 'Connect your Bandwidth numbers to a Bland agent over SIP for inbound calls, outbound calls, and transfers'
+---
+
+Use your Bandwidth phone numbers with a Bland agent. A SIP trunk connects Bandwidth and Bland, so the agent answers inbound calls and places outbound calls on your Bandwidth numbers and network.
+
+Setup is configuration only, on both sides. No code.
+
+<Note>
+**Verified integration.** Bandwidth built and tested this integration against the configuration on this page, on the Bandwidth Universal Platform. Integrations on Bandwidth's legacy platform are supported best effort. Bandwidth publishes the same steps in its [Bland integration guide](https://dev.bandwidth.com/docs/voice/integrations/bland).
+</Note>
+
+## What works
+
+- Inbound calls to your agent
+- Outbound calls from your agent
+- Transfers from your agent
+
+## Prerequisites
+
+- A Bandwidth Universal Platform account with Bland interconnect enabled. Open a ticket with your Bandwidth account representative, name the admin user who will configure it, and ask for a Bland integration
+- A Bland account with SIP trunking enabled. If there is no **SIP** tab under **Phone numbers**, contact Bland support
+
+## Configure Bandwidth
+
+Bland needs a Bandwidth SIP endpoint for both directions, so create it even if you only plan to use one.
+
+<Steps>
+  <Step title="Create a SIP realm">
+    In the Bandwidth App, go to **Account**, then **SIP Credentials**, then **Manage Realms**, and press **Add**. Name the realm, for example `bland1`.
+
+    Bandwidth generates the realm's FQDN, for example `bland1-decce2.auth.bandwidth.com`. Copy it exactly as shown.
+  </Step>
+
+  <Step title="Note your trunk group port">
+    Go to **Trunk Group Configurations** and note the port assigned to your trunk group. It varies by account.
+
+    Your SIP endpoint is the FQDN plus that port, for example `bland1-decce2.auth.bandwidth.com:5239`.
+  </Step>
+
+  <Step title="Route inbound calls to Bland">
+    Go to **Service Management**, then **Voice Configuration**, and press **Add Package**. Name it, for example `Bland`.
+
+    Under **Routing**, create the primary route, press **Add endpoint**, and set the type to **Route to domain name**. Enter Bland's endpoint for your region, for example `us2.sip.bland.ai:5061`. The other regions are under [Connection endpoints](/agents/sip-network#connection-endpoints). Press **Create Package**.
+
+    Open each number your agent should answer, select the package under **Voice configuration package**, and save. Many numbers can share one package.
+  </Step>
+
+  <Step title="Create outbound credentials">
+    Skip this if you only need inbound calls.
+
+    Go to **Account**, then **SIP Credentials**, and press **Add**. Enter a username and password, select the realm you created, and save.
+  </Step>
+</Steps>
+
+## Configure Bland
+
+Every trunk the Bland wizard builds carries both directions, so create one even for inbound only.
+
+<Steps>
+  <Step title="Open the setup wizard">
+    At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab, and press **Create trunk**.
+  </Step>
+
+  <Step title="Provider">
+    Pick **Other** and enter your Bandwidth SIP endpoint, for example `bland1-decce2.auth.bandwidth.com:5239`.
+  </Step>
+
+  <Step title="Firewall">
+    Bandwidth has already allow-listed Bland on its side. Tick the box and continue.
+  </Step>
+
+  <Step title="Authentication">
+    Pick **IP-based**, and leave **Outbound routing** on **Via Bland's carrier**. Under **Outbound call credentials**, enter the username and password from your Bandwidth realm. Press **Create trunk**.
+  </Step>
+
+  <Step title="Numbers">
+    Add each Bandwidth number in E.164 format, for example `+19195551234`.
+  </Step>
+
+  <Step title="Assign an agent">
+    Under **Phone numbers**, press **Configure** on the number and pick the agent under **Assignment**.
+  </Step>
+</Steps>
+
+You know it worked when a call to the number reaches the agent and shows up on the trunk's **Overview** tab. For outbound, use the number as `from` in [`POST /v1/calls`](/api-v1/post/calls).
+
+<Tip>
+The wizard's connection checks can report errors against a working Bandwidth endpoint. If they do, continue and confirm with a test call.
+</Tip>
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Outbound calls are rejected with 403 or 407">
+    The endpoint or credentials don't match. The endpoint in Bland must match the realm FQDN exactly, and the username and password must match the credential assigned to that realm.
+  </Accordion>
+
+  <Accordion title="Calls fail before reaching Bandwidth">
+    The endpoint or port is wrong. Copy the FQDN verbatim, and use the port from your own trunk group configuration.
+  </Accordion>
+
+  <Accordion title="Inbound calls don't reach the agent">
+    The number isn't on the Bland voice configuration package, or has no agent assigned in Bland. Check both.
+  </Accordion>
+
+  <Accordion title="The call connects with no audio">
+    Transport or media encryption doesn't match. Bland requires TLS signaling and SRTP media.
+  </Accordion>
+
+  <Accordion title="The number won't save in Bland">
+    Enter it in E.164 format, with the `+`.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    Send callers onward from the agent.
+  </Card>
+  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
+    Bland's regions, IPs, and TLS and SRTP.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
