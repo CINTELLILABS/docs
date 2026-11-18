@@ -17,7 +17,7 @@ Staging and production are snapshots. Each holds one version of the agent and ke
 
 ## Where environments live
 
-Inside an agent, Environments is under Configure. It has two tabs, Environments and Variables.
+Inside an agent, Environments is under Configure. It has two tabs, Environments and Configurations.
 
 There is no organization-wide view. Environments belong to one agent, and you reach them from that agent.
 
@@ -198,19 +198,40 @@ Over the API, [Publish Agent to Staging](/api-v2/post/agents-id-publish) does no
 
 A judge scores a rate, not a verdict per conversation. It passes when half or more of the scored conversations match the target, so a single bad conversation does not necessarily fail the run. Test cases default to an odd number of conversations, which keeps ties rare.
 
-## Variables
+## Configurations
 
-The Variables tab holds keys and values that belong to an environment rather than to the agent. Pick Development, Staging or Production to choose which set you are editing.
+The Configurations tab holds two things: the agent's environment variables at the top, and its conversation configurations below them.
 
-The same key can carry a different value in development, staging and production. Reference one anywhere in the agent's configuration as `{"{{env.KEY}}"}`, and it resolves to the running environment's value when a call starts, which is how an agent points at a test system while it is on staging and a real one once it is promoted. A variable nothing references does nothing.
+### Environment variables
 
-Marking a value **Secret** stores it in your secret vault and keeps only a reference here. It cannot be read back afterwards.
+Environment variables are keys and values that belong to an environment rather than to the agent. They sit in one table: each row is a variable, with its Development, Staging and Production values side by side. Click **Add variable** to create one, and edit any row in place.
+
+The same key can carry a different value in development, staging and production. Reference one anywhere in the agent's configuration as `{"{{env.KEY}}"}`. In the prompt and in request data, type `{"{{"}` and pick the variable from the suggestions to insert its reference. A reference resolves to the running environment's value when a call starts, which is how an agent points at a test system while it is on staging and a real one once it is promoted. A variable nothing references does nothing.
+
+Turning on **Secret** in a variable's row stores its values in your secret vault and keeps only a reference here. They cannot be read back afterwards.
 
 <Warning>
 A key with no value in the environment the call is running in does not fall back to another environment. It fails the call before it starts, with `AGENT_VARIABLE_UNRESOLVED`.
 
 Promotion checks for this: promoting a version that references a key with no production value is refused with the same code, even when the promotion is forced. A rollback is not checked, and neither is deleting a value from production, so either can still leave production calls failing.
 </Warning>
+
+### Conversation configurations
+
+A configuration is a saved set of call settings you reuse instead of filling them in each time. Each one belongs to a channel: **Calls**, **Messages**, **Web chat** or **API chat**. Filter the list by channel, and use a row's menu to **Duplicate** or **Delete** it.
+
+A configuration has these fields:
+
+- **Name** and **Description**: what it is and when to use it.
+- **Channel**: where it applies.
+- **Agent version**: a version you choose now, or **Choose when placing the call**.
+- **Starting pathway**: a pathway from that environment's agent version.
+- **Request data source** and **Metadata source**: **Use agent defaults**, or custom key and value rows. Request data values can reference environment variables. Web chat does not support conversation metadata. For what request data does, see [Configure settings](/agents/agent-builder#configure-settings).
+- **Webhook**: a URL that receives call updates.
+
+To use one, pick it under **Conversation configuration** when you set up a test run, send a call, or create a call or SMS batch. **Edit configurations** beside the picker opens this tab. Call configurations you saved before configurations existed still appear in the picker.
+
+Under **Connected phone numbers**, assign a Calls or Messages configuration to one of the agent's numbers. New conversations on that number then use it. Deleting a configuration sends its connected numbers back to the agent defaults for new conversations. Runs that already started keep the settings they started with.
 
 ## Common failures
 
