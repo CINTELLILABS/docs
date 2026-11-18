@@ -128,21 +128,38 @@ The dates are a plan. A step that needs approval waits for it, and every step af
 A staged release never skips the evaluation gate. Starting the experiment checks the same required evaluations as a promotion, so a version that can't be promoted can't be released in stages either.
 </Note>
 
-## Attach a number to staging
+## Assign a number to an environment
 
-On enterprise plans, you can point a phone number at staging instead of production. Calls to that number run the version pinned to staging, so you can dial the staging version before you promote it.
+By default, a phone number attached to an agent answers on production. On enterprise plans, you can point a number at staging or development instead, so you can dial a version before you promote it.
 
-1. Publish to staging first. With nothing on staging, the Staging option is disabled and reads **Not deployed**.
+- **Staging**: calls run the version pinned to staging, with staging's variable values.
+- **Development Main** or a **Development** branch: calls follow the latest saved content of Main or that branch, not a published version, with development's variable values.
+
+<Warning>
+Only calls follow the number's environment. Texts to a staging or development number run the same version as texts to the agent's other numbers.
+</Warning>
+
+### From the phone number
+
+1. At All agents, open **Phone numbers** and press Configure on the number's row.
+2. Under **Assignment**, below **Agent**, set **Environment** to **Production**, **Staging**, **Development Main** or a **Development** branch.
+3. In **Review and save**, check the change, tick the confirmation and press **Save**.
+
+### From the agent
+
+1. Publish to staging first if you want staging. With nothing on staging, the Staging option is disabled and reads **Not deployed**.
 2. Inside the agent, open Channels, then the Calls tab, and select **Add a number**.
 3. In Attach a number, pick the number, then set **Environment** to **Staging**. Each option shows the version deployed to that environment.
 
-Every number on the Channels page shows which environment it answers on, **Production** or **Staging**.
+Every number on the Channels page shows which environment it answers on, such as **Production** or **Staging**.
 
-<Warning>
-Only calls follow staging. Texts to a staging number run the same version as texts to the agent's other numbers.
-</Warning>
+To move a number that is already attached between production and staging, open its **Number options** menu on the Calls tab and select **Switch to Staging** or **Switch to Production**. You don't need to detach it first. **Switch to Staging** is disabled, with the reason shown, when staging has no version or the number is on dedicated infrastructure that runs an older release.
 
-A staging number runs staging's variable values, so every variable the agent references needs a staging value before you can attach. Numbers can't be attached to staging on dedicated infrastructure. To move a number back to production, detach it and attach it again with **Production** selected. With the API, call [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) with `environment: "production"`; you don't need to detach first.
+### Requirements
+
+Every variable the agent references needs a value in the number's environment before you can assign it. On dedicated infrastructure, you can attach numbers to staging once your infrastructure runs a recent enough release. Development and branch numbers aren't available on dedicated infrastructure.
+
+With the API, call [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) with `environment` set to `"production"`, `"staging"` or `"dev"`, plus `branch_id` to pick a development branch.
 
 ## Roll back
 
