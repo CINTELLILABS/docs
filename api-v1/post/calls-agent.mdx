@@ -9,7 +9,7 @@ description: "Place an outbound call with one of your agents."
 Send an AI phone call with one of your agents. The agent's published version supplies the conversation, its prompt, scenarios, nodes and tools, so this request names the agent and sets anything you want to override for this one call.
 
 <Note>
-International calls need a completed purchase: buy at least $5 of credits in the [dashboard](https://app.bland.ai/dashboard/pay) under Billing, or turn on auto-recharge. Numbers on the [Agent Phone Plan](/platform/agent-phone-plan) call the US and Canada only, regardless of your credit balance.
+International calls need a completed purchase: buy at least $5 of credits in the [dashboard](https://app.bland.ai/dashboard/pay) under Billing, or turn on auto-recharge. On the [Agent Phone Plan](/platform/agent-phone-plan), calls to the US and Canada are included, and calls to other countries are [paid from your credit balance](/platform/agent-phone-plan#international-calls).
 </Note>
 
 Every setting below is optional. If you omit a setting the agent configures, the call uses the agent's value. An agent can configure `voice`, `language`, `keywords`, `pronunciation_guide`, `wait_for_greeting`, `max_duration`, `noise_cancellation`, `ignore_button_press`, `record`, `background_track`, `request_data`, `metadata`, interruptions, voicemail, and the caller ID. Any other setting you omit uses the default listed below.
@@ -1123,6 +1123,22 @@ Only calls that omit `agent_version` are eligible for [experiments](/api-v2/post
     ```
   </ResponseField>
 
+  <ResponseField name="402 - Agent Phone Plan International Call Needs Credits" type="object">
+    An organization on the Agent Phone Plan called a number outside the US and Canada with a credit balance of \$0 or less. Add credits, then try again.
+
+    ```json
+    {
+      "status": "error",
+      "message": "Calls outside the US and Canada are paid from your credit balance. Add credits, then try again.",
+      "errors": [
+        {
+          "error": "CALL_PLAN_INTL_NEEDS_CREDITS",
+          "message": "Calls outside the US and Canada are paid from your credit balance. Add credits, then try again."
+        }
+      ]
+    }
+    ```
+  </ResponseField>
   <ResponseField name="429 - International Rate Limit" type="object">
     International calling rate limit exceeded.
 
