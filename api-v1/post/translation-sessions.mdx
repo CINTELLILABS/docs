@@ -201,7 +201,7 @@ JSON text frames from the server, discriminated by `type`:
 | `transcript` | One finalized utterance was translated | `turn_id`, `original`, `translation`, `source_language`, `target_language`, `is_final` |
 | `tts_complete` | All translated audio for a turn has been written to the WebSocket | `turn_id`, `audio_duration_ms` |
 | `session_ended` | Terminal notification — last JSON frame before close | `reason`, `session_seconds`, `end_reason` |
-| `error` | Fatal session failure, followed by `session_ended` and close | `code`, `message`, `fatal` |
+| `error` | A session or turn failure. When `fatal` is `true`, `session_ended` and close follow | `code`, `message`, `fatal` |
 
 ```json Example transcript event
 {
@@ -219,6 +219,7 @@ JSON text frames from the server, discriminated by `type`:
   - `audio_duration_ms` is currently always `0` — a placeholder. Do not rely on it.
   - A `tts_complete` may be absent for a turn whose speech synthesis failed — don't block on it. The transcript still arrives.
   - Error codes that can fire: `taas/audio_protocol_mismatch` and `taas/internal_error`, both `fatal: true`.
+  - `taas/translation_failed` fires with `fatal: false` when one turn cannot be translated. The session stays open and the next turn translates as usual.
   - `session_ended.reason` is one of `client_disconnect`, `max_duration`, `error`, `api_terminated`.
 </Note>
 
