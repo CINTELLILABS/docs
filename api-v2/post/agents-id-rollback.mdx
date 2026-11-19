@@ -6,7 +6,7 @@ description: "Repoint production at a previously deployed version."
 
 ### Overview
 
-Moves the agent's `production` pointer back to a version that has been deployed to production before, recording a new deployment with that version's original semver. Phone numbers attached to the agent begin answering with the restored version. Find candidates with [List Agent Deployments](/api-v2/get/agents-id-deployments), where `is_rollback_eligible` is `true`. `staging` is not changed.
+Moves the agent's `production` pointer back to a version that has been deployed to production before, recording a new deployment with that version's original semver. Phone numbers attached to the agent begin answering with the restored version, and any active experiment whose baseline is production ends with `completed_reason` set to `baseline_changed`. A rollback is never blocked by evaluations, a live rollout, or missing `production` variable values, so check that every variable the restored version references has a `production` value. Find candidates with [List Agent Deployments](/api-v2/get/agents-id-deployments), where `is_rollback_eligible` is `true`. `staging` is not changed.
 
 Requires an admin, owner, operator, or prompter role.
 

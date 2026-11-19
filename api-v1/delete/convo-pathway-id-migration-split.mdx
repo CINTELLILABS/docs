@@ -1,0 +1,60 @@
+---
+title: "Delete Migration Split"
+api: "DELETE https://api.bland.ai/v1/convo_pathway/{pathway_id}/migration_split"
+description: "Remove a pathway's migration split so all its traffic runs on the pathway."
+---
+
+Removes the migration split from a V1 pathway. From the next call, all of the pathway's traffic runs on the pathway. A rollout over the split never blocks this request, and the rollout ends. The request succeeds even when the pathway has no split.
+
+Delete the split before you attach the pathway's numbers to an agent or a persona: while a split exists, even at `0%`, [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) and [Attach Phone Numbers to Persona](/api-v1/post/personas-id-inbound-attach) return `409 MIGRATION_EXPERIMENT_NUMBER` for those numbers. To keep the split but send no traffic, use [Set Migration Split](/api-v1/put/convo-pathway-id-migration-split) with `v2_percentage` set to `0`.
+
+Requires an admin, owner, or operator role.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The V1 pathway. Must be a UUID of a pathway in your organization. Returns `400 BAD_REQUEST` for an invalid UUID, `404 NOT_FOUND` for a pathway outside your organization, and `400 BAD_REQUEST` for a pathway that Bland compiled from a V2 agent.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.deleted" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "deleted": true
+  },
+  "errors": null
+}
+```
+
+```json Pathway Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Pathway not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

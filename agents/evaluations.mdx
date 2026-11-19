@@ -5,12 +5,12 @@ description: 'Score an agent before it ships: write a judge, build a simulation,
 
 An evaluation is a judge reading a conversation and saying whether the agent did the thing you wanted.
 
-Three objects do the work. A judge scores a conversation. A simulation is a simulated caller that produces conversations to score. A run pairs them and gives you a result. A simulation carries no judges of its own; you pick both when you start a run.
+Three objects do the work. A judge scores a conversation. A simulation is a simulated caller that produces conversations. A run plays simulations against your agent and, when you add judges, scores the conversations. A simulation carries no judges of its own; you pick them, if any, when you start a run.
 
 ## Prerequisites
 
 - An agent you have built, from [Agent builder](/agents/agent-builder)
-- An owner, admin, operator or prompter role to make an evaluation a required check
+- An owner, admin, operator or prompter role to write judges, run evaluations and make an evaluation a required check. Publishing a judge needs an owner, admin or operator role. See [Roles and permissions](/platform/roles-and-permissions)
 
 ## Where evaluations live
 
@@ -92,13 +92,15 @@ To start from your own traffic, use **Generate from call** on a new simulation. 
 
 When you generate simulations from several conversations at once, Bland drafts one simulation per call, up to 50 calls, one call at a time. Each draft gets a short name that describes what happened on the call. Names are unique, so you can save every draft without renaming it. If some calls fail, Bland keeps the drafts that succeeded and lists each failed call with its error.
 
-**Run** on a saved simulation opens the testing panel, where you watch the conversation and read its grading results. The panel keeps the conversation you selected, and a cancelled run says so beneath **Conversation ended**.
+**Run** on a saved simulation opens the Runs tab with the **Create run** dialog already filled in with that simulation.
 
 ## Run them
 
-A run pairs judges with simulations. Pick both, choose how many conversations each simulation should produce, and start it.
+The **Create run** dialog is a table with one row per simulation and the columns **Simulation**, **Configuration**, **Judges (optional)** and **Conversations**. **Add simulation** adds a row, and you can duplicate or remove rows. Pick the simulation for each row, how many conversations it should produce, and any judges, then start the run.
 
-The new run dialog lists text-based simulations only. Start a voice simulation with **Run** on the simulation itself.
+Rows start with no judges. A run without judges still produces conversations, and you can open each one to read its transcript. Runs lists these conversation-only runs alongside scored ones.
+
+A voice run uses voice simulations in every row, so text and voice cannot mix in one run. It needs an **Agent version** selected, and its conversations run one at a time in the order shown. While a voice call is active, you can follow it in a side pane with speaker waveforms, captions and the agent's current pathway.
 
 <Warning>
 A run you start here is stored in your browser, not on Bland.
@@ -106,15 +108,13 @@ A run you start here is stored in your browser, not on Bland.
 Your teammates cannot see it, and neither can you from another machine or another browser. Only the runs that happen as part of a publish are kept on the server.
 </Warning>
 
-<Warning>
-The version picker in the new run dialog does not change which version runs.
-
-Every conversation runs the agent's current version. The picker records your choice on the run for reference, and the tooltip says so.
-</Warning>
+The run uses the agent version you pick in the dialog.
 
 ## Read a run
 
 A conversation passes only if **every** judge passed it. A judge that could not tell counts against it here.
+
+A run without judges shows its conversations and transcripts but no verdicts.
 
 This is worth holding onto, because the promotion gate scores the same run differently: there, each judge is scored on its own, across conversations. So a run can show failed conversations in the results and still clear the gate.
 
@@ -201,10 +201,6 @@ To re-run the same set of judges over time, save it as a [workbench setup](/api-
 
   <Accordion title="Promote looks enabled but does nothing">
     A required evaluation failed. The button dims rather than disabling, and the reason is on hover.
-  </Accordion>
-
-  <Accordion title="I chose a version in the run dialog and it ran a different one">
-    It ran the current one. The picker records a version on the run and does not select what executes.
   </Accordion>
 </AccordionGroup>
 
