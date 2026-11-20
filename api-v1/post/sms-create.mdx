@@ -4,9 +4,6 @@ api: "POST https://api.bland.ai/v1/sms/create"
 description: "Create an SMS conversation with specific pathway state without triggering immediate message sending."
 ---
 
-<Info>
-  **Enterprise Feature** - SMS is only available on Enterprise plans. Contact your Bland representative for access.
-</Info>
 
 ### Headers
 
@@ -28,12 +25,12 @@ description: "Create an SMS conversation with specific pathway state without tri
   The content of the message to be stored in the conversation history.
 </ParamField>
 
-<ParamField body="message_sid" type="string" required={false}>
-  Optional Twilio message SID for tracking and correlation purposes.
+<ParamField body="message_sid" type="string" required>
+  Twilio message SID for tracking and correlation purposes. A request without it fails with `400` and error code `MISSING_REQUIRED_FIELDS`.
 </ParamField>
 
 <ParamField body="curr_pathway_id" type="string" required={false}>
-  The UUID of the current pathway being used in this conversation.
+  The UUID of the current pathway being used in this conversation. On a number attached to a V2 agent, replies run the agent, not this pathway.
 </ParamField>
 
 <ParamField body="curr_pathway_version" type="string" required={false}>
@@ -86,21 +83,18 @@ description: "Create an SMS conversation with specific pathway state without tri
   ID of the conversation that was created.
 </ResponseField>
 
-<ResponseField name="data.workflow_id" type="string">
-  ID of the Temporal workflow triggered to process the conversation setup.
-</ResponseField>
-
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of error objects if the request failed.
 </ResponseField>
+
+If `agent_number` is attached to a V2 agent whose Messages channel is turned off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`.
 
 <ResponseExample>
 ```json Response
 {
   "data": {
     "message": "SMS conversation created successfully",
-    "conversation_id": "conv_abc123",
-    "workflow_id": "workflow_xyz789"
+    "conversation_id": "conv_abc123"
   },
   "errors": null
 }

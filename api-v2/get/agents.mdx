@@ -16,8 +16,8 @@ Returns every live agent in your organization, ordered by `updated_at` descendin
 
 ### Query Parameters
 
-<ParamField query="limit" type="integer" default="100">
-  Maximum number of agents to return. Minimum `1`, maximum `500`. Values outside that range are clamped.
+<ParamField query="limit" type="integer">
+  Maximum number of agents to return. Minimum `1`, maximum `500`. Values outside that range are clamped. When omitted or not a number, every agent is returned. There is no offset or cursor.
 </ParamField>
 
 ### Response
@@ -36,7 +36,7 @@ Returns every live agent in your organization, ordered by `updated_at` descendin
       The agent's display name.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
-      ID of the user who created the agent, or `null` when created with an org-level key.
+      ID of the user who created the agent. With an API key, this is the user the key belongs to. `null` when no user was recorded.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp of creation.
@@ -49,6 +49,15 @@ Returns every live agent in your organization, ordered by `updated_at` descendin
     </ResponseField>
     <ResponseField name="color" type="string">
       The agent's chosen identity color, read from its newest saved version. Omitted when no color has been picked.
+    </ResponseField>
+    <ResponseField name="source_pathway_id" type="string | null">
+      The pathway this agent was migrated from, or `null`. When one migration combined several pathways, this is the first.
+    </ResponseField>
+    <ResponseField name="source_persona_id" type="string | null">
+      The persona this agent was migrated from, or `null`. At most one of `source_pathway_id` and `source_persona_id` is set.
+    </ResponseField>
+    <ResponseField name="migrated_at" type="string | null">
+      ISO 8601 timestamp of the migration that created the agent, or `null` for an agent built from scratch.
     </ResponseField>
   </Expandable>
 </ResponseField>
