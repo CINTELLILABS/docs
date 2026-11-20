@@ -11,19 +11,23 @@ It does not replace the rest of the Bland API. Calls, numbers, knowledge bases, 
 
 Most of this API follows from four ideas, so it is worth reading these before the endpoint pages.
 
-**An agent** is an org-scoped record. Creating one gives you three empty environments and nothing else, because an agent holds no configuration of its own.
+**An agent** is an org-scoped record. Creating one gives you three empty environments and no configuration, because an agent holds no configuration of its own.
 
 **A version** is a complete agent configuration, saved and never modified afterwards. Saving a version does not deploy it.
 
-**Environments** are `dev`, `staging`, and `production`. Each one pins a single version. Publishing moves the staging pin, promoting moves the production pin, and rolling back moves it to an earlier version. Calls run whatever version the environment currently pins.
+**Environments** are `dev`, `staging`, and `production`. Each one pins a single version. Publishing moves the staging pin, promoting moves the production pin, and rolling back moves it to an earlier version. A call runs the version pinned to `production` unless the call's `agent_version` selects another; see [Send Call with an Agent](/api-v1/post/calls-agent).
 
 **Branches** are dev workspaces. Save onto a branch to work without touching the dev timeline, then rebase and merge it back.
 
-Three features build on those: checks gate promotions, experiments run a variant against an environment's pin, and dispositions classify call outcomes. Dispositions are enabled per organization.
+Three features build on those: checks gate promotions, experiments run a variant against an environment's pin, and dispositions classify call outcomes. Experiments and dispositions require an enterprise plan, and dispositions are also enabled per organization.
 
 ### Base URL and authentication
 
 Every route lives under `https://api.bland.ai/v2/agents`. Send your API key in the `authorization` header.
+
+Endpoints that change an agent, such as create, update, delete, save a version, publish, promote, and roll back, require an owner, admin, operator, or prompter role. With a full-access API key, the role checked is that of the user the key belongs to. That user is also recorded as `created_by` or `deployed_by` on what the request creates.
+
+A [restricted API key](/api-v1/post/keys-create#restricted-keys) skips the role check but reaches only the endpoints its scopes cover. The agent, version, branch, publish, promote, and rollback endpoints accept `agents:read` or `agents:write`. Endpoints that accept no scope, such as [List Agent Environments](/api-v2/get/agents-id-environments) and [List Agent Deployments](/api-v2/get/agents-id-deployments), return `403 INSUFFICIENT_SCOPE` to a restricted key.
 
 A successful response returns your payload in `data` with `errors` set to `null`. On any error, `data` is `null` and `errors` carries one or more entries with an `error` code and a `message`.
 

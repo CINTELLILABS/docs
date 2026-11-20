@@ -1,0 +1,62 @@
+---
+title: "List Scenario Folders"
+api: "GET https://api.bland.ai/v2/agents/library/scenario-folders"
+description: "See which folder each of your agents' scenarios is filed in."
+---
+
+### Overview
+
+Returns one entry for every scenario your organization has filed in a folder. The list is flat: each entry names one scenario and its folder. It doesn't list folders, and it doesn't group scenarios by folder.
+
+Scenarios you haven't filed are left out, so the list is empty until you file one with [File Scenario in Folder](/api-v2/put/agents-library-scenario-folders). Migrating a pathway into an agent doesn't file its scenarios. Entries for deleted agents are left out, but an entry stays when its scenario is removed from an agent, so match entries against [List Library Scenarios](/api-v2/get/agents-library-scenarios). Call it with `paginate=true` and walk every page, or you'll miss agents past the first 50. An entry for a node that isn't in the agent's latest saved version won't match until that version is saved.
+
+To list, create, rename, or delete folders, use the folder endpoints, such as [Get All Folders](/api-v1/get/pathway_folders) and [Create Folder](/api-v1/post/create_pathway_folder). Deleting a folder takes every scenario filed in it out of the folder.
+
+Restricted API keys can't call this endpoint. Use a full-access key.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  One entry per filed scenario.
+
+  <Expandable title="entry">
+    <ResponseField name="agent_id" type="string">
+      The agent the scenario belongs to.
+    </ResponseField>
+    <ResponseField name="node_id" type="string">
+      The scenario's node ID: the `id` of a scenario from [List Library Scenarios](/api-v2/get/agents-library-scenarios).
+    </ResponseField>
+    <ResponseField name="folder_id" type="string">
+      The folder the scenario is filed in.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": [
+    {
+      "agent_id": "b5154820-6f11-4886-8523-d896934528ae",
+      "node_id": "00fa3bcf-56f5-45b9-8996-427d57b091b7",
+      "folder_id": "6f0e2a6c-1d3b-4f6e-9a57-2c8d1e4b7a90"
+    }
+  ],
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
