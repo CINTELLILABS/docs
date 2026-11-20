@@ -1,0 +1,69 @@
+---
+title: "Claude Duet"
+description: "Connect Claude Duet to Bland using an owner-approved Agent Phone Plan setup flow."
+hidden: true
+---
+
+Bland provides the account setup, phone number, calling, and SMS APIs for a Duet connection. This guide follows the same owner approval flow used for [Meta Muse](/integrations/mcp/meta-muse).
+
+<Note>
+	Duet compatibility is being verified. Anthropic currently lists phone calls
+	and texts as unavailable in Duet. Confirm that your Duet version permits
+	these actions through connected tools before using the calling or texting
+	examples below.
+</Note>
+
+## Prerequisites
+
+-   Access to Claude Duet.
+-   A supported Bland connector in Claude, or a connection method that can securely store a Bland API key. Keep keys out of chat and ordinary files.
+-   For agent-led setup, a Duet environment that can make HTTP requests, poll for approval, and securely retain the returned credential. If unavailable, use the existing-account path below.
+-   For a dedicated US number and texting, an active [Agent Phone Plan](/platform/agent-phone-plan). Review the current initial and recurring prices before approving checkout.
+
+## Let Duet help you connect
+
+Give Duet this prompt:
+
+```text
+Read https://api.bland.ai/v1/agent/onboarding/duet and help me
+connect Bland. Reuse my existing connection if available. Check
+that you can securely complete setup without putting credentials
+in chat. Otherwise help me connect through Claude's supported
+connector authentication. Show me the owner approval link and
+code. I will open it and approve the current first-month and
+recurring prices. Keep the same organization throughout setup.
+Tell me my phone number when it is ready, then ask before placing
+a test call.
+```
+
+Duet reads the available setup options and starts the [owner approval flow](/platform/connect-your-agent). You open the link in your own browser, sign up or sign in, select your organization, review the plan, and approve the connection. Duet then retrieves the credential and your number. Confirm that the connection was saved securely before asking it to call or text.
+
+If number setup is still pending, payment has succeeded. Follow the returned setup instructions rather than subscribing again. If approval expires, ask Duet for a new link. You can revoke an issued key from **Settings > API Keys**.
+
+## Connect an existing account
+
+Create or select your Bland organization and subscribe through [Billing & Plans](https://app.bland.ai/dashboard/pay?tab=plan). Then add the [Bland remote MCP connector](/integrations/mcp/overview) in your Claude connector settings using `https://api.bland.ai/v1/mcp` and its supported sign-in flow. Verify that the connected organization owns the plan and number.
+
+If your host offers secure API-key configuration instead, enter the key only in that credential field. See [Personal AI Agents](/integrations/mcp/personal-agents) for the connection requirements. OAuth-connected apps use the owner's browser for purchases.
+
+## Calling and texting
+
+Once your Duet connection is verified, explicitly approve a task such as:
+
+```text
+Call the business number I provide, introduce yourself as my
+assistant, and ask what time they close today. Show me the result
+when the call ends.
+```
+
+Bland returns a call ID. Duet retrieves the result through the existing call tools or [REST quickstart](/platform/agent-quickstart). Long calls may need additional result checks.
+
+For texting, provide the recipient and a clear objective. Bland handles replies toward that objective. Configure the number's texting instructions first; see [Two-way texting](/integrations/mcp/personal-agents#two-way-texting). The plan's [US/Canada and fair-use limits](/platform/agent-phone-plan#limits) apply.
+
+Task context sent to Bland does not give an inbound caller access to Duet's private memory or connected apps. Incoming calls and texts do not establish a notification or wake-up connection to your Duet conversation.
+
+## Wallet setup
+
+The owner approval link is the default payment path. Like [Grok Bot](/integrations/mcp/grok-bot), an environment with a compatible shared payment token or Payment-challenge wallet can use [headless onboarding](/platform/agent-headless-onboarding). A Link virtual card alone cannot complete that API flow. Confirm approval of the recurring terms as well as the first charge; otherwise complete checkout in your own browser.
+
+Choosing free signup supplies no dedicated number or texting. Keep that choice explicit if your environment offers it.

@@ -1,0 +1,138 @@
+---
+title: 'Twilio'
+description: 'Connect numbers on a Twilio Elastic SIP Trunk to a Bland agent over SIP with Secure Trunking'
+---
+
+Keep your numbers on a Twilio Elastic SIP Trunk and have a Bland agent answer them. Twilio sends inbound calls to Bland over TLS with SRTP, and Bland places outbound calls through your trunk's termination URI.
+
+Your numbers stay on your trunk, and Bland never gets your Twilio API credentials. You can split numbers between Bland and your own PBX.
+
+<Note>
+Want Bland to run calls on your Twilio numbers without any SIP setup? Use [Custom Twilio](/tutorials/custom-twilio) instead. It connects your Twilio account to Bland by API.
+</Note>
+
+## What works
+
+- Inbound calls to your agent
+- Outbound calls from your agent
+- Transfers from your agent, with SIP REFER
+
+## Prerequisites
+
+- A Twilio account with Elastic SIP Trunking, and the numbers you want to use
+- A Bland account with SIP trunking enabled. If there is no **SIP** tab under **Phone numbers**, contact Bland support
+
+## Configure Twilio
+
+<Steps>
+  <Step title="Create the trunk">
+    In the Twilio Console, go to **Elastic SIP Trunking**, then **Trunks**, and create a trunk. Name it, for example `Bland`.
+  </Step>
+
+  <Step title="Turn on Secure Trunking and Call Transfer">
+    Under **General**, turn on **Secure Trunking**. Twilio then rejects any unencrypted call, which matches Bland: TLS signaling and SRTP media.
+
+    On the same page, turn on **Call Transfer (SIP REFER)**, and transfers to the PSTN if your agent transfers to phone numbers. Leave **Caller ID for Transfer Target** on **Transferee** so the target sees the original caller.
+  </Step>
+
+  <Step title="Point origination at Bland">
+    Under **Origination**, add an origination SIP URI for your Bland region, with TLS on port 5061:
+
+    ```text
+    sip:us2.sip.bland.ai:5061;transport=tls
+    ```
+
+    Use `sip:` with `;transport=tls`, not `sips:`. Use port 5061 exactly: Bland reserves its other SIP ports for its own carrier connections. The other regions are under [Connection endpoints](/agents/sip-network#connection-endpoints).
+
+    Bland already trusts Twilio's published signaling IPs, so there is nothing to allow-list.
+  </Step>
+
+  <Step title="Add your numbers">
+    Under **Numbers**, associate the numbers your agent should answer with the trunk.
+  </Step>
+
+  <Step title="Create termination credentials">
+    Skip this if you only need inbound calls.
+
+    Under **Termination**, note your termination SIP URI, for example `yourcompany.pstn.twilio.com`. Under **Authentication**, create a **Credential List** with a username and password, and attach it to the trunk.
+
+    Use a credential list, not an IP access control list. Bland's outbound calls don't come from a fixed set of IPs you can list.
+  </Step>
+</Steps>
+
+## Configure Bland
+
+<Steps>
+  <Step title="Open the setup wizard">
+    At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab, and press **Create trunk**.
+  </Step>
+
+  <Step title="Provider">
+    Pick **Twilio** and enter your termination SIP URI, for example `yourcompany.pstn.twilio.com`. No port needed. The wizard skips the firewall step for Twilio.
+  </Step>
+
+  <Step title="Authentication">
+    Pick **IP-based**, and leave **Outbound routing** on **Via Bland's carrier**. Under **Outbound call credentials**, enter the username and password from your Twilio credential list. Press **Create trunk**.
+  </Step>
+
+  <Step title="Numbers">
+    Add each number in E.164 format, for example `+14155550100`.
+  </Step>
+
+  <Step title="Assign an agent">
+    Under **Phone numbers**, press **Configure** on the number and pick the agent under **Assignment**.
+  </Step>
+</Steps>
+
+You know it worked when a call to the number reaches the agent and shows up on the trunk's **Overview** tab. For outbound, use the number as `from` in [`POST /v1/calls`](/api-v1/post/calls).
+
+## Caller ID and transfers
+
+Twilio only accepts outbound calls whose caller ID is a number on your Twilio account or a verified caller ID, in E.164 format. Place outbound calls from a number on the trunk.
+
+The same rule shapes transfers. When Bland bridges a transfer, the target can't see the original caller, because that number isn't on your account. With SIP REFER, Twilio places the transfer itself and shows the original caller.
+
+To transfer with REFER, turn on **Hand off via SIP REFER** in the agent's **Transfer Call** node and enter the target in E.164 format. Bland leaves the call once Twilio takes it. Twilio can't transfer to emergency numbers, and plays no early media during a REFER. See [Transfers](/agents/sip-transfers) for every transfer method.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Inbound calls don't reach Bland">
+    Check the origination URI is `sip:<region>.sip.bland.ai:5061;transport=tls`, and that **Secure Trunking** is on.
+  </Accordion>
+
+  <Accordion title="Inbound calls are rejected with 603 Decline">
+    The number isn't attached in Bland. Attach it on the trunk in E.164 format.
+  </Accordion>
+
+  <Accordion title="Outbound calls are rejected with 401 or 403">
+    The username and password in Bland don't match the credential list attached to the trunk.
+  </Accordion>
+
+  <Accordion title="Outbound calls fail with 400 or a caller ID error">
+    The caller ID isn't a number on your Twilio account, or isn't in E.164 format. Call from a number on the trunk, with the `+`.
+  </Accordion>
+
+  <Accordion title="Transfers fail">
+    **Call Transfer (SIP REFER)** is off on the trunk, or transfers to the PSTN aren't allowed. Turn both on.
+  </Accordion>
+
+  <Accordion title="The call connects with no audio">
+    **Secure Trunking** is off. Twilio and Bland both need SRTP with `AES_CM_128_HMAC_SHA1_80`.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    REFER, new INVITE, and warm transfers.
+  </Card>
+  <Card title="Custom Twilio" icon="key" href="/tutorials/custom-twilio">
+    Connect your Twilio account by API instead.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

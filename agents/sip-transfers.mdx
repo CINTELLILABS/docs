@@ -1,0 +1,73 @@
+---
+title: 'Transfers'
+description: 'Transfer SIP calls to a DID, extension, or SIP URI with SIP REFER, a new INVITE, or a warm transfer, and pass call data in SIP headers'
+---
+
+A **Transfer Call** node can send the caller to a DID, an extension, or a SIP URI on your trunk instead of a phone number. On the node, turn on **Allow SIP/DID targets** and enter the target, for example `2001` or `sip:2001@pbx.example.com`.
+
+Bland resolves the target over the trunk the call arrived on. For a call that did not arrive over SIP, Bland uses your organization's outbound trunk.
+
+You choose how the transfer is delivered:
+
+| | SIP REFER hand-off | New INVITE (REFER off) | Warm transfer |
+|---|---|---|---|
+| Node setting | **Hand off via SIP REFER** on | **Hand off via SIP REFER** off | **Warm transfer** on |
+| What your SBC receives | A `REFER` inside the call your SBC already opened to Bland | A new `INVITE` from Bland to your trunk endpoint | A new `INVITE` from Bland for the consult call |
+| Who places the call to the target | Your PBX | Bland | Bland |
+| Bland after the transfer | Leaves the call | Stays in the call path and bridges the audio | Joins the caller once the briefing ends |
+| Requires | A call that arrived over SIP, and a PBX that supports `REFER` | Your SBC trusting Bland's media IPs as SIP peers | Your SBC trusting Bland's media IPs as SIP peers |
+
+**SIP REFER hand-off.** Bland sends the `REFER` on the existing dialog, so no new connection reaches your SBC and no firewall change is needed. Custom headers travel as header parameters on the `Refer-To` URI (`sip:2001@pbx.example.com?X-Account=42`). Your PBX must copy them onto the `INVITE` it sends to the target. If your PBX cannot do that, use a new INVITE instead.
+
+**New INVITE.** Bland's SIP infrastructure sends the `INVITE` to your trunk endpoint over TLS with SRTP, and your custom headers arrive as SIP headers on that `INVITE`. If your SBC answers with a `401` or `407` challenge, Bland responds with the outbound call credentials saved on the trunk.
+
+**Warm transfer.** Bland places the consult call to your trunk the same way as a new INVITE, briefs whoever answers, then joins the caller. With **Attended transfer via SIP REFER + Replaces** on, Bland completes the merge by sending your PBX a `REFER` with `Replaces`, which requires a call that arrived over SIP.
+
+<Note>
+Bland sends your trunk's credentials and custom headers only to the trunk's own host. A full SIP URI that points at a different host is dialed as written, without them.
+</Note>
+
+## Custom headers
+
+To read headers from inbound calls as variables, see [SIP headers](/agents/sip-headers).
+
+Headers on a transfer come from the trunk's **outbound** header mapping, set in the **Headers** section of the trunk's **Configure** tab or with the `headers` object in [`POST /v1/sip/attach`](/api-v1/post/sip-attach). Each entry maps a call variable to a SIP header name. If the trunk has no outbound header mapping, no custom headers are sent on any transfer method.
+
+- **Header names get an `X-` prefix.** A name that does not start with `X-` is sent as `X-<name>`, and a leading `x_` becomes `X-`. `User-to-User`, `Remote-Party-ID`, `P-Preferred-Identity`, and `P-Called-Party-ID` are sent as written.
+- **Up to 15 headers** per direction.
+- **Numbers inherit the trunk's headers.** Saving the trunk's header mapping updates every number bound to it.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Your SBC answers the transfer with 403 Forbidden, with no 401 or 407 first">
+    The `INVITE` came from an IP your SBC doesn't trust as a SIP peer. Trust every IP under [Connection endpoints](/agents/sip-network#connection-endpoints) as a SIP peer, signaling and media.
+  </Accordion>
+
+  <Accordion title="No INVITE reaches your SBC, and the transfer fails after a few seconds">
+    A firewall is dropping TLS from Bland. Allow all of Bland's IPs for your region to reach your SBC's SIP TLS port.
+  </Accordion>
+
+  <Accordion title="The transfer is rejected with 488 Not Acceptable Here">
+    Your SBC offered or required plain RTP. Enable SRTP on the trunk toward Bland.
+  </Accordion>
+
+  <Accordion title="Headers are missing after a SIP REFER hand-off">
+    Your PBX doesn't copy `Refer-To` header parameters onto the new `INVITE`. Turn **Hand off via SIP REFER** off so Bland sends the `INVITE` with the headers.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Set up a trunk" icon="plug" href="/agents/sip-setup">
+    Map call variables to headers on the trunk.
+  </Card>
+  <Card title="Warm transfer" icon="phone" href="/tutorials/warm-transfer">
+    Brief the person before the caller joins.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)
