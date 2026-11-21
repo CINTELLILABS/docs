@@ -1,0 +1,141 @@
+---
+title: "Translate Call"
+api: "POST https://api.bland.ai/v1/calls/{call_id}/translation"
+description: "Translate every turn of a call into English, one page at a time."
+---
+
+<Info>
+  **Enterprise Feature** - Call translation is only available on Enterprise plans. Contact your Bland representative for access.
+</Info>
+
+## Overview
+
+Returns the turns of a call with an English translation of each one, for example to review a call that was held in Spanish. Turns are listed in the order they were recorded. Turns with no text are left out.
+
+The response is paged. Each request returns up to 50 turns. When the call has more, `next_offset` tells you where the next page starts.
+
+A turn is translated the first time you request it, and later requests reuse that translation, so the first request for a long call takes longer than the ones after it.
+
+Your organization can send up to 10 requests a minute. Further requests in the same minute return `429`.
+
+---
+
+## Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication. A restricted API key needs the `calls:read` scope.
+</ParamField>
+
+---
+
+## Path Parameters
+
+<ParamField path="call_id" type="string" required>
+  The ID of the call. The call must belong to your organization.
+</ParamField>
+
+---
+
+## Body Parameters
+
+All body parameters are optional. Send an empty body or `{}` to get the first page. Unknown fields return a `400` error.
+
+<ParamField body="language" type="string" default="en">
+  The language to translate into. `en` is the only supported value.
+</ParamField>
+
+<ParamField body="offset" type="integer" default="0">
+  The position of the first turn to return. Use the `next_offset` value from the previous response to get the next page.
+</ParamField>
+
+<ParamField body="limit" type="integer" default="50">
+  The maximum number of turns to return, from `1` to `50`.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="data.call_id" type="string">
+  The ID of the call.
+</ResponseField>
+
+<ResponseField name="data.language" type="string">
+  The language of the translations. Always `en`.
+</ResponseField>
+
+<ResponseField name="data.total" type="integer">
+  The number of turns in the whole call.
+</ResponseField>
+
+<ResponseField name="data.offset" type="integer">
+  The position of the first turn in this page.
+</ResponseField>
+
+<ResponseField name="data.next_offset" type="integer | null">
+  The `offset` to request for the next page, or `null` when this page is the last one.
+</ResponseField>
+
+<ResponseField name="data.turns" type="array of objects">
+  The turns in this page. Each turn includes:
+
+  - `id`: the turn ID. This is the same `id` as in the `transcripts` of [Call Details](/api-v1/get/calls-id).
+  - `user`: who spoke (`user`, `assistant`, `robot`, or `agent-action`).
+  - `text`: the turn as it was spoken.
+  - `translated`: the English translation of `text`.
+  - `created_at`: when the turn was recorded.
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success. Otherwise one of:
+
+  - `400` with `INVALID_PARAMETER`: `call_id`, `language`, `offset`, or `limit` is not valid, or the body has an unknown field.
+  - `403` with `ENTERPRISE_REQUIRED`: your organization is not on an Enterprise plan.
+  - `404` with `CALL_NOT_FOUND`: the call does not exist or belongs to a different organization.
+  - `429` with `TOO_MANY_REQUESTS`: your organization sent more than 10 requests in the last minute. Wait a minute and try again.
+  - `502` with `TRANSLATION_FAILED`: the translation could not be completed. Try the request again.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.bland.ai/v1/calls/{call_id}/translation" \
+  -H "authorization: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"language": "en", "limit": 50}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "call_id": "9d404c1b-6a23-4426-953a-a52c392ff8f1",
+    "language": "en",
+    "total": 2,
+    "offset": 0,
+    "next_offset": null,
+    "turns": [
+      {
+        "id": 3055975,
+        "user": "assistant",
+        "text": "Hola, ¿en qué puedo ayudarle hoy?",
+        "translated": "Hello, how can I help you today?",
+        "created_at": "2026-10-28T18:40:33.362Z"
+      },
+      {
+        "id": 3055999,
+        "user": "user",
+        "text": "Quiero cambiar mi cita.",
+        "translated": "I want to change my appointment.",
+        "created_at": "2026-10-28T18:40:40.393Z"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
