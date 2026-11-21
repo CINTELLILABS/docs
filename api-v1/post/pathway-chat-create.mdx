@@ -12,8 +12,18 @@ description: "Create an instance of a pathway chat, which can be used to send an
 
 ### Body
 
-<ParamField body="pathway_id" type="string" required>
-Pathway ID of the pathway to create a chat instance for.
+<ParamField body="pathway_id" type="string">
+Pathway ID of the pathway to create a chat instance for. Required unless you pass `agent_id`. If you pass both, the chat runs this pathway and `agent_id` is ignored.
+</ParamField>
+
+<ParamField body="agent_id" type="string">
+ID of the Bland Agent to chat with. The chat starts at the agent's entry and appears under the agent's Conversations. `start_node_id` and `pathway_version` are not supported with `agent_id`. Use `agent_version` to select a version.
+</ParamField>
+
+<ParamField body="agent_version" type="string">
+Selects the agent version and environment. Requires `agent_id`. Accepts the same values as [agent_version in v1/calls](/api-v1/post/calls#param-agent-version): `"production"`, `"staging"`, `"dev"`, `"latest"`, a semantic version such as `"1.2.0"`, or `"branch:<name>"`. If omitted, the chat runs the production version.
+
+An unknown value returns a 400 error. If the selected version cannot be prepared, the 400 error carries the reason code, such as `AGENT_VERSION_NOT_FOUND` or `AGENT_ENV_UNPINNED`.
 </ParamField>
 
 <ParamField body="start_node_id" type="string">
