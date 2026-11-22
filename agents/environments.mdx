@@ -12,7 +12,7 @@ Staging and production are snapshots. Each holds one version of the agent and ke
 ## Prerequisites
 
 - An agent you have built, from [Agent builder](/agents/agent-builder)
-- An owner, admin, operator or prompter role. A viewer can see the Environments tab but cannot publish, promote, roll back or save a variable
+- An owner, admin or operator role to publish, promote, roll back or save a staging or production variable. A prompter can save development variables. A viewer can see the Environments tab but can't change anything. See [Roles and permissions](/platform/roles-and-permissions)
 - Optional: evaluations configured on staging, if you want them to gate the publish into staging and the promotion out of it. See [Evaluations](/agents/evaluations)
 
 ## Where environments live
@@ -149,11 +149,11 @@ Only calls follow the number's environment. Texts to a staging or development nu
 
 1. Publish to staging first if you want staging. With nothing on staging, the Staging option is disabled and reads **Not deployed**.
 2. Inside the agent, open Channels, then the Calls tab, and select **Add a number**.
-3. In Attach a number, pick the number, then set **Environment** to **Staging**. Each option shows the version deployed to that environment.
+3. In Attach a number, pick the number, then set **Environment** to **Production**, **Staging**, **Development / Main** or an open **Development** branch. Production and Staging show the version deployed to them. Attaching from the Messages tab doesn't offer Development.
 
-Every number on the Channels page shows which environment it answers on, such as **Production** or **Staging**.
+Every number on the Channels page shows which environment it answers on: **Production**, **Staging**, **Development / Main** or **Development /** followed by the branch name.
 
-To move a number that is already attached between production and staging, open its **Number options** menu on the Calls tab and select **Switch to Staging** or **Switch to Production**. You don't need to detach it first. **Switch to Staging** is disabled, with the reason shown, when staging has no version or the number is on dedicated infrastructure that runs an older release.
+To move a number that is already attached, open its **Number options** menu on the Calls tab. The menu offers every environment the number isn't on: **Switch to Production**, **Switch to Staging** and **Switch to Development**, which opens a submenu of Main and the open branches. You don't need to detach the number first, so a development number can go straight back to production. **Switch to Staging** is disabled, with the reason shown, when staging has no version or the number is on dedicated infrastructure that runs an older release.
 
 ### Requirements
 
@@ -248,8 +248,8 @@ Promotion checks for this: promoting a version that references a key with no pro
     The configuration changed after that run. Promotion compares the run against the whole configuration saved now, which covers the required evaluations and the shared test inputs, so changing the test cases or the conversation count invalidates a pass just as editing an evaluation does. Publish to staging again to run them against the current configuration.
   </Accordion>
 
-  <Accordion title="A button does nothing and the error says nothing">
-    Publishing, promoting, rolling back and saving a variable all need an owner, admin, operator or prompter role. The buttons are not disabled for a viewer, so the press fails with a generic message rather than telling you the cause.
+  <Accordion title="A button is disabled">
+    Publishing, promoting, rolling back and saving a staging or production variable need an owner, admin or operator role. Saving a development variable needs any role except viewer. Hover the disabled button to see which roles can use it, and see [Roles and permissions](/platform/roles-and-permissions).
   </Accordion>
 
   <Accordion title="A variable is right in one place and wrong in another">
