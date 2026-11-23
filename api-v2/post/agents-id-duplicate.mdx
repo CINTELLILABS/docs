@@ -1,0 +1,194 @@
+---
+title: "Duplicate Agent"
+api: "POST https://api.bland.ai/v2/agents/{agent_id}/duplicate"
+description: "Copy an agent's latest dev configuration into a new, unpublished agent."
+---
+
+### Overview
+
+Creates a new agent from an existing one. The copy gets its own three environments (`dev`, `staging`, `production`), all unpinned, and one dev version holding the source agent's newest dev configuration. The source agent is not changed.
+
+Only the configuration is copied. Phone numbers, web chat widgets, environment pins, environment variable values, dispositions, test scenarios, and checks stay with the source. The copy answers no calls until you [publish](/api-v2/post/agents-id-publish) it and [attach a number](/api-v2/post/agents-id-inbound-attach). The configuration is copied unchanged, so `settings.displayName` (the name the agent speaks as on a call) keeps the source's value even when you give the copy a new `name`.
+
+In the dashboard, editors can choose **Duplicate agent** on the agent's card. The copy opens in the builder.
+
+Requires an admin, owner, operator, or prompter role. This endpoint does not accept [restricted API keys](/api-v1/post/keys-create#restricted-keys); they receive `403 INSUFFICIENT_SCOPE`.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="agent_id" type="string" required>
+  The unique identifier of the agent to copy. Must belong to your organization. Returns `404 NOT_FOUND` otherwise.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="name" type="string">
+  Display name for the copy. Defaults to the source agent's name followed by ` (copy)`. When sent, it must be non-empty after trimming whitespace. Returns `400 INVALID_NAME` otherwise.
+</ParamField>
+
+### Plan checks
+
+The copy is checked against your plan as a new agent, so paid features the source kept after a plan change are not carried over automatically. If the source uses custom guardrails and your organization is not on an enterprise plan, the request returns `403 ENTERPRISE_REQUIRED`. Remove the custom guardrails from the source agent, then duplicate it.
+
+### Response
+
+Returns `201` on success.
+
+<ResponseField name="data.agent" type="object">
+  The new agent.
+
+  <Expandable title="agent object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the new agent.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The copy's display name.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who duplicated the agent. With an API key, this is the user the key belongs to. `null` when no user was recorded.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last update.
+    </ResponseField>
+    <ResponseField name="deleted_at" type="null">
+      Always `null` on a live agent.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.environments" type="array">
+  The copy's three environments, all unpinned.
+
+  <Expandable title="environment object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the environment.
+    </ResponseField>
+    <ResponseField name="env_type" type="string">
+      One of `dev`, `staging`, `production`.
+    </ResponseField>
+    <ResponseField name="current_version_id" type="null">
+      Always `null` on a new copy. Publish or promote a version to pin one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.version" type="object | null">
+  The copy's first dev version, holding the source's newest dev configuration. `null` when the source agent had no saved versions.
+
+  <Expandable title="version object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the version.
+    </ResponseField>
+    <ResponseField name="org_id" type="string">
+      The organization that owns the agent.
+    </ResponseField>
+    <ResponseField name="agent_id" type="string">
+      The new agent's ID.
+    </ResponseField>
+    <ResponseField name="branch_id" type="null">
+      Always `null`; the version lives on the dev timeline.
+    </ResponseField>
+    <ResponseField name="snapshot" type="object">
+      The copied configuration: `behavior`, `settings`, `contact`, and `knowledge` when present. Same shape as the `snapshot` on any saved version.
+    </ResponseField>
+    <ResponseField name="name" type="null">
+      Always `null`; the copied version is unnamed.
+    </ResponseField>
+    <ResponseField name="created_via" type="string">
+      Always `manual`.
+    </ResponseField>
+    <ResponseField name="revision" type="integer">
+      `0` on the new version.
+    </ResponseField>
+    <ResponseField name="created_by" type="string | null">
+      ID of the user who duplicated the agent. `null` when no user was recorded.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of creation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "agent": {
+      "id": "9c1d3e52-6b0f-4a8e-9f3a-2d7c4b81e0a6",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "name": "Front desk (Spanish)",
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-11-23T01:30:12.104Z",
+      "updated_at": "2026-11-23T01:30:12.104Z",
+      "deleted_at": null
+    },
+    "environments": [
+      {
+        "id": "c4e1a9b0-3f27-4d5a-8b61-0e9f2a7d5c13",
+        "env_type": "dev",
+        "current_version_id": null
+      },
+      {
+        "id": "5b8f0d26-91c4-4e7a-a3d2-6f1b9e0c4a87",
+        "env_type": "staging",
+        "current_version_id": null
+      },
+      {
+        "id": "e0a7c3f1-2d94-4b6e-8c05-9a1f3b7d2e64",
+        "env_type": "production",
+        "current_version_id": null
+      }
+    ],
+    "version": {
+      "id": "71f4b2c8-0e3d-4a96-b5f7-c2d8e1a03b59",
+      "org_id": "45794f66-94ca-44a2-9248-202c5ff22717",
+      "agent_id": "9c1d3e52-6b0f-4a8e-9f3a-2d7c4b81e0a6",
+      "branch_id": null,
+      "snapshot": {
+        "behavior": { "nodes": [], "edges": [] },
+        "settings": { "displayName": "Front desk", "systemPrompt": "" },
+        "contact": {}
+      },
+      "name": null,
+      "created_via": "manual",
+      "revision": 0,
+      "created_by": "bd8ae00b-c51d-4364-b1b3-245ad579c44a",
+      "created_at": "2026-11-23T01:30:12.104Z"
+    }
+  },
+  "errors": null
+}
+```
+
+```json Enterprise Required
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "ENTERPRISE_REQUIRED",
+      "message": "Duplicating an agent with custom guardrails requires an enterprise plan. Remove the custom guardrails from this agent, then duplicate it."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
