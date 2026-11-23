@@ -8,6 +8,8 @@ description: "List an agent's open branches."
 
 Returns the agent's open branches (not yet merged or deleted), oldest first. A branch is a dev workspace cut from the dev head; `behind` tells you whether dev has moved past the branch's base since it was cut. Create one with [Create Agent Branch](/api-v2/post/agents-id-branches) and land it with [Merge Agent Branch](/api-v2/post/agents-id-branches-branch-id-merge).
 
+Set `include_closed=true` to read merged and deleted branches instead of open branches. Closed history is paged and ordered by merge or deletion time, newest first, with branch ID as the tie-breaker. Closed branches are read-only.
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
@@ -20,10 +22,24 @@ Returns the agent's open branches (not yet merged or deleted), oldest first. A b
   The agent's unique identifier.
 </ParamField>
 
+### Query Parameters
+
+<ParamField query="include_closed" type="boolean" default="false">
+  Set to `true` to return only merged or deleted branches. Without it, you receive the unchanged open-branch list.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Closed-history page size, from `1` to `50`. Invalid values return `400 INVALID_PAGINATION`, even when `include_closed` is not set.
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of closed-history rows to skip. Must be a non-negative safe integer. Invalid values return `400 INVALID_PAGINATION`, even when `include_closed` is not set. Pagination does not change the open-branch list.
+</ParamField>
+
 ### Response
 
 <ResponseField name="data" type="array">
-  Array of branch objects ordered by `created_at` ascending. Empty when the agent has no open branches.
+  Open branches ordered by `created_at` ascending, or a closed-history page ordered by closure time descending. Empty when there are no matching branches.
 
   <Expandable title="branch object">
     <ResponseField name="id" type="string">
@@ -44,8 +60,17 @@ Returns the agent's open branches (not yet merged or deleted), oldest first. A b
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp of creation.
     </ResponseField>
+    <ResponseField name="merged_at" type="string | null">
+      ISO 8601 merge timestamp. `null` on branches that have not merged.
+    </ResponseField>
+    <ResponseField name="merged_by" type="string | null">
+      ID of the user who merged the branch. `null` when no user was recorded or the merge predates attribution.
+    </ResponseField>
+    <ResponseField name="deleted_at" type="string | null">
+      ISO 8601 deletion timestamp. `null` on branches that have not been deleted.
+    </ResponseField>
     <ResponseField name="behind" type="boolean">
-      `true` when dev's newest version is no longer the branch's base. A merge returns `409 BRANCH_BEHIND` until the branch is rebased.
+      `true` when dev's newest version is no longer an open branch's base. A merge returns `409 BRANCH_BEHIND` until the branch is rebased. Always `false` for closed branches.
     </ResponseField>
   </Expandable>
 </ResponseField>
