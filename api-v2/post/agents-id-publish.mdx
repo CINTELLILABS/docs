@@ -6,7 +6,7 @@ description: "Publish a version to the staging environment."
 
 ### Overview
 
-Moves the agent's `staging` pointer. The body picks one of three modes: send `snapshot` to save a new version on the dev timeline and publish it, send `version_id` to publish an existing version from the dev timeline or an open branch, or send neither to publish the newest saved dev version. A version published for the first time is given a semver using `bump`; republishing a version that already has one re-records its original number. Move it on to production with [Promote Agent to Production](/api-v2/post/agents-id-promote).
+Moves the agent's `staging` pointer. The body picks one of three modes: send `snapshot` to save a new version on the dev timeline and publish it, send `version_id` to publish an existing version from the dev timeline, an open branch, or a closed branch previously deployed to staging, or send neither to publish the newest saved dev version. A version published for the first time is given a semver using `bump`; republishing a version that already has one re-records its original number. Move it on to production with [Promote Agent to Production](/api-v2/post/agents-id-promote).
 
 Publishing does not run or wait for evaluations, and production does not move. Required evaluations are enforced when you promote. To check a version before it reaches staging, start a run with [Start Check Run](/api-v2/post/agents-id-environments-env-check-runs) and gate on its result yourself.
 
@@ -31,7 +31,7 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="version_id" type="string">
-  ID of an existing version of this agent to publish without saving anything new. It can be on the dev timeline or on an open branch; a branch version publishes without merging the branch, and the branch stays open. Returns `404 VERSION_NOT_FOUND` if the ID is not one of this agent's versions, and `409 BRANCH_CLOSED` if its branch was merged or archived. Ignored when `snapshot` is present.
+  ID of an existing version of this agent to publish without saving anything new. It can be on the dev timeline or on an open branch; publishing does not merge the branch. A merged or archived branch can only republish a version previously deployed to staging. Returns `409 BRANCH_CLOSED` for any other version on a merged or archived branch, and `404 VERSION_NOT_FOUND` if the ID is not one of this agent's versions. Ignored when `snapshot` is present.
 </ParamField>
 
 <ParamField body="branch_id" type="string">
