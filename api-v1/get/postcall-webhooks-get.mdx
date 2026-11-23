@@ -6,7 +6,9 @@ description: "Get the post call webhook data for a specific call."
 
 ## Overview
 
-Retrieve the post call webhook data for a specific call using its call ID. This endpoint returns the webhook data that was sent when the call completed.
+Retrieve the post call webhook data for a specific call using its call ID. This endpoint returns the webhook data that was sent when the call completed. If the call has no stored webhook, `data` is `null`.
+
+For a call that ran an agent, the payload includes `agent_dispositions` from dispositions set to Hold original webhook. Disposition follow-up events (`event_type: "dispositions"`) aren't stored here.
 
 ---
 
@@ -52,7 +54,7 @@ Retrieve the post call webhook data for a specific call using its call ID. This 
           Timestamp of when this webhook attempt was sent
         </ResponseField>
         <ResponseField name="response_code" type="integer">
-          HTTP response code received from the webhook endpoint
+          HTTP response code received from the webhook endpoint. `null` when the request got no response, for example when the endpoint couldn't be reached
         </ResponseField>
         <ResponseField name="response_time" type="string">
           Time taken to receive a response from the webhook endpoint, appended with "ms"
@@ -62,6 +64,10 @@ Retrieve the post call webhook data for a specific call using its call ID. This 
           - "resend": Webhook was manually resent
           - "create": Webhook was recreated outside normal flow
           - "spawn": Webhook was created by normal call flow
+          - "eval": A post-call eval result was sent for this call
+        </ResponseField>
+        <ResponseField name="error_message" type="string">
+          Why the request failed, present only when it got no response
         </ResponseField>
       </Expandable>
     </ResponseField>

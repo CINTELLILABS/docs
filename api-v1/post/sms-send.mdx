@@ -35,7 +35,7 @@ description: "Send an SMS message from an agent to a user. This creates or resum
 <ParamField body="objective" type="string" required={false}>
   The goal of this conversation, for example "Book a haircut for Tuesday afternoon and confirm the price." Replies in the conversation are generated from it instead of the number's prompt, and so is the first message when you omit `agent_message`. Up to 20,000 characters.
 
-  A later send to the same conversation with a new `objective` replaces it, and a send without one keeps it. Set `new_conversation` to `true` to start a thread without it. A `persona_id` or `pathway_id`, on the request or on the number, takes priority: those replies don't use the objective.
+  A later send to the same conversation with a new `objective` replaces it, and a send without one keeps it. Set `new_conversation` to `true` to start a thread without it. A `persona_id` or `pathway_id`, on the request or on the number, takes priority: those replies don't use the objective. So does a V2 agent attached to the number.
 
   An objective that is not a string, is empty, or is longer than 20,000 characters is rejected with a `400` and error code `INVALID_OBJECTIVE`.
 </ParamField>
@@ -51,7 +51,11 @@ Allows you to create a new conversation, archiving the existing conversation and
 <ParamField body="persona_id" type="string" required={false}>
   UUID of a persona to use for this conversation. When provided, the persona's configuration is applied instead of the number's SMS config. Use `persona_version` to select which version to use.
 
-  Cannot be used as a substitute for `agent_number` — the agent number must still belong to your account. The persona_id controls *how* the conversation is handled, not *which number* sends it.
+  Cannot be used as a substitute for `agent_number`. The agent number must still belong to your account. The persona_id controls *how* the conversation is handled, not *which number* sends it.
+
+  <Warning>
+    The send also assigns `agent_number` to this persona, and the assignment stays after the send. Later texts and calls to the number run the persona. If the number was attached to a V2 agent, it no longer runs that agent. To text from an agent, attach the number to the agent and omit `persona_id`. See [V2 agents](#v2-agents).
+  </Warning>
 </ParamField>
 
 <ParamField body="persona_version" type="string" required={false}>
@@ -76,6 +80,8 @@ Allows you to create a new conversation, archiving the existing conversation and
 
 <ParamField body="pathway_id" type="string" required={false}>
   ID of the pathway to use for generating the SMS response. If `persona_id` is provided, this is used as a pathway override within the persona context (lower priority than `persona_settings`).
+
+  On a number attached to a V2 agent, replies run the agent, not this pathway. If this pathway has a migration split, a new conversation can run on the split's agent instead. See [V2 agents](#v2-agents).
 </ParamField>
 
 <ParamField body="pathway_version" type="number" required={false}>
@@ -96,10 +102,14 @@ This overrides the webhook for the conversation, instead of using the webhook at
 
 <ParamField body="disposition_ids" type="string[]" required={false}>
   An array of outcome IDs to run when the conversation ends. If omitted, the outcomes configured on the SMS number are used. If provided, overrides the number's configuration. See [Outcomes](/tutorials/outcomes) for details.
+
+  Not applied on a conversation that runs a V2 agent: the API drops these IDs without an error. The agent's [Dispositions](/agents/dispositions#coming-from-citations-and-outcomes) run instead.
 </ParamField>
 
 <ParamField body="citation_schema_ids" type="string[]" required={false}>
   An array of citation schema IDs to extract when the conversation ends. If omitted, the citation schemas configured on the SMS number are used. If provided, overrides the number's configuration. See [Citations](/enterprise-features/citations) for details.
+
+  Not applied on a conversation that runs a V2 agent: the API drops these IDs without an error.
 </ParamField>
 
 <ParamField body="channel" type="string" required={false}>
@@ -141,14 +151,29 @@ This overrides the webhook for the conversation, instead of using the webhook at
   Per-conversation override for the warning message sent at `warning_time`. Takes priority over `warning_message` on sms_config/whatsapp_config.
 </ParamField>
 
+### V2 agents
+
+This endpoint has no `agent_id` parameter, and it ignores one if you pass it. A conversation runs a V2 agent in these cases:
+
+- **The number is attached to the agent.** Attach `agent_number` with [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) or in the dashboard ([Put an agent on a phone number](/agents/dispatch#put-an-agent-on-a-phone-number)). Replies on the number then run the agent, even when the request includes a `pathway_id`.
+- **A migration split routes the pathway.** If the pathway the send would run has a [migration split](/platform/migrate-api-integrations), a new conversation can run on the split's agent, at its production version, with no change to your request. That pathway is `pathway_id`. When you omit it, it's the pathway in the number's config for the channel, or else the number's voice pathway. The split doesn't apply when the request has a `persona_id`, when the number has an agent or persona attached, or when the key isn't an organization API key. Under the split's default `honor` policy, a request that sets `pathway_version` or `start_node_id` stays on the pathway. A conversation that was already active keeps the pathway it started on, and a split never routes to an agent whose Messages channel is off. Splits apply to this endpoint only. They don't apply to [Send SMS Batch](/api-v1/post/sms-batch), [Create SMS Conversation](/api-v1/post/sms-create), or a conversation that your customer starts by texting the number.
+
+A conversation is recorded as an agent conversation when it's created. On that conversation, `disposition_ids` and `citation_schema_ids` don't run, and the status webhook sent when it ends carries `agent_id`, `agent_version_id`, and `agent_dispositions` instead of `citations` and `dispositions`. See [On a V2 agent conversation](/tutorials/messaging/overview#on-a-v2-agent-conversation). A conversation that was already active when you attached the number isn't recorded as an agent conversation, so its analysis and webhook shape stay V1. Set `new_conversation` to `true` to start a new one.
+
+If the number is attached to an agent whose Messages channel is turned off, for the agent or for this number, the request fails with `403` and error code `CHANNEL_DISABLED`.
+
 ### Response
 
 <ResponseField name="data" type="object">
-  An object confirming the message was sent and referencing the triggered workflow.
+  An object confirming the message was accepted for delivery.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  `"processing"`. The message is sent asynchronously after the response.
 </ResponseField>
 
 <ResponseField name="data.message" type="string">
-  Confirmation text for the successful send.
+  Confirmation text for the accepted send.
 </ResponseField>
 
 <ResponseField name="data.conversation_id" type="string">
@@ -156,7 +181,7 @@ This overrides the webhook for the conversation, instead of using the webhook at
 </ResponseField>
 
 <ResponseField name="data.message_id" type="string">
-  ID of the message that was sent, if a single message was sent, to track message delivery and status.
+  ID of the message, to track its delivery and status. Returned only when the request includes `agent_message` or `content_sid`.
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
@@ -167,11 +192,24 @@ This overrides the webhook for the conversation, instead of using the webhook at
 ```json Response
 {
   "data": {
-    "message": "SMS sent successfully",
+    "status": "processing",
+    "message": "SMS accepted for delivery. Check status of SMS with the message_id",
     "conversation_id": "convo_abc123",
-    "workflow_id": "workflow_xyz789"
+    "message_id": "0c9d8e7f-6a5b-4c3d-9e8f-7a6b5c4d3e2f"
   },
   "errors": null
+}
+```
+
+```json 403 CHANNEL_DISABLED
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "CHANNEL_DISABLED",
+      "message": "Messages are turned off for this agent."
+    }
+  ]
 }
 ```
 </ResponseExample>

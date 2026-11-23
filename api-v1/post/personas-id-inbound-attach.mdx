@@ -65,7 +65,7 @@ description: "Attach one or more inbound phone numbers to a persona. The same en
 </ResponseField>
 
 <ResponseField name="errors" type="null|array">
-  `null` on success, or a list of error objects if the request failed.
+  `null` on success, or a list of error objects if the request failed. A number bound to a pathway that has a [migration split](/api-v1/get/convo-pathway-id-migration-split) returns `409` with `MIGRATION_EXPERIMENT_NUMBER`. Delete the split first.
 </ResponseField>
 
 <ResponseExample>
@@ -103,6 +103,18 @@ description: "Attach one or more inbound phone numbers to a persona. The same en
     {
       "error": "INVALID_INBOUND_NUMBERS",
       "message": "Some phone numbers were not found or do not belong to you"
+    }
+  ]
+}
+```
+
+```json Error Response (Number in a migration split)
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "MIGRATION_EXPERIMENT_NUMBER",
+      "message": "Changing this phone number's agent would bypass the experiment and immediately send 100% of its inbound traffic to the new agent. Remove traffic splitting for this number's control pathway first."
     }
   ]
 }

@@ -231,25 +231,37 @@ This is the immediate webhook sent right after a call completes. This example co
 
 </Accordion>
 
+### Calls that run an agent
+
+A call that runs an agent sends the same call webhook, with these differences:
+
+- `agent_version_id` is the agent version that ran the call. The payload doesn't include `agent_id`, so keep the `agent_id` you sent alongside the returned `call_id`.
+- `agent_experiment_id` identifies the experiment that routed the call, when one did.
+- V1 citation schemas, outcomes, and analysis presets don't run on agent calls. `citation_schema_ids` and `disposition_ids` are empty, the payload has no V1 `dispositions` array, and no `analysis` comes from an analysis preset, including one set on the phone number. Results from the agent's dispositions arrive under `agent_dispositions`, described next.
+
 ### Disposition results
 
-If your agent runs [dispositions](/agents/dispositions), their results arrive on this webhook under `agent_dispositions`. The disposition's **Webhook behavior** setting decides how they arrive:
+If your agent runs [dispositions](/agents/dispositions), their results arrive under `agent_dispositions`. Each disposition's **Webhook behavior** setting decides how they arrive:
 
-- **Follow-up event**: the call webhook fires as usual. A second event with `event_type` set to `dispositions` follows once the disposition finishes
+- **Follow-up event**: the call webhook fires as usual. Once the disposition finishes, a separate event with `event_type` set to `dispositions` follows, one event per disposition, sent to the same URL as the call webhook. If your endpoint doesn't accept the call webhook with a 2xx response, Bland doesn't send the follow-up events for that call
 - **Hold original webhook**: Bland waits for the disposition, then sends one combined webhook with `agent_dispositions` on the call payload. This adds up to 30 minutes of latency
+
+When an agent has dispositions, the call webhook can carry an empty `agent_dispositions` array, for example when every disposition uses Follow-up event. An empty array doesn't mean the dispositions produced nothing.
 
 See [Read the results](/agents/dispositions#read-the-results) for the payload shape.
 
 ### Legacy: delayed webhook with citations
 
 <Note>
-Citations are a legacy feature. [Dispositions](/agents/dispositions) replace citations and outcomes. On an agent still running V1 citations, the call webhook waits for citations, and a disposition set to Hold original webhook falls back to Follow-up event.
+Citations are a legacy feature. [Dispositions](/agents/dispositions) replace citations and outcomes, and citation schemas don't run on calls that run an agent. With the "Delay post call webhook" toggle on, an agent call that subscribes to `post_transfer_transcript` still has its webhook delayed. That webhook carries an empty `citations` array, and a disposition set to Hold original webhook falls back to Follow-up event.
 </Note>
 
 With legacy citation extraction, you can delay the post-call webhook until citations are processed. The combined webhook includes all call data plus citations and a corrected transcript. It needs both of these:
 
-1. `citations` in the call's `webhook_events`
+1. At least one citation schema on the call
 2. The "Delay post call webhook" toggle in your citation settings
+
+A call that also runs V1 outcomes is delayed whenever it has a citation schema, with or without the toggle.
 
 For details, see the [Citations documentation](/enterprise-features/citations#option-2%3A-delayed-post-call-webhook-with-citations).
 
@@ -470,7 +482,7 @@ Compared with the standard webhook, the delayed citations webhook:
 - Includes `corrected_transcript`, with speaker labels and confidence scores
 - Contains a `citations` array with extracted variables linked to specific utterances
 
-When the delay is off, the post-call webhook fires immediately and citations are sent in a separate webhook.
+When the delay is off, the post-call webhook fires immediately. Citations arrive in a separate webhook when the call's `webhook_events` includes `citations`.
 
 ### Post-Transfer Transcript
 
@@ -532,17 +544,17 @@ SMS conversations fire webhooks with the same structure as voice calls, so you c
 
 Every time a message is sent or received, a webhook fires with the message details and full chat history. The payload includes:
 
-- `conversation_id`, `phone_number`, `agent_number`, `channel` (`"sms"`, `"rcs"`, or `"whatsapp"`)
+- `conversation_id`, `to`, `from`, `channel` (`"sms"`, `"rcs"`, or `"whatsapp"`)
 - `pathway_id`, `pathway_version`
 - `message`, `sender` (`"USER"`, `"AGENT"`, or `"HUMAN"` for a rep replying during a [human handoff](/api-v1/post/sms-conversations-handoff))
-- `chat_history`: the full conversation so far
+- `conversation_history`: the full conversation so far
 - `variables`: pathway variables collected during the conversation
 - `metadata`: custom metadata passed when the conversation was created
 - `pathway_tags`: tags from pathway nodes visited during the conversation
 
 ### Status Webhooks
 
-When a conversation ends (via timeout, end-call node, or opt-out), a status webhook fires with the complete conversation context. In addition to the fields above, the status payload includes:
+When a conversation ends (via timeout, end-call node, or opt-out), a status webhook fires with the complete conversation context. It carries `conversation_id`, `channel`, `pathway_id`, `pathway_version`, `conversation_history`, `variables`, `metadata`, and `pathway_tags` as a message webhook does, with `phone_number` and `agent_number` in place of `to` and `from`. The status payload also includes:
 
 - `status`: `"ended"`, `"timeout"`, `"blacklisted"`, `"inactive"`, `"human_handoff"`, `"human_handoff_ended"`, `"read"`, or `"link_clicked"`
 - `message_count`: total messages in the conversation
@@ -550,6 +562,7 @@ When a conversation ends (via timeout, end-call node, or opt-out), a status webh
 - `summary`: AI-generated summary (when a summary prompt is configured)
 - `citations`: extracted citation variables, when legacy citation schemas are configured
 - `dispositions`: outcome run results, when legacy outcomes are configured
+- `agent_id`, `agent_version_id`, and `agent_dispositions`: on a conversation that ran an agent. `agent_dispositions` is always present there, and can be empty. Legacy citation schemas and outcomes don't run on these conversations, so `citations` and `dispositions` are absent. A disposition set to Follow-up event arrives later at the same webhook URL as a separate event with `event_type: "dispositions"`, `conversation_id`, and `agent_dispositions`. Message webhooks never carry agent fields.
 
 SMS also supports `read` and `link_clicked` status events for RCS and WhatsApp channels, which fire when a recipient reads a message or taps an action button link.
 
@@ -580,7 +593,7 @@ All possible values for the `error_message` field in post-call webhooks. Note th
 - `429` - Rate limiting (webhook endpoint receiving too many requests)
 - `5xx` - Server errors (webhook endpoint unavailable or internal errors)
 
-*Webhook delivery failures will trigger automatic retries based on the response code.*
+Bland doesn't retry the post-call webhook when your endpoint returns an error or can't be reached. To send it again, use [Resend Post Call Webhook](/api-v1/post/postcall-webhooks-resend). Disposition follow-up events are retried, and a call webhook held for dispositions can be retried until its hold deadline; see [Read the results](/agents/dispositions#read-the-results).
 
 ### Call Error Messages
 
