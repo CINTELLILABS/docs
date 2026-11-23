@@ -5,12 +5,12 @@ description: 'Score an agent before it ships: write a judge, build a test case, 
 
 An evaluation is a judge reading a conversation and saying whether the agent did the thing you wanted.
 
-Three objects do the work. A judge scores a conversation. A test case is a simulated caller that produces conversations to score. A run pairs them and gives you a result. A test case carries no judges of its own; you pick both when you start a run.
+Three objects do the work. A judge scores a conversation. A test case is a simulated caller that produces conversations to score. A run pairs judges with test cases, or with past production calls, and gives you a result. A test case carries no judges of its own; you pick both when you start a run.
 
 ## Prerequisites
 
 - An agent you have built, from [Agent builder](/agents/agent-builder)
-- An owner, admin, operator or prompter role to make an evaluation a required check
+- An owner, admin, operator or prompter role to write judges, run evaluations and make an evaluation a required check. Publishing a judge needs an owner, admin or operator role. See [Roles and permissions](/platform/roles-and-permissions)
 
 ## Where evaluations live
 
@@ -91,7 +91,18 @@ Then set a **Title**, a **Prompt** describing who the simulated caller is and wh
 
 ## Run them
 
-A run pairs judges with test cases. Pick both, choose how many conversations each test case should produce, and start it.
+A run scores either new simulated conversations or calls the agent already took. In the new run dialog, **Run on** offers both: **Simulations** and **Past calls**.
+
+For simulations, pick judges and test cases, choose how many conversations each test case should produce, and start it.
+
+To score past calls instead:
+
+1. Under **Run on**, choose **Past calls**.
+2. In **Calls**, filter the agent's production calls by outcome, status, duration, date or pathway version. A run takes up to 5,000 calls. Simulated calls and calls with no duration are not offered.
+3. Score every matching call, or select **Score a random sample** and set a sample size (100 by default).
+4. Under **Judges**, choose 1 to 10 judges. Each judge scores every selected call using its configured rubric.
+
+A past-call run appears in Runs next to simulation runs. Open it to see each judge's verdict on each call.
 
 Runs lists every scored run for the agent, wherever it started: here, in another browser, by a teammate, or through the API. A run appears once its conversations are being scored, not while they are still being generated.
 

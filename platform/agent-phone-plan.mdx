@@ -7,7 +7,7 @@ description: "A plan built for autonomous agents and bots at &#36;9.99 for your 
 
 The Agent Phone Plan is a self-serve subscription for bots and autonomous agents that need their own phone number. It's \$9.99 for your first month (50% off), then \$19.99/month. You can pay yearly instead, at \$150/year, which has no first-month discount. The first-month price applies to an organization's first Agent Phone Plan, once per account owner. Any other monthly purchase is \$19.99 from the first month. An organization that has had the plan before keeps the monthly price it had. The billing page and the payment challenge show the amount, and whether yearly billing is offered, before you pay. You get unlimited voice minutes and SMS to the US and Canada on a single dedicated number, no per-minute or per-message billing to track.
 
-It's built for one agent doing one thing at a time, not high-volume outbound campaigns. If your agent needs to run multiple calls in parallel or dial outside the US and Canada, use a [Build or Scale](/platform/billing#plan-tiers) plan instead.
+It's built for one agent doing one thing at a time, not high-volume outbound campaigns. If your agent needs to run multiple calls in parallel, use a [Build or Scale](/platform/billing#plan-tiers) plan instead. Calls to other countries are paid from your credit balance. See [International calls](#international-calls).
 
 <Note>
 The Agent Phone Plan is a self-serve tier. It isn't available to Enterprise or custom-billed accounts.
@@ -18,6 +18,7 @@ The Agent Phone Plan is a self-serve tier. It isn't available to Enterprise or c
 - **Unlimited voice minutes** to US and Canada destinations
 - **Unlimited SMS** to US and Canada destinations
 - **One US local number**, provisioned automatically when you subscribe. Outbound calls use it as the caller ID unless you pass a different `from`
+- **\$10 of international credit** on your first subscription if the account owner's phone number is outside the US and Canada. See [International credit](#international-credit)
 
 ## Limits
 
@@ -32,7 +33,8 @@ The Agent Phone Plan is a self-serve tier. It isn't available to Enterprise or c
 | Max call length | 60 minutes, applied to outbound calls at dispatch |
 | Texts per hour | 20, agent replies and API sends together |
 | Texts per day | 100, agent replies and API sends together |
-| Call, transfer, and SMS destinations | US and Canada only |
+| Included call destinations | US and Canada. [Other countries](#international-calls) are paid from your credit balance |
+| Transfer and SMS destinations | US and Canada only |
 
 A few things follow from that:
 
@@ -40,7 +42,25 @@ A few things follow from that:
 - **Call minutes are capped per day.** Inbound and outbound minutes count together, and each call's minutes are added when it ends. When the day's total reaches 1,000, a new outbound dispatch is rejected with HTTP 429 and error code `CALL_RL_PLAN_DAILY_MINUTES`, and a new inbound call hears a busy message. The allowance resets at midnight UTC.
 - **Max call length applies at dispatch.** If you set `max_duration` above 60 minutes on an outbound call, it is clamped to 60 when the call is dispatched. Inbound calls keep the `max_duration` configured on the number. The plan does not change it.
 - **Texts are capped per hour and per day.** Every outbound text counts, whether your agent replied to an inbound message or you sent one through the API. Past the cap, an API send is rejected with HTTP 429 and error code `SMS_RL_PLAN_HOURLY` or `SMS_RL_PLAN_DAILY`, and the agent stops replying to inbound texts until the allowance resets. Hourly allowances reset on the hour and daily allowances at midnight UTC. Inbound texts still arrive and are kept in the conversation.
-- **Destinations are limited.** Calls, transfers, and SMS to destinations outside the US and Canada are blocked on this plan.
+- **Transfers and texts stay in the US and Canada.** Transfers and SMS to numbers outside the US and Canada are blocked on this plan. Calls to other countries are paid from your credit balance, as described below.
+
+## International calls
+
+The plan's unlimited minutes cover the US and Canada. Your agent can also call other countries. Those calls are paid per minute from your credit balance, at the same rates as a Start plan call to that country.
+
+- **Your balance must be above \$0 when the call starts.** Otherwise the call is rejected with HTTP 402 and error code `CALL_PLAN_INTL_NEEDS_CREDITS`. Add credits on the [billing page](https://app.bland.ai/dashboard/pay), or have your agent [buy them](/platform/agent-headless-onboarding#buying-credits), then try again. A call that runs longer than your balance covers isn't cut off, so your balance can go below \$0.
+- **The plan's limits still apply.** International calls count toward the limits above, including the 1,000 call minutes per day.
+- **Transfers and texts stay in the US and Canada.** Transfers and SMS to other countries are still blocked.
+- **Other +1 numbers are international.** The US and Canada means numbers in those two countries. Numbers in other countries that use the +1 code, such as Puerto Rico or Jamaica, are paid from credits.
+- **Self-serve country rules apply.** Countries that self-serve accounts can't call stay blocked on the plan too.
+
+### International credit
+
+The first time an organization subscribes to the Agent Phone Plan, Bland adds \$10 to its credit balance if the account owner's phone number is outside the US and Canada.
+
+- **Once per organization.** Renewals don't add it again, and neither does subscribing again after a cancel. An organization that had the plan before this credit launched doesn't get it.
+- **The owner's sign-in phone number decides.** An owner with no phone number on their account doesn't qualify.
+- **It's ordinary credit.** It shows in your purchase history as "Agent Phone Plan international credit", and you can spend it the same way as any other credit.
 
 ## Subscribe
 
