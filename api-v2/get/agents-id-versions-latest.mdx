@@ -8,10 +8,18 @@ description: "Retrieve the newest saved version with its full snapshot."
 
 Returns the head of the agent's dev timeline, including the full configuration snapshot. Pass `branch` to read a branch's head instead; a branch with no saves of its own returns the version it was cut from. Use the returned `id` and `revision` as `parent_version_id` and `parent_revision` in [Create Agent Version](/api-v2/post/agents-id-versions) to save safely on top of it.
 
+<Note>
+  The builder's **Download agent JSON** action writes the same `snippets` and `snippets_complete` fields into the file. It downloads only the saved version the editor shows: it refuses while the agent is still loading, while there are unsaved changes, and when a newer save exists than the one the editor loaded.
+</Note>
+
 ### Headers
 
 <ParamField header="authorization" type="string" required>
   Your API key for authentication.
+</ParamField>
+
+<ParamField header="x-bland-include-snippets" type="string">
+  Send `true` to include `snippets`, the code of every custom code snippet the version runs. Required for a full API key. A dashboard session gets `snippets` without it. Restricted API keys, OAuth client tokens, and MCP or Norm loopback credentials never receive `snippets`, with or without this header. Full API key requests forwarded by the hosted MCP also omit them, because the hosted MCP does not forward this header.
 </ParamField>
 
 ### Path Parameters
@@ -24,6 +32,10 @@ Returns the head of the agent's dev timeline, including the full configuration s
 
 <ParamField query="branch" type="string">
   An open branch's ID. Returns that branch's newest save, falling back to its base version when the branch has none. Returns `404 BRANCH_NOT_FOUND` if the branch is not open or does not belong to this agent.
+</ParamField>
+
+<ParamField query="include_snippets" type="string">
+  Send `false` to leave out `snippets` even when the caller would receive them.
 </ParamField>
 
 ### Response
@@ -64,6 +76,36 @@ Returns the head of the agent's dev timeline, including the full configuration s
     </ResponseField>
     <ResponseField name="collaboration_baseline" type="string">
       A signature the dashboard's collaborative editor uses to merge concurrent edits. You can ignore it.
+    </ResponseField>
+<ResponseField name="snippets" type="array">
+      The code of every custom code snippet the version runs: snippets that custom code tools, chain steps, Custom Code steps, and the Initialization step point at, and snippets that library tools used by reference point at. One entry per distinct snippet and version. Present only when the caller receives snippets (see `x-bland-include-snippets`).
+
+      <Expandable title="snippet object">
+        <ResponseField name="snippet_id" type="string">
+          The snippet's unique identifier.
+        </ResponseField>
+        <ResponseField name="version" type="integer | null">
+          The pinned snippet version, or the latest version when the pointer is not pinned. `null` on an unresolved entry whose pointer is not pinned.
+        </ResponseField>
+        <ResponseField name="resolved" type="boolean">
+          `true` when `content` holds the code. `false` when it does not.
+        </ResponseField>
+        <ResponseField name="display_name" type="string">
+          The snippet's name. Present when `resolved` is `true`.
+        </ResponseField>
+        <ResponseField name="language" type="string">
+          The snippet's language, for example `js`. Present when `resolved` is `true`.
+        </ResponseField>
+        <ResponseField name="content" type="string">
+          The snippet's source code. Present when `resolved` is `true`.
+        </ResponseField>
+        <ResponseField name="reason" type="string">
+          Why an entry has no code. `unavailable`: your organization has no such snippet version. `limit`: a read limit was reached before this snippet. Present when `resolved` is `false`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="snippets_complete" type="boolean">
+      `false` when a read limit was reached, so `snippets` is a partial export: some entries have `reason: "limit"`, or library tools past the limit were not read. A single read follows up to 3 levels of library tools that reference other library tools, reads up to 50 library tools, inspects at most 100 distinct tool and override combinations (remaining uses are not inspected), and returns code for up to 50 snippets. A partial export can therefore have no `reason: "limit"` entry. Present with `snippets`.
     </ResponseField>
   </Expandable>
 </ResponseField>
