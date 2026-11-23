@@ -1,0 +1,145 @@
+---
+title: 'Telnyx'
+description: 'Connect your Telnyx numbers to a Bland agent over SIP with an FQDN connection, TLS, and SRTP'
+---
+
+Use your Telnyx phone numbers with a Bland agent. Telnyx sends inbound calls to Bland over an FQDN connection, and Bland places outbound calls through Telnyx with your SIP credentials. Both directions use TLS and SRTP.
+
+<Note>
+These steps use the Mission Control Portal settings Telnyx documents. Portal labels can change, so match by field name if one differs.
+</Note>
+
+## What works
+
+- Inbound calls to your agent
+- Outbound calls from your agent
+- Transfers from your agent, as a new call through Telnyx
+
+## Prerequisites
+
+- A Telnyx account with the numbers you want to use, and an outbound voice profile for outbound calls
+- A Bland account with SIP trunking enabled. If there is no **SIP** tab under **Phone numbers**, contact Bland support
+
+## Configure Telnyx
+
+<Steps>
+  <Step title="Create an FQDN connection">
+    In the Mission Control Portal, go to **Voice**, then **SIP Trunking**, and add a SIP connection of type **FQDN**. Telnyx only sends inbound calls over TLS on FQDN, IP, and Microsoft Teams connections.
+  </Step>
+
+  <Step title="Add Bland as the destination">
+    Under **Authentication and routing**, press **Add FQDN**. Set the DNS record type to `A`, the FQDN to your Bland region, for example `us2.sip.bland.ai`, and the port to `5061`. The other regions are under [Connection endpoints](/agents/sip-network#connection-endpoints).
+
+    Under **Inbound calls routing**, select the Bland FQDN.
+  </Step>
+
+  <Step title="Set the inbound options">
+    On the connection's **Inbound** tab:
+
+    - **SIP transport protocol**: TLS
+    - **Encrypted media**: SRTP. Telnyx turns encryption off by default, and Bland requires it
+    - **Number format** for DNIS and ANI: +E.164, so Bland receives full numbers with the `+`
+    - **SIP region**: the one nearest your Bland endpoint, for example Europe for `eu2.sip.bland.ai`
+    - **SIP subdomain**: leave empty. Telnyx doesn't allow TLS on subdomain calls
+  </Step>
+
+  <Step title="Create outbound credentials">
+    Skip this if you only need inbound calls.
+
+    Under **Authentication and routing**, then **Outbound calls authentication**, set the method to **Credentials** and enter a username and password.
+
+    On the **Outbound** tab, pick an **Outbound Voice Profile** that allows the destinations you will call. Set **Localization country** if you dial outside the US.
+  </Step>
+
+  <Step title="Assign your numbers">
+    Go to **Numbers**, then **My Numbers**, and set each number's connection to the FQDN connection.
+  </Step>
+</Steps>
+
+## Configure Bland
+
+<Steps>
+  <Step title="Open the setup wizard">
+    At **All agents**, go to **Dispatch**, then **Phone numbers**, then the **SIP** tab, and press **Create trunk**.
+  </Step>
+
+  <Step title="Provider">
+    Pick **Other** and enter the Telnyx SIP host for your region, with port 5061:
+
+    | Region | Telnyx host |
+    |---|---|
+    | US | `sip.telnyx.com:5061` |
+    | Canada | `sip.telnyx.ca:5061` |
+    | Europe | `sip.telnyx.eu:5061` |
+    | Australia | `sip.telnyx.com.au:5061` |
+  </Step>
+
+  <Step title="Firewall">
+    Telnyx reaches Bland over the public internet, with no firewall of yours in between. Tick the box and continue.
+  </Step>
+
+  <Step title="Authentication">
+    Pick **IP-based**, and leave **Outbound routing** on **Via Bland's carrier**. Under **Outbound call credentials**, enter the Telnyx username and password. Press **Create trunk**.
+  </Step>
+
+  <Step title="Numbers">
+    Add each Telnyx number in E.164 format, for example `+13125550100`.
+  </Step>
+
+  <Step title="Assign an agent">
+    Under **Phone numbers**, press **Configure** on the number and pick the agent under **Assignment**.
+  </Step>
+</Steps>
+
+You know it worked when a call to the number reaches the agent and shows up on the trunk's **Overview** tab. For outbound, use the number as `from` in [`POST /v1/calls`](/api-v1/post/calls).
+
+## Caller ID
+
+Telnyx validates the caller ID on every outbound call, and requires E.164 for calls that cross borders. Call from a number on your Telnyx account, in E.164 format.
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="Inbound calls never reach Bland">
+    The transport is UDP, or the number isn't on the connection. Set **SIP transport protocol** to TLS on port 5061, and assign the number to the FQDN connection.
+  </Accordion>
+
+  <Accordion title="Inbound calls are challenged with 407">
+    Telnyx sent the call from an IP Bland doesn't trust for your trunk. Check the trunk endpoint in Bland matches your Telnyx region, then contact Bland support with the call's SIP trace.
+  </Accordion>
+
+  <Accordion title="Inbound calls are rejected with 603 Decline">
+    The number isn't attached in Bland, or arrives without the `+`. Attach it, and set the DNIS number format to +E.164.
+  </Accordion>
+
+  <Accordion title="Calls fail right after answer, or are rejected with 488">
+    SRTP isn't on. Set **Encrypted media** to SRTP on the connection.
+  </Accordion>
+
+  <Accordion title="Outbound calls are rejected with 401 or 403">
+    The credentials in Bland don't match Telnyx, or your outbound voice profile doesn't allow the destination.
+  </Accordion>
+
+  <Accordion title="Outbound calls fail with 403 Caller Origination Number is Invalid">
+    The caller ID failed Telnyx's validation. Call from a Telnyx number in E.164 format.
+  </Accordion>
+
+  <Accordion title="Outbound calls outside the US fail with 404">
+    **Localization country** isn't set on the connection's **Outbound** tab.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    Send callers onward from the agent.
+  </Card>
+  <Card title="Network and security" icon="shield-halved" href="/agents/sip-network">
+    Bland's regions, IPs, and TLS and SRTP.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

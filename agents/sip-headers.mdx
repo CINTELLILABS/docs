@@ -1,0 +1,125 @@
+---
+title: 'SIP headers'
+description: 'Use SIP headers from your carrier or PBX as variables in your agent, and send call data back out in SIP headers'
+---
+
+SIP headers carry data with a call. Your PBX can tag a call with an account number, a queue, or the reason for calling, and the agent can use it like any other variable. Going the other way, Bland can put call data into the headers it sends your PBX.
+
+<Note>
+Bland receives every inbound `X-` header as a variable with no setup. Map a header only when you want a different variable name, or want to use it as the call's external ID.
+</Note>
+
+## Read inbound headers in your agent
+
+Every `X-` header on an inbound call becomes a variable named `sip_header_` plus the header name in lowercase:
+
+| Header your PBX sends | Variable in your agent |
+|---|---|
+| `X-Account-Id: 4417` | `{{sip_header_x-account-id}}` |
+| `X-Queue: billing` | `{{sip_header_x-queue}}` |
+
+Use them anywhere variables work: the prompt, pathway nodes, tools, and webhooks.
+
+### The original caller
+
+Bland copies the identity headers from the original `INVITE` into `X-Original-` headers, so they arrive as variables too:
+
+| Original header | Variable |
+|---|---|
+| `P-Asserted-Identity` | `{{sip_header_x-original-pai}}` |
+| `Remote-Party-ID` | `{{sip_header_x-original-rpid}}` |
+| `Diversion` | `{{sip_header_x-original-diversion}}` |
+| `From` | `{{sip_header_x-original-from}}` |
+| `To` | `{{sip_header_x-original-to}}` |
+| `P-Charge-Info` | `{{sip_header_x-original-p-charge-info}}` |
+
+Use these when a PBX forwards the call to Bland and the original caller isn't in `From`. A value of `anonymous` means the caller withheld their number.
+
+### Map a header to your own variable name
+
+To give a header a cleaner name, map it on the number's **inbound** configuration with [`POST /v1/sip/update`](/api-v1/post/sip-update). Each entry's `key` is the header name and `value` is the variable name:
+
+```bash
+curl -X POST https://api.bland.ai/v1/sip/update \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+14155550100",
+    "updates": {
+      "type": "inbound",
+      "headers": {
+        "direction": "inbound",
+        "headers": [
+          { "type": "custom", "key": "X-Account-Id", "value": "account_id", "external_id": true },
+          { "type": "custom", "key": "X-Queue", "value": "queue" }
+        ]
+      }
+    }
+  }'
+```
+
+The agent now reads `{{account_id}}` and `{{queue}}`.
+
+- **Header names match exactly**, including case.
+- **Up to 15 mappings** per number. Sending the list replaces it, and an empty list clears it.
+- **Built-in variable names are reserved.** A mapping into a name such as `call_id`, `phone_number`, or `from_number` is ignored.
+- **`external_id: true`** records the header's value as the call's external ID, so you can find the call later with [`GET /v1/calls?external_id=`](/api-v1/get/calls).
+
+### User-to-User (UUI)
+
+Contact centers often send data in a `User-to-User` header instead of an `X-` header. Bland decodes it when the header is hex encoded with `purpose=bland` and the content is `key=value` text:
+
+```text
+User-to-User: 6163636f756e743d34343137;encoding=hex;purpose=bland
+```
+
+That example decodes to `account=4417`. Map the key, `account`, to a variable the same way as a header: `{ "type": "custom", "key": "account", "value": "account_id" }`. A value can't itself contain `=`.
+
+### Pass variables without headers
+
+If your PBX can only send one header, create an inbound session first. [`POST /v1/inbound/session`](/api-v1/post/inbound-session) takes the number and the variables, and returns a token. Send the token in an `x-bland-session-id` header, and the agent receives every variable from the session.
+
+## Send headers from Bland
+
+Bland can send call data to your PBX in SIP headers, on outbound calls and transfers. Set the mapping in the **Headers** section of the trunk's **Configure** tab: each entry maps a call variable to a SIP header name.
+
+- Header names get an `X-` prefix. A name that doesn't start with `X-` is sent as `X-<name>`, and a leading `x_` becomes `X-`. `User-to-User`, `Remote-Party-ID`, `P-Preferred-Identity`, and `P-Called-Party-ID` are sent as written.
+- Up to 15 headers.
+- Saving the trunk's headers updates every number on the trunk.
+
+How headers travel on each transfer method is in [Transfers](/agents/sip-transfers#custom-headers).
+
+## Common failures
+
+<AccordionGroup>
+  <Accordion title="A header variable is empty">
+    Check the header is an `X-` header, and that the variable is all lowercase: `{{sip_header_x-account-id}}`, not `{{sip_header_X-Account-Id}}`. Open the call's SIP trace on the trunk's **Overview** tab to see exactly what your PBX sent.
+  </Accordion>
+
+  <Accordion title="A mapped variable is empty but the sip_header_ variable works">
+    The mapping's `key` doesn't match the header name exactly, including case. Copy the name from the SIP trace.
+  </Accordion>
+
+  <Accordion title="A mapped variable never changes">
+    The number's own request data sets the same variable, and it wins over SIP headers. Remove it from the number's settings, or map the header to a different name.
+  </Accordion>
+
+  <Accordion title="P-Asserted-Identity isn't a variable">
+    Only `X-` headers become variables. Use the copy in `{{sip_header_x-original-pai}}`.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/agents/sip-transfers">
+    Send headers to your PBX on a transfer.
+  </Card>
+  <Card title="Set up a trunk" icon="plug" href="/agents/sip-setup">
+    Create the trunk your numbers use.
+  </Card>
+</CardGroup>
+
+<div style={{ marginTop: '2rem' }} />
+
+Docs for agents: [llms.txt](/llms.txt)

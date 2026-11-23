@@ -16,27 +16,29 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
 
 ### Query Parameters
 
-<ParamField query="page" type="number" required={false}>
-  The page number to retrieve. Defaults to `1`.
+<ParamField query="limit" type="number" required={false}>
+  The number of conversations to return, from `0` to `1000`. Defaults to `1000`.
 </ParamField>
 
-<ParamField query="pageSize" type="number" required={false}>
-  The number of conversations per page. Defaults to `25`.
+<ParamField query="from" type="number" required={false}>
+  The number of conversations to skip before the first one returned. Use it with `limit` to page through results. Defaults to `0`.
 </ParamField>
 
-<ParamField query="sortBy" type="string" required={false}>
-  Field to sort by. Allowed values: `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`. Defaults to `created_at`.
+<ParamField query="sort_by" type="string" required={false}>
+  Field to sort by. Allowed values: `created_at`, `updated_at`, `last_message_at`, `message_count`. Defaults to `created_at`.
 </ParamField>
 
-<ParamField query="sortDir" type="string" required={false}>
-  Direction of sorting. Either `asc` or `desc`. Defaults to `desc`.
+<ParamField query="ascending" type="boolean" required={false}>
+  Sort in ascending order when `true`. Defaults to `false` (newest first).
 </ParamField>
 
 <ParamField query="filters" type="object[]" required={false}>
   A JSON-encoded array of filter objects. Each object should contain:
-  - `field`: one of `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `variables`, `current_node_id`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`
-  - `operator`: one of `eq`, `contains`, `startsWith`, `endsWith`, `gt`, `gte`, `lt`, `lte`
-  - `value`: the filter value
+  - `field`: one of `created_at`, `updated_at`, `user_number`, `agent_number`, `is_active`, `message_count`, `variables`, `current_node_id`, `curr_pathway_id`, `curr_pathway_version`, `timed_out_at`, `agent_id`, `agent`
+  - `operator`: one of `equals`, `not`, `in`, `notIn`, `contains`, `startsWith`, `endsWith`, `gt`, `gte`, `lt`, `lte`, `isEmpty`, `isNotEmpty`, `hasSome`, `hasEvery`, `none`. An operator outside the accepted set fails with `400` and error code `INVALID_PARAMETER`.
+  - `value`: the filter value. `in` and `notIn` take an array.
+
+  To list the conversations a V2 agent ran, filter on `agent_id` with `equals` or `in`. `agent_id` takes `equals`, `not`, `in`, `notIn`, `isEmpty`, and `isNotEmpty`, and its value must be a UUID. The `agent` field also matches conversations created before the agent was recorded on them, and takes `equals` or `in`.
 </ParamField>
 
 ### Response
@@ -113,6 +115,18 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
   The first successful outcome result tag, if outcomes were configured.
 </ResponseField>
 
+<ResponseField name="data[].agent_id" type="string|null">
+  The V2 agent the conversation ran, or `null` for a pathway or persona conversation. On an agent conversation, `citation_variables` and `disposition_tag` stay empty, and `curr_pathway_id` can be an ID that Bland manages for the agent rather than a pathway you created.
+</ResponseField>
+
+<ResponseField name="data[].agent_version_id" type="string|null">
+  The agent version the conversation ran, when Bland can tell which one. `null` otherwise.
+</ResponseField>
+
+<ResponseField name="data[].agent_dispositions" type="array">
+  The agent's [Dispositions](/agents/dispositions#read-the-results) results for the conversation. Present only when your organization has Dispositions enabled and the page includes an agent conversation. Empty on a conversation that ran no agent.
+</ResponseField>
+
 <ResponseField name="errors" type="null|array">
   `null` on success, or a list of errors on failure.
 </ResponseField>
@@ -155,7 +169,9 @@ description: "Retrieve a paginated list of SMS conversations for the authenticat
       "effective_channel": "sms",
       "summary": null,
       "citation_variables": null,
-      "disposition_tag": null
+      "disposition_tag": null,
+      "agent_id": null,
+      "agent_version_id": null
     }
   ],
   "errors": null,

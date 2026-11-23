@@ -36,7 +36,7 @@ Returns one agent with its `dev`, `staging`, and `production` environments and t
       The agent's display name.
     </ResponseField>
     <ResponseField name="created_by" type="string | null">
-      ID of the user who created the agent, or `null` when created with an org-level key.
+      ID of the user who created the agent. With an API key, this is the user the key belongs to. `null` when no user was recorded.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       ISO 8601 timestamp of creation.
@@ -46,6 +46,15 @@ Returns one agent with its `dev`, `staging`, and `production` environments and t
     </ResponseField>
     <ResponseField name="deleted_at" type="null">
       Always `null` on a live agent.
+    </ResponseField>
+    <ResponseField name="source_pathway_id" type="string | null">
+      The pathway this agent was migrated from, or `null`. When one migration combined several pathways, this is the first.
+    </ResponseField>
+    <ResponseField name="source_persona_id" type="string | null">
+      The persona this agent was migrated from, or `null`. At most one of `source_pathway_id` and `source_persona_id` is set.
+    </ResponseField>
+    <ResponseField name="migrated_at" type="string | null">
+      ISO 8601 timestamp of the migration that created the agent, or `null` for an agent built from scratch.
     </ResponseField>
     <ResponseField name="environments" type="array">
       The agent's three environments. Each has `id`, `env_type` (`dev`, `staging`, or `production`), and `current_version_id` (the pinned version, or `null` if unpinned).
