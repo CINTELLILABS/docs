@@ -19,7 +19,7 @@ Returns the head of the agent's dev timeline, including the full configuration s
 </ParamField>
 
 <ParamField header="x-bland-include-snippets" type="string">
-  Send `true` to include `snippets`, the code of every custom code snippet the version runs. Required for a full API key. A dashboard session gets `snippets` without it. Restricted API keys, OAuth client tokens, and requests made by the hosted MCP or Norm never receive `snippets`, with or without this header.
+  Send `true` to include `snippets`, the code of every custom code snippet the version runs. Required for a full API key. A dashboard session gets `snippets` without it. Restricted API keys, OAuth client tokens, and MCP or Norm loopback credentials never receive `snippets`, with or without this header. Full API key requests forwarded by the hosted MCP also omit them, because the hosted MCP does not forward this header.
 </ParamField>
 
 ### Path Parameters
@@ -105,7 +105,7 @@ Returns the head of the agent's dev timeline, including the full configuration s
       </Expandable>
     </ResponseField>
     <ResponseField name="snippets_complete" type="boolean">
-      `false` when a read limit was reached, so `snippets` is a partial export: some entries have `reason: "limit"`, or library tools past the limit were not read. A single read follows up to 3 levels of library tools that reference other library tools, reads up to 50 library tools, and returns code for up to 50 snippets. Present with `snippets`.
+      `false` when a read limit was reached, so `snippets` is a partial export: some entries have `reason: "limit"`, or library tools past the limit were not read. A single read follows up to 3 levels of library tools that reference other library tools, reads up to 50 library tools, inspects at most 100 distinct tool and override combinations (remaining uses are not inspected), and returns code for up to 50 snippets. A partial export can therefore have no `reason: "limit"` entry. Present with `snippets`.
     </ResponseField>
   </Expandable>
 </ResponseField>
