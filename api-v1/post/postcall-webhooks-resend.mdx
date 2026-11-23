@@ -8,6 +8,10 @@ description: "Resend post call webhooks for specified calls."
 
 Resend post call webhooks for one or more call IDs. This endpoint allows you to manually trigger a resend of webhooks that were previously sent when calls completed. This endpoint can only re-send webhooks that were previously sent when calls completed. Webhooks will be re-sent to the same URL they were previously sent to.
 
+Bland checks every call ID before it sends anything. If any call ID has no stored webhook, or its stored payload was cleared by your data retention policy, the request fails and no webhook is sent.
+
+A resend sends the stored call webhook payload. For a call that ran an agent, that payload includes `agent_dispositions` from dispositions set to Hold original webhook. Disposition follow-up events (`event_type: "dispositions"`) aren't stored with the call webhook and aren't resent.
+
 ---
 
 ## Headers
@@ -76,8 +80,9 @@ Resend post call webhooks for one or more call IDs. This endpoint allows you to 
   <Expandable title="Array Item Properties">
     <ResponseField name="error" type="string">
       The error code. Possible values:
-      - "invalid_parameter": Invalid request parameters
-      - "INTERNAL_SERVER_ERROR": Server error occurred
+      - "invalid_parameter": Invalid request parameters, including duplicate call IDs
+      - "WEBHOOK_PAYLOAD_EXPIRED": Returned with HTTP 410 when your data retention policy cleared a call's stored payload
+      - "INTERNAL_SERVER_ERROR": Server error occurred, including a call ID with no stored webhook
     </ResponseField>
     <ResponseField name="message" type="string">
       Detailed error message.

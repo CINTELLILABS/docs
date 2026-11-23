@@ -1,0 +1,167 @@
+---
+title: "Set Migration Split"
+api: "PUT https://api.bland.ai/v1/convo_pathway/{pathway_id}/migration_split"
+description: "Send a share of a V1 pathway's calls and texts to a V2 agent."
+---
+
+Creates or replaces the migration split on a V1 pathway. A split sends `v2_percentage` percent of the pathway's traffic to a V2 agent, which runs its `production` version. The rest runs on the pathway exactly as before. Your requests and phone numbers keep naming the pathway. A pathway has at most one split, so a `PUT` to a pathway that already has one replaces its agent and share. Changes apply from the next call.
+
+Set `v2_percentage` to `0` to roll back. A rollback skips every agent check below and is accepted while a rollout is running. To remove the split entirely, use [Delete Migration Split](/api-v1/delete/convo-pathway-id-migration-split). For a walkthrough, see [Migrate an API integration without changing its request](/platform/migrate-api-integrations).
+
+Requires an admin, owner, or operator role. This endpoint doesn't require an enterprise plan. Staged rollouts with ramps and guardrails, which the dashboard runs on top of a split, do.
+
+### What the split routes
+
+The split applies to this traffic on the pathway:
+
+- **Inbound calls** to numbers bound directly to the pathway. A number that reaches the pathway through a persona is not split.
+- **[Send Call](/api-v1/post/calls) requests** made with an organization API key that set `pathway_id` and set neither `persona_id` nor `agent_id`.
+- **New text conversations** started with [Send SMS Message](/api-v1/post/sms-send) and an organization API key, on the request's `pathway_id` or, without one, the number's pathway. A request or number with a persona is not split, and a conversation that is already active stays where it is. Conversations that start with an inbound text are not split.
+
+Each call is decided independently, unless a rollout assigns each caller a fixed side. A contact who texts again gets the same side as before while the percentage is unchanged. Traffic stays on the pathway when:
+
+- The agent's calls channel (or messages channel, for texts) is turned off.
+- Bland can't prepare the agent for that call. Under `agent_owned`, the request's removed fields are put back first, so the call runs on the pathway as the request was sent.
+- Under `honor`, a Send Call request sets `pathway_version` in the body or query, or a Send SMS Message request sets `pathway_version` or `start_node_id`.
+
+V1 citation schemas and `disposition_ids` don't run on a call that the split sends to the agent. Send Call requests the split sends to the agent can enter the agent's [experiments](/api-v2/post/agents-id-experiments) only while the split is at 100% and no rollout drives it. Inbound calls the split sends to the agent never do.
+
+While a pathway has a split, at any percentage, its directly bound numbers can't be attached to an agent or a persona: [Attach Numbers to Agent](/api-v2/post/agents-id-inbound-attach) and [Attach Phone Numbers to Persona](/api-v1/post/personas-id-inbound-attach) return `409 MIGRATION_EXPERIMENT_NUMBER`. A number attached to an agent no longer belongs to the pathway, so the split never routes its calls.
+
+<Warning>
+  Deleting the pathway or the agent deletes the split. If your integration keeps sending the pathway's ID, keep the pathway.
+</Warning>
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+<ParamField header="content-type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The V1 pathway to split. Must be a UUID of a pathway in your organization. Returns `400 BAD_REQUEST` for an invalid UUID, `404 NOT_FOUND` for a pathway outside your organization, and `400 BAD_REQUEST` for a pathway that Bland compiled from a V2 agent.
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="agent_id" type="string" required>
+  The V2 agent that receives the split traffic. Must be a UUID. When `v2_percentage` is above `0`, the request also checks the following:
+
+  - `404 NOT_FOUND` if the agent isn't in your organization.
+  - `409 FLEET_NOT_ELIGIBLE` if your organization runs on dedicated infrastructure that can't run V2 agents yet. Organizations on Bland's shared infrastructure always pass this check.
+  - `400 BAD_REQUEST` if the agent can't serve calls on its `production` version. The message names the cause, such as `AGENT_ENV_UNPINNED` when nothing is promoted to `production`.
+</ParamField>
+
+<ParamField body="v2_percentage" type="integer" required>
+  Percentage of the pathway's traffic sent to the agent, `0` to `100`. Returns `400 BAD_REQUEST` for any other value.
+
+  While a rollout is moving this pathway's share (`rollout_id` is set on [Get Migration Split](/api-v1/get/convo-pathway-id-migration-split)), a value above `0` returns `409 ROLLOUT_IN_PROGRESS`. Change the share from the rollout, or set `0` to roll back, which ends the rollout. A `409 CONFLICT` means a rollout change to the agent was in progress and nothing was written. Retry it.
+</ParamField>
+
+<ParamField body="request_policy" type="string">
+  Which values win on a Send Call request that the split sends to the agent: `honor` or `agent_owned`. Omit it to keep an existing split's policy. A new split without it starts on `honor`. Any other value returns `400 BAD_REQUEST`. The policy also decides whether a Send SMS Message request that sets `pathway_version` or `start_node_id` can be routed (only under `agent_owned`). Inbound calls aren't affected by this setting.
+
+  - `honor`: The request's values win. The agent fills in only the settings that the request leaves out. A request with `pathway_version` stays on the pathway.
+  - `agent_owned`: Bland removes these request fields so the agent's settings apply: `voice`, `interruption_threshold`, `language`, `keywords`, `pronunciation_guide`, `agent_backchannel_level`, `agent_backchannel_config`, `wait_for_greeting`, `max_duration`, `noise_cancellation`, `ignore_button_press`, `record`, `background_track`, `interruptibility`, `block_interruptions`, `voicemail`, `voicemail_action`, `voicemail_message`, `voicemail_sms`, `sensitive_voicemail_detection`, `amd`, `ivr_mode`, `pathway_version`, `start_node_id`, `citation_schema_id`, `citation_schema_ids`, and `disposition_ids`. Fields such as `phone_number`, `from`, `timezone`, `webhook`, `metadata`, and `request_data` still come from the request.
+
+  To change only the policy, use [Update Migration Split Request Policy](/api-v1/patch/convo-pathway-id-migration-split).
+</ParamField>
+
+### Response
+
+<ResponseField name="data.migration_split" type="object">
+  The split as saved.
+
+  <Expandable title="migration split object">
+    <ResponseField name="agent_id" type="string">
+      The agent that receives the split traffic.
+    </ResponseField>
+    <ResponseField name="v2_percentage" type="integer">
+      Percentage of the pathway's traffic sent to the agent.
+    </ResponseField>
+    <ResponseField name="request_policy" type="string">
+      `honor` or `agent_owned`.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last change.
+    </ResponseField>
+    <ResponseField name="rollout_id" type="string | null">
+      Always `null` here, because a share that a rollout moves can't be set with this endpoint.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed. Returns `409 SOURCE_CHANGED` and writes nothing if a number bound to the pathway changed while the request ran, for example because another request attached it to an agent. Retry it.
+</ResponseField>
+
+<ResponseExample>
+```json Request
+{
+  "agent_id": "6f2c8a41-3b7e-4d19-9c55-0e8a1f3b7d24",
+  "v2_percentage": 25,
+  "request_policy": "agent_owned"
+}
+```
+
+```json Response
+{
+  "data": {
+    "migration_split": {
+      "agent_id": "6f2c8a41-3b7e-4d19-9c55-0e8a1f3b7d24",
+      "v2_percentage": 25,
+      "request_policy": "agent_owned",
+      "updated_at": "2026-11-12T18:04:51.220Z",
+      "rollout_id": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json Agent Not Promoted
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "Agent cannot serve calls yet (AGENT_ENV_UNPINNED): Agent has no version deployed to \"production\"; deploy one or pass agent_version"
+    }
+  ]
+}
+```
+
+```json Invalid Body
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "BAD_REQUEST",
+      "message": "v2_percentage must be an integer between 0 and 100"
+    }
+  ]
+}
+```
+
+```json Pathway Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Pathway not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)

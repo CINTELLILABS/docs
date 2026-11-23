@@ -1,0 +1,89 @@
+---
+title: "Get Migration Split"
+api: "GET https://api.bland.ai/v1/convo_pathway/{pathway_id}/migration_split"
+description: "Check how much of a V1 pathway's traffic goes to a V2 agent."
+---
+
+Returns the migration split on a V1 pathway, or `null` when the pathway has none. A split sends a share of the pathway's inbound calls, [Send Call](/api-v1/post/calls) requests, and new text conversations to a V2 agent. [Set Migration Split](/api-v1/put/convo-pathway-id-migration-split) describes exactly which traffic it routes. A split at `0%` still exists and is returned.
+
+### Headers
+
+<ParamField header="authorization" type="string" required>
+  Your API key for authentication.
+</ParamField>
+
+### Path Parameters
+
+<ParamField path="pathway_id" type="string" required>
+  The V1 pathway. Must be a UUID of a pathway in your organization. Returns `400 BAD_REQUEST` for an invalid UUID, `404 NOT_FOUND` for a pathway outside your organization, and `400 BAD_REQUEST` for a pathway that Bland compiled from a V2 agent.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.migration_split" type="object | null">
+  The pathway's split, or `null` when it has none.
+
+  <Expandable title="migration split object">
+    <ResponseField name="agent_id" type="string">
+      The agent that receives the split traffic.
+    </ResponseField>
+    <ResponseField name="v2_percentage" type="integer">
+      Percentage of the pathway's traffic sent to the agent, `0` to `100`.
+    </ResponseField>
+    <ResponseField name="request_policy" type="string">
+      `honor` (the request's call settings win) or `agent_owned` (the agent's settings win). See [Set Migration Split](/api-v1/put/convo-pathway-id-migration-split).
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the last change.
+    </ResponseField>
+    <ResponseField name="rollout_id" type="string | null">
+      ID of the rollout that is moving this pathway's share, or `null` when no rollout is in progress. A paused rollout still counts as in progress. While it is set, a [Set Migration Split](/api-v1/put/convo-pathway-id-migration-split) request with a share above `0` returns `409 ROLLOUT_IN_PROGRESS`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="errors" type="null | array">
+  `null` on success, or a list of error objects if the request failed.
+</ResponseField>
+
+<ResponseExample>
+```json Response
+{
+  "data": {
+    "migration_split": {
+      "agent_id": "6f2c8a41-3b7e-4d19-9c55-0e8a1f3b7d24",
+      "v2_percentage": 25,
+      "request_policy": "honor",
+      "updated_at": "2026-11-12T18:04:51.220Z",
+      "rollout_id": null
+    }
+  },
+  "errors": null
+}
+```
+
+```json No Split
+{
+  "data": {
+    "migration_split": null
+  },
+  "errors": null
+}
+```
+
+```json Pathway Not Found
+{
+  "data": null,
+  "errors": [
+    {
+      "error": "NOT_FOUND",
+      "message": "Pathway not found"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
