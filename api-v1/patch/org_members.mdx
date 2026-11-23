@@ -41,19 +41,41 @@ description: "Add or remove members from an organization."
 
 ### Response
 
-<ResponseField name="data" type="null">  
-  Always `null` upon successful update.  
+<ResponseField name="data" type="object">  
+  The result of the update.  
+
+  <Expandable title="data object">
+    <ResponseField name="isInvite" type="boolean">
+      Whether the call created or removed an invitation instead of a full member.
+    </ResponseField>
+    <ResponseField name="removed" type="boolean">
+      Returned when `action` is `"remove"`. Always `true`: the member is no longer in the organization.
+    </ResponseField>
+    <ResponseField name="alreadyRemoved" type="boolean">
+      Returned when `action` is `"remove"`. `true` when the user was removed earlier and this call only retried the access cleanup steps.
+    </ResponseField>
+    <ResponseField name="cleanupFailures" type="string[]">
+      Returned when `action` is `"remove"`. The steps that failed while revoking the removed member's access. Empty when every step succeeded.
+      <br/>Possible values: `"sso_account_links"` (their SSO account links), `"org_api_keys"` (their full-access API keys for the organization), `"session_active_org"` (the organization selected in their signed-in sessions).
+      <br/>Call the endpoint again with the same `target` to retry the failed steps.
+    </ResponseField>
+  </Expandable>
 </ResponseField>  
 
-<ResponseField name="errors" type="null">  
-  Always `null` on success.  
+<ResponseField name="errors" type="array">  
+  `null` on success. On failure, an error with code `ORG_MEMBER_UPDATE_FAILURE`. Returns `403` when the caller isn't an owner or admin (members can still remove themselves), and `404` when the target isn't a member of the organization. If the membership itself can't be deleted, the removal fails and the member stays in the organization.  
 </ResponseField>  
 
 <ResponseExample>  
 
 ```json Response  
 {
-  "data": null,
+  "data": {
+    "isInvite": false,
+    "removed": true,
+    "alreadyRemoved": false,
+    "cleanupFailures": []
+  },
   "errors": null
 }
 ```
