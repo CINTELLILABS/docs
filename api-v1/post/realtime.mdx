@@ -1,0 +1,313 @@
+---
+title: "Speech-to-Speech (WebSocket)"
+description: "Hold a live voice conversation with Bland's speech-to-speech model over one WebSocket, using the OpenAI Realtime event format."
+---
+
+## Overview
+
+```text
+wss://api.bland.ai/v1/realtime
+```
+
+Stream audio in and receive the model's speech and transcript back on the same connection. The model plays a phone caller: you give it a prompt that describes who it is and why it is calling, and it talks to whatever is on the other end. Use it to exercise a voice agent with a realistic, unscripted caller.
+
+The endpoint uses the OpenAI Realtime event names and shapes. A client built for that protocol connects by changing its base URL and API key.
+
+<Note>
+  Access is enabled per account. Contact your Bland representative to turn it on.
+</Note>
+
+To turn text into speech instead, use [Realtime Speech (WebSocket)](/api-v2/post/tts-ws).
+
+## How this model takes turns
+
+The model is full duplex. It listens and speaks at the same time and decides by itself when to talk. This changes three things compared with a turn-based realtime model:
+
+- `response.*` events report what the model is doing. You cannot request a response. `response.create` and `input_audio_buffer.commit` return an `error` event and change nothing.
+- Turn detection cannot be turned off.
+- The model waits for the other side to speak first, for up to 8 seconds. If your agent greets the caller, send that audio.
+
+## Authentication
+
+- `Authorization: Bearer <api_key>` for server-side clients.
+- Browser clients request the WebSocket subprotocols `realtime` and `openai-insecure-api-key.<api_key>`. The server selects `realtime`.
+
+<Warning>
+  Never put a long-lived API key in browser code that you ship to users.
+</Warning>
+
+A request with no credentials is rejected before the WebSocket opens with HTTP `401` and code `AUTH_REQUIRED`. An invalid key is rejected after the upgrade with an `error` event and close code `1008`.
+
+## Audio
+
+All events are JSON text frames. Audio travels as base64 inside them.
+
+| Format | Details |
+| --- | --- |
+| `audio/pcm` | 16-bit little-endian PCM, 24 kHz, mono. The default for input and output. |
+| `audio/pcmu` | G.711 mu-law, 8 kHz, mono. |
+
+Set the input and output formats separately in `session.update`.
+
+Send input audio continuously and in real time, silence included, in chunks of 20 to 200 ms:
+
+- When no audio arrives, the server feeds the model silence so the conversation keeps moving.
+- Audio that arrives faster than real time waits briefly, then the oldest is dropped.
+- Audio sent before the model is ready is dropped, except the last 200 ms. The model starts on your first `input_audio_buffer.append`, or 0.3 seconds after your last `session.update`, and is ready about 0.2 seconds later.
+
+## Client events
+
+### `session.update`
+
+Send it once, right after `session.created`, before any audio.
+
+```json
+{
+  "type": "session.update",
+  "session": {
+    "type": "realtime",
+    "instructions": "You are Dana Reyes. You are calling the clinic to move your Thursday appointment to next week. You are in a hurry.",
+    "audio": {
+      "input": { "format": { "type": "audio/pcm", "rate": 24000 } },
+      "output": { "format": { "type": "audio/pcm", "rate": 24000 }, "voice": "default" }
+    },
+    "bland": { "interruption": 0.3 }
+  }
+}
+```
+
+<ParamField body="session.instructions" type="string">
+  The prompt: who the caller is and what they want. Up to 20,000 characters.
+</ParamField>
+
+<ParamField body="session.audio.input.format" type="object">
+  `{ "type": "audio/pcm", "rate": 24000 }` or `{ "type": "audio/pcmu" }`.
+</ParamField>
+
+<ParamField body="session.audio.output.format" type="object">
+  Same choices as the input format.
+</ParamField>
+
+<ParamField body="session.audio.output.voice" type="string">
+  A voice from the list below. A name that is not on the list is not an error: the session keeps its current voice, and `session.updated` reports the voice in use.
+</ParamField>
+
+<ParamField body="session.bland.interruption" type="number" default="0">
+  From `0` to `1`: the share of the other side's turns the caller may cut into.
+</ParamField>
+
+The server replies with `session.updated`, which carries the full session in effect.
+
+<Warning>
+  `instructions`, the voice, the audio formats and `bland` settings are fixed once audio has started. A later `session.update` that changes them returns an `error` event. Open a new session to change them.
+</Warning>
+
+Tools and text output are not supported. A `session.update` with a non-empty `tools` array, `output_modalities` other than `["audio"]`, or `turn_detection: null` returns an `error` event.
+
+### `input_audio_buffer.append`
+
+```json
+{ "type": "input_audio_buffer.append", "audio": "<base64 audio>" }
+```
+
+`audio` must be standard base64 in the session's input format. PCM must contain whole 16-bit samples. One event can carry up to about 4 seconds of 24 kHz audio.
+
+### `input_audio_buffer.clear`
+
+Drops audio the server has not yet passed to the model. The server replies with `input_audio_buffer.cleared`.
+
+### `response.cancel`
+
+```json
+{ "type": "response.cancel", "response_id": "resp_..." }
+```
+
+Ends the current response. The server sends its closing events with status `cancelled` and stops sending that response's audio. `response_id` is optional; when present it must match the active response. The model itself keeps talking, so stop your own playback as well.
+
+### `conversation.item.truncate`
+
+Acknowledged with `conversation.item.truncated`, so clients that truncate on interruption keep working. The model keeps no editable history.
+
+### Events that return an error
+
+`response.create`, `input_audio_buffer.commit`, `conversation.item.create`, `conversation.item.delete`, `conversation.item.retrieve` and `output_audio_buffer.clear` return an `error` event with code `unsupported_event`. The session stays open.
+
+## Server events
+
+Every server event has a unique `event_id`.
+
+### Session
+
+- `session.created`: the first event on every connection.
+- `session.updated`: the reply to `session.update`.
+
+### The model's speech
+
+Each utterance the model speaks is one response. Its events arrive in this order:
+
+1. `response.created`
+2. `response.output_item.added` and `conversation.item.added`
+3. `response.content_part.added`
+4. `response.output_audio_transcript.delta` and `response.output_audio.delta`, interleaved
+5. `response.output_audio.done`, `response.output_audio_transcript.done`, `response.content_part.done`
+6. `response.output_item.done` and `conversation.item.done`
+7. `response.done`
+
+```json
+{
+  "type": "response.output_audio.delta",
+  "event_id": "event_...",
+  "response_id": "resp_...",
+  "item_id": "item_...",
+  "output_index": 0,
+  "content_index": 0,
+  "delta": "<base64 audio>"
+}
+```
+
+The transcript is the model's own words and runs slightly ahead of the audio. `response.done` arrives about one second after the model stops talking and carries the final transcript, a status and `usage`.
+
+<ResponseField name="response.status" type="string">
+  `completed`, `cancelled` (you sent `response.cancel`), or `failed` (the session ended while the model was speaking).
+</ResponseField>
+
+<ResponseField name="response.usage" type="object">
+  Audio counted as tokens: one token per 100 ms of input and one per 50 ms of output. These numbers are for clients that expect them. They are not what you are billed on.
+</ResponseField>
+
+### The other side's speech
+
+The server detects speech in the audio you send and reports each stretch as a user item:
+
+1. `input_audio_buffer.speech_started`, with `audio_start_ms`
+2. `input_audio_buffer.speech_stopped`, with `audio_end_ms`
+3. `input_audio_buffer.committed`
+4. `conversation.item.added` and `conversation.item.done`
+
+The audio you send is not transcribed. User items carry `transcript: null`.
+
+Because both sides can speak at once, a user item can be added while a response is still in progress. `previous_item_id` on each item gives the conversation order.
+
+### `error`
+
+```json
+{
+  "type": "error",
+  "event_id": "event_...",
+  "error": {
+    "type": "invalid_request_error",
+    "code": "invalid_session",
+    "message": "Tools are not supported on this model.",
+    "param": "session.tools",
+    "event_id": "your_event_id"
+  }
+}
+```
+
+`error.event_id` is the `event_id` of the client event that caused it, when you sent one. Most errors leave the session open.
+
+## Voices
+
+| Voice | Description |
+| --- | --- |
+| `default` | The standard caller voice. |
+
+## Limits
+
+- A session lasts up to 10 minutes. The server then sends an `error` event with code `session_expired` and closes with code `1000`. Open a new session to continue.
+- One WebSocket frame can be at most 256 KiB.
+- When no capacity is free, the session ends with code `model_busy`. Retry after a short wait.
+
+## Error codes
+
+Connection errors arrive as an `error` event followed by a close. The close reason starts with the code.
+
+| Code | Close | Meaning |
+| --- | --- | --- |
+| `AUTH_REQUIRED` | HTTP `401` | No credential was supplied. The WebSocket does not open. |
+| `AUTH_FAILED` | `1008` | The API key is invalid. |
+| `NOT_ENABLED` | `1008` | The realtime API is not enabled for this account. |
+| `INSUFFICIENT_CREDITS` | `1008` | The account is out of credits. Checked at connect and during the session. |
+| `USER_BANNED`, `ORG_DELETED`, `ORG_SUSPENDED`, `ORG_STRIPE_OVERDUE` | `1008` | The account cannot use the API in its current state. |
+| `SERVER_RESTARTING` | `1013` | The server is restarting. Reconnect. |
+
+Session errors arrive as `error` events.
+
+| Code | Session | Meaning |
+| --- | --- | --- |
+| `invalid_json` | Stays open | The frame is not valid JSON. |
+| `unknown_event` | Stays open | The event type is not part of the protocol. |
+| `unsupported_event` | Stays open | The event is not supported on this model. |
+| `invalid_audio` | Stays open | The audio is not standard base64, or PCM is not whole samples. |
+| `invalid_session` | Stays open | A `session.update` field is invalid, unsupported, or changed after audio started. `error.param` names the field. |
+| `response_cancel_not_active` | Stays open | There is no active response, or `response_id` does not match it. |
+| `session_expired` | Closes, `1000` | The session reached 10 minutes. |
+| `model_busy` | Closes, `1013` | No capacity is free. Retry shortly. |
+| `model_unavailable` | Closes, `1013` | The session ended because of a server error. |
+
+The server also closes with `1003` if you send a binary frame, `1009` if a frame is too large, and `1008` if your client stops reading.
+
+## Example
+
+This Python client plays a WAV file to the model in real time and saves what the model says. The input file must be 24 kHz, 16-bit, mono.
+
+```python
+import asyncio, base64, json, os, wave
+import websockets
+
+URL = "wss://api.bland.ai/v1/realtime"
+CHUNK_MS = 20
+CHUNK_BYTES = 24000 * 2 * CHUNK_MS // 1000
+
+
+async def main():
+    headers = {"Authorization": f"Bearer {os.environ['BLAND_API_KEY']}"}
+    async with websockets.connect(URL, additional_headers=headers) as ws:
+        await ws.recv()  # session.created
+        await ws.send(json.dumps({
+            "type": "session.update",
+            "session": {
+                "type": "realtime",
+                "instructions": "You are Dana Reyes. You are calling the clinic "
+                                "to move your Thursday appointment to next week.",
+            },
+        }))
+
+        out = wave.open("caller.wav", "wb")
+        out.setnchannels(1); out.setsampwidth(2); out.setframerate(24000)
+
+        async def receive():
+            async for message in ws:
+                event = json.loads(message)
+                if event["type"] == "response.output_audio.delta":
+                    out.writeframes(base64.b64decode(event["delta"]))
+                elif event["type"] == "response.done":
+                    item = event["response"]["output"][0]
+                    print("caller:", item["content"][0]["transcript"])
+                elif event["type"] == "error":
+                    print("error:", event["error"]["code"], event["error"]["message"])
+
+        receiver = asyncio.create_task(receive())
+
+        with wave.open("agent.wav", "rb") as agent:
+            loop = asyncio.get_running_loop()
+            next_send = loop.time()
+            while chunk := agent.readframes(CHUNK_BYTES // 2):
+                await ws.send(json.dumps({
+                    "type": "input_audio_buffer.append",
+                    "audio": base64.b64encode(chunk).decode(),
+                }))
+                next_send += CHUNK_MS / 1000
+                await asyncio.sleep(max(0, next_send - loop.time()))
+
+        await asyncio.sleep(5)  # let the caller finish its last reply
+        receiver.cancel()
+        out.close()
+
+
+asyncio.run(main())
+```
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
