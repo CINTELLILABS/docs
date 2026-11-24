@@ -1,0 +1,61 @@
+---
+title: "International calling"
+description: "How self-serve accounts enable calls outside the US, the limits that apply to new accounts, and how to resolve international calling errors."
+---
+
+Self-serve accounts can call most countries. This page explains how to enable international calling, the limits that apply while your account is new, and how to resolve the errors you may see.
+
+<Info>
+  **This page covers self-serve accounts.** On Enterprise, international calling is set up with your account team. Contact your account manager to discuss the countries you need.
+</Info>
+
+## Enable international calling
+
+Without a completed purchase, your account can call the US, Canada, France, Spain, and Germany. Calling any other country requires a purchase.
+
+A credit purchase of any amount enables international calling. You can buy credits on the [billing page](https://app.bland.ai/dashboard/pay). Keep the following in mind:
+
+- A saved card alone doesn't enable international calling. The payment must complete.
+- International calling is enabled once your payment settles. If a call is refused right after you pay, wait a moment and try again.
+- The same requirement applies to calls from your own Twilio numbers through [Bring your own Twilio](/tutorials/custom-twilio).
+
+After a completed purchase, you can call any country except China, Cuba, Iran, North Korea, and Syria. Non-geographic numbers, such as +800 numbers, aren't supported.
+
+On the [Agent Phone Plan](/platform/agent-phone-plan), calls to the US and Canada are included, and calls to other countries are [billed from your credit balance](/platform/agent-phone-plan#international-calls).
+
+## Limits for new accounts
+
+Two additional limits apply to international calls while your account is new or your balance is low. Each one lifts automatically, as shown below. Calls to the US, Canada, France, Spain, and Germany are never subject to either limit.
+
+| Limit | Applies when | What it does | Lifts when |
+| --- | --- | --- | --- |
+| New account | Your account is less than 30 days old, or your balance is under \$20. | Calls to countries outside the exempt list below are limited to one per minute, one at a time, and 10 minutes each. | Your account is at least 30 days old and your balance is \$20 or more. |
+| Low balance | Your balance is \$2 or less. | Calls to all countries except the five above get the same limits, and transfers to numbers outside the US are blocked. | Your balance is above \$2. |
+
+<Note>
+  The \$20 balance only lifts the new account limit. It isn't required to enable international calling.
+</Note>
+
+<Accordion title="Countries exempt from the new account limit">
+  Argentina, Australia, Austria, Bangladesh, Bermuda, Brazil, Canada, Colombia, Dominican Republic, Faroe Islands, Finland, France, Germany, Gibraltar, Greece, Guam, Hong Kong, Hungary, Iceland, India, Ireland, Italy, Japan, Kuwait, Malaysia, Mexico, Mongolia, Netherlands, New Zealand, Norway, Peru, Poland, Portugal, Puerto Rico, Romania, Singapore, Slovakia, South Korea, Spain, Sweden, Switzerland, United Kingdom, United States, US Virgin Islands, and Vatican City.
+</Accordion>
+
+## Troubleshooting errors
+
+When a call is refused, the error message explains why. Look up the first sentence of the message you received in the table below.
+
+| Error message | Status | Cause | Resolution |
+| --- | --- | --- | --- |
+| "International calling requires a completed purchase." | 400, `CALL_UNPAID_INTL_BLOCK` | Your account hasn't completed a purchase. | Buy credits, then try again once your payment settles. |
+| "Calls to *country* (+*code*) aren't enabled for your account, and buying credits won't enable them." | 400, `CALL_GEO_BLOCK` | Calling this country isn't available on your account. | Connect your own Twilio account with the country enabled in its [Geo Permissions](/tutorials/custom-twilio#geo-permissions), or contact [support@bland.ai](mailto:support@bland.ai) to request access. |
+| "Calls to *country* (+*code*) are blocked for your account." | 400, `CALL_GEO_SPECIFIC_DENY` | Calls to this country are blocked for your account specifically. | If you believe this is a mistake, contact [support@bland.ai](mailto:support@bland.ai). |
+| "We couldn't identify which country this phone number belongs to." | 400 | The number is missing a country code or isn't a geographic number. | Send the number in E.164 format, including the `+` and the country code. |
+| "Calls to this destination are limited to one per minute." | 429 | Your account has reached the new account limit of one call per minute. | Wait one minute, then try again. |
+| "An international call is still active." | 429 | Your account already has an international call in progress, and only one is allowed at a time. | Wait for the active call to end, then try again. |
+| "Calling to this destination is temporarily limited to one call per minute." | 429 | Your account has reached the low balance limit of one call per minute. | Wait one minute, or add credits to bring your balance above \$2. |
+| "Transfers to this destination are currently restricted on your account." | 400 | Transfers outside the US are blocked while your balance is \$2 or less. | Add credits to bring your balance above \$2. |
+| "This call was limited to 10 minutes because a temporary duration limit applies to this destination on your account." | 200 | This isn't an error. The call was placed with a 10-minute limit. | No action needed. The limit lifts once your account meets the conditions in [Limits for new accounts](#limits-for-new-accounts). |
+
+---
+
+Docs for agents: [llms.txt](/llms.txt)
