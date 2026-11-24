@@ -48,6 +48,79 @@
   font-size: 1rem;
 }
 
+/*
+  Text contrast (WCAG 2.0 1.4.3: 4.5:1 for text under 18.66px bold or 24px).
+
+  Some of Mintlify's built-in API reference and search colours measure below
+  4.5:1 on their real backgrounds. Measured with axe-core 4.12.0 on
+  docs.bland.ai, 2026-11-20, on a POST, GET, PATCH, PUT and DELETE page:
+
+    "default:" in a parameter pill      #a8a29e on #faf9f5  2.39:1  light
+                                        #78716c on #212121  3.35:1  dark
+    "required" pill                     #dc2626 on #fff0ec  4.35:1  light
+    Inactive code-group tabs, "cURL"    #767070 on #f9f3f3  4.42:1  light
+    GET, PATCH, PUT method pills        4.38, 4.35, 4.42:1          light
+    White on GET, PATCH, PUT colour     2.61, 3.64, 2.96:1          both
+    (current page's sidebar pill and the "Try it" button)
+    Search breadcrumbs, Ask Assistant   4.45, 4.29:1                light
+
+  Each fix stays in Mintlify's own palette: one step darker in light, one step
+  lighter in dark, or the same hue at a lower lightness for a solid fill. The
+  ratio each one reaches is noted beside it. Mintlify inlines this file
+  unlayered and its Tailwind utilities sit in @layer utilities, so these rules
+  win without !important. Selectors use Mintlify's data-component-part and
+  data-search-item hooks where they exist.
+*/
+
+/* "default:" label inside a parameter pill. Stone-500 in light (4.55:1 on
+   #faf9f5), stone-400 in dark (6.38:1 on #212121): Mintlify's two shades,
+   swapped. */
+:root:not(.dark) [data-component-part="field-info-pill"] > .text-stone-400 {
+  color: #78716c;
+}
+.dark [data-component-part="field-info-pill"] > .text-stone-400 {
+  color: #a8a29e;
+}
+
+/* "required" pill: red-700 in light, 5.83:1 on #fff0ec. Dark already passes. */
+:root:not(.dark) [data-component-part="field-required-pill"] {
+  color: #b91c1c;
+}
+
+/* Inactive tabs in code groups and request and response examples, and the
+   language picker ("cURL") in the same bar: gray-600 in light, 7.19:1 on
+   #f9f3f3. The selected tab and the hover colour are unchanged. Dark already
+   passes. */
+:root:not(.dark) [data-component-part="code-group-tab-bar"] [role="tab"][aria-selected="false"],
+:root:not(.dark) [data-component-part="code-group-tab-bar"] p.truncate {
+  color: rgb(var(--gray-600));
+}
+
+/* Method pills, in the sidebar and in the endpoint header: the 800 shade in
+   light. GET 6.23:1, PATCH 6.14:1, PUT 6.15:1 on their own 20% tints. POST
+   and DELETE already pass, and dark already passes. */
+:root:not(.dark) :is(.method-nav-pill > .text-green-700, .method-pill.text-green-700) { color: #166534; }
+:root:not(.dark) :is(.method-nav-pill > .text-orange-700, .method-pill.text-orange-700) { color: #9a3412; }
+:root:not(.dark) :is(.method-nav-pill > .text-yellow-700, .method-pill.text-yellow-700) { color: #854d0e; }
+
+/* White text on a solid method colour: the current page's sidebar pill and
+   the "Try it" button, in both themes. Same hue, lower lightness, so white
+   text reaches 4.5:1. POST (#3064E3, 5.17:1) and DELETE (#CB3A32, 5.01:1)
+   already pass.
+     GET    #2AB673 2.61:1  to  #1F8454 4.68:1
+     PATCH  #DA622B 3.64:1  to  #C05321 4.66:1
+     PUT    #C28C30 2.96:1  to  #976D25 4.63:1 */
+[class~="bg-[#2AB673]"][class~="text-[#FFFFFF]"] { background-color: #1f8454; }
+[class~="bg-[#DA622B]"][class~="text-[#FFFFFF]"] { background-color: #c05321; }
+[class~="bg-[#C28C30]"][class~="text-[#FFFFFF]"] { background-color: #976d25; }
+
+/* Search dialog: result breadcrumbs and the "Ask Assistant" button. Gray-600
+   in light, 7.23:1 on #f7f5ee and 6.98:1 on #f3f1e9. Dark already passes. */
+:root:not(.dark) [data-search-item="item-breadcrumb"],
+:root:not(.dark) [data-component-part="search-ask-ai-button"] {
+  color: rgb(var(--gray-600));
+}
+
 /* ==========================================================================
    WELCOME PAGE
    ========================================================================== */
