@@ -10,7 +10,7 @@ Points one or more of your phone numbers at the agent so inbound calls and texts
 
 Attaching also sets each Twilio number up for texting: Bland points its SMS webhook at Bland and adds it to a Messaging Service. This applies to numbers on your own Twilio account too, so an SMS webhook you set there is replaced. The step runs after the attach and doesn't fail it.
 
-Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach without `environment` after saving to refresh it. Texts run the version the binding was last compiled from: the version in `compiled_from_version` from the last attach that compiled one, or the `production` version after a later promote. Enterprise plans can pass `environment: "staging"` so calls run the version pinned to staging instead. The agent must have at least one saved version.
+Calls answer with the agent's `production` version once one is promoted; until then they run the newest version saved on the dev timeline at the time of the attach, so re-attach without `environment` after saving to refresh it. Texts run the version the binding was last compiled from: the version in `compiled_from_version` from the last attach that compiled one, or the `production` version after a later promote. Enterprise plans can pass `environment: "staging"` so calls run the version pinned to staging instead, or `environment: "dev"` so calls follow the latest saved development content. The agent must have at least one saved version.
 
 A number bound to a V1 pathway that has a [migration split](/api-v1/get/convo-pathway-id-migration-split) can't be attached while the split exists, even at 0%. The request returns `409 MIGRATION_EXPERIMENT_NUMBER` and attaches nothing. [Delete the split](/api-v1/delete/convo-pathway-id-migration-split) first.
 
@@ -35,14 +35,19 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="environment" type="string">
-  Which environment calls to these numbers run: `production` or `staging`. When you omit it, a number already attached to this agent on staging stays on staging, and every other number answers on production. Pass `production` to move a staging number back. Any other value returns `400 INVALID_BODY`.
+  Which environment calls to these numbers run: `production`, `staging` or `dev`. When you omit it, a number already attached to this agent on staging or development stays where it is, and every other number answers on production. Pass `production` to move a number back. Any other value returns `400 INVALID_BODY` with the message `environment must be "production", "staging", or "dev"`.
 
-  `staging` is enterprise only and applies to calls. Texts to a staging number run the same version as texts to the agent's other numbers, not the staging version. Every check below runs before anything is written:
+  `staging` and `dev` are enterprise only and apply to calls. Texts to a staging or development number run the same version as texts to the agent's other numbers. `staging` runs the version pinned to staging. `dev` runs the latest saved content of Main, or of the branch in `branch_id`, with development variable values. Every check below runs before anything is written:
 
   - `403 ENTERPRISE_REQUIRED` if your organization is not on an enterprise plan.
-  - `409 STAGING_NUMBER_UNSUPPORTED` if your account or any of the numbers runs on dedicated infrastructure.
-  - `409 AGENT_ENV_UNPINNED` if nothing is published to staging.
-  - `409 AGENT_VARIABLE_UNRESOLVED` if a variable the staging version references has no staging value, or `409 AGENT_SNAPSHOT_INVALID` if the staging version can't run.
+  - `409 STAGING_NUMBER_UNSUPPORTED` for `staging` if your account or any of the numbers runs on dedicated infrastructure on a release that doesn't support staging numbers.
+  - `409 NUMBER_ENV_UNSUPPORTED` for `dev` if your account or any of the numbers runs on dedicated infrastructure.
+  - `409 AGENT_ENV_UNPINNED` for `staging` if nothing is published to staging. `dev` doesn't need a published version.
+  - `409 AGENT_VARIABLE_UNRESOLVED` if a variable the version references has no value in that environment, or `409 AGENT_SNAPSHOT_INVALID` if the version can't run.
+</ParamField>
+
+<ParamField body="branch_id" type="string">
+  ID of one of this agent's development branches. Calls run the latest saved content of that branch. Valid only with `environment: "dev"`; leave it out to follow Main. Any other use returns `400 INVALID_BODY` with the message `branch_id must be a branch ID and requires environment "dev"`.
 </ParamField>
 
 <ParamField body="only_if_unassigned" type="boolean" default="false">
@@ -50,7 +55,7 @@ Requires an admin, owner, operator, or prompter role.
 </ParamField>
 
 <ParamField body="only_if_bound" type="boolean" default="false">
-  When `true`, writes only numbers that are still attached to this agent. Use it with `environment` to move a number between `production` and `staging` without taking back a number that another request moved. If any number is no longer attached to this agent, the request returns `409 NUMBER_NOT_BOUND` and changes nothing. Any value other than a boolean returns `400 INVALID_BODY`.
+  When `true`, writes only numbers that are still attached to this agent. Use it with `environment` to move a number between environments without taking back a number that another request moved. If any number is no longer attached to this agent, the request returns `409 NUMBER_NOT_BOUND` and changes nothing. Any value other than a boolean returns `400 INVALID_BODY`.
 </ParamField>
 
 ### Response
