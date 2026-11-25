@@ -1,12 +1,12 @@
 ---
 title: "Cancel Agent Phone Plan"
 api: "POST https://api.bland.ai/billing/cancel_agent_phone"
-description: "Cancel your organization's Agent Phone Plan at the end of its billing period, with an optional offboarding survey."
+description: "Cancel your organization's Agent Phone Plan now or at the end of its billing period, with an optional offboarding survey."
 ---
 
 ### Overview
 
-Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan) at the end of the current billing period. The plan doesn't renew, it stays active until the month or year you've paid for ends, and there's no refund for the rest of that period. Your included phone number stays on your account.
+Cancels your organization's [Agent Phone Plan](/platform/agent-phone-plan). By default, the cancel takes effect at the end of the current billing period: the plan doesn't renew, and it stays active until the month or year you've paid for ends. Set `when` to `now` to end the plan immediately instead. Either way, there's no refund for the rest of the period, and your included phone number stays on your account.
 
 You can answer a short, optional offboarding survey in the same request with `feedback`. If you leave it out, the response includes `cancellation_survey`, which lists the questions and their allowed answers. You can send your answers afterwards with [Submit Cancellation Feedback](/api-v1/post/agent-phone-plan-cancel-feedback). The survey never affects the cancel.
 
@@ -25,6 +25,14 @@ If you're an agent canceling for a person, ask them the survey questions and pas
 </ParamField>
 
 ### Body Parameters
+
+<ParamField body="when" type="string" default="period_end">
+  When the plan ends. One of:
+  - `period_end`: the plan stops renewing and stays active until the end of the period you've paid for.
+  - `now`: the plan ends immediately, with no refund for the rest of the period.
+
+  If a cancel at period end is already scheduled, send `now` to end the plan right away. Any other value gets `400 BAD_REQUEST`.
+</ParamField>
 
 <ParamField body="feedback" type="object">
   Optional answers to the offboarding survey. Every field is optional, and blank answers count as no answer. An invalid survey gets `400 BAD_REQUEST` and nothing is canceled.
@@ -51,7 +59,7 @@ If you're an agent canceling for a person, ask them the survey questions and pas
 ### Response
 
 <ResponseField name="data" type="object">
-  Your plan after the cancel. `status` stays `active` until the period ends, at `current_period_end`, and then becomes `canceled`. `phone_number` is the number you keep.
+  Your plan after the cancel. With `period_end`, `status` stays `active` until the period ends, at `current_period_end`, and then becomes `canceled`. With `now`, the plan has already ended when the response returns. `phone_number` is the number you keep.
 </ResponseField>
 
 <ResponseField name="data.cancellation_survey" type="object">
@@ -80,6 +88,13 @@ curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
 ```bash Without feedback
 curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
   -H "authorization: <org-api-key>"
+```
+
+```bash Cancel now
+curl -X POST https://api.bland.ai/billing/cancel_agent_phone \
+  -H "authorization: <org-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{ "when": "now" }'
 ```
 </RequestExample>
 
